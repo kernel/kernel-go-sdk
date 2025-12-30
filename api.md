@@ -205,6 +205,7 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyNewResponse">ProxyNewResponse</a>
 - <a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyGetResponse">ProxyGetResponse</a>
 - <a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyListResponse">ProxyListResponse</a>
+- <a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyCheckResponse">ProxyCheckResponse</a>
 
 Methods:
 
@@ -212,6 +213,7 @@ Methods:
 - <code title="get /proxies/{id}">client.Proxies.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyGetResponse">ProxyGetResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /proxies">client.Proxies.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) ([]<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyListResponse">ProxyListResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="delete /proxies/{id}">client.Proxies.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+- <code title="post /proxies/{id}/check">client.Proxies.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyService.Check">Check</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk#ProxyCheckResponse">ProxyCheckResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 # Extensions
 
