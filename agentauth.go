@@ -20,7 +20,6 @@ import (
 	"github.com/onkernel/kernel-go-sdk/packages/pagination"
 	"github.com/onkernel/kernel-go-sdk/packages/param"
 	"github.com/onkernel/kernel-go-sdk/packages/respjson"
-	"github.com/onkernel/kernel-go-sdk/shared/constant"
 )
 
 // AgentAuthService contains methods and other services that help with interacting
@@ -68,7 +67,7 @@ func (r *AgentAuthService) Get(ctx context.Context, id string, opts ...option.Re
 	return
 }
 
-// List auth agents with optional filters for profile_name and target_domain.
+// List auth agents with optional filters for profile_name and domain.
 func (r *AgentAuthService) List(ctx context.Context, query AgentAuthListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[AuthAgent], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -86,7 +85,7 @@ func (r *AgentAuthService) List(ctx context.Context, query AgentAuthListParams, 
 	return res, nil
 }
 
-// List auth agents with optional filters for profile_name and target_domain.
+// List auth agents with optional filters for profile_name and domain.
 func (r *AgentAuthService) ListAutoPaging(ctx context.Context, query AgentAuthListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[AuthAgent] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
@@ -108,74 +107,60 @@ func (r *AgentAuthService) Delete(ctx context.Context, id string, opts ...option
 	return
 }
 
-// Triggers automatic re-authentication for an auth agent using stored credentials.
-// Requires the auth agent to have a linked credential, stored selectors, and
-// login_url. Returns immediately with status indicating whether re-auth was
-// started.
-func (r *AgentAuthService) Reauth(ctx context.Context, id string, opts ...option.RequestOption) (res *ReauthResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
-		return
-	}
-	path := fmt.Sprintf("agents/auth/%s/reauth", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
-}
-
-// Response from discover endpoint matching AuthBlueprint schema
-type AgentAuthDiscoverResponse struct {
-	// Whether discovery succeeded
-	Success bool `json:"success,required"`
-	// Error message if discovery failed
-	ErrorMessage string `json:"error_message"`
-	// Discovered form fields (present when success is true)
-	Fields []DiscoveredField `json:"fields"`
-	// Whether user is already logged in
-	LoggedIn bool `json:"logged_in"`
-	// URL of the discovered login page
-	LoginURL string `json:"login_url" format:"uri"`
-	// Title of the login page
-	PageTitle string `json:"page_title"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Success      respjson.Field
-		ErrorMessage respjson.Field
-		Fields       respjson.Field
-		LoggedIn     respjson.Field
-		LoginURL     respjson.Field
-		PageTitle    respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r AgentAuthDiscoverResponse) RawJSON() string { return r.JSON.raw }
-func (r *AgentAuthDiscoverResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Response from get invocation endpoint
 type AgentAuthInvocationResponse struct {
 	// App name (org name at time of invocation creation)
 	AppName string `json:"app_name,required"`
+	// Domain for authentication
+	Domain string `json:"domain,required"`
 	// When the handoff code expires
 	ExpiresAt time.Time `json:"expires_at,required" format:"date-time"`
 	// Invocation status
 	//
-	// Any of "IN_PROGRESS", "SUCCESS", "EXPIRED", "CANCELED".
+	// Any of "IN_PROGRESS", "SUCCESS", "EXPIRED", "CANCELED", "FAILED".
 	Status AgentAuthInvocationResponseStatus `json:"status,required"`
-	// Target domain for authentication
-	TargetDomain string `json:"target_domain,required"`
+	// Current step in the invocation workflow
+	//
+	// Any of "initialized", "discovering", "awaiting_input",
+	// "awaiting_external_action", "submitting", "completed", "expired".
+	Step AgentAuthInvocationResponseStep `json:"step,required"`
+	// The invocation type:
+	//
+	// - login: First-time authentication
+	// - reauth: Re-authentication for previously authenticated agents
+	// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+	//
+	// Any of "login", "auto_login", "reauth".
+	Type AgentAuthInvocationResponseType `json:"type,required"`
+	// Error message explaining why the invocation failed (present when status=FAILED)
+	ErrorMessage string `json:"error_message,nullable"`
+	// Instructions for user when external action is required (present when
+	// step=awaiting_external_action)
+	ExternalActionMessage string `json:"external_action_message,nullable"`
+	// Browser live view URL for debugging the invocation
+	LiveViewURL string `json:"live_view_url,nullable"`
+	// Fields currently awaiting input (present when step=awaiting_input)
+	PendingFields []DiscoveredField `json:"pending_fields,nullable"`
+	// SSO buttons available on the page (present when step=awaiting_input)
+	PendingSSOButtons []AgentAuthInvocationResponsePendingSSOButton `json:"pending_sso_buttons,nullable"`
+	// Names of fields that have been submitted (present when step=submitting or later)
+	SubmittedFields []string `json:"submitted_fields,nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		AppName      respjson.Field
-		ExpiresAt    respjson.Field
-		Status       respjson.Field
-		TargetDomain respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		AppName               respjson.Field
+		Domain                respjson.Field
+		ExpiresAt             respjson.Field
+		Status                respjson.Field
+		Step                  respjson.Field
+		Type                  respjson.Field
+		ErrorMessage          respjson.Field
+		ExternalActionMessage respjson.Field
+		LiveViewURL           respjson.Field
+		PendingFields         respjson.Field
+		PendingSSOButtons     respjson.Field
+		SubmittedFields       respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
 	} `json:"-"`
 }
 
@@ -193,36 +178,68 @@ const (
 	AgentAuthInvocationResponseStatusSuccess    AgentAuthInvocationResponseStatus = "SUCCESS"
 	AgentAuthInvocationResponseStatusExpired    AgentAuthInvocationResponseStatus = "EXPIRED"
 	AgentAuthInvocationResponseStatusCanceled   AgentAuthInvocationResponseStatus = "CANCELED"
+	AgentAuthInvocationResponseStatusFailed     AgentAuthInvocationResponseStatus = "FAILED"
 )
 
-// Response from submit endpoint matching SubmitResult schema
-type AgentAuthSubmitResponse struct {
-	// Whether submission succeeded
-	Success bool `json:"success,required"`
-	// Additional fields needed (e.g., OTP) - present when needs_additional_auth is
-	// true
-	AdditionalFields []DiscoveredField `json:"additional_fields"`
-	// App name (only present when logged_in is true)
-	AppName string `json:"app_name"`
-	// Error message if submission failed
-	ErrorMessage string `json:"error_message"`
-	// Whether user is now logged in
-	LoggedIn bool `json:"logged_in"`
-	// Whether additional authentication fields are needed
-	NeedsAdditionalAuth bool `json:"needs_additional_auth"`
-	// Target domain (only present when logged_in is true)
-	TargetDomain string `json:"target_domain"`
+// Current step in the invocation workflow
+type AgentAuthInvocationResponseStep string
+
+const (
+	AgentAuthInvocationResponseStepInitialized            AgentAuthInvocationResponseStep = "initialized"
+	AgentAuthInvocationResponseStepDiscovering            AgentAuthInvocationResponseStep = "discovering"
+	AgentAuthInvocationResponseStepAwaitingInput          AgentAuthInvocationResponseStep = "awaiting_input"
+	AgentAuthInvocationResponseStepAwaitingExternalAction AgentAuthInvocationResponseStep = "awaiting_external_action"
+	AgentAuthInvocationResponseStepSubmitting             AgentAuthInvocationResponseStep = "submitting"
+	AgentAuthInvocationResponseStepCompleted              AgentAuthInvocationResponseStep = "completed"
+	AgentAuthInvocationResponseStepExpired                AgentAuthInvocationResponseStep = "expired"
+)
+
+// The invocation type:
+//
+// - login: First-time authentication
+// - reauth: Re-authentication for previously authenticated agents
+// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+type AgentAuthInvocationResponseType string
+
+const (
+	AgentAuthInvocationResponseTypeLogin     AgentAuthInvocationResponseType = "login"
+	AgentAuthInvocationResponseTypeAutoLogin AgentAuthInvocationResponseType = "auto_login"
+	AgentAuthInvocationResponseTypeReauth    AgentAuthInvocationResponseType = "reauth"
+)
+
+// An SSO button for signing in with an external identity provider
+type AgentAuthInvocationResponsePendingSSOButton struct {
+	// Visible button text
+	Label string `json:"label,required"`
+	// Identity provider name
+	Provider string `json:"provider,required"`
+	// XPath selector for the button
+	Selector string `json:"selector,required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Success             respjson.Field
-		AdditionalFields    respjson.Field
-		AppName             respjson.Field
-		ErrorMessage        respjson.Field
-		LoggedIn            respjson.Field
-		NeedsAdditionalAuth respjson.Field
-		TargetDomain        respjson.Field
-		ExtraFields         map[string]respjson.Field
-		raw                 string
+		Label       respjson.Field
+		Provider    respjson.Field
+		Selector    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AgentAuthInvocationResponsePendingSSOButton) RawJSON() string { return r.JSON.raw }
+func (r *AgentAuthInvocationResponsePendingSSOButton) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Response from submit endpoint - returns immediately after submission is accepted
+type AgentAuthSubmitResponse struct {
+	// Whether the submission was accepted for processing
+	Accepted bool `json:"accepted,required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Accepted    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
 	} `json:"-"`
 }
 
@@ -245,6 +262,10 @@ type AuthAgent struct {
 	//
 	// Any of "AUTHENTICATED", "NEEDS_AUTH".
 	Status AuthAgentStatus `json:"status,required"`
+	// Additional domains that are valid for this auth agent's authentication flow
+	// (besides the primary domain). Useful when login pages redirect to different
+	// domains.
+	AllowedDomains []string `json:"allowed_domains"`
 	// Whether automatic re-authentication is possible (has credential_id, selectors,
 	// and login_url)
 	CanReauth bool `json:"can_reauth"`
@@ -262,6 +283,7 @@ type AuthAgent struct {
 		Domain          respjson.Field
 		ProfileName     respjson.Field
 		Status          respjson.Field
+		AllowedDomains  respjson.Field
 		CanReauth       respjson.Field
 		CredentialID    respjson.Field
 		CredentialName  respjson.Field
@@ -288,12 +310,12 @@ const (
 
 // Request to create or find an auth agent
 //
-// The properties ProfileName, TargetDomain are required.
+// The properties Domain, ProfileName are required.
 type AuthAgentCreateRequestParam struct {
+	// Domain for authentication
+	Domain string `json:"domain,required"`
 	// Name of the profile to use for this auth agent
 	ProfileName string `json:"profile_name,required"`
-	// Target domain for authentication
-	TargetDomain string `json:"target_domain,required"`
 	// Optional name of an existing credential to use for this auth agent. If provided,
 	// the credential will be linked to the agent and its values will be used to
 	// auto-fill the login form on invocation.
@@ -301,6 +323,10 @@ type AuthAgentCreateRequestParam struct {
 	// Optional login page URL. If provided, will be stored on the agent and used to
 	// skip discovery in future invocations.
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
+	// Additional domains that are valid for this auth agent's authentication flow
+	// (besides the primary domain). Useful when login pages redirect to different
+	// domains.
+	AllowedDomains []string `json:"allowed_domains,omitzero"`
 	// Optional proxy configuration
 	Proxy AuthAgentCreateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
@@ -350,102 +376,8 @@ func (r *AuthAgentInvocationCreateRequestParam) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// AuthAgentInvocationCreateResponseUnion contains all possible properties and
-// values from [AuthAgentInvocationCreateResponseAlreadyAuthenticated],
-// [AuthAgentInvocationCreateResponseInvocationCreated].
-//
-// Use the [AuthAgentInvocationCreateResponseUnion.AsAny] method to switch on the
-// variant.
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-type AuthAgentInvocationCreateResponseUnion struct {
-	// Any of "already_authenticated", "invocation_created".
-	Status string `json:"status"`
-	// This field is from variant [AuthAgentInvocationCreateResponseInvocationCreated].
-	ExpiresAt time.Time `json:"expires_at"`
-	// This field is from variant [AuthAgentInvocationCreateResponseInvocationCreated].
-	HandoffCode string `json:"handoff_code"`
-	// This field is from variant [AuthAgentInvocationCreateResponseInvocationCreated].
-	HostedURL string `json:"hosted_url"`
-	// This field is from variant [AuthAgentInvocationCreateResponseInvocationCreated].
-	InvocationID string `json:"invocation_id"`
-	JSON         struct {
-		Status       respjson.Field
-		ExpiresAt    respjson.Field
-		HandoffCode  respjson.Field
-		HostedURL    respjson.Field
-		InvocationID respjson.Field
-		raw          string
-	} `json:"-"`
-}
-
-// anyAuthAgentInvocationCreateResponse is implemented by each variant of
-// [AuthAgentInvocationCreateResponseUnion] to add type safety for the return type
-// of [AuthAgentInvocationCreateResponseUnion.AsAny]
-type anyAuthAgentInvocationCreateResponse interface {
-	implAuthAgentInvocationCreateResponseUnion()
-}
-
-func (AuthAgentInvocationCreateResponseAlreadyAuthenticated) implAuthAgentInvocationCreateResponseUnion() {
-}
-func (AuthAgentInvocationCreateResponseInvocationCreated) implAuthAgentInvocationCreateResponseUnion() {
-}
-
-// Use the following switch statement to find the correct variant
-//
-//	switch variant := AuthAgentInvocationCreateResponseUnion.AsAny().(type) {
-//	case kernel.AuthAgentInvocationCreateResponseAlreadyAuthenticated:
-//	case kernel.AuthAgentInvocationCreateResponseInvocationCreated:
-//	default:
-//	  fmt.Errorf("no variant present")
-//	}
-func (u AuthAgentInvocationCreateResponseUnion) AsAny() anyAuthAgentInvocationCreateResponse {
-	switch u.Status {
-	case "already_authenticated":
-		return u.AsAlreadyAuthenticated()
-	case "invocation_created":
-		return u.AsInvocationCreated()
-	}
-	return nil
-}
-
-func (u AuthAgentInvocationCreateResponseUnion) AsAlreadyAuthenticated() (v AuthAgentInvocationCreateResponseAlreadyAuthenticated) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u AuthAgentInvocationCreateResponseUnion) AsInvocationCreated() (v AuthAgentInvocationCreateResponseInvocationCreated) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u AuthAgentInvocationCreateResponseUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *AuthAgentInvocationCreateResponseUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Response when the agent is already authenticated.
-type AuthAgentInvocationCreateResponseAlreadyAuthenticated struct {
-	// Indicates the agent is already authenticated and no invocation was created.
-	Status constant.AlreadyAuthenticated `json:"status,required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Status      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r AuthAgentInvocationCreateResponseAlreadyAuthenticated) RawJSON() string { return r.JSON.raw }
-func (r *AuthAgentInvocationCreateResponseAlreadyAuthenticated) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Response when a new invocation was created.
-type AuthAgentInvocationCreateResponseInvocationCreated struct {
+// Response from creating an invocation. Always returns an invocation_id.
+type AuthAgentInvocationCreateResponse struct {
 	// When the handoff code expires.
 	ExpiresAt time.Time `json:"expires_at,required" format:"date-time"`
 	// One-time code for handoff.
@@ -454,25 +386,44 @@ type AuthAgentInvocationCreateResponseInvocationCreated struct {
 	HostedURL string `json:"hosted_url,required" format:"uri"`
 	// Unique identifier for the invocation.
 	InvocationID string `json:"invocation_id,required"`
-	// Indicates an invocation was created.
-	Status constant.InvocationCreated `json:"status,required"`
+	// The invocation type:
+	//
+	// - login: First-time authentication
+	// - reauth: Re-authentication for previously authenticated agents
+	// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+	//
+	// Any of "login", "auto_login", "reauth".
+	Type AuthAgentInvocationCreateResponseType `json:"type,required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ExpiresAt    respjson.Field
 		HandoffCode  respjson.Field
 		HostedURL    respjson.Field
 		InvocationID respjson.Field
-		Status       respjson.Field
+		Type         respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
 }
 
 // Returns the unmodified JSON received from the API
-func (r AuthAgentInvocationCreateResponseInvocationCreated) RawJSON() string { return r.JSON.raw }
-func (r *AuthAgentInvocationCreateResponseInvocationCreated) UnmarshalJSON(data []byte) error {
+func (r AuthAgentInvocationCreateResponse) RawJSON() string { return r.JSON.raw }
+func (r *AuthAgentInvocationCreateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// The invocation type:
+//
+// - login: First-time authentication
+// - reauth: Re-authentication for previously authenticated agents
+// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+type AuthAgentInvocationCreateResponseType string
+
+const (
+	AuthAgentInvocationCreateResponseTypeLogin     AuthAgentInvocationCreateResponseType = "login"
+	AuthAgentInvocationCreateResponseTypeAutoLogin AuthAgentInvocationCreateResponseType = "auto_login"
+	AuthAgentInvocationCreateResponseTypeReauth    AuthAgentInvocationCreateResponseType = "reauth"
+)
 
 // A discovered form field
 type DiscoveredField struct {
@@ -484,7 +435,7 @@ type DiscoveredField struct {
 	Selector string `json:"selector,required"`
 	// Field type
 	//
-	// Any of "text", "email", "password", "tel", "number", "url", "code".
+	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
 	Type DiscoveredFieldType `json:"type,required"`
 	// Field placeholder
 	Placeholder string `json:"placeholder"`
@@ -520,41 +471,7 @@ const (
 	DiscoveredFieldTypeNumber   DiscoveredFieldType = "number"
 	DiscoveredFieldTypeURL      DiscoveredFieldType = "url"
 	DiscoveredFieldTypeCode     DiscoveredFieldType = "code"
-)
-
-// Response from triggering re-authentication
-type ReauthResponse struct {
-	// Result of the re-authentication attempt
-	//
-	// Any of "reauth_started", "already_authenticated", "cannot_reauth".
-	Status ReauthResponseStatus `json:"status,required"`
-	// ID of the re-auth invocation if one was created
-	InvocationID string `json:"invocation_id"`
-	// Human-readable description of the result
-	Message string `json:"message"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Status       respjson.Field
-		InvocationID respjson.Field
-		Message      respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ReauthResponse) RawJSON() string { return r.JSON.raw }
-func (r *ReauthResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Result of the re-authentication attempt
-type ReauthResponseStatus string
-
-const (
-	ReauthResponseStatusReauthStarted        ReauthResponseStatus = "reauth_started"
-	ReauthResponseStatusAlreadyAuthenticated ReauthResponseStatus = "already_authenticated"
-	ReauthResponseStatusCannotReauth         ReauthResponseStatus = "cannot_reauth"
+	DiscoveredFieldTypeTotp     DiscoveredFieldType = "totp"
 )
 
 type AgentAuthNewParams struct {
@@ -571,14 +488,14 @@ func (r *AgentAuthNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type AgentAuthListParams struct {
+	// Filter by domain
+	Domain param.Opt[string] `query:"domain,omitzero" json:"-"`
 	// Maximum number of results to return
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Filter by profile name
 	ProfileName param.Opt[string] `query:"profile_name,omitzero" json:"-"`
-	// Filter by target domain
-	TargetDomain param.Opt[string] `query:"target_domain,omitzero" json:"-"`
 	paramObj
 }
 

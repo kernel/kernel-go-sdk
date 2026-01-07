@@ -40,15 +40,15 @@ func NewAgentAuthInvocationService(opts ...option.RequestOption) (r AgentAuthInv
 // Creates a new authentication invocation for the specified auth agent. This
 // starts the auth flow and returns a hosted URL for the user to complete
 // authentication.
-func (r *AgentAuthInvocationService) New(ctx context.Context, body AgentAuthInvocationNewParams, opts ...option.RequestOption) (res *AuthAgentInvocationCreateResponseUnion, err error) {
+func (r *AgentAuthInvocationService) New(ctx context.Context, body AgentAuthInvocationNewParams, opts ...option.RequestOption) (res *AuthAgentInvocationCreateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "agents/auth/invocations"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return
 }
 
-// Returns invocation details including app_name and target_domain. Uses the JWT
-// returned by the exchange endpoint, or standard API key or JWT authentication.
+// Returns invocation details including status, app_name, and domain. Supports both
+// API key and JWT (from exchange endpoint) authentication.
 func (r *AgentAuthInvocationService) Get(ctx context.Context, invocationID string, opts ...option.RequestOption) (res *AgentAuthInvocationResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if invocationID == "" {
@@ -57,20 +57,6 @@ func (r *AgentAuthInvocationService) Get(ctx context.Context, invocationID strin
 	}
 	path := fmt.Sprintf("agents/auth/invocations/%s", invocationID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
-}
-
-// Inspects the target site to detect logged-in state or discover required fields.
-// Returns 200 with success: true when fields are found, or 4xx/5xx for failures.
-// Requires the JWT returned by the exchange endpoint.
-func (r *AgentAuthInvocationService) Discover(ctx context.Context, invocationID string, body AgentAuthInvocationDiscoverParams, opts ...option.RequestOption) (res *AgentAuthDiscoverResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	if invocationID == "" {
-		err = errors.New("missing required invocation_id parameter")
-		return
-	}
-	path := fmt.Sprintf("agents/auth/invocations/%s/discover", invocationID)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return
 }
 
@@ -87,8 +73,9 @@ func (r *AgentAuthInvocationService) Exchange(ctx context.Context, invocationID 
 	return
 }
 
-// Submits field values for the discovered login form and may return additional
-// auth fields or success. Requires the JWT returned by the exchange endpoint.
+// Submits field values for the discovered login form. Returns immediately after
+// submission is accepted. Poll the invocation endpoint to track progress and get
+// results.
 func (r *AgentAuthInvocationService) Submit(ctx context.Context, invocationID string, body AgentAuthInvocationSubmitParams, opts ...option.RequestOption) (res *AgentAuthSubmitResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if invocationID == "" {
@@ -134,21 +121,6 @@ func (r *AgentAuthInvocationNewParams) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &r.AuthAgentInvocationCreateRequest)
 }
 
-type AgentAuthInvocationDiscoverParams struct {
-	// Optional login page URL. If provided, will override the stored login URL for
-	// this discovery invocation and skip Phase 1 discovery.
-	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
-	paramObj
-}
-
-func (r AgentAuthInvocationDiscoverParams) MarshalJSON() (data []byte, err error) {
-	type shadow AgentAuthInvocationDiscoverParams
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *AgentAuthInvocationDiscoverParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 type AgentAuthInvocationExchangeParams struct {
 	// Handoff code from start endpoint
 	Code string `json:"code,required"`
@@ -164,15 +136,52 @@ func (r *AgentAuthInvocationExchangeParams) UnmarshalJSON(data []byte) error {
 }
 
 type AgentAuthInvocationSubmitParams struct {
+
+	//
+	// Request body variants
+	//
+
+	// This field is a request body variant, only one variant field can be set.
+	OfFieldValues *AgentAuthInvocationSubmitParamsBodyFieldValues `json:",inline"`
+	// This field is a request body variant, only one variant field can be set.
+	OfSSOButton *AgentAuthInvocationSubmitParamsBodySSOButton `json:",inline"`
+
+	paramObj
+}
+
+func (u AgentAuthInvocationSubmitParams) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfFieldValues, u.OfSSOButton)
+}
+func (r *AgentAuthInvocationSubmitParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property FieldValues is required.
+type AgentAuthInvocationSubmitParamsBodyFieldValues struct {
 	// Values for the discovered login fields
 	FieldValues map[string]string `json:"field_values,omitzero,required"`
 	paramObj
 }
 
-func (r AgentAuthInvocationSubmitParams) MarshalJSON() (data []byte, err error) {
-	type shadow AgentAuthInvocationSubmitParams
+func (r AgentAuthInvocationSubmitParamsBodyFieldValues) MarshalJSON() (data []byte, err error) {
+	type shadow AgentAuthInvocationSubmitParamsBodyFieldValues
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *AgentAuthInvocationSubmitParams) UnmarshalJSON(data []byte) error {
+func (r *AgentAuthInvocationSubmitParamsBodyFieldValues) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property SSOButton is required.
+type AgentAuthInvocationSubmitParamsBodySSOButton struct {
+	// Selector of SSO button to click
+	SSOButton string `json:"sso_button,required"`
+	paramObj
+}
+
+func (r AgentAuthInvocationSubmitParamsBodySSOButton) MarshalJSON() (data []byte, err error) {
+	type shadow AgentAuthInvocationSubmitParamsBodySSOButton
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AgentAuthInvocationSubmitParamsBodySSOButton) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }

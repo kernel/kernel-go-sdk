@@ -64,35 +64,6 @@ func TestAgentAuthInvocationGet(t *testing.T) {
 	}
 }
 
-func TestAgentAuthInvocationDiscoverWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := kernel.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Agents.Auth.Invocations.Discover(
-		context.TODO(),
-		"invocation_id",
-		kernel.AgentAuthInvocationDiscoverParams{
-			LoginURL: kernel.String("https://doordash.com/account/login"),
-		},
-	)
-	if err != nil {
-		var apierr *kernel.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
 func TestAgentAuthInvocationExchange(t *testing.T) {
 	t.Skip("Prism tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -139,9 +110,11 @@ func TestAgentAuthInvocationSubmit(t *testing.T) {
 		context.TODO(),
 		"invocation_id",
 		kernel.AgentAuthInvocationSubmitParams{
-			FieldValues: map[string]string{
-				"email":    "user@example.com",
-				"password": "********",
+			OfFieldValues: &kernel.AgentAuthInvocationSubmitParamsBodyFieldValues{
+				FieldValues: map[string]string{
+					"email":    "user@example.com",
+					"password": "********",
+				},
 			},
 		},
 	)

@@ -24,6 +24,7 @@ func TestUsage(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
+	t.Skip("Prism tests are disabled")
 	browser, err := client.Browsers.New(context.TODO(), kernel.BrowserNewParams{
 		Stealth: kernel.Bool(true),
 	})
