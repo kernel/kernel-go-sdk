@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/kernel/kernel-go-sdk/internal/apijson"
-	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
-	"github.com/kernel/kernel-go-sdk/option"
-	"github.com/kernel/kernel-go-sdk/packages/param"
-	"github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/onkernel/kernel-go-sdk/internal/apijson"
+	"github.com/onkernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/respjson"
 )
 
 // aliased to make [param.APIUnion] private when embedding
@@ -46,12 +46,13 @@ func (r *OffsetPagination[T]) GetNextPage() (res *OffsetPagination[T], err error
 	}
 	cfg := r.cfg.Clone(r.cfg.Context)
 
-	nextStr := r.res.Header.Get("X-Next-Offset")
+	offset := r.res.Header.Get("X-Next-Offset")
 	next, err := strconv.ParseInt(nextStr, 10, 64)
 	if err != nil {
 		return nil, err
 	}
 	length := int64(len(r.Items))
+	nextStr := offset + length
 
 	if length > 0 && next != 0 {
 		err = cfg.Apply(option.WithQuery("offset", strconv.FormatInt(next, 10)))

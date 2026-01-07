@@ -1,7 +1,7 @@
 package apiform
 
 import (
-	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
 	"mime/multipart"
 	"reflect"
 )

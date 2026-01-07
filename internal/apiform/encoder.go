@@ -13,7 +13,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
 )
 
 var encoders sync.Map // map[encoderEntry]encoderFunc

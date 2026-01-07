@@ -3,8 +3,8 @@ package respjson_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kernel/kernel-go-sdk/internal/apijson"
-	rj "github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/onkernel/kernel-go-sdk/internal/apijson"
+	rj "github.com/onkernel/kernel-go-sdk/packages/respjson"
 	"reflect"
 	"testing"
 )

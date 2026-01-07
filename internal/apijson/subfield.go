@@ -1,7 +1,7 @@
 package apijson
 
 import (
-	"github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/onkernel/kernel-go-sdk/packages/respjson"
 	"reflect"
 )
 

@@ -2,7 +2,7 @@ package apiform
 
 import (
 	"bytes"
-	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
 	"io"
 	"mime/multipart"
 	"strings"

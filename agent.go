@@ -3,7 +3,7 @@
 package kernel
 
 import (
-	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/onkernel/kernel-go-sdk/option"
 )
 
 // AgentService contains methods and other services that help with interacting with

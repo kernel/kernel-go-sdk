@@ -2,7 +2,7 @@
 package json
 
 import (
-	"github.com/kernel/kernel-go-sdk/internal/encoding/json/shims"
+	"github.com/onkernel/kernel-go-sdk/internal/encoding/json/shims"
 	"reflect"
 	"time"
 )

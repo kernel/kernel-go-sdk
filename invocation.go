@@ -12,16 +12,16 @@ import (
 	"slices"
 	"time"
 
-	"github.com/kernel/kernel-go-sdk/internal/apijson"
-	"github.com/kernel/kernel-go-sdk/internal/apiquery"
-	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
-	"github.com/kernel/kernel-go-sdk/option"
-	"github.com/kernel/kernel-go-sdk/packages/pagination"
-	"github.com/kernel/kernel-go-sdk/packages/param"
-	"github.com/kernel/kernel-go-sdk/packages/respjson"
-	"github.com/kernel/kernel-go-sdk/packages/ssestream"
-	"github.com/kernel/kernel-go-sdk/shared"
-	"github.com/kernel/kernel-go-sdk/shared/constant"
+	"github.com/onkernel/kernel-go-sdk/internal/apijson"
+	"github.com/onkernel/kernel-go-sdk/internal/apiquery"
+	"github.com/onkernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/onkernel/kernel-go-sdk/packages/pagination"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/respjson"
+	"github.com/onkernel/kernel-go-sdk/packages/ssestream"
+	"github.com/onkernel/kernel-go-sdk/shared"
+	"github.com/onkernel/kernel-go-sdk/shared/constant"
 )
 
 // InvocationService contains methods and other services that help with interacting

@@ -10,12 +10,12 @@ import (
 	"net/url"
 	"slices"
 
-	"github.com/kernel/kernel-go-sdk/internal/apiquery"
-	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
-	"github.com/kernel/kernel-go-sdk/option"
-	"github.com/kernel/kernel-go-sdk/packages/param"
-	"github.com/kernel/kernel-go-sdk/packages/ssestream"
-	"github.com/kernel/kernel-go-sdk/shared"
+	"github.com/onkernel/kernel-go-sdk/internal/apiquery"
+	"github.com/onkernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/ssestream"
+	"github.com/onkernel/kernel-go-sdk/shared"
 )
 
 // BrowserLogService contains methods and other services that help with interacting

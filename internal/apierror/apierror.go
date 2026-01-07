@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/kernel/kernel-go-sdk/internal/apijson"
-	"github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/onkernel/kernel-go-sdk/internal/apijson"
+	"github.com/onkernel/kernel-go-sdk/packages/respjson"
 )
 
 // Error represents an error that originates from the API, i.e. when a request is

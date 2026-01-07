@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
+	shimjson "github.com/onkernel/kernel-go-sdk/internal/encoding/json"
 
 	"github.com/tidwall/sjson"
 )

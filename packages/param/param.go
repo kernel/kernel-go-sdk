@@ -2,7 +2,7 @@ package param
 
 import (
 	"encoding/json"
-	"github.com/kernel/kernel-go-sdk/internal/encoding/json/sentinel"
+	"github.com/onkernel/kernel-go-sdk/internal/encoding/json/sentinel"
 	"reflect"
 )
 

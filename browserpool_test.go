@@ -8,10 +8,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/kernel/kernel-go-sdk"
-	"github.com/kernel/kernel-go-sdk/internal/testutil"
-	"github.com/kernel/kernel-go-sdk/option"
-	"github.com/kernel/kernel-go-sdk/shared"
+	"github.com/onkernel/kernel-go-sdk"
+	"github.com/onkernel/kernel-go-sdk/internal/testutil"
+	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/onkernel/kernel-go-sdk/shared"
 )
 
 func TestBrowserPoolNewWithOptionalParams(t *testing.T) {

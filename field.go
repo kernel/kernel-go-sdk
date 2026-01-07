@@ -1,7 +1,7 @@
 package kernel
 
 import (
-	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/onkernel/kernel-go-sdk/packages/param"
 	"io"
 	"time"
 )
