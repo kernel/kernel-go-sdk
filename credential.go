@@ -41,8 +41,7 @@ func NewCredentialService(opts ...option.RequestOption) (r CredentialService) {
 	return
 }
 
-// Create a new credential for storing login information. Values are encrypted at
-// rest.
+// Create a new credential for storing login information.
 func (r *CredentialService) New(ctx context.Context, body CredentialNewParams, opts ...option.RequestOption) (res *Credential, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "credentials"
@@ -50,26 +49,27 @@ func (r *CredentialService) New(ctx context.Context, body CredentialNewParams, o
 	return
 }
 
-// Retrieve a credential by its ID. Credential values are not returned.
-func (r *CredentialService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *Credential, err error) {
+// Retrieve a credential by its ID or name. Credential values are not returned.
+func (r *CredentialService) Get(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *Credential, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return
 	}
-	path := fmt.Sprintf("credentials/%s", id)
+	path := fmt.Sprintf("credentials/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
 
-// Update a credential's name or values. Values are encrypted at rest.
-func (r *CredentialService) Update(ctx context.Context, id string, body CredentialUpdateParams, opts ...option.RequestOption) (res *Credential, err error) {
+// Update a credential's name or values. When values are provided, they are merged
+// with existing values (new keys are added, existing keys are overwritten).
+func (r *CredentialService) Update(ctx context.Context, idOrName string, body CredentialUpdateParams, opts ...option.RequestOption) (res *Credential, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return
 	}
-	path := fmt.Sprintf("credentials/%s", id)
+	path := fmt.Sprintf("credentials/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return
 }
@@ -99,16 +99,30 @@ func (r *CredentialService) ListAutoPaging(ctx context.Context, query Credential
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Delete a credential by its ID.
-func (r *CredentialService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+// Delete a credential by its ID or name.
+func (r *CredentialService) Delete(ctx context.Context, idOrName string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return
 	}
-	path := fmt.Sprintf("credentials/%s", id)
+	path := fmt.Sprintf("credentials/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return
+}
+
+// Returns the current 6-digit TOTP code for a credential with a configured
+// totp_secret. Use this to complete 2FA setup on sites or when you need a fresh
+// code.
+func (r *CredentialService) TotpCode(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *CredentialTotpCodeResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return
+	}
+	path := fmt.Sprintf("credentials/%s/totp-code", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
 
@@ -122,6 +136,14 @@ type CreateCredentialRequestParam struct {
 	Name string `json:"name,required"`
 	// Field name to value mapping (e.g., username, password)
 	Values map[string]string `json:"values,omitzero,required"`
+	// If set, indicates this credential should be used with the specified SSO provider
+	// (e.g., google, github, microsoft). When the target site has a matching SSO
+	// button, it will be clicked first before filling credential values on the
+	// identity provider's login page.
+	SSOProvider param.Opt[string] `json:"sso_provider,omitzero"`
+	// Base32-encoded TOTP secret for generating one-time passwords. Used for automatic
+	// 2FA during login.
+	TotpSecret param.Opt[string] `json:"totp_secret,omitzero"`
 	paramObj
 }
 
@@ -145,15 +167,31 @@ type Credential struct {
 	Name string `json:"name,required"`
 	// When the credential was last updated
 	UpdatedAt time.Time `json:"updated_at,required" format:"date-time"`
+	// Whether this credential has a TOTP secret configured for automatic 2FA
+	HasTotpSecret bool `json:"has_totp_secret"`
+	// If set, indicates this credential should be used with the specified SSO provider
+	// (e.g., google, github, microsoft). When the target site has a matching SSO
+	// button, it will be clicked first before filling credential values on the
+	// identity provider's login page.
+	SSOProvider string `json:"sso_provider,nullable"`
+	// Current 6-digit TOTP code. Only included in create/update responses when
+	// totp_secret was just set.
+	TotpCode string `json:"totp_code"`
+	// When the totp_code expires. Only included when totp_code is present.
+	TotpCodeExpiresAt time.Time `json:"totp_code_expires_at" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		CreatedAt   respjson.Field
-		Domain      respjson.Field
-		Name        respjson.Field
-		UpdatedAt   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID                respjson.Field
+		CreatedAt         respjson.Field
+		Domain            respjson.Field
+		Name              respjson.Field
+		UpdatedAt         respjson.Field
+		HasTotpSecret     respjson.Field
+		SSOProvider       respjson.Field
+		TotpCode          respjson.Field
+		TotpCodeExpiresAt respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
@@ -165,10 +203,16 @@ func (r *Credential) UnmarshalJSON(data []byte) error {
 
 // Request to update an existing credential
 type UpdateCredentialRequestParam struct {
+	// If set, indicates this credential should be used with the specified SSO
+	// provider. Set to empty string or null to remove.
+	SSOProvider param.Opt[string] `json:"sso_provider,omitzero"`
 	// New name for the credential
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Field name to value mapping (e.g., username, password). Replaces all existing
-	// values.
+	// Base32-encoded TOTP secret for generating one-time passwords. Spaces and
+	// formatting are automatically normalized. Set to empty string to remove.
+	TotpSecret param.Opt[string] `json:"totp_secret,omitzero"`
+	// Field name to value mapping. Values are merged with existing values (new keys
+	// added, existing keys overwritten).
 	Values map[string]string `json:"values,omitzero"`
 	paramObj
 }
@@ -178,6 +222,26 @@ func (r UpdateCredentialRequestParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *UpdateCredentialRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type CredentialTotpCodeResponse struct {
+	// Current 6-digit TOTP code
+	Code string `json:"code,required"`
+	// When this code expires (ISO 8601 timestamp)
+	ExpiresAt time.Time `json:"expires_at,required" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Code        respjson.Field
+		ExpiresAt   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r CredentialTotpCodeResponse) RawJSON() string { return r.JSON.raw }
+func (r *CredentialTotpCodeResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
