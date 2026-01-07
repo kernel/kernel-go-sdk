@@ -13,7 +13,7 @@ import (
 	"github.com/onkernel/kernel-go-sdk/option"
 )
 
-func TestCredentialNew(t *testing.T) {
+func TestCredentialNewWithOptionalParams(t *testing.T) {
 	t.Skip("Prism tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -34,6 +34,8 @@ func TestCredentialNew(t *testing.T) {
 				"username": "user@example.com",
 				"password": "mysecretpassword",
 			},
+			SSOProvider: kernel.String("google"),
+			TotpSecret:  kernel.String("JBSWY3DPEHPK3PXP"),
 		},
 	})
 	if err != nil {
@@ -58,7 +60,7 @@ func TestCredentialGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Credentials.Get(context.TODO(), "id")
+	_, err := client.Credentials.Get(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -83,10 +85,12 @@ func TestCredentialUpdateWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Credentials.Update(
 		context.TODO(),
-		"id",
+		"id_or_name",
 		kernel.CredentialUpdateParams{
 			UpdateCredentialRequest: kernel.UpdateCredentialRequestParam{
-				Name: kernel.String("my-updated-login"),
+				Name:        kernel.String("my-updated-login"),
+				SSOProvider: kernel.String("google"),
+				TotpSecret:  kernel.String("JBSWY3DPEHPK3PXP"),
 				Values: map[string]string{
 					"username": "user@example.com",
 					"password": "newpassword",
@@ -143,7 +147,30 @@ func TestCredentialDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Credentials.Delete(context.TODO(), "id")
+	err := client.Credentials.Delete(context.TODO(), "id_or_name")
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestCredentialTotpCode(t *testing.T) {
+	t.Skip("Prism tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Credentials.TotpCode(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
