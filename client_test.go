@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/onkernel/kernel-go-sdk"
-	"github.com/onkernel/kernel-go-sdk/internal"
-	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk"
+	"github.com/kernel/kernel-go-sdk/internal"
+	"github.com/kernel/kernel-go-sdk/option"
 )
 
 type closureTransport struct {

@@ -2,7 +2,7 @@ package apijson
 
 import (
 	"errors"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/param"
 	"reflect"
 
 	"github.com/tidwall/gjson"

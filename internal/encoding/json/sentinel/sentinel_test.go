@@ -1,8 +1,8 @@
 package sentinel_test
 
 import (
-	"github.com/onkernel/kernel-go-sdk/internal/encoding/json/sentinel"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/internal/encoding/json/sentinel"
+	"github.com/kernel/kernel-go-sdk/packages/param"
 	"reflect"
 	"slices"
 	"testing"
