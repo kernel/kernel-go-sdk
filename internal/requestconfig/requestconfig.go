@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/onkernel/kernel-go-sdk/internal"
-	"github.com/onkernel/kernel-go-sdk/internal/apierror"
-	"github.com/onkernel/kernel-go-sdk/internal/apiform"
-	"github.com/onkernel/kernel-go-sdk/internal/apiquery"
+	"github.com/kernel/kernel-go-sdk/internal"
+	"github.com/kernel/kernel-go-sdk/internal/apierror"
+	"github.com/kernel/kernel-go-sdk/internal/apiform"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 )
 
 func getDefaultHeaders() map[string]string {

@@ -12,14 +12,14 @@ import (
 	"slices"
 	"time"
 
-	"github.com/onkernel/kernel-go-sdk/internal/apijson"
-	"github.com/onkernel/kernel-go-sdk/internal/apiquery"
-	shimjson "github.com/onkernel/kernel-go-sdk/internal/encoding/json"
-	"github.com/onkernel/kernel-go-sdk/internal/requestconfig"
-	"github.com/onkernel/kernel-go-sdk/option"
-	"github.com/onkernel/kernel-go-sdk/packages/pagination"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
-	"github.com/onkernel/kernel-go-sdk/packages/respjson"
+	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
+	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
+	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
+	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
 // AgentAuthService contains methods and other services that help with interacting

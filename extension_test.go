@@ -12,9 +12,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/onkernel/kernel-go-sdk"
-	"github.com/onkernel/kernel-go-sdk/internal/testutil"
-	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk"
+	"github.com/kernel/kernel-go-sdk/internal/testutil"
+	"github.com/kernel/kernel-go-sdk/option"
 )
 
 func TestExtensionList(t *testing.T) {
