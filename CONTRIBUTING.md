@@ -41,7 +41,7 @@ To use a local version of this library from source in another project, edit the 
 directive. This can be done through the CLI with the following:
 
 ```sh
-$ go mod edit -replace github.com/onkernel/kernel-go-sdk=/path/to/kernel-go-sdk
+$ go mod edit -replace github.com/kernel/kernel-go-sdk=/path/to/kernel-go-sdk
 ```
 
 ## Running tests

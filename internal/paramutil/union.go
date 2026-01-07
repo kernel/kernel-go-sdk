@@ -2,7 +2,7 @@ package paramutil
 
 import (
 	"fmt"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/param"
 	"reflect"
 )
 

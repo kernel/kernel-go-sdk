@@ -1,4 +1,4 @@
-module github.com/onkernel/kernel-go-sdk
+module github.com/kernel/kernel-go-sdk
 
 go 1.22
 

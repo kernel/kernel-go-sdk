@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/onkernel/kernel-go-sdk/internal/apijson"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
-	"github.com/onkernel/kernel-go-sdk/packages/respjson"
-	"github.com/onkernel/kernel-go-sdk/shared/constant"
+	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/kernel/kernel-go-sdk/shared/constant"
 )
 
 // aliased to make [param.APIUnion] private when embedding
