@@ -2,7 +2,7 @@ package param_test
 
 import (
 	"encoding/json"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/param"
 	"testing"
 )
 

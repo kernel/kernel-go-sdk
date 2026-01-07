@@ -3,9 +3,9 @@
 package kernel
 
 import (
-	"github.com/onkernel/kernel-go-sdk/internal/apierror"
-	"github.com/onkernel/kernel-go-sdk/packages/param"
-	"github.com/onkernel/kernel-go-sdk/shared"
+	"github.com/kernel/kernel-go-sdk/internal/apierror"
+	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/shared"
 )
 
 // aliased to make [param.APIUnion] private when embedding
