@@ -145,12 +145,14 @@ type AgentAuthInvocationSubmitParams struct {
 	OfFieldValues *AgentAuthInvocationSubmitParamsBodyFieldValues `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	OfSSOButton *AgentAuthInvocationSubmitParamsBodySSOButton `json:",inline"`
+	// This field is a request body variant, only one variant field can be set.
+	OfSelectedMfaType *AgentAuthInvocationSubmitParamsBodySelectedMfaType `json:",inline"`
 
 	paramObj
 }
 
 func (u AgentAuthInvocationSubmitParams) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfFieldValues, u.OfSSOButton)
+	return param.MarshalUnion(u, u.OfFieldValues, u.OfSSOButton, u.OfSelectedMfaType)
 }
 func (r *AgentAuthInvocationSubmitParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
@@ -184,4 +186,27 @@ func (r AgentAuthInvocationSubmitParamsBodySSOButton) MarshalJSON() (data []byte
 }
 func (r *AgentAuthInvocationSubmitParamsBodySSOButton) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property SelectedMfaType is required.
+type AgentAuthInvocationSubmitParamsBodySelectedMfaType struct {
+	// The MFA delivery method type
+	//
+	// Any of "sms", "call", "email", "totp", "push", "security_key".
+	SelectedMfaType string `json:"selected_mfa_type,omitzero,required"`
+	paramObj
+}
+
+func (r AgentAuthInvocationSubmitParamsBodySelectedMfaType) MarshalJSON() (data []byte, err error) {
+	type shadow AgentAuthInvocationSubmitParamsBodySelectedMfaType
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AgentAuthInvocationSubmitParamsBodySelectedMfaType) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AgentAuthInvocationSubmitParamsBodySelectedMfaType](
+		"selected_mfa_type", "sms", "call", "email", "totp", "push", "security_key",
+	)
 }
