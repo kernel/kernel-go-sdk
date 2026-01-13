@@ -6,7 +6,7 @@
 
 <!-- x-release-please-end -->
 
-The Kernel Go library provides convenient access to the [Kernel REST API](https://docs.onkernel.com)
+The Kernel Go library provides convenient access to the [Kernel REST API](https://docs.kernel.com)
 from applications written in Go.
 
 It is generated with [Stainless](https://www.stainless.com/).
