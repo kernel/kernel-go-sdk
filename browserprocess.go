@@ -65,6 +65,22 @@ func (r *BrowserProcessService) Kill(ctx context.Context, processID string, para
 	return
 }
 
+// Resize a PTY-backed process terminal
+func (r *BrowserProcessService) Resize(ctx context.Context, processID string, params BrowserProcessResizeParams, opts ...option.RequestOption) (res *BrowserProcessResizeResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if params.ID == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	if processID == "" {
+		err = errors.New("missing required process_id parameter")
+		return
+	}
+	path := fmt.Sprintf("browsers/%s/process/%s/resize", params.ID, processID)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
+	return
+}
+
 // Execute a command asynchronously
 func (r *BrowserProcessService) Spawn(ctx context.Context, id string, body BrowserProcessSpawnParams, opts ...option.RequestOption) (res *BrowserProcessSpawnResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -172,6 +188,24 @@ type BrowserProcessKillResponse struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserProcessKillResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserProcessKillResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Generic OK response.
+type BrowserProcessResizeResponse struct {
+	// Indicates success.
+	Ok bool `json:"ok,required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Ok          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProcessResizeResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProcessResizeResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -353,6 +387,23 @@ const (
 	BrowserProcessKillParamsSignalHup  BrowserProcessKillParamsSignal = "HUP"
 )
 
+type BrowserProcessResizeParams struct {
+	ID string `path:"id,required" json:"-"`
+	// New terminal columns.
+	Cols int64 `json:"cols,required"`
+	// New terminal rows.
+	Rows int64 `json:"rows,required"`
+	paramObj
+}
+
+func (r BrowserProcessResizeParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserProcessResizeParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserProcessResizeParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserProcessSpawnParams struct {
 	// Executable or shell command to run.
 	Command string `json:"command,required"`
@@ -362,8 +413,14 @@ type BrowserProcessSpawnParams struct {
 	Cwd param.Opt[string] `json:"cwd,omitzero"`
 	// Maximum execution time in seconds.
 	TimeoutSec param.Opt[int64] `json:"timeout_sec,omitzero"`
+	// Allocate a pseudo-terminal (PTY) for interactive shells.
+	AllocateTty param.Opt[bool] `json:"allocate_tty,omitzero"`
 	// Run the process with root privileges.
 	AsRoot param.Opt[bool] `json:"as_root,omitzero"`
+	// Initial terminal columns. Only used when allocate_tty is true.
+	Cols param.Opt[int64] `json:"cols,omitzero"`
+	// Initial terminal rows. Only used when allocate_tty is true.
+	Rows param.Opt[int64] `json:"rows,omitzero"`
 	// Command arguments.
 	Args []string `json:"args,omitzero"`
 	// Environment variables to set for the process.
