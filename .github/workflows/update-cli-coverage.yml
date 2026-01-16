@@ -1,0 +1,188 @@
+name: Update CLI Coverage
+
+on:
+  push:
+    branches: [main]
+  # Or trigger on releases:
+  # release:
+  #   types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  update-cli-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SDK repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          fetch-tags: true
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "Cursor Agent"
+          git config --global user.email "cursor-agent@kernel.sh"
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+
+      - name: Clone API repo
+        env:
+          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+        run: |
+          gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
+
+      - name: Clone CLI repo
+        env:
+          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+        run: |
+          gh repo clone kernel/cli /tmp/kernel-cli
+
+      - name: Get SDK version info
+        id: sdk-version
+        run: |
+          # Get the latest tag if available, otherwise use commit SHA
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+            echo "SDK version: $LATEST_TAG"
+          else
+            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
+            echo "SDK version: ${{ github.sha }} (no tag)"
+          fi
+          
+          # Get the module path from go.mod
+          MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
+          echo "module=$MODULE_PATH" >> $GITHUB_OUTPUT
+          echo "SDK module: $MODULE_PATH"
+
+      - name: Update CLI coverage
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+          BRANCH_PREFIX: cli-coverage-update
+        run: |
+          cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
+
+          The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/cli).
+
+          # Context
+          - SDK Repo: ${{ github.repository }} (current directory)
+          - SDK Module: ${{ steps.sdk-version.outputs.module }}
+          - SDK Version: ${{ steps.sdk-version.outputs.version }}
+          - Commit SHA: ${{ github.sha }}
+          - Commit Author: ${{ github.event.head_commit.author.username || github.actor }}
+          - API Repo Location: /tmp/kernel-api
+          - CLI Repo Location: /tmp/kernel-cli
+          - Update Branch Prefix: cli-coverage-update
+
+          # Background
+          The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
+
+          # Source Files
+          - SDK: Current directory - check for new/changed methods in the Go SDK
+          - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
+          - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification
+          - CLI: /tmp/kernel-cli - Existing CLI commands
+
+          # Task
+          1. ALWAYS update the CLI to use the latest Go SDK version:
+             - Go to /tmp/kernel-cli
+             - Update go.mod to require the latest SDK: ${{ steps.sdk-version.outputs.module }}@${{ steps.sdk-version.outputs.version }}
+             - Run: go get ${{ steps.sdk-version.outputs.module }}@${{ steps.sdk-version.outputs.version }}
+             - Run: go mod tidy
+             - This ensures the CLI always uses the latest SDK, even if no new commands are added
+
+          2. Check the recent commit(s) to this SDK repo to see what methods were added/changed:
+             git log -1 --name-only
+             git diff HEAD~1 --name-only
+
+          3. Read the stainless.yaml to understand the full resource/method structure
+
+          4. Check the CLI repo at /tmp/kernel-cli to see what commands already exist:
+             - Look at cmd/ directory structure for existing commands
+             - Identify which SDK methods have CLI command equivalents
+
+          5. Identify coverage gaps - SDK methods that don't have CLI equivalents, or new SDK method parameters that aren't exposed via the CLI
+
+          6. If new commands or flags are needed:
+             - Implement them in /tmp/kernel-cli following existing patterns
+             - Run \`go build ./...\` to verify the code compiles
+
+          7. Create and push changes (SDK version update + any new commands):
+             - Create/update the evergreen branch: cli-coverage-update (always use this single branch name)
+             - Commit with message describing SDK version bump and any new commands
+             - Force push changes to the CLI repo (since we're updating an evergreen branch)
+             - Create or update an evergreen PR in kernel/cli (check if PR already exists for this branch first)
+             - Tag the commit author as a reviewer
+
+          8. If only SDK version was updated (no new commands), still update the evergreen PR with title 'CLI: Update Go SDK to <version>'
+
+          # Mapping Guide
+          Use these mappings to implement CLI commands:
+          - client.Resource.Create() -> kernel resource create
+          - client.Resource.List() -> kernel resource list
+          - client.Resource.Get() -> kernel resource get
+          - client.Resource.Delete() -> kernel resource delete
+          - client.Resource.Update() -> kernel resource update
+          - client.Resource.Sub.Action() -> kernel resource sub action
+
+          # Implementation Guidelines
+          - Follow the existing CLI code patterns in /tmp/kernel-cli
+          - Use cobra for command definitions
+          - Use the Kernel Go SDK (this repo) for API calls
+          - Include proper flag definitions with descriptions
+          - Add help text for commands
+          - Handle errors appropriately
+          - Match the style of existing commands
+
+          # Output Format
+          After pushing changes, create or update an evergreen PR using gh:
+
+          1. Check if a PR already exists for the cli-coverage-update branch:
+             gh pr list --repo kernel/cli --head cli-coverage-update --json number
+
+          2. If PR exists, update it. If not, create a new one.
+
+          If new commands or flags were added:
+            Title: 'CLI: Update SDK to <version> and add new commands/flags'
+            Body:
+            'This PR updates the Go SDK to ${{ steps.sdk-version.outputs.version }} and adds CLI commands/flags for new SDK methods.
+
+            ## SDK Update
+            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
+
+            ## New Commands/Flags
+            - \`kernel <resource> <action>\` for \`client.Resource.Action()\`
+
+            Triggered by: kernel/kernel-go-sdk@${{ github.sha }}
+            Reviewer: @<commit_author>'
+
+          If only SDK version update (no new commands):
+            Title: 'CLI: Update Go SDK to ${{ steps.sdk-version.outputs.version }}'
+            Body:
+            'This PR updates the Go SDK dependency to the latest version.
+
+            ## SDK Update
+            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
+
+            Triggered by: kernel/kernel-go-sdk@${{ github.sha }}
+            Reviewer: @<commit_author>'
+
+          # Constraints
+          - ALWAYS update the SDK version in go.mod - this is the primary purpose
+          - Only implement genuinely missing CLI functionality for new commands
+          - Internal/admin methods may not need CLI commands
+          - Streaming methods may have different CLI implementations
+          - Even if no new commands are needed, still create a PR for the SDK version bump
+          - Ensure code compiles before pushing
+          " --model opus-4.5 --force --output-format=text
