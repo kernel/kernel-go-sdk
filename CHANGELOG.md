@@ -1,26 +1,23 @@
 # Changelog
 
-## 0.25.0 (2026-01-07)
+## 0.25.0 (2026-01-16)
 
-Full Changelog: [v0.24.0...v0.25.0](https://github.com/onkernel/kernel-go-sdk/compare/v0.24.0...v0.25.0)
+Full Changelog: [v0.24.0...v0.25.0](https://github.com/kernel/kernel-go-sdk/compare/v0.24.0...v0.25.0)
 
 ### Features
 
-* **api:** add health check endpoint for proxies ([c7b8728](https://github.com/onkernel/kernel-go-sdk/commit/c7b8728369482de76bdf143a59f16b0de8bc03bb))
-* **auth:** add auto_login credential flow ([2eec1a1](https://github.com/onkernel/kernel-go-sdk/commit/2eec1a147279fe64a060c2066b30a2f0a13e74ab))
-* Enhance AuthAgentInvocation with step and last activity tracking ([ccb1425](https://github.com/onkernel/kernel-go-sdk/commit/ccb1425ea205fbb18129f341ae36bfc55c70ca64))
-
-
-### Bug Fixes
-
-* skip usage tests that don't work with Prism ([8872193](https://github.com/onkernel/kernel-go-sdk/commit/88721930052bff16639f371a9a7e46e7e34e7ff4))
+* add MFA options to agent authentication workflow ([0f5b637](https://github.com/kernel/kernel-go-sdk/commit/0f5b63778ed3fce2f8662053eb213ba55a77cde9))
+* add WebSocket process attach and PTY support ([690d473](https://github.com/kernel/kernel-go-sdk/commit/690d4737fe6b3d13c64acc5de08da76deb74a597))
+* **api:** add IP address logging for residential and custom proxies ([35a09ad](https://github.com/kernel/kernel-go-sdk/commit/35a09ad5ece2cdaf09a8d3b6420b4744377f5d6f))
+* **api:** manual updates ([0980329](https://github.com/kernel/kernel-go-sdk/commit/0980329671baab3951d42b472f69fcd5ef29aab7))
+* **api:** update production repos ([0cdfbfd](https://github.com/kernel/kernel-go-sdk/commit/0cdfbfdfccab1abe18180bce8500623be8bcad66))
+* Support hot swap proxy on a session ([5c479d9](https://github.com/kernel/kernel-go-sdk/commit/5c479d9abb0f42edbb4bdf8d0cef681f5aeeca3a))
 
 
 ### Chores
 
-* add float64 to valid types for RegisterFieldValidator ([1e23b39](https://github.com/onkernel/kernel-go-sdk/commit/1e23b39aca94dd1a98d6ec6669d2c8b87f8ccf02))
-* **internal:** codegen related update ([e07718d](https://github.com/onkernel/kernel-go-sdk/commit/e07718dbecbbc00c19e9d0725c04297fe48f2121))
-* **internal:** codegen related update ([0320876](https://github.com/onkernel/kernel-go-sdk/commit/0320876c8f64185768a3ad562b9656f96ab7e935))
+* sync repo ([1728134](https://github.com/kernel/kernel-go-sdk/commit/1728134103bf4a4bcb1c74ad335408cc3f7cc65a))
+* update module path from onkernel to kernel ([52c5887](https://github.com/kernel/kernel-go-sdk/commit/52c588700307b752e5d239718a00aafddc86ab96))
 
 ## 0.24.0 (2025-12-17)
 

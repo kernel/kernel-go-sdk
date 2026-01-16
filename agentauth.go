@@ -139,6 +139,9 @@ type AgentAuthInvocationResponse struct {
 	ExternalActionMessage string `json:"external_action_message,nullable"`
 	// Browser live view URL for debugging the invocation
 	LiveViewURL string `json:"live_view_url,nullable"`
+	// MFA method options to choose from (present when step=awaiting_input and MFA
+	// selection is required)
+	MfaOptions []AgentAuthInvocationResponseMfaOption `json:"mfa_options,nullable"`
 	// Fields currently awaiting input (present when step=awaiting_input)
 	PendingFields []DiscoveredField `json:"pending_fields,nullable"`
 	// SSO buttons available on the page (present when step=awaiting_input)
@@ -156,6 +159,7 @@ type AgentAuthInvocationResponse struct {
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
 		LiveViewURL           respjson.Field
+		MfaOptions            respjson.Field
 		PendingFields         respjson.Field
 		PendingSSOButtons     respjson.Field
 		SubmittedFields       respjson.Field
@@ -206,6 +210,35 @@ const (
 	AgentAuthInvocationResponseTypeAutoLogin AgentAuthInvocationResponseType = "auto_login"
 	AgentAuthInvocationResponseTypeReauth    AgentAuthInvocationResponseType = "reauth"
 )
+
+// An MFA method option for verification
+type AgentAuthInvocationResponseMfaOption struct {
+	// The visible option text
+	Label string `json:"label,required"`
+	// The MFA delivery method type
+	//
+	// Any of "sms", "call", "email", "totp", "push", "security_key".
+	Type string `json:"type,required"`
+	// Additional instructions from the site
+	Description string `json:"description,nullable"`
+	// The masked destination (phone/email) if shown
+	Target string `json:"target,nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label       respjson.Field
+		Type        respjson.Field
+		Description respjson.Field
+		Target      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AgentAuthInvocationResponseMfaOption) RawJSON() string { return r.JSON.raw }
+func (r *AgentAuthInvocationResponseMfaOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 // An SSO button for signing in with an external identity provider
 type AgentAuthInvocationResponsePendingSSOButton struct {

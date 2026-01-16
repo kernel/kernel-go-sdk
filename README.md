@@ -2,11 +2,11 @@
 
 <!-- x-release-please-start-version -->
 
-<a href="https://pkg.go.dev/github.com/onkernel/kernel-go-sdk"><img src="https://pkg.go.dev/badge/github.com/onkernel/kernel-go-sdk.svg" alt="Go Reference"></a>
+<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk"><img src="https://pkg.go.dev/badge/github.com/kernel/kernel-go-sdk.svg" alt="Go Reference"></a>
 
 <!-- x-release-please-end -->
 
-The Kernel Go library provides convenient access to the [Kernel REST API](https://docs.onkernel.com)
+The Kernel Go library provides convenient access to the [Kernel REST API](https://www.kernel.sh/docs/api-reference)
 from applications written in Go.
 
 It is generated with [Stainless](https://www.stainless.com/).
@@ -17,7 +17,7 @@ It is generated with [Stainless](https://www.stainless.com/).
 
 ```go
 import (
-	"github.com/onkernel/kernel-go-sdk" // imported as kernel
+	"github.com/kernel/kernel-go-sdk" // imported as kernel
 )
 ```
 
@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/onkernel/kernel-go-sdk@v0.25.0'
+go get -u 'github.com/kernel/kernel-go-sdk@v0.25.0'
 ```
 
 <!-- x-release-please-end -->
@@ -48,8 +48,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/onkernel/kernel-go-sdk"
-	"github.com/onkernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk"
+	"github.com/kernel/kernel-go-sdk/option"
 )
 
 func main() {
@@ -279,7 +279,7 @@ client.Browsers.New(context.TODO(), ...,
 
 The request option `option.WithDebugLog(nil)` may be helpful while debugging.
 
-See the [full list of request options](https://pkg.go.dev/github.com/onkernel/kernel-go-sdk/option).
+See the [full list of request options](https://pkg.go.dev/github.com/kernel/kernel-go-sdk/option).
 
 ### Pagination
 
@@ -542,7 +542,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/onkernel/kernel-go-sdk/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/kernel/kernel-go-sdk/issues) with questions, bugs, or suggestions.
 
 ## Contributing
 

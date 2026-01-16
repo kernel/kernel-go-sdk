@@ -100,6 +100,8 @@ type ProxyNewResponse struct {
 	ID   string               `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyNewResponseConfigUnion `json:"config"`
+	// IP address that the proxy uses when making requests.
+	IPAddress string `json:"ip_address"`
 	// Timestamp of the last health check performed on this proxy.
 	LastChecked time.Time `json:"last_checked" format:"date-time"`
 	// Readable name of the proxy.
@@ -117,6 +119,7 @@ type ProxyNewResponse struct {
 		Type        respjson.Field
 		ID          respjson.Field
 		Config      respjson.Field
+		IPAddress   respjson.Field
 		LastChecked respjson.Field
 		Name        respjson.Field
 		Protocol    respjson.Field
@@ -388,6 +391,8 @@ type ProxyGetResponse struct {
 	ID   string               `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyGetResponseConfigUnion `json:"config"`
+	// IP address that the proxy uses when making requests.
+	IPAddress string `json:"ip_address"`
 	// Timestamp of the last health check performed on this proxy.
 	LastChecked time.Time `json:"last_checked" format:"date-time"`
 	// Readable name of the proxy.
@@ -405,6 +410,7 @@ type ProxyGetResponse struct {
 		Type        respjson.Field
 		ID          respjson.Field
 		Config      respjson.Field
+		IPAddress   respjson.Field
 		LastChecked respjson.Field
 		Name        respjson.Field
 		Protocol    respjson.Field
@@ -676,6 +682,8 @@ type ProxyListResponse struct {
 	ID   string                `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyListResponseConfigUnion `json:"config"`
+	// IP address that the proxy uses when making requests.
+	IPAddress string `json:"ip_address"`
 	// Timestamp of the last health check performed on this proxy.
 	LastChecked time.Time `json:"last_checked" format:"date-time"`
 	// Readable name of the proxy.
@@ -693,6 +701,7 @@ type ProxyListResponse struct {
 		Type        respjson.Field
 		ID          respjson.Field
 		Config      respjson.Field
+		IPAddress   respjson.Field
 		LastChecked respjson.Field
 		Name        respjson.Field
 		Protocol    respjson.Field
@@ -964,6 +973,8 @@ type ProxyCheckResponse struct {
 	ID   string                 `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyCheckResponseConfigUnion `json:"config"`
+	// IP address that the proxy uses when making requests.
+	IPAddress string `json:"ip_address"`
 	// Timestamp of the last health check performed on this proxy.
 	LastChecked time.Time `json:"last_checked" format:"date-time"`
 	// Readable name of the proxy.
@@ -981,6 +992,7 @@ type ProxyCheckResponse struct {
 		Type        respjson.Field
 		ID          respjson.Field
 		Config      respjson.Field
+		IPAddress   respjson.Field
 		LastChecked respjson.Field
 		Name        respjson.Field
 		Protocol    respjson.Field

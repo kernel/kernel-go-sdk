@@ -77,6 +77,18 @@ func (r *BrowserService) Get(ctx context.Context, id string, opts ...option.Requ
 	return
 }
 
+// Update a browser session.
+func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpdateParams, opts ...option.RequestOption) (res *BrowserUpdateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("browsers/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return
+}
+
 // List all browser sessions with pagination support. Use include_deleted=true to
 // include soft-deleted sessions in the results.
 func (r *BrowserService) List(ctx context.Context, query BrowserListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserListResponse], err error) {
@@ -345,6 +357,69 @@ func (r *BrowserGetResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type BrowserUpdateResponse struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url,required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless,required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id,required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth,required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
+	//
+	// Deprecated: deprecated
+	Persistence BrowserPersistence `json:"persistence"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// ID of the proxy associated with this browser session, if any.
+	ProxyID string `json:"proxy_id"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). Only specific viewport configurations are
+	// supported. The server will reject unsupported combinations. Supported
+	// resolutions are: 2560x1440@10, 1920x1080@25, 1920x1200@25, 1440x900@25,
+	// 1024x768@60, 1200x800@60 If refresh_rate is not provided, it will be
+	// automatically determined from the width and height if they match a supported
+	// configuration exactly. Note: Higher resolutions may affect the responsiveness of
+	// live view browser
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		BrowserLiveViewURL respjson.Field
+		DeletedAt          respjson.Field
+		KioskMode          respjson.Field
+		Persistence        respjson.Field
+		Profile            respjson.Field
+		ProxyID            respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserUpdateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserListResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url,required"`
@@ -454,6 +529,21 @@ func (r BrowserNewParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserUpdateParams struct {
+	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
+	// proxy.
+	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
