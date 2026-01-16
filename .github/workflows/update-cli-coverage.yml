@@ -15,9 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout SDK repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
+          fetch-tags: true
 
       - name: Install Cursor CLI
         run: |
@@ -27,12 +28,12 @@ jobs:
       - name: Configure git identity
         run: |
           git config --global user.name "Cursor Agent"
-          git config --global user.email "cursor-agent@onkernel.com"
+          git config --global user.email "cursor-agent@kernel.sh"
 
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: 'stable'
 
       - name: Clone API repo
         env:
@@ -85,7 +86,7 @@ jobs:
           - Update Branch Prefix: cli-coverage-update
 
           # Background
-          The Go SDK (this repo) was just updated by Stainless with new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
+          The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
 
           # Source Files
           - SDK: Current directory - check for new/changed methods in the Go SDK
@@ -111,20 +112,20 @@ jobs:
              - Look at cmd/ directory structure for existing commands
              - Identify which SDK methods have CLI command equivalents
 
-          5. Identify coverage gaps - SDK methods that don't have CLI equivalents
+          5. Identify coverage gaps - SDK methods that don't have CLI equivalents, or new SDK method parameters that aren't exposed via the CLI
 
-          6. If new commands are needed:
-             - Implement the missing CLI commands in /tmp/kernel-cli following existing patterns
+          6. If new commands or flags are needed:
+             - Implement them in /tmp/kernel-cli following existing patterns
              - Run \`go build ./...\` to verify the code compiles
 
           7. Create and push changes (SDK version update + any new commands):
-             - Create/update a branch: cli-coverage-update/${{ github.sha }}
+             - Create/update the evergreen branch: cli-coverage-update (always use this single branch name)
              - Commit with message describing SDK version bump and any new commands
-             - Push changes to the CLI repo
-             - Create an issue or PR in kernel/cli with the changes
+             - Force push changes to the CLI repo (since we're updating an evergreen branch)
+             - Create or update an evergreen PR in kernel/cli (check if PR already exists for this branch first)
              - Tag the commit author as a reviewer
 
-          8. If only SDK version was updated (no new commands), still create the PR with title 'CLI: Update Go SDK to <version>'
+          8. If only SDK version was updated (no new commands), still update the evergreen PR with title 'CLI: Update Go SDK to <version>'
 
           # Mapping Guide
           Use these mappings to implement CLI commands:
@@ -145,17 +146,22 @@ jobs:
           - Match the style of existing commands
 
           # Output Format
-          After pushing changes, create a PR using gh:
+          After pushing changes, create or update an evergreen PR using gh:
 
-          If new commands were added:
-            Title: 'CLI: Update SDK to <version> and add new commands'
+          1. Check if a PR already exists for the cli-coverage-update branch:
+             gh pr list --repo kernel/cli --head cli-coverage-update --json number
+
+          2. If PR exists, update it. If not, create a new one.
+
+          If new commands or flags were added:
+            Title: 'CLI: Update SDK to <version> and add new commands/flags'
             Body:
-            'This PR updates the Go SDK to ${{ steps.sdk-version.outputs.version }} and adds CLI commands for the following new SDK methods:
+            'This PR updates the Go SDK to ${{ steps.sdk-version.outputs.version }} and adds CLI commands/flags for new SDK methods.
 
             ## SDK Update
-            - Updated kernel-go-sdk from <old-version> to ${{ steps.sdk-version.outputs.version }}
+            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
 
-            ## New Commands
+            ## New Commands/Flags
             - \`kernel <resource> <action>\` for \`client.Resource.Action()\`
 
             Triggered by: kernel/kernel-go-sdk@${{ github.sha }}
@@ -167,7 +173,7 @@ jobs:
             'This PR updates the Go SDK dependency to the latest version.
 
             ## SDK Update
-            - Updated kernel-go-sdk from <old-version> to ${{ steps.sdk-version.outputs.version }}
+            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
 
             Triggered by: kernel/kernel-go-sdk@${{ github.sha }}
             Reviewer: @<commit_author>'
