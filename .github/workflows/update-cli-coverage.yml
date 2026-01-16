@@ -1,0 +1,132 @@
+name: Update CLI Coverage
+
+on:
+  push:
+    branches: [main]
+  # Or trigger on releases:
+  # release:
+  #   types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  update-cli-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout SDK repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install Cursor CLI
+        run: |
+          curl https://cursor.com/install -fsS | bash
+          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "Cursor Agent"
+          git config --global user.email "cursor-agent@onkernel.com"
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Clone API repo
+        env:
+          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+        run: |
+          gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
+
+      - name: Clone CLI repo
+        env:
+          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+        run: |
+          gh repo clone kernel/cli /tmp/kernel-cli
+
+      - name: Update CLI coverage
+        env:
+          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+          BRANCH_PREFIX: cli-coverage-update
+        run: |
+          cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
+
+          The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/cli).
+
+          # Context
+          - SDK Repo: ${{ github.repository }} (current directory)
+          - Commit SHA: ${{ github.sha }}
+          - Commit Author: ${{ github.event.head_commit.author.username || github.actor }}
+          - API Repo Location: /tmp/kernel-api
+          - CLI Repo Location: /tmp/kernel-cli
+          - Update Branch Prefix: cli-coverage-update
+
+          # Background
+          The Go SDK (this repo) was just updated by Stainless with new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
+
+          # Source Files
+          - SDK: Current directory - check for new/changed methods in the Go SDK
+          - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
+          - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification
+          - CLI: /tmp/kernel-cli - Existing CLI commands
+
+          # Task
+          1. Check the recent commit(s) to this SDK repo to see what methods were added/changed:
+             git log -1 --name-only
+             git diff HEAD~1 --name-only
+          2. Read the stainless.yaml to understand the full resource/method structure
+          3. Check the CLI repo at /tmp/kernel-cli to see what commands already exist:
+             - Look at cmd/ directory structure for existing commands
+             - Identify which SDK methods have CLI command equivalents
+          4. Identify coverage gaps - SDK methods that don't have CLI equivalents
+          5. If updates are needed:
+             - Implement the missing CLI commands in /tmp/kernel-cli following existing patterns
+             - Update go.mod to use the latest SDK version if needed
+             - Run \`go build ./...\` to verify the code compiles
+             - Run \`go mod tidy\` to clean up dependencies
+             - Create/update a branch: cli-coverage-update/${{ github.sha }}
+             - Push changes to the CLI repo
+             - Create an issue or PR in kernel/cli with the changes
+             - Tag the commit author as a reviewer
+          6. If no updates needed, output 'CLI coverage is up to date' and exit
+
+          # Mapping Guide
+          Use these mappings to implement CLI commands:
+          - client.Resource.Create() -> kernel resource create
+          - client.Resource.List() -> kernel resource list
+          - client.Resource.Get() -> kernel resource get
+          - client.Resource.Delete() -> kernel resource delete
+          - client.Resource.Update() -> kernel resource update
+          - client.Resource.Sub.Action() -> kernel resource sub action
+
+          # Implementation Guidelines
+          - Follow the existing CLI code patterns in /tmp/kernel-cli
+          - Use cobra for command definitions
+          - Use the Kernel Go SDK (this repo) for API calls
+          - Include proper flag definitions with descriptions
+          - Add help text for commands
+          - Handle errors appropriately
+          - Match the style of existing commands
+
+          # Output Format (if updates made)
+          After pushing changes, create an issue or use gh to post information:
+
+          Title: 'CLI: Add commands for new SDK methods'
+
+          Body:
+          'This PR adds CLI commands for the following SDK methods added in kernel/kernel-go-sdk@<commit>:
+
+          - \`kernel <resource> <action>\` for \`client.Resource.Action()\`
+
+          Reviewer: @<commit_author>'
+
+          # Constraints
+          - Only implement genuinely missing CLI functionality
+          - Internal/admin methods may not need CLI commands
+          - Streaming methods may have different CLI implementations
+          - If no new public methods were added, make no changes
+          - Ensure code compiles before pushing
+          " --model opus-4.5 --force --output-format=text
