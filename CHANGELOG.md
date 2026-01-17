@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.26.0 (2026-01-17)
+
+Full Changelog: [v0.25.0...v0.26.0](https://github.com/kernel/kernel-go-sdk/compare/v0.25.0...v0.26.0)
+
+### Features
+
+* Auth agents auth check URL ([b7ecbfe](https://github.com/kernel/kernel-go-sdk/commit/b7ecbfe68333179633c445aa1eed551f8b0a11d8))
+
+
+### Bug Fixes
+
+* **docs:** add missing pointer prefix to api.md return types ([ec3f3d7](https://github.com/kernel/kernel-go-sdk/commit/ec3f3d7baa03b861afb53e3c12b1d32aba02b7e0))
+* **stainless:** use @onkernel/sdk package name for TypeScript SDK ([3a4991d](https://github.com/kernel/kernel-go-sdk/commit/3a4991d1ef8e51bc1d3909cd6f4725448f765530))
+* use setup-go@v6 (not checkout@v6) ([f1e6ffc](https://github.com/kernel/kernel-go-sdk/commit/f1e6ffc8352c405647fb9d4d07299a465a241bad))
+
+
+### Chores
+
+* **internal:** update `actions/checkout` version ([5a2a7d4](https://github.com/kernel/kernel-go-sdk/commit/5a2a7d471453081cc84a4fb987c6f43c36bb16ac))
+
 ## 0.25.0 (2026-01-16)
 
 Full Changelog: [v0.24.0...v0.25.0](https://github.com/kernel/kernel-go-sdk/compare/v0.24.0...v0.25.0)
