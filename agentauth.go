@@ -310,6 +310,9 @@ type AuthAgent struct {
 	HasSelectors bool `json:"has_selectors"`
 	// When the last authentication check was performed
 	LastAuthCheckAt time.Time `json:"last_auth_check_at" format:"date-time"`
+	// URL where the browser landed after successful login. Query parameters and
+	// fragments are stripped for privacy.
+	PostLoginURL string `json:"post_login_url" format:"uri"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID              respjson.Field
@@ -322,6 +325,7 @@ type AuthAgent struct {
 		CredentialName  respjson.Field
 		HasSelectors    respjson.Field
 		LastAuthCheckAt respjson.Field
+		PostLoginURL    respjson.Field
 		ExtraFields     map[string]respjson.Field
 		raw             string
 	} `json:"-"`

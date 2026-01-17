@@ -6,7 +6,7 @@
 
 <!-- x-release-please-end -->
 
-The Kernel Go library provides convenient access to the [Kernel REST API](https://www.kernel.sh/docs/api-reference)
+The Kernel Go library provides convenient access to the [Kernel REST API](https://kernel.sh/docs)
 from applications written in Go.
 
 It is generated with [Stainless](https://www.stainless.com/).
@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/kernel/kernel-go-sdk@v0.25.0'
+go get -u 'github.com/kernel/kernel-go-sdk@v0.26.0'
 ```
 
 <!-- x-release-please-end -->
