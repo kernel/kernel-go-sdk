@@ -37,13 +37,13 @@ jobs:
 
       - name: Clone API repo
         env:
-          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
 
       - name: Clone CLI repo
         env:
-          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           gh repo clone kernel/cli /tmp/kernel-cli
 
@@ -68,7 +68,7 @@ jobs:
       - name: Update CLI coverage
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GH_TOKEN: ${{ secrets.CLI_REPO_PAT }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           BRANCH_PREFIX: cli-coverage-update
         run: |
           cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
