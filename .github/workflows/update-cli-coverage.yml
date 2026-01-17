@@ -145,7 +145,7 @@ jobs:
           - SDK api.md: Current directory - READ THIS FILE FIRST. This is the authoritative list of all SDK methods and their signatures.
           - SDK *.go files: Current directory - Contains param structs (e.g., BrowserNewParams, DeploymentListParams) with all available options/fields.
           - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
-          - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification
+          - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
           - CLI: /tmp/kernel-cli - Existing CLI commands
 
           # Task
@@ -287,7 +287,8 @@ jobs:
           # Constraints
           - ALWAYS update the SDK version in go.mod - this is the primary purpose
           - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
-          - ALL SDK methods in api.md MUST have corresponding CLI commands - no exceptions
+          - ALL SDK methods in api.md MUST have corresponding CLI commands, EXCEPT those marked with x-cli-skip in openapi.yaml
+          - SKIP endpoints marked with x-cli-skip: true in openapi.yaml - these are internal endpoints (e.g., hosted UI auth flows) not suitable for CLI
           - Streaming methods may have different CLI implementations (e.g., follow flags)
           - Even if no coverage gaps are found, still create a PR for the SDK version bump
           - Ensure code compiles before pushing
