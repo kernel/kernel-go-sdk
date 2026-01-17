@@ -287,9 +287,8 @@ jobs:
           # Constraints
           - ALWAYS update the SDK version in go.mod - this is the primary purpose
           - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
-          - Only implement genuinely missing CLI functionality
-          - Internal/admin methods may not need CLI commands
-          - Streaming methods may have different CLI implementations
+          - ALL SDK methods in api.md MUST have corresponding CLI commands - no exceptions
+          - Streaming methods may have different CLI implementations (e.g., follow flags)
           - Even if no coverage gaps are found, still create a PR for the SDK version bump
           - Ensure code compiles before pushing
           " --model opus-4.5 --force --output-format=text
