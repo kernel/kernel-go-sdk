@@ -3,6 +3,12 @@ name: Update CLI Coverage
 on:
   push:
     branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to use for context (leave empty to use most recent merged PR)'
+        required: false
+        type: string
   # Or trigger on releases:
   # release:
   #   types: [published]
@@ -14,11 +20,49 @@ jobs:
   update-cli-coverage:
     runs-on: ubuntu-latest
     steps:
+      - name: Get PR info for manual dispatch
+        id: pr-info
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+        run: |
+          if [ -n "${{ inputs.pr_number }}" ]; then
+            # Use provided PR number
+            PR_NUMBER="${{ inputs.pr_number }}"
+            echo "Using provided PR number: $PR_NUMBER"
+          else
+            # Get most recent merged PR
+            PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --state merged --limit 1 --json number --jq '.[0].number')
+            echo "Using most recent merged PR: $PR_NUMBER"
+          fi
+          
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR found, will use HEAD commit"
+            echo "has_pr=false" >> $GITHUB_OUTPUT
+          else
+            # Get PR details
+            PR_DATA=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json mergeCommit,author,title)
+            MERGE_SHA=$(echo "$PR_DATA" | jq -r '.mergeCommit.oid // empty')
+            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login // empty')
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // empty')
+            
+            echo "PR #$PR_NUMBER: $PR_TITLE"
+            echo "Merge commit: $MERGE_SHA"
+            echo "Author: $PR_AUTHOR"
+            
+            echo "has_pr=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "merge_sha=$MERGE_SHA" >> $GITHUB_OUTPUT
+            echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+          fi
+
       - name: Checkout SDK repo
         uses: actions/checkout@v4
         with:
           fetch-depth: 2
           fetch-tags: true
+          # For manual dispatch with a specific PR, checkout the merge commit
+          ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
       - name: Install Cursor CLI
         run: |
@@ -56,14 +100,22 @@ jobs:
             echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
             echo "SDK version: $LATEST_TAG"
           else
-            echo "version=${{ github.sha }}" >> $GITHUB_OUTPUT
-            echo "SDK version: ${{ github.sha }} (no tag)"
+            CURRENT_SHA="${{ steps.pr-info.outputs.merge_sha || github.sha }}"
+            echo "version=$CURRENT_SHA" >> $GITHUB_OUTPUT
+            echo "SDK version: $CURRENT_SHA (no tag)"
           fi
           
           # Get the module path from go.mod
           MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
           echo "module=$MODULE_PATH" >> $GITHUB_OUTPUT
           echo "SDK module: $MODULE_PATH"
+          
+          # Determine the commit author (from PR info for manual dispatch, or from push event)
+          if [ -n "${{ steps.pr-info.outputs.pr_author }}" ]; then
+            echo "author=${{ steps.pr-info.outputs.pr_author }}" >> $GITHUB_OUTPUT
+          else
+            echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Update CLI coverage
         env:
@@ -79,8 +131,9 @@ jobs:
           - SDK Repo: ${{ github.repository }} (current directory)
           - SDK Module: ${{ steps.sdk-version.outputs.module }}
           - SDK Version: ${{ steps.sdk-version.outputs.version }}
-          - Commit SHA: ${{ github.sha }}
-          - Commit Author: ${{ github.event.head_commit.author.username || github.actor }}
+          - Commit SHA: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
+          - Commit Author: ${{ steps.sdk-version.outputs.author }}
+          - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
           - API Repo Location: /tmp/kernel-api
           - CLI Repo Location: /tmp/kernel-cli
           - Update Branch Prefix: cli-coverage-update
@@ -214,7 +267,7 @@ jobs:
             ## New Flags
             - \`--flag-name\` for \`ResourceParams.FieldName\`
 
-            Triggered by: kernel/kernel-go-sdk@${{ github.sha }}
+            Triggered by: kernel/kernel-go-sdk@${{ steps.pr-info.outputs.merge_sha || github.sha }}
             Reviewer: @<commit_author>'
 
           If only SDK version update (no coverage gaps found):
@@ -228,7 +281,7 @@ jobs:
             ## Coverage Analysis
             A full enumeration of SDK methods and CLI commands was performed. No coverage gaps were found.
 
-            Triggered by: kernel/kernel-go-sdk@${{ github.sha }}
+            Triggered by: kernel/kernel-go-sdk@${{ steps.pr-info.outputs.merge_sha || github.sha }}
             Reviewer: @<commit_author>'
 
           # Constraints
