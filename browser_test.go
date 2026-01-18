@@ -63,7 +63,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestBrowserGet(t *testing.T) {
+func TestBrowserGetWithOptionalParams(t *testing.T) {
 	t.Skip("Prism tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -76,7 +76,13 @@ func TestBrowserGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Browsers.Get(context.TODO(), "htzv5orfit78e1m2biiifpbv")
+	_, err := client.Browsers.Get(
+		context.TODO(),
+		"htzv5orfit78e1m2biiifpbv",
+		kernel.BrowserGetParams{
+			IncludeDeleted: kernel.Bool(true),
+		},
+	)
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -132,6 +138,7 @@ func TestBrowserListWithOptionalParams(t *testing.T) {
 		IncludeDeleted: kernel.Bool(true),
 		Limit:          kernel.Int(1),
 		Offset:         kernel.Int(0),
+		Status:         kernel.BrowserListParamsStatusActive,
 	})
 	if err != nil {
 		var apierr *kernel.Error
