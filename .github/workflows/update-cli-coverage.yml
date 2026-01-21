@@ -85,11 +85,23 @@ jobs:
         run: |
           gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
 
-      - name: Clone CLI repo
+      - name: Clone CLI repo and checkout existing branch
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
         run: |
           gh repo clone kernel/cli /tmp/kernel-cli
+          cd /tmp/kernel-cli
+          
+          # Check if the cli-coverage-update branch already exists on remote
+          if git ls-remote --exit-code --heads origin cli-coverage-update >/dev/null 2>&1; then
+            echo "Branch cli-coverage-update exists, checking it out..."
+            git fetch origin cli-coverage-update
+            git checkout cli-coverage-update
+            # Merge latest main to keep it up to date
+            git merge origin/main -m "Merge main into cli-coverage-update" --no-edit || true
+          else
+            echo "Branch cli-coverage-update does not exist, will create from main"
+          fi
 
       - name: Get SDK version info
         id: sdk-version
@@ -213,10 +225,12 @@ jobs:
           - Run \`go build ./...\` to verify the code compiles
 
           ## Step 6: Commit and Push
-          - Create/update the evergreen branch: cli-coverage-update (always use this single branch name)
+          - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
+          - If you're on main, create/switch to the cli-coverage-update branch
           - Commit with message describing SDK version bump and any new commands/flags
-          - Force push changes to the CLI repo (since we're updating an evergreen branch)
-          - Create or update an evergreen PR in kernel/cli
+          - IMPORTANT: Do NOT force push! Use regular \`git push origin cli-coverage-update\` to preserve existing work on the branch
+          - If push fails due to divergence, pull and rebase first: \`git pull --rebase origin cli-coverage-update\`
+          - Create or update the PR in kernel/cli
 
           # SDK Method -> CLI Command Mapping Guide
           - client.Resource.New() -> kernel resource create
