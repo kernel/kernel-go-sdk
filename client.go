@@ -16,17 +16,18 @@ import (
 // interacting with the kernel API. You should not instantiate this client
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
-	Options      []option.RequestOption
-	Deployments  DeploymentService
-	Apps         AppService
-	Invocations  InvocationService
-	Browsers     BrowserService
-	Profiles     ProfileService
-	Proxies      ProxyService
-	Extensions   ExtensionService
-	BrowserPools BrowserPoolService
-	Agents       AgentService
-	Credentials  CredentialService
+	Options             []option.RequestOption
+	Deployments         DeploymentService
+	Apps                AppService
+	Invocations         InvocationService
+	Browsers            BrowserService
+	Profiles            ProfileService
+	Proxies             ProxyService
+	Extensions          ExtensionService
+	BrowserPools        BrowserPoolService
+	Agents              AgentService
+	Credentials         CredentialService
+	CredentialProviders CredentialProviderService
 }
 
 // DefaultClientOptions read from the environment (KERNEL_API_KEY,
@@ -61,6 +62,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.BrowserPools = NewBrowserPoolService(opts...)
 	r.Agents = NewAgentService(opts...)
 	r.Credentials = NewCredentialService(opts...)
+	r.CredentialProviders = NewCredentialProviderService(opts...)
 
 	return
 }
