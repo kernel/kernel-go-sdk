@@ -66,14 +66,14 @@ func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ..
 }
 
 // Get information about a browser session.
-func (r *BrowserService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *BrowserGetResponse, err error) {
+func (r *BrowserService) Get(ctx context.Context, id string, query BrowserGetParams, opts ...option.RequestOption) (res *BrowserGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return
 	}
 	path := fmt.Sprintf("browsers/%s", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return
 }
 
@@ -89,8 +89,8 @@ func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpda
 	return
 }
 
-// List all browser sessions with pagination support. Use include_deleted=true to
-// include soft-deleted sessions in the results.
+// List all browser sessions with pagination support. Use status parameter to
+// filter by session state.
 func (r *BrowserService) List(ctx context.Context, query BrowserListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserListResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -108,8 +108,8 @@ func (r *BrowserService) List(ctx context.Context, query BrowserListParams, opts
 	return res, nil
 }
 
-// List all browser sessions with pagination support. Use include_deleted=true to
-// include soft-deleted sessions in the results.
+// List all browser sessions with pagination support. Use status parameter to
+// filter by session state.
 func (r *BrowserService) ListAutoPaging(ctx context.Context, query BrowserListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserListResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
@@ -532,6 +532,20 @@ func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type BrowserGetParams struct {
+	// When true, includes soft-deleted browser sessions in the lookup.
+	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BrowserGetParams]'s query parameters as `url.Values`.
+func (r BrowserGetParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
 type BrowserUpdateParams struct {
 	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
 	// proxy.
@@ -548,13 +562,18 @@ func (r *BrowserUpdateParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserListParams struct {
-	// When true, includes soft-deleted browser sessions in the results alongside
-	// active sessions.
+	// Deprecated: Use status=all instead. When true, includes soft-deleted browser
+	// sessions in the results alongside active sessions.
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	// Maximum number of results to return. Defaults to 20, maximum 100.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Filter sessions by status. "active" returns only active sessions (default),
+	// "deleted" returns only soft-deleted sessions, "all" returns both.
+	//
+	// Any of "active", "deleted", "all".
+	Status BrowserListParamsStatus `query:"status,omitzero" json:"-"`
 	paramObj
 }
 
@@ -565,6 +584,16 @@ func (r BrowserListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Filter sessions by status. "active" returns only active sessions (default),
+// "deleted" returns only soft-deleted sessions, "all" returns both.
+type BrowserListParamsStatus string
+
+const (
+	BrowserListParamsStatusActive  BrowserListParamsStatus = "active"
+	BrowserListParamsStatusDeleted BrowserListParamsStatus = "deleted"
+	BrowserListParamsStatusAll     BrowserListParamsStatus = "all"
+)
 
 type BrowserDeleteParams struct {
 	// Persistent browser identifier

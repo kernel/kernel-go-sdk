@@ -146,6 +146,8 @@ type AgentAuthInvocationResponse struct {
 	PendingFields []DiscoveredField `json:"pending_fields,nullable"`
 	// SSO buttons available on the page (present when step=awaiting_input)
 	PendingSSOButtons []AgentAuthInvocationResponsePendingSSOButton `json:"pending_sso_buttons,nullable"`
+	// SSO provider being used for authentication (e.g., google, github, microsoft)
+	SSOProvider string `json:"sso_provider,nullable"`
 	// Names of fields that have been submitted (present when step=submitting or later)
 	SubmittedFields []string `json:"submitted_fields,nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -162,6 +164,7 @@ type AgentAuthInvocationResponse struct {
 		MfaOptions            respjson.Field
 		PendingFields         respjson.Field
 		PendingSSOButtons     respjson.Field
+		SSOProvider           respjson.Field
 		SubmittedFields       respjson.Field
 		ExtraFields           map[string]respjson.Field
 		raw                   string
