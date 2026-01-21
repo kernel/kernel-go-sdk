@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.27.0 (2026-01-21)
+
+Full Changelog: [v0.26.0...v0.27.0](https://github.com/kernel/kernel-go-sdk/compare/v0.26.0...v0.27.0)
+
+### Features
+
+* **agent-auth:** add 1Password integration for credential providers ([690962f](https://github.com/kernel/kernel-go-sdk/commit/690962f9f276c1e917c7462ec57400afccf3509f))
+* **dashboard:** add browser replays support for past browsers ([33f2a9c](https://github.com/kernel/kernel-go-sdk/commit/33f2a9cd0b5391bd058f6c74900c8d3731b3f990))
+* Update browser pool org limits ([6848a1c](https://github.com/kernel/kernel-go-sdk/commit/6848a1c11b3b648b163db8cf1e47347d6b6acbb8))
+
+
+### Refactors
+
+* **agentauth:** enhance discover and submit modules with improve… ([71801e7](https://github.com/kernel/kernel-go-sdk/commit/71801e7d3375037a68f751099bc6333e592fb654))
+
 ## 0.26.0 (2026-01-17)
 
 Full Changelog: [v0.25.0...v0.26.0](https://github.com/kernel/kernel-go-sdk/compare/v0.25.0...v0.26.0)
