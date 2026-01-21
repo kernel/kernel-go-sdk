@@ -167,7 +167,9 @@ func (r *BrowserPool) UnmarshalJSON(data []byte) error {
 
 // Configuration used to create all browsers in this pool
 type BrowserPoolBrowserPoolConfig struct {
-	// Number of browsers to create in the pool
+	// Number of browsers to maintain in the pool. The maximum size is determined by
+	// your organization's pooled sessions limit (the sum of all pool sizes cannot
+	// exceed your limit).
 	Size int64 `json:"size,required"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtension `json:"extensions"`
@@ -290,7 +292,9 @@ func (r *BrowserPoolAcquireResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserPoolNewParams struct {
-	// Number of browsers to create in the pool
+	// Number of browsers to maintain in the pool. The maximum size is determined by
+	// your organization's pooled sessions limit (the sum of all pool sizes cannot
+	// exceed your limit).
 	Size int64 `json:"size,required"`
 	// Percentage of the pool to fill per minute. Defaults to 10%.
 	FillRatePerMinute param.Opt[int64] `json:"fill_rate_per_minute,omitzero"`
@@ -337,7 +341,9 @@ func (r *BrowserPoolNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserPoolUpdateParams struct {
-	// Number of browsers to create in the pool
+	// Number of browsers to maintain in the pool. The maximum size is determined by
+	// your organization's pooled sessions limit (the sum of all pool sizes cannot
+	// exceed your limit).
 	Size int64 `json:"size,required"`
 	// Whether to discard all idle browsers and rebuild the pool immediately. Defaults
 	// to false.
