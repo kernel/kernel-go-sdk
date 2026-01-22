@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.28.0 (2026-01-22)
+
+Full Changelog: [v0.27.0...v0.28.0](https://github.com/kernel/kernel-go-sdk/compare/v0.27.0...v0.28.0)
+
+### Features
+
+* Allow hot loading profiles into sessions ([436ac8c](https://github.com/kernel/kernel-go-sdk/commit/436ac8cfa797b3283ccb0a801a59fb1fa499e32f))
+
+
+### Bug Fixes
+
+* preserve existing CLI branch work in coverage workflow ([5c2eb99](https://github.com/kernel/kernel-go-sdk/commit/5c2eb9944cf21b4c9b4870666be6332c52f2a4d9))
+
 ## 0.27.0 (2026-01-21)
 
 Full Changelog: [v0.26.0...v0.27.0](https://github.com/kernel/kernel-go-sdk/compare/v0.26.0...v0.27.0)
