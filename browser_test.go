@@ -109,7 +109,17 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserUpdateParams{
+			Profile: shared.BrowserProfileParam{
+				ID:          kernel.String("id"),
+				Name:        kernel.String("name"),
+				SaveChanges: kernel.Bool(true),
+			},
 			ProxyID: kernel.String("proxy_id"),
+			Viewport: shared.BrowserViewportParam{
+				Height:      800,
+				Width:       1280,
+				RefreshRate: kernel.Int(60),
+			},
 		},
 	)
 	if err != nil {

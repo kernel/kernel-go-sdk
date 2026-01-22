@@ -550,6 +550,11 @@ type BrowserUpdateParams struct {
 	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
 	// proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Profile to load into the browser session. Only allowed if the session does not
+	// already have a profile loaded.
+	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// Viewport configuration to apply to the browser session.
+	Viewport shared.BrowserViewportParam `json:"viewport,omitzero"`
 	paramObj
 }
 
