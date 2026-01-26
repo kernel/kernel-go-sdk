@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.29.0 (2026-01-26)
+
+Full Changelog: [v0.28.0...v0.29.0](https://github.com/kernel/kernel-go-sdk/compare/v0.28.0...v0.29.0)
+
+### Features
+
+* **client:** add a convenient param.SetJSON helper ([00e86b2](https://github.com/kernel/kernel-go-sdk/commit/00e86b280372cea0186578a4e73bf857310233e8))
+
 ## 0.28.0 (2026-01-22)
 
 Full Changelog: [v0.27.0...v0.28.0](https://github.com/kernel/kernel-go-sdk/compare/v0.27.0...v0.28.0)
