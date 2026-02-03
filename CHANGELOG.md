@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.30.0 (2026-02-03)
+
+Full Changelog: [v0.29.0...v0.30.0](https://github.com/kernel/kernel-go-sdk/compare/v0.29.0...v0.30.0)
+
+### Features
+
+* Neil/kernel 872 templates v3 ([9a6a1bf](https://github.com/kernel/kernel-go-sdk/commit/9a6a1bf18929ef26c9fe7259dbd59682532d4bdc))
+
 ## 0.29.0 (2026-01-29)
 
 Full Changelog: [v0.28.0...v0.29.0](https://github.com/kernel/kernel-go-sdk/compare/v0.28.0...v0.29.0)
