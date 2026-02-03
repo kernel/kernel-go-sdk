@@ -133,6 +133,18 @@ func (r *InvocationService) FollowStreaming(ctx context.Context, id string, quer
 	return ssestream.NewStream[InvocationFollowResponseUnion](ssestream.NewDecoder(raw), err)
 }
 
+// Returns all active browser sessions created within the specified invocation.
+func (r *InvocationService) ListBrowsers(ctx context.Context, id string, opts ...option.RequestOption) (res *InvocationListBrowsersResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("invocations/%s/browsers", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return
+}
+
 // An event representing the current state of an invocation.
 type InvocationStateEvent struct {
 	// Event type identifier (always "invocation_state").
@@ -504,6 +516,85 @@ func (u InvocationFollowResponseUnion) AsSseHeartbeat() (v shared.HeartbeatEvent
 func (u InvocationFollowResponseUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *InvocationFollowResponseUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationListBrowsersResponse struct {
+	Browsers []InvocationListBrowsersResponseBrowser `json:"browsers,required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Browsers    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationListBrowsersResponse) RawJSON() string { return r.JSON.raw }
+func (r *InvocationListBrowsersResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationListBrowsersResponseBrowser struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url,required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless,required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id,required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth,required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
+	//
+	// Deprecated: deprecated
+	Persistence BrowserPersistence `json:"persistence"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// ID of the proxy associated with this browser session, if any.
+	ProxyID string `json:"proxy_id"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). Only specific viewport configurations are
+	// supported. The server will reject unsupported combinations. Supported
+	// resolutions are: 2560x1440@10, 1920x1080@25, 1920x1200@25, 1440x900@25,
+	// 1280x800@60, 1024x768@60, 1200x800@60 If refresh_rate is not provided, it will
+	// be automatically determined from the width and height if they match a supported
+	// configuration exactly. Note: Higher resolutions may affect the responsiveness of
+	// live view browser
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		BrowserLiveViewURL respjson.Field
+		DeletedAt          respjson.Field
+		KioskMode          respjson.Field
+		Persistence        respjson.Field
+		Profile            respjson.Field
+		ProxyID            respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationListBrowsersResponseBrowser) RawJSON() string { return r.JSON.raw }
+func (r *InvocationListBrowsersResponseBrowser) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
