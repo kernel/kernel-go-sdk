@@ -17,6 +17,80 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
+func TestBrowserComputerBatch(t *testing.T) {
+	t.Skip("Prism tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	err := client.Browsers.Computer.Batch(
+		context.TODO(),
+		"id",
+		kernel.BrowserComputerBatchParams{
+			Actions: []kernel.BrowserComputerBatchParamsAction{{
+				Type: "click_mouse",
+				ClickMouse: kernel.BrowserComputerBatchParamsActionClickMouse{
+					X:         0,
+					Y:         0,
+					Button:    "left",
+					ClickType: "down",
+					HoldKeys:  []string{"string"},
+					NumClicks: kernel.Int(0),
+				},
+				DragMouse: kernel.BrowserComputerBatchParamsActionDragMouse{
+					Path:            [][]int64{{0, 0}, {0, 0}},
+					Button:          "left",
+					Delay:           kernel.Int(0),
+					HoldKeys:        []string{"string"},
+					StepDelayMs:     kernel.Int(0),
+					StepsPerSegment: kernel.Int(1),
+				},
+				MoveMouse: kernel.BrowserComputerBatchParamsActionMoveMouse{
+					X:        0,
+					Y:        0,
+					HoldKeys: []string{"string"},
+				},
+				PressKey: kernel.BrowserComputerBatchParamsActionPressKey{
+					Keys:     []string{"string"},
+					Duration: kernel.Int(0),
+					HoldKeys: []string{"string"},
+				},
+				Scroll: kernel.BrowserComputerBatchParamsActionScroll{
+					X:        0,
+					Y:        0,
+					DeltaX:   kernel.Int(0),
+					DeltaY:   kernel.Int(0),
+					HoldKeys: []string{"string"},
+				},
+				SetCursor: kernel.BrowserComputerBatchParamsActionSetCursor{
+					Hidden: true,
+				},
+				Sleep: kernel.BrowserComputerBatchParamsActionSleep{
+					DurationMs: 0,
+				},
+				TypeText: kernel.BrowserComputerBatchParamsActionTypeText{
+					Text:  "text",
+					Delay: kernel.Int(0),
+				},
+			}},
+		},
+	)
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestBrowserComputerCaptureScreenshotWithOptionalParams(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
@@ -121,6 +195,29 @@ func TestBrowserComputerDragMouseWithOptionalParams(t *testing.T) {
 			StepsPerSegment: kernel.Int(1),
 		},
 	)
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestBrowserComputerGetMousePosition(t *testing.T) {
+	t.Skip("Prism tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Browsers.Computer.GetMousePosition(context.TODO(), "id")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
