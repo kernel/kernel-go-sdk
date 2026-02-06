@@ -24,6 +24,7 @@ type DeploymentState string   // Always "deployment_state"
 type Error string             // Always "error"
 type InvocationState string   // Always "invocation_state"
 type Log string               // Always "log"
+type ManagedAuthState string  // Always "managed_auth_state"
 type SseHeartbeat string      // Always "sse_heartbeat"
 
 func (c AppVersionSummary) Default() AppVersionSummary { return "app_version_summary" }
@@ -32,6 +33,7 @@ func (c DeploymentState) Default() DeploymentState     { return "deployment_stat
 func (c Error) Default() Error                         { return "error" }
 func (c InvocationState) Default() InvocationState     { return "invocation_state" }
 func (c Log) Default() Log                             { return "log" }
+func (c ManagedAuthState) Default() ManagedAuthState   { return "managed_auth_state" }
 func (c SseHeartbeat) Default() SseHeartbeat           { return "sse_heartbeat" }
 
 func (c AppVersionSummary) MarshalJSON() ([]byte, error) { return marshalString(c) }
@@ -40,6 +42,7 @@ func (c DeploymentState) MarshalJSON() ([]byte, error)   { return marshalString(
 func (c Error) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c InvocationState) MarshalJSON() ([]byte, error)   { return marshalString(c) }
 func (c Log) MarshalJSON() ([]byte, error)               { return marshalString(c) }
+func (c ManagedAuthState) MarshalJSON() ([]byte, error)  { return marshalString(c) }
 func (c SseHeartbeat) MarshalJSON() ([]byte, error)      { return marshalString(c) }
 
 type constant[T any] interface {

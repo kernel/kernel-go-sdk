@@ -42,7 +42,7 @@ func NewCredentialProviderService(opts ...option.RequestOption) (r CredentialPro
 // credential lookup.
 func (r *CredentialProviderService) New(ctx context.Context, body CredentialProviderNewParams, opts ...option.RequestOption) (res *CredentialProvider, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "org/credential-providers"
+	path := "org/credential_providers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return
 }
@@ -54,7 +54,7 @@ func (r *CredentialProviderService) Get(ctx context.Context, id string, opts ...
 		err = errors.New("missing required id parameter")
 		return
 	}
-	path := fmt.Sprintf("org/credential-providers/%s", id)
+	path := fmt.Sprintf("org/credential_providers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
@@ -66,7 +66,7 @@ func (r *CredentialProviderService) Update(ctx context.Context, id string, body 
 		err = errors.New("missing required id parameter")
 		return
 	}
-	path := fmt.Sprintf("org/credential-providers/%s", id)
+	path := fmt.Sprintf("org/credential_providers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return
 }
@@ -74,7 +74,7 @@ func (r *CredentialProviderService) Update(ctx context.Context, id string, body 
 // List external credential providers configured for the organization.
 func (r *CredentialProviderService) List(ctx context.Context, opts ...option.RequestOption) (res *[]CredentialProvider, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "org/credential-providers"
+	path := "org/credential_providers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
@@ -87,8 +87,21 @@ func (r *CredentialProviderService) Delete(ctx context.Context, id string, opts 
 		err = errors.New("missing required id parameter")
 		return
 	}
-	path := fmt.Sprintf("org/credential-providers/%s", id)
+	path := fmt.Sprintf("org/credential_providers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return
+}
+
+// Returns available credential items (e.g., 1Password login items) from the
+// provider.
+func (r *CredentialProviderService) ListItems(ctx context.Context, id string, opts ...option.RequestOption) (res *CredentialProviderListItemsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("org/credential_providers/%s/items", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return
 }
 
@@ -99,17 +112,19 @@ func (r *CredentialProviderService) Test(ctx context.Context, id string, opts ..
 		err = errors.New("missing required id parameter")
 		return
 	}
-	path := fmt.Sprintf("org/credential-providers/%s/test", id)
+	path := fmt.Sprintf("org/credential_providers/%s/test", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
 	return
 }
 
 // Request to create an external credential provider
 //
-// The properties Token, ProviderType are required.
+// The properties Token, Name, ProviderType are required.
 type CreateCredentialProviderRequestParam struct {
 	// Service account token for the provider (e.g., 1Password service account token)
 	Token string `json:"token,required"`
+	// Human-readable name for this provider instance (unique per org)
+	Name string `json:"name,required"`
 	// Type of credential provider
 	//
 	// Any of "onepassword".
@@ -143,6 +158,8 @@ type CredentialProvider struct {
 	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
 	// Whether the provider is enabled for credential lookups
 	Enabled bool `json:"enabled,required"`
+	// Human-readable name for this provider instance
+	Name string `json:"name,required"`
 	// Priority order for credential lookups (lower numbers are checked first)
 	Priority int64 `json:"priority,required"`
 	// Type of credential provider
@@ -156,6 +173,7 @@ type CredentialProvider struct {
 		ID           respjson.Field
 		CreatedAt    respjson.Field
 		Enabled      respjson.Field
+		Name         respjson.Field
 		Priority     respjson.Field
 		ProviderType respjson.Field
 		UpdatedAt    respjson.Field
@@ -176,6 +194,39 @@ type CredentialProviderProviderType string
 const (
 	CredentialProviderProviderTypeOnepassword CredentialProviderProviderType = "onepassword"
 )
+
+// A credential item from an external provider (e.g., a 1Password login item)
+type CredentialProviderItem struct {
+	// Unique identifier for the item within the provider
+	ID string `json:"id,required"`
+	// Path to reference this item (VaultName/ItemTitle format)
+	Path string `json:"path,required"`
+	// Display name of the credential item
+	Title string `json:"title,required"`
+	// ID of the vault containing this item
+	VaultID string `json:"vault_id,required"`
+	// Name of the vault containing this item
+	VaultName string `json:"vault_name,required"`
+	// URLs associated with this credential
+	URLs []string `json:"urls"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Path        respjson.Field
+		Title       respjson.Field
+		VaultID     respjson.Field
+		VaultName   respjson.Field
+		URLs        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r CredentialProviderItem) RawJSON() string { return r.JSON.raw }
+func (r *CredentialProviderItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 // Result of testing a credential provider connection
 type CredentialProviderTestResult struct {
@@ -229,6 +280,8 @@ type UpdateCredentialProviderRequestParam struct {
 	CacheTtlSeconds param.Opt[int64] `json:"cache_ttl_seconds,omitzero"`
 	// Whether the provider is enabled for credential lookups
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Human-readable name for this provider instance
+	Name param.Opt[string] `json:"name,omitzero"`
 	// Priority order for credential lookups (lower numbers are checked first)
 	Priority param.Opt[int64] `json:"priority,omitzero"`
 	paramObj
@@ -239,6 +292,22 @@ func (r UpdateCredentialProviderRequestParam) MarshalJSON() (data []byte, err er
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *UpdateCredentialProviderRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type CredentialProviderListItemsResponse struct {
+	Items []CredentialProviderItem `json:"items"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Items       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r CredentialProviderListItemsResponse) RawJSON() string { return r.JSON.raw }
+func (r *CredentialProviderListItemsResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

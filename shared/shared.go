@@ -260,7 +260,8 @@ func (r *ErrorEvent) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-func (ErrorEvent) ImplInvocationFollowResponseUnion() {}
+func (ErrorEvent) ImplInvocationFollowResponseUnion()     {}
+func (ErrorEvent) ImplAuthConnectionFollowResponseUnion() {}
 
 type ErrorModel struct {
 	// Application-specific error code (machine-readable)
@@ -308,7 +309,8 @@ func (r *HeartbeatEvent) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-func (HeartbeatEvent) ImplInvocationFollowResponseUnion() {}
+func (HeartbeatEvent) ImplInvocationFollowResponseUnion()     {}
+func (HeartbeatEvent) ImplAuthConnectionFollowResponseUnion() {}
 
 // A log entry from the application.
 type LogEvent struct {
