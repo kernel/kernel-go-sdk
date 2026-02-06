@@ -43,10 +43,13 @@ func NewAgentAuthService(opts ...option.RequestOption) (r AgentAuthService) {
 	return
 }
 
-// Creates a new auth agent for the specified domain and profile combination, or
-// returns an existing one if it already exists. This is idempotent - calling with
-// the same domain and profile will return the same agent. Does NOT start an
-// invocation - use POST /agents/auth/invocations to start an auth flow.
+// **Deprecated: Use POST /auth/connections instead.** Creates a new auth agent for
+// the specified domain and profile combination, or returns an existing one if it
+// already exists. This is idempotent - calling with the same domain and profile
+// will return the same agent. Does NOT start an invocation - use POST
+// /agents/auth/invocations to start an auth flow.
+//
+// Deprecated: deprecated
 func (r *AgentAuthService) New(ctx context.Context, body AgentAuthNewParams, opts ...option.RequestOption) (res *AuthAgent, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "agents/auth"
@@ -54,8 +57,10 @@ func (r *AgentAuthService) New(ctx context.Context, body AgentAuthNewParams, opt
 	return
 }
 
-// Retrieve an auth agent by its ID. Returns the current authentication status of
-// the managed profile.
+// **Deprecated: Use GET /auth/connections/{id} instead.** Retrieve an auth agent
+// by its ID. Returns the current authentication status of the managed profile.
+//
+// Deprecated: deprecated
 func (r *AgentAuthService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *AuthAgent, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -67,7 +72,10 @@ func (r *AgentAuthService) Get(ctx context.Context, id string, opts ...option.Re
 	return
 }
 
-// List auth agents with optional filters for profile_name and domain.
+// **Deprecated: Use GET /auth/connections instead.** List auth agents with
+// optional filters for profile_name and domain.
+//
+// Deprecated: deprecated
 func (r *AgentAuthService) List(ctx context.Context, query AgentAuthListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[AuthAgent], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -85,16 +93,22 @@ func (r *AgentAuthService) List(ctx context.Context, query AgentAuthListParams, 
 	return res, nil
 }
 
-// List auth agents with optional filters for profile_name and domain.
+// **Deprecated: Use GET /auth/connections instead.** List auth agents with
+// optional filters for profile_name and domain.
+//
+// Deprecated: deprecated
 func (r *AgentAuthService) ListAutoPaging(ctx context.Context, query AgentAuthListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[AuthAgent] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Deletes an auth agent and terminates its workflow. This will:
+// **Deprecated: Use DELETE /auth/connections/{id} instead.** Deletes an auth agent
+// and terminates its workflow. This will:
 //
 // - Soft delete the auth agent record
 // - Gracefully terminate the agent's Temporal workflow
 // - Cancel any in-progress invocations
+//
+// Deprecated: deprecated
 func (r *AgentAuthService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -124,13 +138,12 @@ type AgentAuthInvocationResponse struct {
 	// Any of "initialized", "discovering", "awaiting_input",
 	// "awaiting_external_action", "submitting", "completed", "expired".
 	Step AgentAuthInvocationResponseStep `json:"step,required"`
-	// The invocation type:
+	// The session type:
 	//
-	// - login: First-time authentication
-	// - reauth: Re-authentication for previously authenticated agents
-	// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+	// - login: User-initiated authentication
+	// - reauth: System-triggered re-authentication (via health check)
 	//
-	// Any of "login", "auto_login", "reauth".
+	// Any of "login", "reauth".
 	Type AgentAuthInvocationResponseType `json:"type,required"`
 	// Error message explaining why the invocation failed (present when status=FAILED)
 	ErrorMessage string `json:"error_message,nullable"`
@@ -201,26 +214,24 @@ const (
 	AgentAuthInvocationResponseStepExpired                AgentAuthInvocationResponseStep = "expired"
 )
 
-// The invocation type:
+// The session type:
 //
-// - login: First-time authentication
-// - reauth: Re-authentication for previously authenticated agents
-// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+// - login: User-initiated authentication
+// - reauth: System-triggered re-authentication (via health check)
 type AgentAuthInvocationResponseType string
 
 const (
-	AgentAuthInvocationResponseTypeLogin     AgentAuthInvocationResponseType = "login"
-	AgentAuthInvocationResponseTypeAutoLogin AgentAuthInvocationResponseType = "auto_login"
-	AgentAuthInvocationResponseTypeReauth    AgentAuthInvocationResponseType = "reauth"
+	AgentAuthInvocationResponseTypeLogin  AgentAuthInvocationResponseType = "login"
+	AgentAuthInvocationResponseTypeReauth AgentAuthInvocationResponseType = "reauth"
 )
 
 // An MFA method option for verification
 type AgentAuthInvocationResponseMfaOption struct {
 	// The visible option text
 	Label string `json:"label,required"`
-	// The MFA delivery method type
+	// The MFA delivery method type (includes password for auth method selection pages)
 	//
-	// Any of "sms", "call", "email", "totp", "push", "security_key".
+	// Any of "sms", "call", "email", "totp", "push", "password".
 	Type string `json:"type,required"`
 	// Additional instructions from the site
 	Description string `json:"description,nullable"`
@@ -301,14 +312,34 @@ type AuthAgent struct {
 	// Additional domains that are valid for this auth agent's authentication flow
 	// (besides the primary domain). Useful when login pages redirect to different
 	// domains.
+	//
+	// The following SSO/OAuth provider domains are automatically allowed by default
+	// and do not need to be specified:
+	//
+	// - Google: accounts.google.com
+	// - Microsoft/Azure AD: login.microsoftonline.com, login.live.com
+	// - Okta: _.okta.com, _.oktapreview.com
+	// - Auth0: _.auth0.com, _.us.auth0.com, _.eu.auth0.com, _.au.auth0.com
+	// - Apple: appleid.apple.com
+	// - GitHub: github.com
+	// - Facebook/Meta: www.facebook.com
+	// - LinkedIn: www.linkedin.com
+	// - Amazon Cognito: \*.amazoncognito.com
+	// - OneLogin: \*.onelogin.com
+	// - Ping Identity: _.pingone.com, _.pingidentity.com
 	AllowedDomains []string `json:"allowed_domains"`
 	// Whether automatic re-authentication is possible (has credential_id, selectors,
 	// and login_url)
 	CanReauth bool `json:"can_reauth"`
-	// ID of the linked credential for automatic re-authentication
+	// Reference to credentials for managed auth. Use one of:
+	//
+	// - { name } for Kernel credentials
+	// - { provider, path } for external provider item
+	// - { provider, auto: true } for external provider domain lookup
+	Credential AuthAgentCredential `json:"credential"`
+	// ID of the linked Kernel credential for automatic re-authentication (deprecated,
+	// use credential)
 	CredentialID string `json:"credential_id"`
-	// Name of the linked credential for automatic re-authentication
-	CredentialName string `json:"credential_name"`
 	// Whether this auth agent has stored selectors for deterministic re-authentication
 	HasSelectors bool `json:"has_selectors"`
 	// When the last authentication check was performed
@@ -324,8 +355,8 @@ type AuthAgent struct {
 		Status          respjson.Field
 		AllowedDomains  respjson.Field
 		CanReauth       respjson.Field
+		Credential      respjson.Field
 		CredentialID    respjson.Field
-		CredentialName  respjson.Field
 		HasSelectors    respjson.Field
 		LastAuthCheckAt respjson.Field
 		PostLoginURL    respjson.Field
@@ -348,6 +379,37 @@ const (
 	AuthAgentStatusNeedsAuth     AuthAgentStatus = "NEEDS_AUTH"
 )
 
+// Reference to credentials for managed auth. Use one of:
+//
+// - { name } for Kernel credentials
+// - { provider, path } for external provider item
+// - { provider, auto: true } for external provider domain lookup
+type AuthAgentCredential struct {
+	// If true, lookup by domain from the specified provider
+	Auto bool `json:"auto"`
+	// Kernel credential name
+	Name string `json:"name"`
+	// Provider-specific path (e.g., "VaultName/ItemName" for 1Password)
+	Path string `json:"path"`
+	// External provider name (e.g., "my-1p")
+	Provider string `json:"provider"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Auto        respjson.Field
+		Name        respjson.Field
+		Path        respjson.Field
+		Provider    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthAgentCredential) RawJSON() string { return r.JSON.raw }
+func (r *AuthAgentCredential) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Request to create or find an auth agent
 //
 // The properties Domain, ProfileName are required.
@@ -366,6 +428,21 @@ type AuthAgentCreateRequestParam struct {
 	// Additional domains that are valid for this auth agent's authentication flow
 	// (besides the primary domain). Useful when login pages redirect to different
 	// domains.
+	//
+	// The following SSO/OAuth provider domains are automatically allowed by default
+	// and do not need to be specified:
+	//
+	// - Google: accounts.google.com
+	// - Microsoft/Azure AD: login.microsoftonline.com, login.live.com
+	// - Okta: _.okta.com, _.oktapreview.com
+	// - Auth0: _.auth0.com, _.us.auth0.com, _.eu.auth0.com, _.au.auth0.com
+	// - Apple: appleid.apple.com
+	// - GitHub: github.com
+	// - Facebook/Meta: www.facebook.com
+	// - LinkedIn: www.linkedin.com
+	// - Amazon Cognito: \*.amazoncognito.com
+	// - OneLogin: \*.onelogin.com
+	// - Ping Identity: _.pingone.com, _.pingidentity.com
 	AllowedDomains []string `json:"allowed_domains,omitzero"`
 	// Optional proxy configuration
 	Proxy AuthAgentCreateRequestProxyParam `json:"proxy,omitzero"`
@@ -426,13 +503,12 @@ type AuthAgentInvocationCreateResponse struct {
 	HostedURL string `json:"hosted_url,required" format:"uri"`
 	// Unique identifier for the invocation.
 	InvocationID string `json:"invocation_id,required"`
-	// The invocation type:
+	// The session type:
 	//
-	// - login: First-time authentication
-	// - reauth: Re-authentication for previously authenticated agents
-	// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+	// - login: User-initiated authentication
+	// - reauth: System-triggered re-authentication (via health check)
 	//
-	// Any of "login", "auto_login", "reauth".
+	// Any of "login", "reauth".
 	Type AuthAgentInvocationCreateResponseType `json:"type,required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -452,17 +528,15 @@ func (r *AuthAgentInvocationCreateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The invocation type:
+// The session type:
 //
-// - login: First-time authentication
-// - reauth: Re-authentication for previously authenticated agents
-// - auto_login: Legacy type (no longer created, kept for backward compatibility)
+// - login: User-initiated authentication
+// - reauth: System-triggered re-authentication (via health check)
 type AuthAgentInvocationCreateResponseType string
 
 const (
-	AuthAgentInvocationCreateResponseTypeLogin     AuthAgentInvocationCreateResponseType = "login"
-	AuthAgentInvocationCreateResponseTypeAutoLogin AuthAgentInvocationCreateResponseType = "auto_login"
-	AuthAgentInvocationCreateResponseTypeReauth    AuthAgentInvocationCreateResponseType = "reauth"
+	AuthAgentInvocationCreateResponseTypeLogin  AuthAgentInvocationCreateResponseType = "login"
+	AuthAgentInvocationCreateResponseTypeReauth AuthAgentInvocationCreateResponseType = "reauth"
 )
 
 // A discovered form field
@@ -477,20 +551,26 @@ type DiscoveredField struct {
 	//
 	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
 	Type DiscoveredFieldType `json:"type,required"`
+	// If this field is associated with an MFA option, the type of that option (e.g.,
+	// password field linked to "Enter password" option)
+	//
+	// Any of "sms", "call", "email", "totp", "push", "password".
+	LinkedMfaType DiscoveredFieldLinkedMfaType `json:"linked_mfa_type,nullable"`
 	// Field placeholder
 	Placeholder string `json:"placeholder"`
 	// Whether field is required
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Label       respjson.Field
-		Name        respjson.Field
-		Selector    respjson.Field
-		Type        respjson.Field
-		Placeholder respjson.Field
-		Required    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Label         respjson.Field
+		Name          respjson.Field
+		Selector      respjson.Field
+		Type          respjson.Field
+		LinkedMfaType respjson.Field
+		Placeholder   respjson.Field
+		Required      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
 	} `json:"-"`
 }
 
@@ -512,6 +592,19 @@ const (
 	DiscoveredFieldTypeURL      DiscoveredFieldType = "url"
 	DiscoveredFieldTypeCode     DiscoveredFieldType = "code"
 	DiscoveredFieldTypeTotp     DiscoveredFieldType = "totp"
+)
+
+// If this field is associated with an MFA option, the type of that option (e.g.,
+// password field linked to "Enter password" option)
+type DiscoveredFieldLinkedMfaType string
+
+const (
+	DiscoveredFieldLinkedMfaTypeSMS      DiscoveredFieldLinkedMfaType = "sms"
+	DiscoveredFieldLinkedMfaTypeCall     DiscoveredFieldLinkedMfaType = "call"
+	DiscoveredFieldLinkedMfaTypeEmail    DiscoveredFieldLinkedMfaType = "email"
+	DiscoveredFieldLinkedMfaTypeTotp     DiscoveredFieldLinkedMfaType = "totp"
+	DiscoveredFieldLinkedMfaTypePush     DiscoveredFieldLinkedMfaType = "push"
+	DiscoveredFieldLinkedMfaTypePassword DiscoveredFieldLinkedMfaType = "password"
 )
 
 type AgentAuthNewParams struct {
