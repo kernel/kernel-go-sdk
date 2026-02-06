@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.31.0 (2026-02-06)
+
+Full Changelog: [v0.30.0...v0.31.0](https://github.com/kernel/kernel-go-sdk/compare/v0.30.0...v0.31.0)
+
+### Features
+
+* add batch computer action proxy endpoint ([19e11cc](https://github.com/kernel/kernel-go-sdk/commit/19e11cc10d4b9331a5342152ca745d06535809c7))
+
 ## 0.30.0 (2026-02-03)
 
 Full Changelog: [v0.29.0...v0.30.0](https://github.com/kernel/kernel-go-sdk/compare/v0.29.0...v0.30.0)
