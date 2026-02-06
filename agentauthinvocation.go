@@ -37,9 +37,11 @@ func NewAgentAuthInvocationService(opts ...option.RequestOption) (r AgentAuthInv
 	return
 }
 
-// Creates a new authentication invocation for the specified auth agent. This
-// starts the auth flow and returns a hosted URL for the user to complete
-// authentication.
+// **Deprecated: Use POST /auth/connections/{id}/login instead.** Creates a new
+// authentication invocation for the specified auth agent. This starts the auth
+// flow and returns a hosted URL for the user to complete authentication.
+//
+// Deprecated: deprecated
 func (r *AgentAuthInvocationService) New(ctx context.Context, body AgentAuthInvocationNewParams, opts ...option.RequestOption) (res *AuthAgentInvocationCreateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "agents/auth/invocations"
@@ -47,8 +49,11 @@ func (r *AgentAuthInvocationService) New(ctx context.Context, body AgentAuthInvo
 	return
 }
 
-// Returns invocation details including status, app_name, and domain. Supports both
-// API key and JWT (from exchange endpoint) authentication.
+// **Deprecated: Use GET /auth/connections/{id} instead.** Returns invocation
+// details including status, app_name, and domain. Supports both API key and JWT
+// (from exchange endpoint) authentication.
+//
+// Deprecated: deprecated
 func (r *AgentAuthInvocationService) Get(ctx context.Context, invocationID string, opts ...option.RequestOption) (res *AgentAuthInvocationResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if invocationID == "" {
@@ -60,8 +65,11 @@ func (r *AgentAuthInvocationService) Get(ctx context.Context, invocationID strin
 	return
 }
 
-// Validates the handoff code and returns a JWT token for subsequent requests. No
-// authentication required (the handoff code serves as the credential).
+// **Deprecated: Use POST /auth/connections/{id}/exchange instead.** Validates the
+// handoff code and returns a JWT token for subsequent requests. No authentication
+// required (the handoff code serves as the credential).
+//
+// Deprecated: deprecated
 func (r *AgentAuthInvocationService) Exchange(ctx context.Context, invocationID string, body AgentAuthInvocationExchangeParams, opts ...option.RequestOption) (res *AgentAuthInvocationExchangeResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if invocationID == "" {
@@ -73,9 +81,11 @@ func (r *AgentAuthInvocationService) Exchange(ctx context.Context, invocationID 
 	return
 }
 
-// Submits field values for the discovered login form. Returns immediately after
-// submission is accepted. Poll the invocation endpoint to track progress and get
-// results.
+// **Deprecated: Use POST /auth/connections/{id}/submit instead.** Submits field
+// values for the discovered login form. Returns immediately after submission is
+// accepted. Poll the invocation endpoint to track progress and get results.
+//
+// Deprecated: deprecated
 func (r *AgentAuthInvocationService) Submit(ctx context.Context, invocationID string, body AgentAuthInvocationSubmitParams, opts ...option.RequestOption) (res *AgentAuthSubmitResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if invocationID == "" {
@@ -190,9 +200,9 @@ func (r *AgentAuthInvocationSubmitParamsBodySSOButton) UnmarshalJSON(data []byte
 
 // The property SelectedMfaType is required.
 type AgentAuthInvocationSubmitParamsBodySelectedMfaType struct {
-	// The MFA delivery method type
+	// The MFA delivery method type (includes password for auth method selection pages)
 	//
-	// Any of "sms", "call", "email", "totp", "push", "security_key".
+	// Any of "sms", "call", "email", "totp", "push", "password".
 	SelectedMfaType string `json:"selected_mfa_type,omitzero,required"`
 	paramObj
 }
@@ -207,6 +217,6 @@ func (r *AgentAuthInvocationSubmitParamsBodySelectedMfaType) UnmarshalJSON(data 
 
 func init() {
 	apijson.RegisterFieldValidator[AgentAuthInvocationSubmitParamsBodySelectedMfaType](
-		"selected_mfa_type", "sms", "call", "email", "totp", "push", "security_key",
+		"selected_mfa_type", "sms", "call", "email", "totp", "push", "password",
 	)
 }

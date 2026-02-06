@@ -22,6 +22,7 @@ type Client struct {
 	Invocations         InvocationService
 	Browsers            BrowserService
 	Profiles            ProfileService
+	Auth                AuthService
 	Proxies             ProxyService
 	Extensions          ExtensionService
 	BrowserPools        BrowserPoolService
@@ -57,6 +58,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Invocations = NewInvocationService(opts...)
 	r.Browsers = NewBrowserService(opts...)
 	r.Profiles = NewProfileService(opts...)
+	r.Auth = NewAuthService(opts...)
 	r.Proxies = NewProxyService(opts...)
 	r.Extensions = NewExtensionService(opts...)
 	r.BrowserPools = NewBrowserPoolService(opts...)
