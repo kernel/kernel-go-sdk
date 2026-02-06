@@ -35,6 +35,21 @@ func NewBrowserComputerService(opts ...option.RequestOption) (r BrowserComputerS
 	return
 }
 
+// Send an array of computer actions to execute in order on the browser instance.
+// Execution stops on the first error. This reduces network latency compared to
+// sending individual action requests.
+func (r *BrowserComputerService) Batch(ctx context.Context, id string, body BrowserComputerBatchParams, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("browsers/%s/computer/batch", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
+	return
+}
+
 // Capture a screenshot of the browser instance
 func (r *BrowserComputerService) CaptureScreenshot(ctx context.Context, id string, body BrowserComputerCaptureScreenshotParams, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -71,6 +86,18 @@ func (r *BrowserComputerService) DragMouse(ctx context.Context, id string, body 
 	}
 	path := fmt.Sprintf("browsers/%s/computer/drag_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
+	return
+}
+
+// Get the current mouse cursor position on the browser instance
+func (r *BrowserComputerService) GetMousePosition(ctx context.Context, id string, opts ...option.RequestOption) (res *BrowserComputerGetMousePositionResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("browsers/%s/computer/get_mouse_position", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
 	return
 }
 
@@ -138,6 +165,26 @@ func (r *BrowserComputerService) TypeText(ctx context.Context, id string, body B
 	return
 }
 
+type BrowserComputerGetMousePositionResponse struct {
+	// X coordinate of the cursor
+	X int64 `json:"x,required"`
+	// Y coordinate of the cursor
+	Y int64 `json:"y,required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		X           respjson.Field
+		Y           respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserComputerGetMousePositionResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserComputerGetMousePositionResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Generic OK response.
 type BrowserComputerSetCursorVisibilityResponse struct {
 	// Indicates success.
@@ -153,6 +200,244 @@ type BrowserComputerSetCursorVisibilityResponse struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserComputerSetCursorVisibilityResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserComputerSetCursorVisibilityResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserComputerBatchParams struct {
+	// Ordered list of actions to execute. Execution stops on the first error.
+	Actions []BrowserComputerBatchParamsAction `json:"actions,omitzero,required"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A single computer action to execute as part of a batch. The `type` field selects
+// which action to perform, and the corresponding field contains the action
+// parameters. Exactly one action field matching the type must be provided.
+//
+// The property Type is required.
+type BrowserComputerBatchParamsAction struct {
+	// The type of action to perform.
+	//
+	// Any of "click_mouse", "move_mouse", "type_text", "press_key", "scroll",
+	// "drag_mouse", "set_cursor", "sleep".
+	Type       string                                     `json:"type,omitzero,required"`
+	ClickMouse BrowserComputerBatchParamsActionClickMouse `json:"click_mouse,omitzero"`
+	DragMouse  BrowserComputerBatchParamsActionDragMouse  `json:"drag_mouse,omitzero"`
+	MoveMouse  BrowserComputerBatchParamsActionMoveMouse  `json:"move_mouse,omitzero"`
+	PressKey   BrowserComputerBatchParamsActionPressKey   `json:"press_key,omitzero"`
+	Scroll     BrowserComputerBatchParamsActionScroll     `json:"scroll,omitzero"`
+	SetCursor  BrowserComputerBatchParamsActionSetCursor  `json:"set_cursor,omitzero"`
+	// Pause execution for a specified duration.
+	Sleep    BrowserComputerBatchParamsActionSleep    `json:"sleep,omitzero"`
+	TypeText BrowserComputerBatchParamsActionTypeText `json:"type_text,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsAction) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsAction
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsAction) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[BrowserComputerBatchParamsAction](
+		"type", "click_mouse", "move_mouse", "type_text", "press_key", "scroll", "drag_mouse", "set_cursor", "sleep",
+	)
+}
+
+// The properties X, Y are required.
+type BrowserComputerBatchParamsActionClickMouse struct {
+	// X coordinate of the click position
+	X int64 `json:"x,required"`
+	// Y coordinate of the click position
+	Y int64 `json:"y,required"`
+	// Number of times to repeat the click
+	NumClicks param.Opt[int64] `json:"num_clicks,omitzero"`
+	// Mouse button to interact with
+	//
+	// Any of "left", "right", "middle", "back", "forward".
+	Button string `json:"button,omitzero"`
+	// Type of click action
+	//
+	// Any of "down", "up", "click".
+	ClickType string `json:"click_type,omitzero"`
+	// Modifier keys to hold during the click
+	HoldKeys []string `json:"hold_keys,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionClickMouse) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionClickMouse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionClickMouse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[BrowserComputerBatchParamsActionClickMouse](
+		"button", "left", "right", "middle", "back", "forward",
+	)
+	apijson.RegisterFieldValidator[BrowserComputerBatchParamsActionClickMouse](
+		"click_type", "down", "up", "click",
+	)
+}
+
+// The property Path is required.
+type BrowserComputerBatchParamsActionDragMouse struct {
+	// Ordered list of [x, y] coordinate pairs to move through while dragging. Must
+	// contain at least 2 points.
+	Path [][]int64 `json:"path,omitzero,required"`
+	// Delay in milliseconds between button down and starting to move along the path.
+	Delay param.Opt[int64] `json:"delay,omitzero"`
+	// Delay in milliseconds between relative steps while dragging (not the initial
+	// delay).
+	StepDelayMs param.Opt[int64] `json:"step_delay_ms,omitzero"`
+	// Number of relative move steps per segment in the path. Minimum 1.
+	StepsPerSegment param.Opt[int64] `json:"steps_per_segment,omitzero"`
+	// Mouse button to drag with
+	//
+	// Any of "left", "middle", "right".
+	Button string `json:"button,omitzero"`
+	// Modifier keys to hold during the drag
+	HoldKeys []string `json:"hold_keys,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionDragMouse) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionDragMouse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionDragMouse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[BrowserComputerBatchParamsActionDragMouse](
+		"button", "left", "middle", "right",
+	)
+}
+
+// The properties X, Y are required.
+type BrowserComputerBatchParamsActionMoveMouse struct {
+	// X coordinate to move the cursor to
+	X int64 `json:"x,required"`
+	// Y coordinate to move the cursor to
+	Y int64 `json:"y,required"`
+	// Modifier keys to hold during the move
+	HoldKeys []string `json:"hold_keys,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionMoveMouse) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionMoveMouse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionMoveMouse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property Keys is required.
+type BrowserComputerBatchParamsActionPressKey struct {
+	// List of key symbols to press. Each item should be a key symbol supported by
+	// xdotool (see X11 keysym definitions). Examples include "Return", "Shift",
+	// "Ctrl", "Alt", "F5". Items in this list could also be combinations, e.g.
+	// "Ctrl+t" or "Ctrl+Shift+Tab".
+	Keys []string `json:"keys,omitzero,required"`
+	// Duration to hold the keys down in milliseconds. If omitted or 0, keys are
+	// tapped.
+	Duration param.Opt[int64] `json:"duration,omitzero"`
+	// Optional modifier keys to hold during the key press sequence.
+	HoldKeys []string `json:"hold_keys,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionPressKey) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionPressKey
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionPressKey) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties X, Y are required.
+type BrowserComputerBatchParamsActionScroll struct {
+	// X coordinate at which to perform the scroll
+	X int64 `json:"x,required"`
+	// Y coordinate at which to perform the scroll
+	Y int64 `json:"y,required"`
+	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
+	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
+	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
+	DeltaY param.Opt[int64] `json:"delta_y,omitzero"`
+	// Modifier keys to hold during the scroll
+	HoldKeys []string `json:"hold_keys,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionScroll) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionScroll
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionScroll) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property Hidden is required.
+type BrowserComputerBatchParamsActionSetCursor struct {
+	// Whether the cursor should be hidden or visible
+	Hidden bool `json:"hidden,required"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionSetCursor) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionSetCursor
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionSetCursor) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Pause execution for a specified duration.
+//
+// The property DurationMs is required.
+type BrowserComputerBatchParamsActionSleep struct {
+	// Duration to sleep in milliseconds.
+	DurationMs int64 `json:"duration_ms,required"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionSleep) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionSleep
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionSleep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property Text is required.
+type BrowserComputerBatchParamsActionTypeText struct {
+	// Text to type on the browser instance
+	Text string `json:"text,required"`
+	// Delay in milliseconds between keystrokes
+	Delay param.Opt[int64] `json:"delay,omitzero"`
+	paramObj
+}
+
+func (r BrowserComputerBatchParamsActionTypeText) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerBatchParamsActionTypeText
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerBatchParamsActionTypeText) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
