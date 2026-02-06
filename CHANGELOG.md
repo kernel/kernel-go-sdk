@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.31.1 (2026-02-06)
+
+Full Changelog: [v0.31.0...v0.31.1](https://github.com/kernel/kernel-go-sdk/compare/v0.31.0...v0.31.1)
+
+### Chores
+
+* add Managed Auth API planning doc ([fe6c74f](https://github.com/kernel/kernel-go-sdk/commit/fe6c74f86576f1939a61e5ea78a0480837629c81))
+
 ## 0.31.0 (2026-02-06)
 
 Full Changelog: [v0.30.0...v0.31.0](https://github.com/kernel/kernel-go-sdk/compare/v0.30.0...v0.31.0)
