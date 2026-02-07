@@ -331,6 +331,8 @@ type AuthAgent struct {
 	// Whether automatic re-authentication is possible (has credential_id, selectors,
 	// and login_url)
 	CanReauth bool `json:"can_reauth"`
+	// Reason why automatic re-authentication is or is not possible
+	CanReauthReason string `json:"can_reauth_reason"`
 	// Reference to credentials for managed auth. Use one of:
 	//
 	// - { name } for Kernel credentials
@@ -355,6 +357,7 @@ type AuthAgent struct {
 		Status          respjson.Field
 		AllowedDomains  respjson.Field
 		CanReauth       respjson.Field
+		CanReauthReason respjson.Field
 		Credential      respjson.Field
 		CredentialID    respjson.Field
 		HasSelectors    respjson.Field
