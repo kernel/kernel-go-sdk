@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.32.0 (2026-02-07)
+
+Full Changelog: [v0.31.1...v0.32.0](https://github.com/kernel/kernel-go-sdk/compare/v0.31.1...v0.32.0)
+
+### Features
+
+* **auth:** add reauth circuit breaker logic ([9cfbd02](https://github.com/kernel/kernel-go-sdk/commit/9cfbd021a7ecf10f4a037ce73e775c5dab2d8fa0))
+
 ## 0.31.1 (2026-02-06)
 
 Full Changelog: [v0.31.0...v0.31.1](https://github.com/kernel/kernel-go-sdk/compare/v0.31.0...v0.31.1)
