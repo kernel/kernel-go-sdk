@@ -333,7 +333,7 @@ type AuthAgent struct {
 	CanReauth bool `json:"can_reauth"`
 	// Reason why automatic re-authentication is or is not possible
 	CanReauthReason string `json:"can_reauth_reason"`
-	// Reference to credentials for managed auth. Use one of:
+	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
 	// - { provider, path } for external provider item
@@ -382,7 +382,7 @@ const (
 	AuthAgentStatusNeedsAuth     AuthAgentStatus = "NEEDS_AUTH"
 )
 
-// Reference to credentials for managed auth. Use one of:
+// Reference to credentials for the auth connection. Use one of:
 //
 // - { name } for Kernel credentials
 // - { provider, path } for external provider item
