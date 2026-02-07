@@ -44,8 +44,8 @@ func NewAuthConnectionService(opts ...option.RequestOption) (r AuthConnectionSer
 	return
 }
 
-// Creates managed authentication for a profile and domain combination. Returns 409
-// Conflict if managed auth already exists for the given profile and domain.
+// Creates an auth connection for a profile and domain combination. Returns 409
+// Conflict if an auth connection already exists for the given profile and domain.
 func (r *AuthConnectionService) New(ctx context.Context, body AuthConnectionNewParams, opts ...option.RequestOption) (res *ManagedAuth, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "auth/connections"
@@ -53,8 +53,8 @@ func (r *AuthConnectionService) New(ctx context.Context, body AuthConnectionNewP
 	return
 }
 
-// Retrieve managed auth by its ID. Includes current flow state if a login is in
-// progress.
+// Retrieve an auth connection by its ID. Includes current flow state if a login is
+// in progress.
 func (r *AuthConnectionService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ManagedAuth, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -66,7 +66,7 @@ func (r *AuthConnectionService) Get(ctx context.Context, id string, opts ...opti
 	return
 }
 
-// List managed auths with optional filters for profile_name and domain.
+// List auth connections with optional filters for profile_name and domain.
 func (r *AuthConnectionService) List(ctx context.Context, query AuthConnectionListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[ManagedAuth], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -84,14 +84,14 @@ func (r *AuthConnectionService) List(ctx context.Context, query AuthConnectionLi
 	return res, nil
 }
 
-// List managed auths with optional filters for profile_name and domain.
+// List auth connections with optional filters for profile_name and domain.
 func (r *AuthConnectionService) ListAutoPaging(ctx context.Context, query AuthConnectionListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[ManagedAuth] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Deletes managed auth and terminates its workflow. This will:
+// Deletes an auth connection and terminates its workflow. This will:
 //
-// - Delete the managed auth record
+// - Delete the auth connection record
 // - Terminate the Temporal workflow
 // - Cancel any in-progress login flows
 func (r *AuthConnectionService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
@@ -125,8 +125,8 @@ func (r *AuthConnectionService) FollowStreaming(ctx context.Context, id string, 
 	return ssestream.NewStream[AuthConnectionFollowResponseUnion](ssestream.NewDecoder(raw), err)
 }
 
-// Starts a login flow for the managed auth. Returns immediately with a hosted URL
-// for the user to complete authentication, or triggers automatic re-auth if
+// Starts a login flow for the auth connection. Returns immediately with a hosted
+// URL for the user to complete authentication, or triggers automatic re-auth if
 // credentials are stored.
 func (r *AuthConnectionService) Login(ctx context.Context, id string, body AuthConnectionLoginParams, opts ...option.RequestOption) (res *LoginResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -139,8 +139,8 @@ func (r *AuthConnectionService) Login(ctx context.Context, id string, body AuthC
 	return
 }
 
-// Submits field values for the login form. Poll the managed auth to track progress
-// and get results.
+// Submits field values for the login form. Poll the auth connection to track
+// progress and get results.
 func (r *AuthConnectionService) Submit(ctx context.Context, id string, body AuthConnectionSubmitParams, opts ...option.RequestOption) (res *SubmitFieldsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -169,7 +169,7 @@ func (r *LoginRequestParam) UnmarshalJSON(data []byte) error {
 
 // Response from starting a login flow
 type LoginResponse struct {
-	// Managed auth ID
+	// Auth connection ID
 	ID string `json:"id,required"`
 	// When the login flow expires
 	FlowExpiresAt time.Time `json:"flow_expires_at,required" format:"date-time"`
@@ -214,11 +214,11 @@ const (
 // fields (flow_status, flow_step, discovered_fields, mfa_options) reflect the most
 // recent login flow and are null when no flow has been initiated.
 type ManagedAuth struct {
-	// Unique identifier for the managed auth
+	// Unique identifier for the auth connection
 	ID string `json:"id,required"`
 	// Target domain for authentication
 	Domain string `json:"domain,required"`
-	// Name of the profile associated with this managed auth
+	// Name of the profile associated with this auth connection
 	ProfileName string `json:"profile_name,required"`
 	// Current authentication status of the managed profile
 	//
@@ -247,7 +247,7 @@ type ManagedAuth struct {
 	CanReauth bool `json:"can_reauth"`
 	// Reason why automatic re-authentication is or is not possible
 	CanReauthReason string `json:"can_reauth_reason"`
-	// Reference to credentials for managed auth. Use one of:
+	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
 	// - { provider, path } for external provider item
@@ -343,7 +343,7 @@ const (
 	ManagedAuthStatusNeedsAuth     ManagedAuthStatus = "NEEDS_AUTH"
 )
 
-// Reference to credentials for managed auth. Use one of:
+// Reference to credentials for the auth connection. Use one of:
 //
 // - { name } for Kernel credentials
 // - { provider, path } for external provider item
@@ -457,7 +457,7 @@ func (r *ManagedAuthPendingSSOButton) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Request to create managed auth for a profile and domain
+// Request to create an auth connection for a profile and domain
 //
 // The properties Domain, ProfileName are required.
 type ManagedAuthCreateRequestParam struct {
@@ -490,7 +490,7 @@ type ManagedAuthCreateRequestParam struct {
 	// - OneLogin: \*.onelogin.com
 	// - Ping Identity: _.pingone.com, _.pingidentity.com
 	AllowedDomains []string `json:"allowed_domains,omitzero"`
-	// Reference to credentials for managed auth. Use one of:
+	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
 	// - { provider, path } for external provider item
@@ -509,7 +509,7 @@ func (r *ManagedAuthCreateRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Reference to credentials for managed auth. Use one of:
+// Reference to credentials for the auth connection. Use one of:
 //
 // - { name } for Kernel credentials
 // - { provider, path } for external provider item
@@ -821,7 +821,7 @@ func (r *AuthConnectionFollowResponseManagedAuthStatePendingSSOButton) Unmarshal
 }
 
 type AuthConnectionNewParams struct {
-	// Request to create managed auth for a profile and domain
+	// Request to create an auth connection for a profile and domain
 	ManagedAuthCreateRequest ManagedAuthCreateRequestParam
 	paramObj
 }
