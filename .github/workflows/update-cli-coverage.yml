@@ -20,11 +20,18 @@ jobs:
   update-cli-coverage:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ADMIN_APP_ID }}
+          private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
+
       - name: Get PR info for manual dispatch
         id: pr-info
         if: github.event_name == 'workflow_dispatch'
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           if [ -n "${{ inputs.pr_number }}" ]; then
             # Use provided PR number
@@ -71,8 +78,8 @@ jobs:
 
       - name: Configure git identity
         run: |
-          git config --global user.name "Cursor Agent"
-          git config --global user.email "cursor-agent@kernel.sh"
+          git config --global user.name "kernel-internal[bot]"
+          git config --global user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
 
       - name: Setup Go
         uses: actions/setup-go@v6
@@ -81,13 +88,13 @@ jobs:
 
       - name: Clone API repo
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
 
       - name: Clone CLI repo and checkout existing branch
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           gh repo clone kernel/cli /tmp/kernel-cli
           cd /tmp/kernel-cli
@@ -132,7 +139,7 @@ jobs:
       - name: Update CLI coverage
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           BRANCH_PREFIX: cli-coverage-update
         run: |
           cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
