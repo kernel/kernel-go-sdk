@@ -26,6 +26,7 @@ jobs:
         with:
           app-id: ${{ secrets.ADMIN_APP_ID }}
           private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
+          owner: kernel
 
       - name: Get PR info for manual dispatch
         id: pr-info
