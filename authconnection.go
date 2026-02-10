@@ -156,6 +156,9 @@ func (r *AuthConnectionService) Submit(ctx context.Context, id string, body Auth
 type LoginRequestParam struct {
 	// If provided, saves credentials under this name upon successful login
 	SaveCredentialAs param.Opt[string] `json:"save_credential_as,omitzero"`
+	// Proxy selection. Provide either id or name. The proxy must belong to the
+	// caller's org.
+	Proxy LoginRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
 
@@ -164,6 +167,24 @@ func (r LoginRequestParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *LoginRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Proxy selection. Provide either id or name. The proxy must belong to the
+// caller's org.
+type LoginRequestProxyParam struct {
+	// Proxy ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Proxy name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r LoginRequestProxyParam) MarshalJSON() (data []byte, err error) {
+	type shadow LoginRequestProxyParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *LoginRequestProxyParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -537,7 +558,8 @@ type ManagedAuthCreateRequestParam struct {
 	// - { provider, path } for external provider item
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCreateRequestCredentialParam `json:"credential,omitzero"`
-	// Optional proxy configuration
+	// Proxy selection. Provide either id or name. The proxy must belong to the
+	// caller's org.
 	Proxy ManagedAuthCreateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -575,10 +597,13 @@ func (r *ManagedAuthCreateRequestCredentialParam) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Optional proxy configuration
+// Proxy selection. Provide either id or name. The proxy must belong to the
+// caller's org.
 type ManagedAuthCreateRequestProxyParam struct {
-	// ID of the proxy to use
-	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Proxy ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Proxy name
+	Name param.Opt[string] `json:"name,omitzero"`
 	paramObj
 }
 
