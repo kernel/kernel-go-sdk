@@ -284,43 +284,6 @@ Methods:
 - <code title="post /browser_pools/{id_or_name}/flush">client.BrowserPools.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPoolService.Flush">Flush</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="post /browser_pools/{id_or_name}/release">client.BrowserPools.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPoolService.Release">Release</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPoolReleaseParams">BrowserPoolReleaseParams</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 
-# Agents
-
-## Auth
-
-Params Types:
-
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgentCreateRequestParam">AuthAgentCreateRequestParam</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgentInvocationCreateRequestParam">AuthAgentInvocationCreateRequestParam</a>
-
-Response Types:
-
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationResponse">AgentAuthInvocationResponse</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthSubmitResponse">AgentAuthSubmitResponse</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgent">AuthAgent</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgentInvocationCreateResponse">AuthAgentInvocationCreateResponse</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#DiscoveredField">DiscoveredField</a>
-
-Methods:
-
-- <code title="post /agents/auth">client.Agents.Auth.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthNewParams">AgentAuthNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgent">AuthAgent</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="get /agents/auth/{id}">client.Agents.Auth.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgent">AuthAgent</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="get /agents/auth">client.Agents.Auth.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthListParams">AgentAuthListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgent">AuthAgent</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="delete /agents/auth/{id}">client.Agents.Auth.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
-
-### Invocations
-
-Response Types:
-
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationExchangeResponse">AgentAuthInvocationExchangeResponse</a>
-
-Methods:
-
-- <code title="post /agents/auth/invocations">client.Agents.Auth.Invocations.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationNewParams">AgentAuthInvocationNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthAgentInvocationCreateResponse">AuthAgentInvocationCreateResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="get /agents/auth/invocations/{invocation_id}">client.Agents.Auth.Invocations.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, invocationID <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationResponse">AgentAuthInvocationResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="post /agents/auth/invocations/{invocation_id}/exchange">client.Agents.Auth.Invocations.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationService.Exchange">Exchange</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, invocationID <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationExchangeParams">AgentAuthInvocationExchangeParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationExchangeResponse">AgentAuthInvocationExchangeResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="post /agents/auth/invocations/{invocation_id}/submit">client.Agents.Auth.Invocations.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationService.Submit">Submit</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, invocationID <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthInvocationSubmitParams">AgentAuthInvocationSubmitParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentAuthSubmitResponse">AgentAuthSubmitResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-
 # Credentials
 
 Params Types:
