@@ -26,7 +26,6 @@ type Client struct {
 	Proxies             ProxyService
 	Extensions          ExtensionService
 	BrowserPools        BrowserPoolService
-	Agents              AgentService
 	Credentials         CredentialService
 	CredentialProviders CredentialProviderService
 }
@@ -62,7 +61,6 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Proxies = NewProxyService(opts...)
 	r.Extensions = NewExtensionService(opts...)
 	r.BrowserPools = NewBrowserPoolService(opts...)
-	r.Agents = NewAgentService(opts...)
 	r.Credentials = NewCredentialService(opts...)
 	r.CredentialProviders = NewCredentialProviderService(opts...)
 

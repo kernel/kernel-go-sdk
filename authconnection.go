@@ -254,7 +254,7 @@ type ManagedAuth struct {
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCredential `json:"credential"`
 	// Fields awaiting input (present when flow_step=awaiting_input)
-	DiscoveredFields []DiscoveredField `json:"discovered_fields,nullable"`
+	DiscoveredFields []ManagedAuthDiscoveredField `json:"discovered_fields,nullable"`
 	// Error message (present when flow_status=failed)
 	ErrorMessage string `json:"error_message,nullable"`
 	// Instructions for external action (present when
@@ -371,6 +371,47 @@ type ManagedAuthCredential struct {
 // Returns the unmodified JSON received from the API
 func (r ManagedAuthCredential) RawJSON() string { return r.JSON.raw }
 func (r *ManagedAuthCredential) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A discovered form field
+type ManagedAuthDiscoveredField struct {
+	// Field label
+	Label string `json:"label,required"`
+	// Field name
+	Name string `json:"name,required"`
+	// CSS selector for the field
+	Selector string `json:"selector,required"`
+	// Field type
+	//
+	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
+	Type string `json:"type,required"`
+	// If this field is associated with an MFA option, the type of that option (e.g.,
+	// password field linked to "Enter password" option)
+	//
+	// Any of "sms", "call", "email", "totp", "push", "password".
+	LinkedMfaType string `json:"linked_mfa_type,nullable"`
+	// Field placeholder
+	Placeholder string `json:"placeholder"`
+	// Whether field is required
+	Required bool `json:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label         respjson.Field
+		Name          respjson.Field
+		Selector      respjson.Field
+		Type          respjson.Field
+		LinkedMfaType respjson.Field
+		Placeholder   respjson.Field
+		Required      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthDiscoveredField) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthDiscoveredField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -605,7 +646,7 @@ type AuthConnectionFollowResponseUnion struct {
 	FlowStep  string    `json:"flow_step"`
 	Timestamp time.Time `json:"timestamp"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
-	DiscoveredFields []DiscoveredField `json:"discovered_fields"`
+	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	ErrorMessage string `json:"error_message"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
@@ -714,7 +755,7 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
 	// Fields awaiting input (present when flow_step=AWAITING_INPUT).
-	DiscoveredFields []DiscoveredField `json:"discovered_fields"`
+	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
 	// Error message (present when flow_status=FAILED).
 	ErrorMessage string `json:"error_message"`
 	// Instructions for external action (present when
@@ -762,6 +803,49 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 // Returns the unmodified JSON received from the API
 func (r AuthConnectionFollowResponseManagedAuthState) RawJSON() string { return r.JSON.raw }
 func (r *AuthConnectionFollowResponseManagedAuthState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A discovered form field
+type AuthConnectionFollowResponseManagedAuthStateDiscoveredField struct {
+	// Field label
+	Label string `json:"label,required"`
+	// Field name
+	Name string `json:"name,required"`
+	// CSS selector for the field
+	Selector string `json:"selector,required"`
+	// Field type
+	//
+	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
+	Type string `json:"type,required"`
+	// If this field is associated with an MFA option, the type of that option (e.g.,
+	// password field linked to "Enter password" option)
+	//
+	// Any of "sms", "call", "email", "totp", "push", "password".
+	LinkedMfaType string `json:"linked_mfa_type,nullable"`
+	// Field placeholder
+	Placeholder string `json:"placeholder"`
+	// Whether field is required
+	Required bool `json:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label         respjson.Field
+		Name          respjson.Field
+		Selector      respjson.Field
+		Type          respjson.Field
+		LinkedMfaType respjson.Field
+		Placeholder   respjson.Field
+		Required      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthConnectionFollowResponseManagedAuthStateDiscoveredField) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AuthConnectionFollowResponseManagedAuthStateDiscoveredField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
