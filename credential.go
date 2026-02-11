@@ -169,6 +169,8 @@ type Credential struct {
 	UpdatedAt time.Time `json:"updated_at,required" format:"date-time"`
 	// Whether this credential has a TOTP secret configured for automatic 2FA
 	HasTotpSecret bool `json:"has_totp_secret"`
+	// Whether this credential has stored values (email, password, etc.)
+	HasValues bool `json:"has_values"`
 	// If set, indicates this credential should be used with the specified SSO provider
 	// (e.g., google, github, microsoft). When the target site has a matching SSO
 	// button, it will be clicked first before filling credential values on the
@@ -187,6 +189,7 @@ type Credential struct {
 		Name              respjson.Field
 		UpdatedAt         respjson.Field
 		HasTotpSecret     respjson.Field
+		HasValues         respjson.Field
 		SSOProvider       respjson.Field
 		TotpCode          respjson.Field
 		TotpCodeExpiresAt respjson.Field

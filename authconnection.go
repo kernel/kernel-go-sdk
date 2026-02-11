@@ -152,42 +152,6 @@ func (r *AuthConnectionService) Submit(ctx context.Context, id string, body Auth
 	return
 }
 
-// Request to start a login flow
-type LoginRequestParam struct {
-	// If provided, saves credentials under this name upon successful login
-	SaveCredentialAs param.Opt[string] `json:"save_credential_as,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must belong to the
-	// caller's org.
-	Proxy LoginRequestProxyParam `json:"proxy,omitzero"`
-	paramObj
-}
-
-func (r LoginRequestParam) MarshalJSON() (data []byte, err error) {
-	type shadow LoginRequestParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *LoginRequestParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Proxy selection. Provide either id or name. The proxy must belong to the
-// caller's org.
-type LoginRequestProxyParam struct {
-	// Proxy ID
-	ID param.Opt[string] `json:"id,omitzero"`
-	// Proxy name
-	Name param.Opt[string] `json:"name,omitzero"`
-	paramObj
-}
-
-func (r LoginRequestProxyParam) MarshalJSON() (data []byte, err error) {
-	type shadow LoginRequestProxyParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *LoginRequestProxyParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Response from starting a login flow
 type LoginResponse struct {
 	// Auth connection ID
@@ -241,6 +205,9 @@ type ManagedAuth struct {
 	Domain string `json:"domain,required"`
 	// Name of the profile associated with this auth connection
 	ProfileName string `json:"profile_name,required"`
+	// Whether credentials are saved after every successful login. One-time codes
+	// (TOTP, SMS, etc.) are not saved.
+	SaveCredentials bool `json:"save_credentials,required"`
 	// Current authentication status of the managed profile
 	//
 	// Any of "AUTHENTICATED", "NEEDS_AUTH".
@@ -315,6 +282,8 @@ type ManagedAuth struct {
 	PendingSSOButtons []ManagedAuthPendingSSOButton `json:"pending_sso_buttons,nullable"`
 	// URL where the browser landed after successful login
 	PostLoginURL string `json:"post_login_url" format:"uri"`
+	// ID of the proxy associated with this connection, if any.
+	ProxyID string `json:"proxy_id"`
 	// SSO provider being used (e.g., google, github, microsoft)
 	SSOProvider string `json:"sso_provider,nullable"`
 	// Visible error message from the website (e.g., 'Incorrect password'). Present
@@ -325,6 +294,7 @@ type ManagedAuth struct {
 		ID                    respjson.Field
 		Domain                respjson.Field
 		ProfileName           respjson.Field
+		SaveCredentials       respjson.Field
 		Status                respjson.Field
 		AllowedDomains        respjson.Field
 		CanReauth             respjson.Field
@@ -344,6 +314,7 @@ type ManagedAuth struct {
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
 		PostLoginURL          respjson.Field
+		ProxyID               respjson.Field
 		SSOProvider           respjson.Field
 		WebsiteError          respjson.Field
 		ExtraFields           map[string]respjson.Field
@@ -536,6 +507,9 @@ type ManagedAuthCreateRequestParam struct {
 	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
 	// Optional login page URL to skip discovery
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
+	// Whether to save credentials after every successful login. Defaults to true.
+	// One-time codes (TOTP, SMS, etc.) are not saved.
+	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
 	// Additional domains valid for this auth flow (besides the primary domain). Useful
 	// when login pages redirect to different domains.
 	//
@@ -617,16 +591,15 @@ func (r *ManagedAuthCreateRequestProxyParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Request to submit field values for login
-//
-// The property Fields is required.
+// Request to submit field values, click an SSO button, or select an MFA method.
+// Provide exactly one of fields, sso_button_selector, or mfa_option_id.
 type SubmitFieldsRequestParam struct {
-	// Map of field name to value
-	Fields map[string]string `json:"fields,omitzero,required"`
 	// Optional MFA option ID if user selected an MFA method
 	MfaOptionID param.Opt[string] `json:"mfa_option_id,omitzero"`
 	// Optional XPath selector if user chose to click an SSO button instead
 	SSOButtonSelector param.Opt[string] `json:"sso_button_selector,omitzero"`
+	// Map of field name to value
+	Fields map[string]string `json:"fields,omitzero"`
 	paramObj
 }
 
@@ -966,20 +939,41 @@ func (r AuthConnectionListParams) URLQuery() (v url.Values, err error) {
 }
 
 type AuthConnectionLoginParams struct {
-	// Request to start a login flow
-	LoginRequest LoginRequestParam
+	// Proxy selection. Provide either id or name. The proxy must belong to the
+	// caller's org.
+	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`
 	paramObj
 }
 
 func (r AuthConnectionLoginParams) MarshalJSON() (data []byte, err error) {
-	return shimjson.Marshal(r.LoginRequest)
+	type shadow AuthConnectionLoginParams
+	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *AuthConnectionLoginParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.LoginRequest)
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Proxy selection. Provide either id or name. The proxy must belong to the
+// caller's org.
+type AuthConnectionLoginParamsProxy struct {
+	// Proxy ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Proxy name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r AuthConnectionLoginParamsProxy) MarshalJSON() (data []byte, err error) {
+	type shadow AuthConnectionLoginParamsProxy
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AuthConnectionLoginParamsProxy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type AuthConnectionSubmitParams struct {
-	// Request to submit field values for login
+	// Request to submit field values, click an SSO button, or select an MFA method.
+	// Provide exactly one of fields, sso_button_selector, or mfa_option_id.
 	SubmitFieldsRequest SubmitFieldsRequestParam
 	paramObj
 }
