@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.33.0 (2026-02-11)
+
+Full Changelog: [v0.32.0...v0.33.0](https://github.com/kernel/kernel-go-sdk/compare/v0.32.0...v0.33.0)
+
+### Features
+
+* **auth:** add save_credentials support ([dc044eb](https://github.com/kernel/kernel-go-sdk/commit/dc044eb18795520ad5969e2337dac13f20adfbde))
+* **auth:** plan-based min health check intervals ([b2f5bc2](https://github.com/kernel/kernel-go-sdk/commit/b2f5bc203e14397ab9b4f2641f42e1286935d0fc))
+* Browser API endpoint grouping ([b772828](https://github.com/kernel/kernel-go-sdk/commit/b7728287d7e63d612f6fedd2c4e199bda93440e5))
+
+
+### Bug Fixes
+
+* **encoder:** correctly serialize NullStruct ([85ac49d](https://github.com/kernel/kernel-go-sdk/commit/85ac49d67563554db23e8d39694d27d381d0b1c3))
+* use kernel-internal app token in update-cli-coverage workflow ([789d161](https://github.com/kernel/kernel-go-sdk/commit/789d1616fac976f15e44eae364442fc47cad381e))
+
+
+### Refactors
+
+* **api:** remove deprecated agent-auth endpoints from stainless.… ([cb2010d](https://github.com/kernel/kernel-go-sdk/commit/cb2010d43ca2a93f21442218d978524329e9a57e))
+* **auth:** simplify proxy configuration in OpenAPI schema ([7302183](https://github.com/kernel/kernel-go-sdk/commit/73021835cd291ba1e86172670daa599d49e76172))
+
 ## 0.32.0 (2026-02-07)
 
 Full Changelog: [v0.31.1...v0.32.0](https://github.com/kernel/kernel-go-sdk/compare/v0.31.1...v0.32.0)
