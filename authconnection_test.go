@@ -43,6 +43,7 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
 			},
+			SaveCredentials: kernel.Bool(true),
 		},
 	})
 	if err != nil {
@@ -145,12 +146,9 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.AuthConnectionLoginParams{
-			LoginRequest: kernel.LoginRequestParam{
-				Proxy: kernel.LoginRequestProxyParam{
-					ID:   kernel.String("id"),
-					Name: kernel.String("name"),
-				},
-				SaveCredentialAs: kernel.String("my-netflix-login"),
+			Proxy: kernel.AuthConnectionLoginParamsProxy{
+				ID:   kernel.String("id"),
+				Name: kernel.String("name"),
 			},
 		},
 	)
