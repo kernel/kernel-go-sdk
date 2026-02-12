@@ -243,6 +243,8 @@ type ManagedAuth struct {
 	Credential ManagedAuthCredential `json:"credential"`
 	// Fields awaiting input (present when flow_step=awaiting_input)
 	DiscoveredFields []ManagedAuthDiscoveredField `json:"discovered_fields,nullable"`
+	// Machine-readable error code (present when flow_status=failed)
+	ErrorCode string `json:"error_code,nullable"`
 	// Error message (present when flow_status=failed)
 	ErrorMessage string `json:"error_message,nullable"`
 	// Instructions for external action (present when
@@ -301,6 +303,7 @@ type ManagedAuth struct {
 		CanReauthReason       respjson.Field
 		Credential            respjson.Field
 		DiscoveredFields      respjson.Field
+		ErrorCode             respjson.Field
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
 		FlowExpiresAt         respjson.Field
@@ -648,6 +651,8 @@ type AuthConnectionFollowResponseUnion struct {
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
+	ErrorCode string `json:"error_code"`
+	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	ErrorMessage string `json:"error_message"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	ExternalActionMessage string `json:"external_action_message"`
@@ -673,6 +678,7 @@ type AuthConnectionFollowResponseUnion struct {
 		FlowStep              respjson.Field
 		Timestamp             respjson.Field
 		DiscoveredFields      respjson.Field
+		ErrorCode             respjson.Field
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
 		FlowType              respjson.Field
@@ -756,6 +762,8 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
 	// Fields awaiting input (present when flow_step=AWAITING_INPUT).
 	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
+	// Machine-readable error code (present when flow_status=FAILED).
+	ErrorCode string `json:"error_code"`
 	// Error message (present when flow_status=FAILED).
 	ErrorMessage string `json:"error_message"`
 	// Instructions for external action (present when
@@ -786,6 +794,7 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 		FlowStep              respjson.Field
 		Timestamp             respjson.Field
 		DiscoveredFields      respjson.Field
+		ErrorCode             respjson.Field
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
 		FlowType              respjson.Field
