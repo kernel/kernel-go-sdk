@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.35.0 (2026-02-18)
+
+Full Changelog: [v0.34.0...v0.35.0](https://github.com/kernel/kernel-go-sdk/compare/v0.34.0...v0.35.0)
+
+### Features
+
+* GPU pools ([d370bcb](https://github.com/kernel/kernel-go-sdk/commit/d370bcbdafb94975cdcc8a9e0d22c75ba4d6d6c6))
+
 ## 0.34.0 (2026-02-18)
 
 Full Changelog: [v0.33.0...v0.34.0](https://github.com/kernel/kernel-go-sdk/compare/v0.33.0...v0.34.0)
