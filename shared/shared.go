@@ -22,11 +22,19 @@ type paramObj = param.APIObject
 type AppAction struct {
 	// Name of the action
 	Name string `json:"name,required"`
+	// JSON Schema (draft-07) describing the expected input payload. Null if schema
+	// could not be automatically generated.
+	InputSchema map[string]any `json:"input_schema,nullable"`
+	// JSON Schema (draft-07) describing the expected output payload. Null if schema
+	// could not be automatically generated.
+	OutputSchema map[string]any `json:"output_schema,nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Name        respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Name         respjson.Field
+		InputSchema  respjson.Field
+		OutputSchema respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
