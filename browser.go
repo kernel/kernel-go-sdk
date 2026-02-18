@@ -249,6 +249,8 @@ type BrowserNewResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether the browser session has hardware-accelerated GPU rendering.
+	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
 	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
@@ -278,6 +280,7 @@ type BrowserNewResponse struct {
 		TimeoutSeconds     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
+		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
 		Profile            respjson.Field
@@ -312,6 +315,8 @@ type BrowserGetResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether the browser session has hardware-accelerated GPU rendering.
+	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
 	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
@@ -341,6 +346,7 @@ type BrowserGetResponse struct {
 		TimeoutSeconds     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
+		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
 		Profile            respjson.Field
@@ -375,6 +381,8 @@ type BrowserUpdateResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether the browser session has hardware-accelerated GPU rendering.
+	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
 	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
@@ -404,6 +412,7 @@ type BrowserUpdateResponse struct {
 		TimeoutSeconds     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
+		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
 		Profile            respjson.Field
@@ -438,6 +447,8 @@ type BrowserListResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether the browser session has hardware-accelerated GPU rendering.
+	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
 	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
@@ -467,6 +478,7 @@ type BrowserListResponse struct {
 		TimeoutSeconds     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
+		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
 		Profile            respjson.Field
@@ -484,6 +496,9 @@ func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserNewParams struct {
+	// If true, launches a hardware-accelerated browser with GPU rendering. Requires
+	// Start-Up or Enterprise plan.
+	GPU param.Opt[bool] `json:"gpu,omitzero"`
 	// If true, launches the browser using a headless image (no VNC/GUI). Defaults to
 	// false.
 	Headless param.Opt[bool] `json:"headless,omitzero"`
