@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.34.0 (2026-02-18)
+
+Full Changelog: [v0.33.0...v0.34.0](https://github.com/kernel/kernel-go-sdk/compare/v0.33.0...v0.34.0)
+
+### Features
+
+* Add error_code field to ManagedAuthSession and related components ([09fcbf2](https://github.com/kernel/kernel-go-sdk/commit/09fcbf20f9dfc15b1b279089a9c7e1ff7f6967fc))
+* Allow arbitrary viewport dimensions ([7460146](https://github.com/kernel/kernel-go-sdk/commit/746014666e64ce99d97e5eb44986e6360b93b5e1))
+* Neil/kernel 873 templates v4 ([dc79b42](https://github.com/kernel/kernel-go-sdk/commit/dc79b427e161c35f4087cdac62efe507f75acf1c))
+
 ## 0.33.0 (2026-02-11)
 
 Full Changelog: [v0.32.0...v0.33.0](https://github.com/kernel/kernel-go-sdk/compare/v0.32.0...v0.33.0)
