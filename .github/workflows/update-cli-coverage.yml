@@ -141,6 +141,7 @@ jobs:
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
           BRANCH_PREFIX: cli-coverage-update
         run: |
           cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
@@ -232,10 +233,32 @@ jobs:
           - Add missing flags to existing commands
           - Run \`go build ./...\` to verify the code compiles
 
-          ## Step 6: Commit and Push
+          ## Step 6: Test Your Changes (ALWAYS DO THIS)
+          After implementing, build the CLI and smoke test the new commands/flags you just added against the real API.
+          The KERNEL_API_KEY environment variable is available for authentication.
+
+          6a. Build the CLI:
+              cd /tmp/kernel-cli && go build -o /tmp/kernel-cli/bin/kernel ./cmd/kernel
+
+          6b. For each new command or flag you added:
+              - Run the command against the real API and verify it succeeds
+              - For create/write commands: create a resource, verify it works, then clean up (delete it)
+              - For read commands: call them and verify the output format is correct
+              - For flag additions: create a resource with the new flag and verify it shows up in the get output
+              Example test flow for a new browser flag:
+                /tmp/kernel-cli/bin/kernel browsers create --new-flag value -t 30
+                /tmp/kernel-cli/bin/kernel browsers get <id>  # verify new-flag appears
+                /tmp/kernel-cli/bin/kernel browsers delete <id>  # clean up
+
+          6c. If any command fails or produces unexpected output, fix the implementation and re-test before proceeding.
+
+          6d. If you added no new commands or flags (SDK version bump only), skip this step.
+
+          ## Step 7: Commit and Push
           - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
           - If you're on main, create/switch to the cli-coverage-update branch
           - Commit with message describing SDK version bump and any new commands/flags
+          - Include test results in the commit message (e.g., 'Tested: browsers create --gpu, browsers computer get-mouse-position')
           - IMPORTANT: Do NOT force push! Use regular \`git push origin cli-coverage-update\` to preserve existing work on the branch
           - If push fails due to divergence, pull and rebase first: \`git pull --rebase origin cli-coverage-update\`
           - Create or update the PR in kernel/cli
