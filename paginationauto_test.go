@@ -28,7 +28,7 @@ func TestAutoPagination(t *testing.T) {
 		AppName: kernel.String("YOUR_APP"),
 		Limit:   kernel.Int(2),
 	})
-	// Prism mock isn't going to give us real pagination
+	// The mock server isn't going to give us real pagination
 	for i := 0; i < 3 && iter.Next(); i++ {
 		deployment := iter.Current()
 		t.Logf("%+v\n", deployment.ID)
