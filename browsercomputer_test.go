@@ -18,7 +18,7 @@ import (
 )
 
 func TestBrowserComputerBatch(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -137,7 +137,7 @@ func TestBrowserComputerCaptureScreenshotWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserComputerClickMouseWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -171,7 +171,7 @@ func TestBrowserComputerClickMouseWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserComputerDragMouseWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -205,7 +205,7 @@ func TestBrowserComputerDragMouseWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserComputerGetMousePosition(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -228,7 +228,7 @@ func TestBrowserComputerGetMousePosition(t *testing.T) {
 }
 
 func TestBrowserComputerMoveMouseWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -259,7 +259,7 @@ func TestBrowserComputerMoveMouseWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserComputerPressKeyWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -290,7 +290,7 @@ func TestBrowserComputerPressKeyWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserComputerScrollWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -323,7 +323,7 @@ func TestBrowserComputerScrollWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserComputerSetCursorVisibility(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -352,7 +352,7 @@ func TestBrowserComputerSetCursorVisibility(t *testing.T) {
 }
 
 func TestBrowserComputerTypeTextWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL

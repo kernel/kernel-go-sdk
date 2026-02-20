@@ -14,7 +14,7 @@ import (
 )
 
 func TestBrowserProcessExecWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -51,7 +51,7 @@ func TestBrowserProcessExecWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserProcessKill(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -81,7 +81,7 @@ func TestBrowserProcessKill(t *testing.T) {
 }
 
 func TestBrowserProcessResize(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -112,7 +112,7 @@ func TestBrowserProcessResize(t *testing.T) {
 }
 
 func TestBrowserProcessSpawnWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -152,7 +152,7 @@ func TestBrowserProcessSpawnWithOptionalParams(t *testing.T) {
 }
 
 func TestBrowserProcessStatus(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -181,7 +181,7 @@ func TestBrowserProcessStatus(t *testing.T) {
 }
 
 func TestBrowserProcessStdin(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
