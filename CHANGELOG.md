@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.36.0 (2026-02-21)
+
+Full Changelog: [v0.35.0...v0.36.0](https://github.com/kernel/kernel-go-sdk/compare/v0.35.0...v0.36.0)
+
+### Features
+
+* Add DELETE /deployments/{id} API endpoint ([759add0](https://github.com/kernel/kernel-go-sdk/commit/759add0fb28e9c823d6df9947f47f7266a346062))
+* add live smoke testing to CLI coverage workflow ([fd4f331](https://github.com/kernel/kernel-go-sdk/commit/fd4f3311b14a895782821708acc592019b5f3bfb))
+
+
+### Bug Fixes
+
+* allow canceling a request while it is waiting to retry ([f04d85f](https://github.com/kernel/kernel-go-sdk/commit/f04d85f0dbf49c9e2629e3f26b4b5b9b8dcb1586))
+
+
+### Chores
+
+* **internal:** remove mock server code ([0676f28](https://github.com/kernel/kernel-go-sdk/commit/0676f28561cbbec3cfa6ad4209710e2210c1c292))
+* update mock server docs ([217f713](https://github.com/kernel/kernel-go-sdk/commit/217f713a30fd2350b3245cf55605b6a5f375a697))
+
 ## 0.35.0 (2026-02-18)
 
 Full Changelog: [v0.34.0...v0.35.0](https://github.com/kernel/kernel-go-sdk/compare/v0.34.0...v0.35.0)
