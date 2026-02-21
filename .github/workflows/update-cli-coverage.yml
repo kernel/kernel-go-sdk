@@ -134,6 +134,30 @@ jobs:
             echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Compute SDK diff since CLI's current version
+        id: sdk-diff
+        run: |
+          # Extract the SDK version currently used by the CLI
+          OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | awk '{print $2}')
+          echo "CLI currently uses SDK version: $OLD_SDK_VERSION"
+          echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
+
+          NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
+          echo "New SDK version: $NEW_SDK_VERSION"
+
+          # Compute the diff between old and new SDK versions
+          # This gives the agent a focused view of what changed
+          if git diff "$OLD_SDK_VERSION".."$NEW_SDK_VERSION" -- api.md '*.go' ':!*_test.go' ':!internal/*' > /tmp/sdk-diff.patch 2>/dev/null; then
+            DIFF_LINES=$(wc -l < /tmp/sdk-diff.patch)
+            echo "SDK diff: $DIFF_LINES lines"
+            if [ "$DIFF_LINES" -eq 0 ]; then
+              echo "No SDK changes between versions (diff is empty)"
+            fi
+          else
+            echo "Could not compute SDK diff (old version tag may not exist), creating empty diff"
+            echo "" > /tmp/sdk-diff.patch
+          fi
+
       - name: Update CLI coverage
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
@@ -158,10 +182,12 @@ jobs:
 
           # Background
           The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
+          The CLI was previously on SDK version ${{ steps.sdk-diff.outputs.old_version }}, and we are updating it to ${{ steps.sdk-version.outputs.version }}.
 
           # Source Files
           - SDK api.md: Current directory - READ THIS FILE FIRST. This is the authoritative list of all SDK methods and their signatures.
           - SDK *.go files: Current directory - Contains param structs (e.g., BrowserNewParams, DeploymentListParams) with all available options/fields.
+          - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the CLI's current SDK version (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
           - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
           - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
           - CLI: /tmp/kernel-cli - Existing CLI commands
@@ -175,20 +201,26 @@ jobs:
           - Run: go mod tidy
           - This ensures the CLI always uses the latest SDK, even if no new commands are added
 
-          ## Step 2: Full SDK Method Enumeration (CRITICAL - DO NOT SKIP)
-          You MUST perform a complete enumeration of ALL SDK methods and their parameters. Do NOT rely only on recent commits.
+          ## Step 2: Review SDK Diff (CRITICAL - DO THIS BEFORE THE FULL ENUMERATION)
+          Read /tmp/sdk-diff.patch to see exactly what changed in the SDK between the CLI's current version and the new version.
+          This diff shows new methods, new param fields, and changed signatures — these are the changes most likely to need CLI coverage.
+          Treat every addition in this diff as a checklist item: each new method needs a CLI command, each new param field needs a CLI flag.
+          After verifying these are covered, proceed to the full enumeration below to catch anything else.
 
-          2a. Read the api.md file in the SDK repo root. This file lists EVERY SDK method in the format:
+          ## Step 3: Full SDK Method Enumeration (CRITICAL - DO NOT SKIP)
+          You MUST perform a complete enumeration of ALL SDK methods and their parameters. Do NOT rely only on the diff from Step 2.
+
+          3a. Read the api.md file in the SDK repo root. This file lists EVERY SDK method in the format:
               - \`client.Resource.Method(ctx, params)\` with links to param types
               Extract a complete list of all methods.
 
-          2b. For EACH SDK method, read the corresponding param type from the Go source files.
+          3b. For EACH SDK method, read the corresponding param type from the Go source files.
               For example:
               - BrowserNewParams in browser.go -> lists all fields like \`Proxy\`, \`Profile\`, \`Viewport\`, etc.
               - DeploymentNewParams in deployment.go -> lists all fields like \`AppName\`, \`Region\`, \`EnvVars\`, etc.
               Each field in a Params struct represents an option that could be a CLI flag.
 
-          2c. Build a complete SDK coverage matrix:
+          3c. Build a complete SDK coverage matrix:
               | SDK Method | SDK Param Type | SDK Param Fields |
               |------------|----------------|------------------|
               | client.Browsers.New | BrowserNewParams | Proxy, Profile, Viewport, Extensions, ... |
@@ -196,26 +228,27 @@ jobs:
               | client.Deployments.New | DeploymentNewParams | AppName, Region, EnvVars, ... |
               | ... | ... | ... |
 
-          ## Step 3: Full CLI Command Enumeration (CRITICAL - DO NOT SKIP)
+          ## Step 4: Full CLI Command Enumeration (CRITICAL - DO NOT SKIP)
           Enumerate ALL existing CLI commands and their flags.
 
-          3a. Look at cmd/ directory structure for existing commands
-          3b. For each command file, extract:
+          4a. Look at cmd/ directory structure for existing commands
+          4b. For each command file, extract:
               - The command name/path (e.g., \`kernel browser create\`)
               - All flags defined for that command
-          3c. Build a CLI coverage matrix:
+          4c. Build a CLI coverage matrix:
               | CLI Command | CLI Flags |
               |-------------|-----------|
               | kernel browser create | --proxy, --profile, --viewport, ... |
               | kernel browser list | --limit, --offset, ... |
               | ... | ... |
 
-          ## Step 4: Gap Analysis (CRITICAL - DO NOT SKIP)
-          Compare the SDK matrix (Step 2) with the CLI matrix (Step 3) to identify:
+          ## Step 5: Gap Analysis (CRITICAL - DO NOT SKIP)
+          Compare the SDK matrix (Step 3) with the CLI matrix (Step 4) to identify:
 
-          4a. Missing commands: SDK methods with NO corresponding CLI command
-          4b. Missing flags: SDK param fields with NO corresponding CLI flag
-          4c. Create a gap report:
+          5a. Missing commands: SDK methods with NO corresponding CLI command
+          5b. Missing flags: SDK param fields with NO corresponding CLI flag
+          5c. Cross-check against the SDK diff from Step 2: every addition in /tmp/sdk-diff.patch MUST appear as a gap to address (new method = missing command, new param field = missing flag) unless it already exists in the CLI.
+          5d. Create a gap report:
               ## Missing Commands
               - client.Browsers.LoadExtensions -> needs \`kernel browser load-extensions\`
               - client.Proxies.Check -> needs \`kernel proxy check\`
@@ -224,20 +257,20 @@ jobs:
               - BrowserNewParams.SomeNewField -> \`kernel browser create\` needs --some-new-field
               - DeploymentListParams.Status -> \`kernel deployment list\` needs --status
 
-          ## Step 5: Implement Missing Coverage
-          For each gap identified in Step 4:
+          ## Step 6: Implement Missing Coverage
+          For each gap identified in Step 5:
           - Implement missing commands following existing patterns
           - Add missing flags to existing commands
           - Run \`go build ./...\` to verify the code compiles
 
-          ## Step 6: Test Your Changes (ALWAYS DO THIS)
+          ## Step 7: Test Your Changes (ALWAYS DO THIS)
           After implementing, build the CLI and smoke test the new commands/flags you just added against the real API.
           The KERNEL_API_KEY environment variable is available for authentication.
 
-          6a. Build the CLI:
+          7a. Build the CLI:
               cd /tmp/kernel-cli && go build -o /tmp/kernel-cli/bin/kernel ./cmd/kernel
 
-          6b. For each new command or flag you added:
+          7b. For each new command or flag you added:
               - Run the command against the real API and verify it succeeds
               - For create/write commands: create a resource, verify it works, then clean up (delete it)
               - For read commands: call them and verify the output format is correct
@@ -247,11 +280,11 @@ jobs:
                 /tmp/kernel-cli/bin/kernel browsers get <id>  # verify new-flag appears
                 /tmp/kernel-cli/bin/kernel browsers delete <id>  # clean up
 
-          6c. If any command fails or produces unexpected output, fix the implementation and re-test before proceeding.
+          7c. If any command fails or produces unexpected output, fix the implementation and re-test before proceeding.
 
-          6d. If you added no new commands or flags (SDK version bump only), skip this step.
+          7d. If you added no new commands or flags (SDK version bump only), skip this step.
 
-          ## Step 7: Commit and Push
+          ## Step 8: Commit and Push
           - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
           - If you're on main, create/switch to the cli-coverage-update branch
           - Commit with message describing SDK version bump and any new commands/flags
