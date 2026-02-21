@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.36.1 (2026-02-21)
+
+Full Changelog: [v0.36.0...v0.36.1](https://github.com/kernel/kernel-go-sdk/compare/v0.36.0...v0.36.1)
+
+### Features
+
+* Add version filter to GET /deployments endpoint ([cebd474](https://github.com/kernel/kernel-go-sdk/commit/cebd474525fbafe8b5897f92cc6d8b258f360626))
+
 ## 0.36.0 (2026-02-21)
 
 Full Changelog: [v0.35.0...v0.36.0](https://github.com/kernel/kernel-go-sdk/compare/v0.35.0...v0.36.0)
