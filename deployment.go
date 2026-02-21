@@ -90,6 +90,20 @@ func (r *DeploymentService) ListAutoPaging(ctx context.Context, query Deployment
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
+// Stops a running deployment and marks it for deletion. If the deployment is
+// already in a terminal state (stopped or failed), returns immediately.
+func (r *DeploymentService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("deployments/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return
+}
+
 // Establishes a Server-Sent Events (SSE) stream that delivers real-time logs and
 // status updates for a deployment. The stream terminates automatically once the
 // deployment reaches a terminal state.
