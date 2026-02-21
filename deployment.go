@@ -67,7 +67,7 @@ func (r *DeploymentService) Get(ctx context.Context, id string, opts ...option.R
 	return
 }
 
-// List deployments. Optionally filter by application name.
+// List deployments. Optionally filter by application name and version.
 func (r *DeploymentService) List(ctx context.Context, query DeploymentListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[DeploymentListResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -85,7 +85,7 @@ func (r *DeploymentService) List(ctx context.Context, query DeploymentListParams
 	return res, nil
 }
 
-// List deployments. Optionally filter by application name.
+// List deployments. Optionally filter by application name and version.
 func (r *DeploymentService) ListAutoPaging(ctx context.Context, query DeploymentListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[DeploymentListResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
@@ -572,6 +572,8 @@ func init() {
 type DeploymentListParams struct {
 	// Filter results by application name.
 	AppName param.Opt[string] `query:"app_name,omitzero" json:"-"`
+	// Filter results by application version. Requires app_name to be set.
+	AppVersion param.Opt[string] `query:"app_version,omitzero" json:"-"`
 	// Limit the number of deployments to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of deployments to return.

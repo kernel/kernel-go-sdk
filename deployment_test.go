@@ -95,9 +95,10 @@ func TestDeploymentListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Deployments.List(context.TODO(), kernel.DeploymentListParams{
-		AppName: kernel.String("app_name"),
-		Limit:   kernel.Int(1),
-		Offset:  kernel.Int(0),
+		AppName:    kernel.String("app_name"),
+		AppVersion: kernel.String("app_version"),
+		Limit:      kernel.Int(1),
+		Offset:     kernel.Int(0),
 	})
 	if err != nil {
 		var apierr *kernel.Error
