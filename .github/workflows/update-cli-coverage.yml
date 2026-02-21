@@ -361,7 +361,7 @@ jobs:
 
           # Constraints
           - ALWAYS update the SDK version in go.mod - this is the primary purpose
-          - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
+          - ALWAYS perform the full enumeration (Steps 3-5) - this is critical for finding gaps
           - ALL SDK methods in api.md MUST have corresponding CLI commands, EXCEPT those marked with x-cli-skip in openapi.yaml
           - SKIP endpoints marked with x-cli-skip: true in openapi.yaml - these are internal endpoints (e.g., hosted UI auth flows) not suitable for CLI
           - Streaming methods may have different CLI implementations (e.g., follow flags)
