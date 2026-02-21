@@ -16,7 +16,7 @@ import (
 )
 
 func TestDeploymentNewWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -59,7 +59,7 @@ func TestDeploymentNewWithOptionalParams(t *testing.T) {
 }
 
 func TestDeploymentGet(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -82,7 +82,7 @@ func TestDeploymentGet(t *testing.T) {
 }
 
 func TestDeploymentListWithOptionalParams(t *testing.T) {
-	t.Skip("Prism tests are disabled")
+	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -99,6 +99,29 @@ func TestDeploymentListWithOptionalParams(t *testing.T) {
 		Limit:   kernel.Int(1),
 		Offset:  kernel.Int(0),
 	})
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestDeploymentDelete(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	err := client.Deployments.Delete(context.TODO(), "id")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
