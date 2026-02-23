@@ -224,7 +224,7 @@ jobs:
               | SDK Method | SDK Param Type | SDK Param Fields |
               |------------|----------------|------------------|
               | client.Browsers.New | BrowserNewParams | Proxy, Profile, Viewport, Extensions, ... |
-              | client.Browsers.List | BrowserListParams | Limit, Offset, IncludeDeleted, ... |
+              | client.Browsers.List | BrowserListParams | Page, PerPage, IncludeDeleted, ... |
               | client.Deployments.New | DeploymentNewParams | AppName, Region, EnvVars, ... |
               | ... | ... | ... |
 
@@ -239,7 +239,7 @@ jobs:
               | CLI Command | CLI Flags |
               |-------------|-----------|
               | kernel browser create | --proxy, --profile, --viewport, ... |
-              | kernel browser list | --limit, --offset, ... |
+              | kernel browser list | --page, --per-page, ... |
               | ... | ... |
 
           ## Step 5: Gap Analysis (CRITICAL - DO NOT SKIP)
@@ -316,6 +316,50 @@ jobs:
           - Add help text for commands matching SDK method comments
           - Handle errors appropriately
           - Match the style of existing commands
+
+          # CLI Pagination UX for Paginated List Endpoints
+          When an SDK update introduces pagination on a list endpoint (e.g., the return type
+          changes to \`*pagination.OffsetPagination[T]\` and the params gain \`Limit\`/\`Offset\`
+          fields), do NOT naively expose \`--limit\` and \`--offset\` flags. Instead, follow the
+          page-based UX pattern used by \`kernel app list\` (see cmd/app.go):
+
+          ## Flags
+          - Add \`--page\` (int, default 1): 1-based page number.
+          - Add \`--per-page\` (int, default 20): items per page.
+          - Do NOT add \`--limit\` or \`--offset\` flags. These are implementation details the
+            user should not need to think about.
+          - Keep any filter flags the endpoint supports (e.g., \`--query\`, \`--name\`, \`--status\`).
+
+          ## Pagination Logic (the \"+1 trick\")
+          The SDK's \`OffsetPagination\` struct stores response headers (\`X-Has-More\`,
+          \`X-Next-Offset\`) in private fields that the CLI cannot access. To detect whether
+          more pages exist without an extra API call, request one extra item:
+          1. Set \`params.Limit = perPage + 1\`
+          2. Set \`params.Offset = (page - 1) * perPage\`
+          3. If the API returns more than \`perPage\` items, \`hasMore = true\`; truncate to
+             \`perPage\` items for display.
+          4. Otherwise \`hasMore = false\`.
+
+          ## Pagination Footer
+          After rendering the table, always print a pagination footer (using \`pterm.Printf\`
+          so test output capture works):
+            Page: 1 Per-page: 20 Items this page: 20 Has more: yes
+            Next: kernel <resource> list --page 2 --per-page 20
+          - The footer line is always printed (even when \`hasMore\` is false).
+          - The \"Next:\" line is only printed when \`hasMore\` is true.
+          - Preserve all filter flags in the \"Next:\" hint. Always quote string values
+            (e.g., \`--query \"value\"\`) to handle multi-word values safely.
+          - Use \`lo.Ternary(hasMore, \"yes\", \"no\")\` for the Has more value
+            (import \`github.com/samber/lo\`, already a dependency).
+          - Do NOT print the footer when \`--output json\` is used.
+
+          ## Input Struct
+          Use \`Page int\` and \`PerPage int\` in the list input struct, not \`Limit\`/\`Offset\`.
+          Default both defensively in the List method body (\`page <= 0\` -> 1, \`perPage <= 0\` -> 20).
+
+          ## Example Reference
+          See \`cmd/profiles.go\` ProfilesCmd.List and \`cmd/app.go\` runAppList for working
+          implementations of this pattern.
 
           # Output Format
           After pushing changes, create or update an evergreen PR using gh:
