@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.37.0 (2026-02-23)
+
+Full Changelog: [v0.36.1...v0.37.0](https://github.com/kernel/kernel-go-sdk/compare/v0.36.1...v0.37.0)
+
+### Features
+
+* Neil/kernel 1017 profile pagination query parameter ([d6166c8](https://github.com/kernel/kernel-go-sdk/commit/d6166c8793e9ad1e28d97b211af802d0abc87461))
+
+
+### Bug Fixes
+
+* improve CLI coverage workflow reliability and accuracy ([4dac142](https://github.com/kernel/kernel-go-sdk/commit/4dac142d082cec5ac906426e9edb00bc6b0c1693))
+* remove racy branch existence check in CLI coverage workflow ([32639df](https://github.com/kernel/kernel-go-sdk/commit/32639df54540df7e4d15c32092a565d20b32718e))
+
 ## 0.36.1 (2026-02-21)
 
 Full Changelog: [v0.36.0...v0.36.1](https://github.com/kernel/kernel-go-sdk/compare/v0.36.0...v0.36.1)
