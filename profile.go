@@ -7,11 +7,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
 	"github.com/kernel/kernel-go-sdk/packages/param"
 )
 
@@ -56,11 +59,26 @@ func (r *ProfileService) Get(ctx context.Context, idOrName string, opts ...optio
 }
 
 // List profiles with optional filtering and pagination.
-func (r *ProfileService) List(ctx context.Context, opts ...option.RequestOption) (res *[]Profile, err error) {
+func (r *ProfileService) List(ctx context.Context, query ProfileListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[Profile], err error) {
+	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	path := "profiles"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// List profiles with optional filtering and pagination.
+func (r *ProfileService) ListAutoPaging(ctx context.Context, query ProfileListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[Profile] {
+	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
 // Delete a profile by its ID or by its name.
@@ -102,4 +120,22 @@ func (r ProfileNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *ProfileNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type ProfileListParams struct {
+	// Limit the number of profiles to return.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Offset the number of profiles to return.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search profiles by name or ID.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [ProfileListParams]'s query parameters as `url.Values`.
+func (r ProfileListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

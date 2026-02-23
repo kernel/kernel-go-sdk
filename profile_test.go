@@ -65,7 +65,7 @@ func TestProfileGet(t *testing.T) {
 	}
 }
 
-func TestProfileList(t *testing.T) {
+func TestProfileListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -78,7 +78,11 @@ func TestProfileList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Profiles.List(context.TODO())
+	_, err := client.Profiles.List(context.TODO(), kernel.ProfileListParams{
+		Limit:  kernel.Int(1),
+		Offset: kernel.Int(0),
+		Query:  kernel.String("query"),
+	})
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
