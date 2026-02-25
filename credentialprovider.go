@@ -122,13 +122,13 @@ func (r *CredentialProviderService) Test(ctx context.Context, id string, opts ..
 // The properties Token, Name, ProviderType are required.
 type CreateCredentialProviderRequestParam struct {
 	// Service account token for the provider (e.g., 1Password service account token)
-	Token string `json:"token,required"`
+	Token string `json:"token" api:"required"`
 	// Human-readable name for this provider instance (unique per org)
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// Type of credential provider
 	//
 	// Any of "onepassword".
-	ProviderType CreateCredentialProviderRequestProviderType `json:"provider_type,omitzero,required"`
+	ProviderType CreateCredentialProviderRequestProviderType `json:"provider_type,omitzero" api:"required"`
 	// How long to cache credential lists (default 300 seconds)
 	CacheTtlSeconds param.Opt[int64] `json:"cache_ttl_seconds,omitzero"`
 	paramObj
@@ -153,21 +153,21 @@ const (
 // lookup
 type CredentialProvider struct {
 	// Unique identifier for the credential provider
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// When the credential provider was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the provider is enabled for credential lookups
-	Enabled bool `json:"enabled,required"`
+	Enabled bool `json:"enabled" api:"required"`
 	// Human-readable name for this provider instance
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// Priority order for credential lookups (lower numbers are checked first)
-	Priority int64 `json:"priority,required"`
+	Priority int64 `json:"priority" api:"required"`
 	// Type of credential provider
 	//
 	// Any of "onepassword".
-	ProviderType CredentialProviderProviderType `json:"provider_type,required"`
+	ProviderType CredentialProviderProviderType `json:"provider_type" api:"required"`
 	// When the credential provider was last updated
-	UpdatedAt time.Time `json:"updated_at,required" format:"date-time"`
+	UpdatedAt time.Time `json:"updated_at" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -198,15 +198,15 @@ const (
 // A credential item from an external provider (e.g., a 1Password login item)
 type CredentialProviderItem struct {
 	// Unique identifier for the item within the provider
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Path to reference this item (VaultName/ItemTitle format)
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// Display name of the credential item
-	Title string `json:"title,required"`
+	Title string `json:"title" api:"required"`
 	// ID of the vault containing this item
-	VaultID string `json:"vault_id,required"`
+	VaultID string `json:"vault_id" api:"required"`
 	// Name of the vault containing this item
-	VaultName string `json:"vault_name,required"`
+	VaultName string `json:"vault_name" api:"required"`
 	// URLs associated with this credential
 	URLs []string `json:"urls"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -231,9 +231,9 @@ func (r *CredentialProviderItem) UnmarshalJSON(data []byte) error {
 // Result of testing a credential provider connection
 type CredentialProviderTestResult struct {
 	// Whether the connection test was successful
-	Success bool `json:"success,required"`
+	Success bool `json:"success" api:"required"`
 	// List of vaults accessible by the service account
-	Vaults []CredentialProviderTestResultVault `json:"vaults,required"`
+	Vaults []CredentialProviderTestResultVault `json:"vaults" api:"required"`
 	// Error message if the test failed
 	Error string `json:"error"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -254,9 +254,9 @@ func (r *CredentialProviderTestResult) UnmarshalJSON(data []byte) error {
 
 type CredentialProviderTestResultVault struct {
 	// Vault ID
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Vault name
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field

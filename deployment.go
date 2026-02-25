@@ -126,11 +126,11 @@ func (r *DeploymentService) FollowStreaming(ctx context.Context, id string, quer
 // An event representing the current state of a deployment.
 type DeploymentStateEvent struct {
 	// Deployment record information.
-	Deployment DeploymentStateEventDeployment `json:"deployment,required"`
+	Deployment DeploymentStateEventDeployment `json:"deployment" api:"required"`
 	// Event type identifier (always "deployment_state").
-	Event constant.DeploymentState `json:"event,required"`
+	Event constant.DeploymentState `json:"event" api:"required"`
 	// Time the state was reported.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Deployment  respjson.Field
@@ -150,15 +150,15 @@ func (r *DeploymentStateEvent) UnmarshalJSON(data []byte) error {
 // Deployment record information.
 type DeploymentStateEventDeployment struct {
 	// Unique identifier for the deployment
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the deployment was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region,required"`
+	Region constant.AwsUsEast1a `json:"region" api:"required"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
-	Status string `json:"status,required"`
+	Status string `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
 	// Environment variables configured for this deployment
@@ -166,7 +166,7 @@ type DeploymentStateEventDeployment struct {
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
-	UpdatedAt time.Time `json:"updated_at,nullable" format:"date-time"`
+	UpdatedAt time.Time `json:"updated_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -191,15 +191,15 @@ func (r *DeploymentStateEventDeployment) UnmarshalJSON(data []byte) error {
 // Deployment record information.
 type DeploymentNewResponse struct {
 	// Unique identifier for the deployment
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the deployment was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region,required"`
+	Region constant.AwsUsEast1a `json:"region" api:"required"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
-	Status DeploymentNewResponseStatus `json:"status,required"`
+	Status DeploymentNewResponseStatus `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
 	// Environment variables configured for this deployment
@@ -207,7 +207,7 @@ type DeploymentNewResponse struct {
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
-	UpdatedAt time.Time `json:"updated_at,nullable" format:"date-time"`
+	UpdatedAt time.Time `json:"updated_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -243,15 +243,15 @@ const (
 // Deployment record information.
 type DeploymentGetResponse struct {
 	// Unique identifier for the deployment
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the deployment was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region,required"`
+	Region constant.AwsUsEast1a `json:"region" api:"required"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
-	Status DeploymentGetResponseStatus `json:"status,required"`
+	Status DeploymentGetResponseStatus `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
 	// Environment variables configured for this deployment
@@ -259,7 +259,7 @@ type DeploymentGetResponse struct {
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
-	UpdatedAt time.Time `json:"updated_at,nullable" format:"date-time"`
+	UpdatedAt time.Time `json:"updated_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -295,15 +295,15 @@ const (
 // Deployment record information.
 type DeploymentListResponse struct {
 	// Unique identifier for the deployment
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the deployment was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region,required"`
+	Region constant.AwsUsEast1a `json:"region" api:"required"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
-	Status DeploymentListResponseStatus `json:"status,required"`
+	Status DeploymentListResponseStatus `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
 	// Environment variables configured for this deployment
@@ -311,7 +311,7 @@ type DeploymentListResponse struct {
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
-	UpdatedAt time.Time `json:"updated_at,nullable" format:"date-time"`
+	UpdatedAt time.Time `json:"updated_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -425,19 +425,19 @@ func (r *DeploymentFollowResponseUnion) UnmarshalJSON(data []byte) error {
 // Summary of an application version.
 type DeploymentFollowResponseAppVersionSummaryEvent struct {
 	// Unique identifier for the app version
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// List of actions available on the app
-	Actions []shared.AppAction `json:"actions,required"`
+	Actions []shared.AppAction `json:"actions" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// Event type identifier (always "app_version_summary").
-	Event constant.AppVersionSummary `json:"event,required"`
+	Event constant.AppVersionSummary `json:"event" api:"required"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region,required"`
+	Region constant.AwsUsEast1a `json:"region" api:"required"`
 	// Time the state was reported.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// Version label for the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// Environment variables configured for this app version
 	EnvVars map[string]string `json:"env_vars"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -512,15 +512,15 @@ const (
 // The properties Entrypoint, Ref, Type, URL are required.
 type DeploymentNewParamsSource struct {
 	// Relative path to the application entrypoint within the selected path.
-	Entrypoint string `json:"entrypoint,required"`
+	Entrypoint string `json:"entrypoint" api:"required"`
 	// Git ref (branch, tag, or commit SHA) to fetch.
-	Ref string `json:"ref,required"`
+	Ref string `json:"ref" api:"required"`
 	// Source type identifier.
 	//
 	// Any of "github".
-	Type string `json:"type,omitzero,required"`
+	Type string `json:"type,omitzero" api:"required"`
 	// Base repository URL (without blob/tree suffixes).
-	URL string `json:"url,required"`
+	URL string `json:"url" api:"required"`
 	// Path within the repo to deploy (omit to use repo root).
 	Path param.Opt[string] `json:"path,omitzero"`
 	// Authentication for private repositories.
@@ -547,11 +547,11 @@ func init() {
 // The properties Token, Method are required.
 type DeploymentNewParamsSourceAuth struct {
 	// GitHub PAT or installation access token
-	Token string `json:"token,required" format:"password"`
+	Token string `json:"token" api:"required" format:"password"`
 	// Auth method
 	//
 	// Any of "github_token".
-	Method string `json:"method,omitzero,required"`
+	Method string `json:"method,omitzero" api:"required"`
 	paramObj
 }
 

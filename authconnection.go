@@ -155,15 +155,15 @@ func (r *AuthConnectionService) Submit(ctx context.Context, id string, body Auth
 // Response from starting a login flow
 type LoginResponse struct {
 	// Auth connection ID
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// When the login flow expires
-	FlowExpiresAt time.Time `json:"flow_expires_at,required" format:"date-time"`
+	FlowExpiresAt time.Time `json:"flow_expires_at" api:"required" format:"date-time"`
 	// Type of login flow started
 	//
 	// Any of "LOGIN", "REAUTH".
-	FlowType LoginResponseFlowType `json:"flow_type,required"`
+	FlowType LoginResponseFlowType `json:"flow_type" api:"required"`
 	// URL to redirect user to for login
-	HostedURL string `json:"hosted_url,required" format:"uri"`
+	HostedURL string `json:"hosted_url" api:"required" format:"uri"`
 	// One-time code for handoff (internal use)
 	HandoffCode string `json:"handoff_code"`
 	// Browser live view URL for watching the login flow
@@ -200,18 +200,18 @@ const (
 // recent login flow and are null when no flow has been initiated.
 type ManagedAuth struct {
 	// Unique identifier for the auth connection
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Target domain for authentication
-	Domain string `json:"domain,required"`
+	Domain string `json:"domain" api:"required"`
 	// Name of the profile associated with this auth connection
-	ProfileName string `json:"profile_name,required"`
+	ProfileName string `json:"profile_name" api:"required"`
 	// Whether credentials are saved after every successful login. One-time codes
 	// (TOTP, SMS, etc.) are not saved.
-	SaveCredentials bool `json:"save_credentials,required"`
+	SaveCredentials bool `json:"save_credentials" api:"required"`
 	// Current authentication status of the managed profile
 	//
 	// Any of "AUTHENTICATED", "NEEDS_AUTH".
-	Status ManagedAuthStatus `json:"status,required"`
+	Status ManagedAuthStatus `json:"status" api:"required"`
 	// Additional domains that are valid for this auth flow (besides the primary
 	// domain). Useful when login pages redirect to different domains.
 	//
@@ -242,55 +242,55 @@ type ManagedAuth struct {
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCredential `json:"credential"`
 	// Fields awaiting input (present when flow_step=awaiting_input)
-	DiscoveredFields []ManagedAuthDiscoveredField `json:"discovered_fields,nullable"`
+	DiscoveredFields []ManagedAuthDiscoveredField `json:"discovered_fields" api:"nullable"`
 	// Machine-readable error code (present when flow_status=failed)
-	ErrorCode string `json:"error_code,nullable"`
+	ErrorCode string `json:"error_code" api:"nullable"`
 	// Error message (present when flow_status=failed)
-	ErrorMessage string `json:"error_message,nullable"`
+	ErrorMessage string `json:"error_message" api:"nullable"`
 	// Instructions for external action (present when
 	// flow_step=awaiting_external_action)
-	ExternalActionMessage string `json:"external_action_message,nullable"`
+	ExternalActionMessage string `json:"external_action_message" api:"nullable"`
 	// When the current flow expires (null when no flow in progress)
-	FlowExpiresAt time.Time `json:"flow_expires_at,nullable" format:"date-time"`
+	FlowExpiresAt time.Time `json:"flow_expires_at" api:"nullable" format:"date-time"`
 	// Current flow status (null when no flow in progress)
 	//
 	// Any of "IN_PROGRESS", "SUCCESS", "FAILED", "EXPIRED", "CANCELED".
-	FlowStatus ManagedAuthFlowStatus `json:"flow_status,nullable"`
+	FlowStatus ManagedAuthFlowStatus `json:"flow_status" api:"nullable"`
 	// Current step in the flow (null when no flow in progress)
 	//
 	// Any of "DISCOVERING", "AWAITING_INPUT", "AWAITING_EXTERNAL_ACTION",
 	// "SUBMITTING", "COMPLETED".
-	FlowStep ManagedAuthFlowStep `json:"flow_step,nullable"`
+	FlowStep ManagedAuthFlowStep `json:"flow_step" api:"nullable"`
 	// Type of the current flow (null when no flow in progress)
 	//
 	// Any of "LOGIN", "REAUTH".
-	FlowType ManagedAuthFlowType `json:"flow_type,nullable"`
+	FlowType ManagedAuthFlowType `json:"flow_type" api:"nullable"`
 	// Interval in seconds between automatic health checks. When set, the system
 	// periodically verifies the authentication status and triggers re-authentication
 	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour). The minimum
 	// depends on your plan: Enterprise: 300 (5 minutes), Startup: 1200 (20 minutes),
 	// Hobbyist: 3600 (1 hour).
-	HealthCheckInterval int64 `json:"health_check_interval,nullable"`
+	HealthCheckInterval int64 `json:"health_check_interval" api:"nullable"`
 	// URL to redirect user to for hosted login (present when flow in progress)
-	HostedURL string `json:"hosted_url,nullable" format:"uri"`
+	HostedURL string `json:"hosted_url" api:"nullable" format:"uri"`
 	// When the profile was last successfully authenticated
 	LastAuthAt time.Time `json:"last_auth_at" format:"date-time"`
 	// Browser live view URL for debugging (present when flow in progress)
-	LiveViewURL string `json:"live_view_url,nullable" format:"uri"`
+	LiveViewURL string `json:"live_view_url" api:"nullable" format:"uri"`
 	// MFA method options (present when flow_step=awaiting_input and MFA selection
 	// required)
-	MfaOptions []ManagedAuthMfaOption `json:"mfa_options,nullable"`
+	MfaOptions []ManagedAuthMfaOption `json:"mfa_options" api:"nullable"`
 	// SSO buttons available (present when flow_step=awaiting_input)
-	PendingSSOButtons []ManagedAuthPendingSSOButton `json:"pending_sso_buttons,nullable"`
+	PendingSSOButtons []ManagedAuthPendingSSOButton `json:"pending_sso_buttons" api:"nullable"`
 	// URL where the browser landed after successful login
 	PostLoginURL string `json:"post_login_url" format:"uri"`
 	// ID of the proxy associated with this connection, if any.
 	ProxyID string `json:"proxy_id"`
 	// SSO provider being used (e.g., google, github, microsoft)
-	SSOProvider string `json:"sso_provider,nullable"`
+	SSOProvider string `json:"sso_provider" api:"nullable"`
 	// Visible error message from the website (e.g., 'Incorrect password'). Present
 	// when the website displays an error during login.
-	WebsiteError string `json:"website_error,nullable"`
+	WebsiteError string `json:"website_error" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                    respjson.Field
@@ -373,20 +373,20 @@ func (r *ManagedAuthCredential) UnmarshalJSON(data []byte) error {
 // A discovered form field
 type ManagedAuthDiscoveredField struct {
 	// Field label
-	Label string `json:"label,required"`
+	Label string `json:"label" api:"required"`
 	// Field name
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// CSS selector for the field
-	Selector string `json:"selector,required"`
+	Selector string `json:"selector" api:"required"`
 	// Field type
 	//
 	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
-	Type string `json:"type,required"`
+	Type string `json:"type" api:"required"`
 	// If this field is associated with an MFA option, the type of that option (e.g.,
 	// password field linked to "Enter password" option)
 	//
 	// Any of "sms", "call", "email", "totp", "push", "password".
-	LinkedMfaType string `json:"linked_mfa_type,nullable"`
+	LinkedMfaType string `json:"linked_mfa_type" api:"nullable"`
 	// Field placeholder
 	Placeholder string `json:"placeholder"`
 	// Whether field is required
@@ -444,15 +444,15 @@ const (
 // An MFA method option for verification
 type ManagedAuthMfaOption struct {
 	// The visible option text
-	Label string `json:"label,required"`
+	Label string `json:"label" api:"required"`
 	// The MFA delivery method type (includes password for auth method selection pages)
 	//
 	// Any of "sms", "call", "email", "totp", "push", "password".
-	Type string `json:"type,required"`
+	Type string `json:"type" api:"required"`
 	// Additional instructions from the site
-	Description string `json:"description,nullable"`
+	Description string `json:"description" api:"nullable"`
 	// The masked destination (phone/email) if shown
-	Target string `json:"target,nullable"`
+	Target string `json:"target" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Label       respjson.Field
@@ -473,11 +473,11 @@ func (r *ManagedAuthMfaOption) UnmarshalJSON(data []byte) error {
 // An SSO button for signing in with an external identity provider
 type ManagedAuthPendingSSOButton struct {
 	// Visible button text
-	Label string `json:"label,required"`
+	Label string `json:"label" api:"required"`
 	// Identity provider name
-	Provider string `json:"provider,required"`
+	Provider string `json:"provider" api:"required"`
 	// XPath selector for the button
-	Selector string `json:"selector,required"`
+	Selector string `json:"selector" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Label       respjson.Field
@@ -499,9 +499,9 @@ func (r *ManagedAuthPendingSSOButton) UnmarshalJSON(data []byte) error {
 // The properties Domain, ProfileName are required.
 type ManagedAuthCreateRequestParam struct {
 	// Domain for authentication
-	Domain string `json:"domain,required"`
+	Domain string `json:"domain" api:"required"`
 	// Name of the profile to manage authentication for
-	ProfileName string `json:"profile_name,required"`
+	ProfileName string `json:"profile_name" api:"required"`
 	// Interval in seconds between automatic health checks. When set, the system
 	// periodically verifies the authentication status and triggers re-authentication
 	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour). The minimum
@@ -617,7 +617,7 @@ func (r *SubmitFieldsRequestParam) UnmarshalJSON(data []byte) error {
 // Response from submitting field values
 type SubmitFieldsResponse struct {
 	// Whether the submission was accepted for processing
-	Accepted bool `json:"accepted,required"`
+	Accepted bool `json:"accepted" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Accepted    respjson.Field
@@ -748,18 +748,18 @@ func (r *AuthConnectionFollowResponseUnion) UnmarshalJSON(data []byte) error {
 // An event representing the current state of a managed auth flow.
 type AuthConnectionFollowResponseManagedAuthState struct {
 	// Event type identifier (always "managed_auth_state").
-	Event constant.ManagedAuthState `json:"event,required"`
+	Event constant.ManagedAuthState `json:"event" api:"required"`
 	// Current flow status.
 	//
 	// Any of "IN_PROGRESS", "SUCCESS", "FAILED", "EXPIRED", "CANCELED".
-	FlowStatus string `json:"flow_status,required"`
+	FlowStatus string `json:"flow_status" api:"required"`
 	// Current step in the flow.
 	//
 	// Any of "DISCOVERING", "AWAITING_INPUT", "AWAITING_EXTERNAL_ACTION",
 	// "SUBMITTING", "COMPLETED".
-	FlowStep string `json:"flow_step,required"`
+	FlowStep string `json:"flow_step" api:"required"`
 	// Time the state was reported.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// Fields awaiting input (present when flow_step=AWAITING_INPUT).
 	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
 	// Machine-readable error code (present when flow_status=FAILED).
@@ -818,20 +818,20 @@ func (r *AuthConnectionFollowResponseManagedAuthState) UnmarshalJSON(data []byte
 // A discovered form field
 type AuthConnectionFollowResponseManagedAuthStateDiscoveredField struct {
 	// Field label
-	Label string `json:"label,required"`
+	Label string `json:"label" api:"required"`
 	// Field name
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// CSS selector for the field
-	Selector string `json:"selector,required"`
+	Selector string `json:"selector" api:"required"`
 	// Field type
 	//
 	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
-	Type string `json:"type,required"`
+	Type string `json:"type" api:"required"`
 	// If this field is associated with an MFA option, the type of that option (e.g.,
 	// password field linked to "Enter password" option)
 	//
 	// Any of "sms", "call", "email", "totp", "push", "password".
-	LinkedMfaType string `json:"linked_mfa_type,nullable"`
+	LinkedMfaType string `json:"linked_mfa_type" api:"nullable"`
 	// Field placeholder
 	Placeholder string `json:"placeholder"`
 	// Whether field is required
@@ -861,15 +861,15 @@ func (r *AuthConnectionFollowResponseManagedAuthStateDiscoveredField) UnmarshalJ
 // An MFA method option for verification
 type AuthConnectionFollowResponseManagedAuthStateMfaOption struct {
 	// The visible option text
-	Label string `json:"label,required"`
+	Label string `json:"label" api:"required"`
 	// The MFA delivery method type (includes password for auth method selection pages)
 	//
 	// Any of "sms", "call", "email", "totp", "push", "password".
-	Type string `json:"type,required"`
+	Type string `json:"type" api:"required"`
 	// Additional instructions from the site
-	Description string `json:"description,nullable"`
+	Description string `json:"description" api:"nullable"`
 	// The masked destination (phone/email) if shown
-	Target string `json:"target,nullable"`
+	Target string `json:"target" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Label       respjson.Field
@@ -890,11 +890,11 @@ func (r *AuthConnectionFollowResponseManagedAuthStateMfaOption) UnmarshalJSON(da
 // An SSO button for signing in with an external identity provider
 type AuthConnectionFollowResponseManagedAuthStatePendingSSOButton struct {
 	// Visible button text
-	Label string `json:"label,required"`
+	Label string `json:"label" api:"required"`
 	// Identity provider name
-	Provider string `json:"provider,required"`
+	Provider string `json:"provider" api:"required"`
 	// XPath selector for the button
-	Selector string `json:"selector,required"`
+	Selector string `json:"selector" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Label       respjson.Field

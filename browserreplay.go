@@ -97,13 +97,13 @@ func (r *BrowserReplayService) Stop(ctx context.Context, replayID string, body B
 // Information about a browser replay recording.
 type BrowserReplayListResponse struct {
 	// Unique identifier for the replay recording.
-	ReplayID string `json:"replay_id,required"`
+	ReplayID string `json:"replay_id" api:"required"`
 	// Timestamp when replay finished
-	FinishedAt time.Time `json:"finished_at,nullable" format:"date-time"`
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
 	// URL for viewing the replay recording.
 	ReplayViewURL string `json:"replay_view_url"`
 	// Timestamp when replay started
-	StartedAt time.Time `json:"started_at,nullable" format:"date-time"`
+	StartedAt time.Time `json:"started_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ReplayID      respjson.Field
@@ -124,13 +124,13 @@ func (r *BrowserReplayListResponse) UnmarshalJSON(data []byte) error {
 // Information about a browser replay recording.
 type BrowserReplayStartResponse struct {
 	// Unique identifier for the replay recording.
-	ReplayID string `json:"replay_id,required"`
+	ReplayID string `json:"replay_id" api:"required"`
 	// Timestamp when replay finished
-	FinishedAt time.Time `json:"finished_at,nullable" format:"date-time"`
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
 	// URL for viewing the replay recording.
 	ReplayViewURL string `json:"replay_view_url"`
 	// Timestamp when replay started
-	StartedAt time.Time `json:"started_at,nullable" format:"date-time"`
+	StartedAt time.Time `json:"started_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ReplayID      respjson.Field
@@ -149,7 +149,7 @@ func (r *BrowserReplayStartResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserReplayDownloadParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	paramObj
 }
 
@@ -170,6 +170,6 @@ func (r *BrowserReplayStartParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserReplayStopParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	paramObj
 }

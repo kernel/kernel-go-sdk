@@ -176,7 +176,7 @@ func (r *BrowserProcessExecResponse) UnmarshalJSON(data []byte) error {
 // Generic OK response.
 type BrowserProcessKillResponse struct {
 	// Indicates success.
-	Ok bool `json:"ok,required"`
+	Ok bool `json:"ok" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Ok          respjson.Field
@@ -194,7 +194,7 @@ func (r *BrowserProcessKillResponse) UnmarshalJSON(data []byte) error {
 // Generic OK response.
 type BrowserProcessResizeResponse struct {
 	// Indicates success.
-	Ok bool `json:"ok,required"`
+	Ok bool `json:"ok" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Ok          respjson.Field
@@ -238,7 +238,7 @@ type BrowserProcessStatusResponse struct {
 	// Estimated CPU usage percentage.
 	CPUPct float64 `json:"cpu_pct"`
 	// Exit code if the process has exited.
-	ExitCode int64 `json:"exit_code,nullable"`
+	ExitCode int64 `json:"exit_code" api:"nullable"`
 	// Estimated resident memory usage in bytes.
 	MemBytes int64 `json:"mem_bytes"`
 	// Process state.
@@ -336,7 +336,7 @@ const (
 
 type BrowserProcessExecParams struct {
 	// Executable or shell command to run.
-	Command string `json:"command,required"`
+	Command string `json:"command" api:"required"`
 	// Run the process as this user.
 	AsUser param.Opt[string] `json:"as_user,omitzero"`
 	// Working directory (absolute path) to run the command in.
@@ -361,11 +361,11 @@ func (r *BrowserProcessExecParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserProcessKillParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	// Signal to send.
 	//
 	// Any of "TERM", "KILL", "INT", "HUP".
-	Signal BrowserProcessKillParamsSignal `json:"signal,omitzero,required"`
+	Signal BrowserProcessKillParamsSignal `json:"signal,omitzero" api:"required"`
 	paramObj
 }
 
@@ -388,11 +388,11 @@ const (
 )
 
 type BrowserProcessResizeParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	// New terminal columns.
-	Cols int64 `json:"cols,required"`
+	Cols int64 `json:"cols" api:"required"`
 	// New terminal rows.
-	Rows int64 `json:"rows,required"`
+	Rows int64 `json:"rows" api:"required"`
 	paramObj
 }
 
@@ -406,7 +406,7 @@ func (r *BrowserProcessResizeParams) UnmarshalJSON(data []byte) error {
 
 type BrowserProcessSpawnParams struct {
 	// Executable or shell command to run.
-	Command string `json:"command,required"`
+	Command string `json:"command" api:"required"`
 	// Run the process as this user.
 	AsUser param.Opt[string] `json:"as_user,omitzero"`
 	// Working directory (absolute path) to run the command in.
@@ -437,14 +437,14 @@ func (r *BrowserProcessSpawnParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserProcessStatusParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	paramObj
 }
 
 type BrowserProcessStdinParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	// Base64-encoded data to write.
-	DataB64 string `json:"data_b64,required"`
+	DataB64 string `json:"data_b64" api:"required"`
 	paramObj
 }
 
@@ -457,6 +457,6 @@ func (r *BrowserProcessStdinParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserProcessStdoutStreamParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	paramObj
 }

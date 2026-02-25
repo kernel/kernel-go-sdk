@@ -21,13 +21,13 @@ type paramObj = param.APIObject
 // An action available on the app
 type AppAction struct {
 	// Name of the action
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// JSON Schema (draft-07) describing the expected input payload. Null if schema
 	// could not be automatically generated.
-	InputSchema map[string]any `json:"input_schema,nullable"`
+	InputSchema map[string]any `json:"input_schema" api:"nullable"`
 	// JSON Schema (draft-07) describing the expected output payload. Null if schema
 	// could not be automatically generated.
-	OutputSchema map[string]any `json:"output_schema,nullable"`
+	OutputSchema map[string]any `json:"output_schema" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Name         respjson.Field
@@ -165,9 +165,9 @@ func (r *BrowserProfileParam) UnmarshalJSON(data []byte) error {
 // bandwidth reasonable).
 type BrowserViewport struct {
 	// Browser window height in pixels.
-	Height int64 `json:"height,required"`
+	Height int64 `json:"height" api:"required"`
 	// Browser window width in pixels.
-	Width int64 `json:"width,required"`
+	Width int64 `json:"width" api:"required"`
 	// Display refresh rate in Hz. If omitted, automatically determined from width and
 	// height.
 	RefreshRate int64 `json:"refresh_rate"`
@@ -208,9 +208,9 @@ func (r BrowserViewport) ToParam() BrowserViewportParam {
 // The properties Height, Width are required.
 type BrowserViewportParam struct {
 	// Browser window height in pixels.
-	Height int64 `json:"height,required"`
+	Height int64 `json:"height" api:"required"`
 	// Browser window width in pixels.
-	Width int64 `json:"width,required"`
+	Width int64 `json:"width" api:"required"`
 	// Display refresh rate in Hz. If omitted, automatically determined from width and
 	// height.
 	RefreshRate param.Opt[int64] `json:"refresh_rate,omitzero"`
@@ -247,11 +247,11 @@ func (r *ErrorDetail) UnmarshalJSON(data []byte) error {
 
 // An error event from the application.
 type ErrorEvent struct {
-	Error ErrorModel `json:"error,required"`
+	Error ErrorModel `json:"error" api:"required"`
 	// Event type identifier (always "error").
-	Event constant.Error `json:"event,required"`
+	Event constant.Error `json:"event" api:"required"`
 	// Time the error occurred.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Error       respjson.Field
@@ -273,9 +273,9 @@ func (ErrorEvent) ImplAuthConnectionFollowResponseUnion() {}
 
 type ErrorModel struct {
 	// Application-specific error code (machine-readable)
-	Code string `json:"code,required"`
+	Code string `json:"code" api:"required"`
 	// Human-readable error description for debugging
-	Message string `json:"message,required"`
+	Message string `json:"message" api:"required"`
 	// Additional error details (for multiple errors)
 	Details    []ErrorDetail `json:"details"`
 	InnerError ErrorDetail   `json:"inner_error"`
@@ -299,9 +299,9 @@ func (r *ErrorModel) UnmarshalJSON(data []byte) error {
 // Heartbeat event sent periodically to keep SSE connection alive.
 type HeartbeatEvent struct {
 	// Event type identifier (always "sse_heartbeat").
-	Event constant.SseHeartbeat `json:"event,required"`
+	Event constant.SseHeartbeat `json:"event" api:"required"`
 	// Time the heartbeat was sent.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Event       respjson.Field
@@ -323,11 +323,11 @@ func (HeartbeatEvent) ImplAuthConnectionFollowResponseUnion() {}
 // A log entry from the application.
 type LogEvent struct {
 	// Event type identifier (always "log").
-	Event constant.Log `json:"event,required"`
+	Event constant.Log `json:"event" api:"required"`
 	// Log message text.
-	Message string `json:"message,required"`
+	Message string `json:"message" api:"required"`
 	// Time the log entry was produced.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Event       respjson.Field
