@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.39.0 (2026-02-25)
+
+Full Changelog: [v0.38.0...v0.39.0](https://github.com/kernel/kernel-go-sdk/compare/v0.38.0...v0.39.0)
+
+### Features
+
+* Add proxy hostname bypass hosts ([2b066bf](https://github.com/kernel/kernel-go-sdk/commit/2b066bfd2e42070cbf2551dc6579854de5760807))
+
 ## 0.38.0 (2026-02-25)
 
 Full Changelog: [v0.37.0...v0.38.0](https://github.com/kernel/kernel-go-sdk/compare/v0.37.0...v0.38.0)
