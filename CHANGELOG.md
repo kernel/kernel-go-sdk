@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.38.0 (2026-02-25)
+
+Full Changelog: [v0.37.0...v0.38.0](https://github.com/kernel/kernel-go-sdk/compare/v0.37.0...v0.38.0)
+
+### Features
+
+* Neil/kernel 1029 past session search ([04750c0](https://github.com/kernel/kernel-go-sdk/commit/04750c05fd4b0491f34d65cf8e003a7ee38537b5))
+
+
+### Chores
+
+* **internal:** move custom custom `json` tags to `api` ([a35c88c](https://github.com/kernel/kernel-go-sdk/commit/a35c88ce383ecf7a2a98b303837948cd3edd3d39))
+
 ## 0.37.0 (2026-02-23)
 
 Full Changelog: [v0.36.1...v0.37.0](https://github.com/kernel/kernel-go-sdk/compare/v0.36.1...v0.37.0)
