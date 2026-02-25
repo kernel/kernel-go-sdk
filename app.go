@@ -64,19 +64,19 @@ func (r *AppService) ListAutoPaging(ctx context.Context, query AppListParams, op
 // Summary of an application version.
 type AppListResponse struct {
 	// Unique identifier for the app version
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// List of actions available on the app
-	Actions []shared.AppAction `json:"actions,required"`
+	Actions []shared.AppAction `json:"actions" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// Deployment ID
-	Deployment string `json:"deployment,required"`
+	Deployment string `json:"deployment" api:"required"`
 	// Environment variables configured for this app version
-	EnvVars map[string]string `json:"env_vars,required"`
+	EnvVars map[string]string `json:"env_vars" api:"required"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region,required"`
+	Region constant.AwsUsEast1a `json:"region" api:"required"`
 	// Version label for the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field

@@ -148,10 +148,10 @@ func (r *InvocationService) ListBrowsers(ctx context.Context, id string, opts ..
 // An event representing the current state of an invocation.
 type InvocationStateEvent struct {
 	// Event type identifier (always "invocation_state").
-	Event      constant.InvocationState       `json:"event,required"`
-	Invocation InvocationStateEventInvocation `json:"invocation,required"`
+	Event      constant.InvocationState       `json:"event" api:"required"`
+	Invocation InvocationStateEventInvocation `json:"invocation" api:"required"`
 	// Time the state was reported.
-	Timestamp time.Time `json:"timestamp,required" format:"date-time"`
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Event       respjson.Field
@@ -170,22 +170,22 @@ func (r *InvocationStateEvent) UnmarshalJSON(data []byte) error {
 
 type InvocationStateEventInvocation struct {
 	// ID of the invocation
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Name of the action invoked
-	ActionName string `json:"action_name,required"`
+	ActionName string `json:"action_name" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation started
-	StartedAt time.Time `json:"started_at,required" format:"date-time"`
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
 	// Status of the invocation
 	//
 	// Any of "queued", "running", "succeeded", "failed".
-	Status string `json:"status,required"`
+	Status string `json:"status" api:"required"`
 	// Version label for the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
 	// running)
-	FinishedAt time.Time `json:"finished_at,nullable" format:"date-time"`
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
 	// Output produced by the action, rendered as a JSON string. This could be: string,
 	// number, boolean, array, object, or null.
 	Output string `json:"output"`
@@ -218,13 +218,13 @@ func (r *InvocationStateEventInvocation) UnmarshalJSON(data []byte) error {
 
 type InvocationNewResponse struct {
 	// ID of the invocation
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Name of the action invoked
-	ActionName string `json:"action_name,required"`
+	ActionName string `json:"action_name" api:"required"`
 	// Status of the invocation
 	//
 	// Any of "queued", "running", "succeeded", "failed".
-	Status InvocationNewResponseStatus `json:"status,required"`
+	Status InvocationNewResponseStatus `json:"status" api:"required"`
 	// The return value of the action that was invoked, rendered as a JSON string. This
 	// could be: string, number, boolean, array, object, or null.
 	Output string `json:"output"`
@@ -260,22 +260,22 @@ const (
 
 type InvocationGetResponse struct {
 	// ID of the invocation
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Name of the action invoked
-	ActionName string `json:"action_name,required"`
+	ActionName string `json:"action_name" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation started
-	StartedAt time.Time `json:"started_at,required" format:"date-time"`
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
 	// Status of the invocation
 	//
 	// Any of "queued", "running", "succeeded", "failed".
-	Status InvocationGetResponseStatus `json:"status,required"`
+	Status InvocationGetResponseStatus `json:"status" api:"required"`
 	// Version label for the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
 	// running)
-	FinishedAt time.Time `json:"finished_at,nullable" format:"date-time"`
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
 	// Output produced by the action, rendered as a JSON string. This could be: string,
 	// number, boolean, array, object, or null.
 	Output string `json:"output"`
@@ -318,22 +318,22 @@ const (
 
 type InvocationUpdateResponse struct {
 	// ID of the invocation
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Name of the action invoked
-	ActionName string `json:"action_name,required"`
+	ActionName string `json:"action_name" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation started
-	StartedAt time.Time `json:"started_at,required" format:"date-time"`
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
 	// Status of the invocation
 	//
 	// Any of "queued", "running", "succeeded", "failed".
-	Status InvocationUpdateResponseStatus `json:"status,required"`
+	Status InvocationUpdateResponseStatus `json:"status" api:"required"`
 	// Version label for the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
 	// running)
-	FinishedAt time.Time `json:"finished_at,nullable" format:"date-time"`
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
 	// Output produced by the action, rendered as a JSON string. This could be: string,
 	// number, boolean, array, object, or null.
 	Output string `json:"output"`
@@ -376,22 +376,22 @@ const (
 
 type InvocationListResponse struct {
 	// ID of the invocation
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Name of the action invoked
-	ActionName string `json:"action_name,required"`
+	ActionName string `json:"action_name" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation started
-	StartedAt time.Time `json:"started_at,required" format:"date-time"`
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
 	// Status of the invocation
 	//
 	// Any of "queued", "running", "succeeded", "failed".
-	Status InvocationListResponseStatus `json:"status,required"`
+	Status InvocationListResponseStatus `json:"status" api:"required"`
 	// Version label for the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
 	// running)
-	FinishedAt time.Time `json:"finished_at,nullable" format:"date-time"`
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
 	// Output produced by the action, rendered as a JSON string. This could be: string,
 	// number, boolean, array, object, or null.
 	Output string `json:"output"`
@@ -520,7 +520,7 @@ func (r *InvocationFollowResponseUnion) UnmarshalJSON(data []byte) error {
 }
 
 type InvocationListBrowsersResponse struct {
-	Browsers []InvocationListBrowsersResponseBrowser `json:"browsers,required"`
+	Browsers []InvocationListBrowsersResponseBrowser `json:"browsers" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browsers    respjson.Field
@@ -537,17 +537,17 @@ func (r *InvocationListBrowsersResponse) UnmarshalJSON(data []byte) error {
 
 type InvocationListBrowsersResponseBrowser struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
-	CdpWsURL string `json:"cdp_ws_url,required"`
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
-	Headless bool `json:"headless,required"`
+	Headless bool `json:"headless" api:"required"`
 	// Unique identifier for the browser session
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
-	Stealth bool `json:"stealth,required"`
+	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
-	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -603,11 +603,11 @@ func (r *InvocationListBrowsersResponseBrowser) UnmarshalJSON(data []byte) error
 
 type InvocationNewParams struct {
 	// Name of the action to invoke
-	ActionName string `json:"action_name,required"`
+	ActionName string `json:"action_name" api:"required"`
 	// Name of the application
-	AppName string `json:"app_name,required"`
+	AppName string `json:"app_name" api:"required"`
 	// Version of the application
-	Version string `json:"version,required"`
+	Version string `json:"version" api:"required"`
 	// If true, invoke asynchronously. When set, the API responds 202 Accepted with
 	// status "queued".
 	Async param.Opt[bool] `json:"async,omitzero"`
@@ -631,7 +631,7 @@ type InvocationUpdateParams struct {
 	// New status for the invocation.
 	//
 	// Any of "succeeded", "failed".
-	Status InvocationUpdateParamsStatus `json:"status,omitzero,required"`
+	Status InvocationUpdateParamsStatus `json:"status,omitzero" api:"required"`
 	// Updated output of the invocation rendered as JSON string.
 	Output param.Opt[string] `json:"output,omitzero"`
 	paramObj

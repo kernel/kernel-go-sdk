@@ -200,17 +200,17 @@ func (r *BrowserFService) WriteFile(ctx context.Context, id string, contents io.
 
 type BrowserFFileInfoResponse struct {
 	// Whether the path is a directory.
-	IsDir bool `json:"is_dir,required"`
+	IsDir bool `json:"is_dir" api:"required"`
 	// Last modification time.
-	ModTime time.Time `json:"mod_time,required" format:"date-time"`
+	ModTime time.Time `json:"mod_time" api:"required" format:"date-time"`
 	// File mode bits (e.g., "drwxr-xr-x" or "-rw-r--r--").
-	Mode string `json:"mode,required"`
+	Mode string `json:"mode" api:"required"`
 	// Base name of the file or directory.
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// Absolute path.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// Size in bytes. 0 for directories.
-	SizeBytes int64 `json:"size_bytes,required"`
+	SizeBytes int64 `json:"size_bytes" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		IsDir       respjson.Field
@@ -232,17 +232,17 @@ func (r *BrowserFFileInfoResponse) UnmarshalJSON(data []byte) error {
 
 type BrowserFListFilesResponse struct {
 	// Whether the path is a directory.
-	IsDir bool `json:"is_dir,required"`
+	IsDir bool `json:"is_dir" api:"required"`
 	// Last modification time.
-	ModTime time.Time `json:"mod_time,required" format:"date-time"`
+	ModTime time.Time `json:"mod_time" api:"required" format:"date-time"`
 	// File mode bits (e.g., "drwxr-xr-x" or "-rw-r--r--").
-	Mode string `json:"mode,required"`
+	Mode string `json:"mode" api:"required"`
 	// Base name of the file or directory.
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// Absolute path.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// Size in bytes. 0 for directories.
-	SizeBytes int64 `json:"size_bytes,required"`
+	SizeBytes int64 `json:"size_bytes" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		IsDir       respjson.Field
@@ -264,7 +264,7 @@ func (r *BrowserFListFilesResponse) UnmarshalJSON(data []byte) error {
 
 type BrowserFNewDirectoryParams struct {
 	// Absolute directory path to create.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// Optional directory mode (octal string, e.g. 755). Defaults to 755.
 	Mode param.Opt[string] `json:"mode,omitzero"`
 	paramObj
@@ -280,7 +280,7 @@ func (r *BrowserFNewDirectoryParams) UnmarshalJSON(data []byte) error {
 
 type BrowserFDeleteDirectoryParams struct {
 	// Absolute path to delete.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	paramObj
 }
 
@@ -294,7 +294,7 @@ func (r *BrowserFDeleteDirectoryParams) UnmarshalJSON(data []byte) error {
 
 type BrowserFDeleteFileParams struct {
 	// Absolute path to delete.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	paramObj
 }
 
@@ -308,7 +308,7 @@ func (r *BrowserFDeleteFileParams) UnmarshalJSON(data []byte) error {
 
 type BrowserFDownloadDirZipParams struct {
 	// Absolute directory path to archive and download.
-	Path string `query:"path,required" json:"-"`
+	Path string `query:"path" api:"required" json:"-"`
 	paramObj
 }
 
@@ -323,7 +323,7 @@ func (r BrowserFDownloadDirZipParams) URLQuery() (v url.Values, err error) {
 
 type BrowserFFileInfoParams struct {
 	// Absolute path of the file or directory.
-	Path string `query:"path,required" json:"-"`
+	Path string `query:"path" api:"required" json:"-"`
 	paramObj
 }
 
@@ -337,7 +337,7 @@ func (r BrowserFFileInfoParams) URLQuery() (v url.Values, err error) {
 
 type BrowserFListFilesParams struct {
 	// Absolute directory path.
-	Path string `query:"path,required" json:"-"`
+	Path string `query:"path" api:"required" json:"-"`
 	paramObj
 }
 
@@ -352,9 +352,9 @@ func (r BrowserFListFilesParams) URLQuery() (v url.Values, err error) {
 
 type BrowserFMoveParams struct {
 	// Absolute destination path.
-	DestPath string `json:"dest_path,required"`
+	DestPath string `json:"dest_path" api:"required"`
 	// Absolute source path.
-	SrcPath string `json:"src_path,required"`
+	SrcPath string `json:"src_path" api:"required"`
 	paramObj
 }
 
@@ -368,7 +368,7 @@ func (r *BrowserFMoveParams) UnmarshalJSON(data []byte) error {
 
 type BrowserFReadFileParams struct {
 	// Absolute file path to read.
-	Path string `query:"path,required" json:"-"`
+	Path string `query:"path" api:"required" json:"-"`
 	paramObj
 }
 
@@ -382,9 +382,9 @@ func (r BrowserFReadFileParams) URLQuery() (v url.Values, err error) {
 
 type BrowserFSetFilePermissionsParams struct {
 	// File mode bits (octal string, e.g. 644).
-	Mode string `json:"mode,required"`
+	Mode string `json:"mode" api:"required"`
 	// Absolute path whose permissions are to be changed.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// New group name or GID.
 	Group param.Opt[string] `json:"group,omitzero"`
 	// New owner username or UID.
@@ -401,7 +401,7 @@ func (r *BrowserFSetFilePermissionsParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserFUploadParams struct {
-	Files []BrowserFUploadParamsFile `json:"files,omitzero,required"`
+	Files []BrowserFUploadParamsFile `json:"files,omitzero" api:"required"`
 	paramObj
 }
 
@@ -426,8 +426,8 @@ func (r BrowserFUploadParams) MarshalMultipart() (data []byte, contentType strin
 // The properties DestPath, File are required.
 type BrowserFUploadParamsFile struct {
 	// Absolute destination path to write the file.
-	DestPath string    `json:"dest_path,required"`
-	File     io.Reader `json:"file,omitzero,required" format:"binary"`
+	DestPath string    `json:"dest_path" api:"required"`
+	File     io.Reader `json:"file,omitzero" api:"required" format:"binary"`
 	paramObj
 }
 
@@ -441,8 +441,8 @@ func (r *BrowserFUploadParamsFile) UnmarshalJSON(data []byte) error {
 
 type BrowserFUploadZipParams struct {
 	// Absolute destination directory to extract the archive to.
-	DestPath string    `json:"dest_path,required"`
-	ZipFile  io.Reader `json:"zip_file,omitzero,required" format:"binary"`
+	DestPath string    `json:"dest_path" api:"required"`
+	ZipFile  io.Reader `json:"zip_file,omitzero" api:"required" format:"binary"`
 	paramObj
 }
 
@@ -466,7 +466,7 @@ func (r BrowserFUploadZipParams) MarshalMultipart() (data []byte, contentType st
 
 type BrowserFWriteFileParams struct {
 	// Destination absolute file path.
-	Path string `query:"path,required" json:"-"`
+	Path string `query:"path" api:"required" json:"-"`
 	// Optional file mode (octal string, e.g. 644). Defaults to 644.
 	Mode param.Opt[string] `query:"mode,omitzero" json:"-"`
 	paramObj

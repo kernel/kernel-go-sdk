@@ -135,15 +135,15 @@ func (r *BrowserPoolService) Release(ctx context.Context, idOrName string, body 
 // A browser pool containing multiple identically configured browsers.
 type BrowserPool struct {
 	// Unique identifier for the browser pool
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Number of browsers currently acquired from the pool
-	AcquiredCount int64 `json:"acquired_count,required"`
+	AcquiredCount int64 `json:"acquired_count" api:"required"`
 	// Number of browsers currently available in the pool
-	AvailableCount int64 `json:"available_count,required"`
+	AvailableCount int64 `json:"available_count" api:"required"`
 	// Configuration used to create all browsers in this pool
-	BrowserPoolConfig BrowserPoolBrowserPoolConfig `json:"browser_pool_config,required"`
+	BrowserPoolConfig BrowserPoolBrowserPoolConfig `json:"browser_pool_config" api:"required"`
 	// Timestamp when the browser pool was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Browser pool name, if set
 	Name string `json:"name"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -170,7 +170,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	// Number of browsers to maintain in the pool. The maximum size is determined by
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
-	Size int64 `json:"size,required"`
+	Size int64 `json:"size" api:"required"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtension `json:"extensions"`
 	// Percentage of the pool to fill per minute. Defaults to 10%.
@@ -230,17 +230,17 @@ func (r *BrowserPoolBrowserPoolConfig) UnmarshalJSON(data []byte) error {
 
 type BrowserPoolAcquireResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
-	CdpWsURL string `json:"cdp_ws_url,required"`
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
-	Headless bool `json:"headless,required"`
+	Headless bool `json:"headless" api:"required"`
 	// Unique identifier for the browser session
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
-	Stealth bool `json:"stealth,required"`
+	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
-	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -298,7 +298,7 @@ type BrowserPoolNewParams struct {
 	// Number of browsers to maintain in the pool. The maximum size is determined by
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
-	Size int64 `json:"size,required"`
+	Size int64 `json:"size" api:"required"`
 	// Percentage of the pool to fill per minute. Defaults to 10%.
 	FillRatePerMinute param.Opt[int64] `json:"fill_rate_per_minute,omitzero"`
 	// If true, launches the browser using a headless image. Defaults to false.
@@ -347,7 +347,7 @@ type BrowserPoolUpdateParams struct {
 	// Number of browsers to maintain in the pool. The maximum size is determined by
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
-	Size int64 `json:"size,required"`
+	Size int64 `json:"size" api:"required"`
 	// Whether to discard all idle browsers and rebuild the pool immediately. Defaults
 	// to false.
 	DiscardAllIdle param.Opt[bool] `json:"discard_all_idle,omitzero"`
@@ -428,7 +428,7 @@ func (r *BrowserPoolAcquireParams) UnmarshalJSON(data []byte) error {
 
 type BrowserPoolReleaseParams struct {
 	// Browser session ID to release back to the pool
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether to reuse the browser instance or destroy it and create a new one.
 	// Defaults to true.
 	Reuse param.Opt[bool] `json:"reuse,omitzero"`

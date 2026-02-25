@@ -98,16 +98,16 @@ func (r *ExtensionService) Upload(ctx context.Context, body ExtensionUploadParam
 // A browser extension uploaded to Kernel.
 type ExtensionListResponse struct {
 	// Unique identifier for the extension
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the extension was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Size of the extension archive in bytes
-	SizeBytes int64 `json:"size_bytes,required"`
+	SizeBytes int64 `json:"size_bytes" api:"required"`
 	// Timestamp when the extension was last used
-	LastUsedAt time.Time `json:"last_used_at,nullable" format:"date-time"`
+	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
 	// organization.
-	Name string `json:"name,nullable"`
+	Name string `json:"name" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -129,16 +129,16 @@ func (r *ExtensionListResponse) UnmarshalJSON(data []byte) error {
 // A browser extension uploaded to Kernel.
 type ExtensionUploadResponse struct {
 	// Unique identifier for the extension
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the extension was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Size of the extension archive in bytes
-	SizeBytes int64 `json:"size_bytes,required"`
+	SizeBytes int64 `json:"size_bytes" api:"required"`
 	// Timestamp when the extension was last used
-	LastUsedAt time.Time `json:"last_used_at,nullable" format:"date-time"`
+	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
 	// organization.
-	Name string `json:"name,nullable"`
+	Name string `json:"name" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -159,7 +159,7 @@ func (r *ExtensionUploadResponse) UnmarshalJSON(data []byte) error {
 
 type ExtensionDownloadFromChromeStoreParams struct {
 	// Chrome Web Store URL for the extension.
-	URL string `query:"url,required" json:"-"`
+	URL string `query:"url" api:"required" json:"-"`
 	// Target operating system for the extension package. Defaults to linux.
 	//
 	// Any of "win", "mac", "linux".
@@ -187,7 +187,7 @@ const (
 
 type ExtensionUploadParams struct {
 	// ZIP file containing the browser extension.
-	File io.Reader `json:"file,omitzero,required" format:"binary"`
+	File io.Reader `json:"file,omitzero" api:"required" format:"binary"`
 	// Optional unique name within the organization to reference this extension.
 	Name param.Opt[string] `json:"name,omitzero"`
 	paramObj

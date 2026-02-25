@@ -53,7 +53,7 @@ func (r *BrowserPlaywrightService) Execute(ctx context.Context, id string, body 
 // Result of Playwright code execution
 type BrowserPlaywrightExecuteResponse struct {
 	// Whether the code executed successfully
-	Success bool `json:"success,required"`
+	Success bool `json:"success" api:"required"`
 	// Error message if execution failed
 	Error string `json:"error"`
 	// The value returned by the code (if any)
@@ -86,7 +86,7 @@ type BrowserPlaywrightExecuteParams struct {
 	// statement at the end to return a value. This value is returned as the `result`
 	// property in the response. Example: "await page.goto('https://example.com');
 	// return await page.title();"
-	Code string `json:"code,required"`
+	Code string `json:"code" api:"required"`
 	// Maximum execution time in seconds. Default is 60.
 	TimeoutSec param.Opt[int64] `json:"timeout_sec,omitzero"`
 	paramObj

@@ -96,7 +96,7 @@ type ProxyNewResponse struct {
 	// worst: `mobile` > `residential` > `isp` > `datacenter`.
 	//
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
-	Type ProxyNewResponseType `json:"type,required"`
+	Type ProxyNewResponseType `json:"type" api:"required"`
 	ID   string               `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyNewResponseConfigUnion `json:"config"`
@@ -341,9 +341,9 @@ func (r *ProxyNewResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) err
 // Configuration for a custom proxy (e.g., private proxy server).
 type ProxyNewResponseConfigCustomProxyConfig struct {
 	// Proxy host address or IP.
-	Host string `json:"host,required"`
+	Host string `json:"host" api:"required"`
 	// Proxy port.
-	Port int64 `json:"port,required"`
+	Port int64 `json:"port" api:"required"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -387,7 +387,7 @@ type ProxyGetResponse struct {
 	// worst: `mobile` > `residential` > `isp` > `datacenter`.
 	//
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
-	Type ProxyGetResponseType `json:"type,required"`
+	Type ProxyGetResponseType `json:"type" api:"required"`
 	ID   string               `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyGetResponseConfigUnion `json:"config"`
@@ -632,9 +632,9 @@ func (r *ProxyGetResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) err
 // Configuration for a custom proxy (e.g., private proxy server).
 type ProxyGetResponseConfigCustomProxyConfig struct {
 	// Proxy host address or IP.
-	Host string `json:"host,required"`
+	Host string `json:"host" api:"required"`
 	// Proxy port.
-	Port int64 `json:"port,required"`
+	Port int64 `json:"port" api:"required"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -678,7 +678,7 @@ type ProxyListResponse struct {
 	// worst: `mobile` > `residential` > `isp` > `datacenter`.
 	//
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
-	Type ProxyListResponseType `json:"type,required"`
+	Type ProxyListResponseType `json:"type" api:"required"`
 	ID   string                `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyListResponseConfigUnion `json:"config"`
@@ -923,9 +923,9 @@ func (r *ProxyListResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) er
 // Configuration for a custom proxy (e.g., private proxy server).
 type ProxyListResponseConfigCustomProxyConfig struct {
 	// Proxy host address or IP.
-	Host string `json:"host,required"`
+	Host string `json:"host" api:"required"`
 	// Proxy port.
-	Port int64 `json:"port,required"`
+	Port int64 `json:"port" api:"required"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -969,7 +969,7 @@ type ProxyCheckResponse struct {
 	// worst: `mobile` > `residential` > `isp` > `datacenter`.
 	//
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
-	Type ProxyCheckResponseType `json:"type,required"`
+	Type ProxyCheckResponseType `json:"type" api:"required"`
 	ID   string                 `json:"id"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyCheckResponseConfigUnion `json:"config"`
@@ -1214,9 +1214,9 @@ func (r *ProxyCheckResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) e
 // Configuration for a custom proxy (e.g., private proxy server).
 type ProxyCheckResponseConfigCustomProxyConfig struct {
 	// Proxy host address or IP.
-	Host string `json:"host,required"`
+	Host string `json:"host" api:"required"`
 	// Proxy port.
-	Port int64 `json:"port,required"`
+	Port int64 `json:"port" api:"required"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -1259,7 +1259,7 @@ type ProxyNewParams struct {
 	// worst: `mobile` > `residential` > `isp` > `datacenter`.
 	//
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
-	Type ProxyNewParamsType `json:"type,omitzero,required"`
+	Type ProxyNewParamsType `json:"type,omitzero" api:"required"`
 	// Readable name of the proxy.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Configuration specific to the selected proxy `type`.
@@ -1543,9 +1543,9 @@ func init() {
 // The properties Host, Port are required.
 type ProxyNewParamsConfigCreateCustomProxyConfig struct {
 	// Proxy host address or IP.
-	Host string `json:"host,required"`
+	Host string `json:"host" api:"required"`
 	// Proxy port.
-	Port int64 `json:"port,required"`
+	Port int64 `json:"port" api:"required"`
 	// Password for proxy authentication.
 	Password param.Opt[string] `json:"password,omitzero"`
 	// Username for proxy authentication.
