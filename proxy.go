@@ -98,6 +98,8 @@ type ProxyNewResponse struct {
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
 	Type ProxyNewResponseType `json:"type" api:"required"`
 	ID   string               `json:"id"`
+	// Hostnames that should bypass the parent proxy and connect directly.
+	BypassHosts []string `json:"bypass_hosts"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyNewResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
@@ -118,6 +120,7 @@ type ProxyNewResponse struct {
 	JSON struct {
 		Type        respjson.Field
 		ID          respjson.Field
+		BypassHosts respjson.Field
 		Config      respjson.Field
 		IPAddress   respjson.Field
 		LastChecked respjson.Field
@@ -389,6 +392,8 @@ type ProxyGetResponse struct {
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
 	Type ProxyGetResponseType `json:"type" api:"required"`
 	ID   string               `json:"id"`
+	// Hostnames that should bypass the parent proxy and connect directly.
+	BypassHosts []string `json:"bypass_hosts"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyGetResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
@@ -409,6 +414,7 @@ type ProxyGetResponse struct {
 	JSON struct {
 		Type        respjson.Field
 		ID          respjson.Field
+		BypassHosts respjson.Field
 		Config      respjson.Field
 		IPAddress   respjson.Field
 		LastChecked respjson.Field
@@ -680,6 +686,8 @@ type ProxyListResponse struct {
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
 	Type ProxyListResponseType `json:"type" api:"required"`
 	ID   string                `json:"id"`
+	// Hostnames that should bypass the parent proxy and connect directly.
+	BypassHosts []string `json:"bypass_hosts"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyListResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
@@ -700,6 +708,7 @@ type ProxyListResponse struct {
 	JSON struct {
 		Type        respjson.Field
 		ID          respjson.Field
+		BypassHosts respjson.Field
 		Config      respjson.Field
 		IPAddress   respjson.Field
 		LastChecked respjson.Field
@@ -971,6 +980,8 @@ type ProxyCheckResponse struct {
 	// Any of "datacenter", "isp", "residential", "mobile", "custom".
 	Type ProxyCheckResponseType `json:"type" api:"required"`
 	ID   string                 `json:"id"`
+	// Hostnames that should bypass the parent proxy and connect directly.
+	BypassHosts []string `json:"bypass_hosts"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyCheckResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
@@ -991,6 +1002,7 @@ type ProxyCheckResponse struct {
 	JSON struct {
 		Type        respjson.Field
 		ID          respjson.Field
+		BypassHosts respjson.Field
 		Config      respjson.Field
 		IPAddress   respjson.Field
 		LastChecked respjson.Field
@@ -1262,6 +1274,8 @@ type ProxyNewParams struct {
 	Type ProxyNewParamsType `json:"type,omitzero" api:"required"`
 	// Readable name of the proxy.
 	Name param.Opt[string] `json:"name,omitzero"`
+	// Hostnames that should bypass the parent proxy and connect directly.
+	BypassHosts []string `json:"bypass_hosts,omitzero"`
 	// Configuration specific to the selected proxy `type`.
 	Config ProxyNewParamsConfigUnion `json:"config,omitzero"`
 	// Protocol to use for the proxy connection.
