@@ -149,6 +149,7 @@ func TestBrowserListWithOptionalParams(t *testing.T) {
 		IncludeDeleted: kernel.Bool(true),
 		Limit:          kernel.Int(1),
 		Offset:         kernel.Int(0),
+		Query:          kernel.String("query"),
 		Status:         kernel.BrowserListParamsStatusActive,
 	})
 	if err != nil {
