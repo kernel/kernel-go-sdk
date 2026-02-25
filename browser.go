@@ -589,6 +589,8 @@ type BrowserListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search browsers by session ID, profile ID, or proxy ID.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter sessions by status. "active" returns only active sessions (default),
 	// "deleted" returns only soft-deleted sessions, "all" returns both.
 	//
