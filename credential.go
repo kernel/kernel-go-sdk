@@ -131,11 +131,11 @@ func (r *CredentialService) TotpCode(ctx context.Context, idOrName string, opts 
 // The properties Domain, Name, Values are required.
 type CreateCredentialRequestParam struct {
 	// Target domain this credential is for
-	Domain string `json:"domain,required"`
+	Domain string `json:"domain" api:"required"`
 	// Unique name for the credential within the organization
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// Field name to value mapping (e.g., username, password)
-	Values map[string]string `json:"values,omitzero,required"`
+	Values map[string]string `json:"values,omitzero" api:"required"`
 	// If set, indicates this credential should be used with the specified SSO provider
 	// (e.g., google, github, microsoft). When the target site has a matching SSO
 	// button, it will be clicked first before filling credential values on the
@@ -158,15 +158,15 @@ func (r *CreateCredentialRequestParam) UnmarshalJSON(data []byte) error {
 // A stored credential for automatic re-authentication
 type Credential struct {
 	// Unique identifier for the credential
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// When the credential was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Target domain this credential is for
-	Domain string `json:"domain,required"`
+	Domain string `json:"domain" api:"required"`
 	// Unique name for the credential within the organization
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// When the credential was last updated
-	UpdatedAt time.Time `json:"updated_at,required" format:"date-time"`
+	UpdatedAt time.Time `json:"updated_at" api:"required" format:"date-time"`
 	// Whether this credential has a TOTP secret configured for automatic 2FA
 	HasTotpSecret bool `json:"has_totp_secret"`
 	// Whether this credential has stored values (email, password, etc.)
@@ -175,7 +175,7 @@ type Credential struct {
 	// (e.g., google, github, microsoft). When the target site has a matching SSO
 	// button, it will be clicked first before filling credential values on the
 	// identity provider's login page.
-	SSOProvider string `json:"sso_provider,nullable"`
+	SSOProvider string `json:"sso_provider" api:"nullable"`
 	// Current 6-digit TOTP code. Only included in create/update responses when
 	// totp_secret was just set.
 	TotpCode string `json:"totp_code"`
@@ -230,9 +230,9 @@ func (r *UpdateCredentialRequestParam) UnmarshalJSON(data []byte) error {
 
 type CredentialTotpCodeResponse struct {
 	// Current 6-digit TOTP code
-	Code string `json:"code,required"`
+	Code string `json:"code" api:"required"`
 	// When this code expires (ISO 8601 timestamp)
-	ExpiresAt time.Time `json:"expires_at,required" format:"date-time"`
+	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Code        respjson.Field

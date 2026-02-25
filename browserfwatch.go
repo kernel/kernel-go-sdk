@@ -89,11 +89,11 @@ func (r *BrowserFWatchService) Stop(ctx context.Context, watchID string, body Br
 // Filesystem change event.
 type BrowserFWatchEventsResponse struct {
 	// Absolute path of the file or directory.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// Event type.
 	//
 	// Any of "CREATE", "WRITE", "DELETE", "RENAME".
-	Type BrowserFWatchEventsResponseType `json:"type,required"`
+	Type BrowserFWatchEventsResponseType `json:"type" api:"required"`
 	// Whether the affected path is a directory.
 	IsDir bool `json:"is_dir"`
 	// Base name of the file or directory affected.
@@ -143,13 +143,13 @@ func (r *BrowserFWatchStartResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserFWatchEventsParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	paramObj
 }
 
 type BrowserFWatchStartParams struct {
 	// Directory to watch.
-	Path string `json:"path,required"`
+	Path string `json:"path" api:"required"`
 	// Whether to watch recursively.
 	Recursive param.Opt[bool] `json:"recursive,omitzero"`
 	paramObj
@@ -164,6 +164,6 @@ func (r *BrowserFWatchStartParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserFWatchStopParams struct {
-	ID string `path:"id,required" json:"-"`
+	ID string `path:"id" api:"required" json:"-"`
 	paramObj
 }

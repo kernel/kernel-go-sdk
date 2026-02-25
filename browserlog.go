@@ -56,7 +56,7 @@ func (r *BrowserLogService) StreamStreaming(ctx context.Context, id string, quer
 
 type BrowserLogStreamParams struct {
 	// Any of "path", "supervisor".
-	Source BrowserLogStreamParamsSource `query:"source,omitzero,required" json:"-"`
+	Source BrowserLogStreamParamsSource `query:"source,omitzero" api:"required" json:"-"`
 	Follow param.Opt[bool]              `query:"follow,omitzero" json:"-"`
 	// only required if source is path
 	Path param.Opt[string] `query:"path,omitzero" json:"-"`

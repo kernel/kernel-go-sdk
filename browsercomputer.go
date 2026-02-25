@@ -167,9 +167,9 @@ func (r *BrowserComputerService) TypeText(ctx context.Context, id string, body B
 
 type BrowserComputerGetMousePositionResponse struct {
 	// X coordinate of the cursor
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate of the cursor
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		X           respjson.Field
@@ -188,7 +188,7 @@ func (r *BrowserComputerGetMousePositionResponse) UnmarshalJSON(data []byte) err
 // Generic OK response.
 type BrowserComputerSetCursorVisibilityResponse struct {
 	// Indicates success.
-	Ok bool `json:"ok,required"`
+	Ok bool `json:"ok" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Ok          respjson.Field
@@ -205,7 +205,7 @@ func (r *BrowserComputerSetCursorVisibilityResponse) UnmarshalJSON(data []byte) 
 
 type BrowserComputerBatchParams struct {
 	// Ordered list of actions to execute. Execution stops on the first error.
-	Actions []BrowserComputerBatchParamsAction `json:"actions,omitzero,required"`
+	Actions []BrowserComputerBatchParamsAction `json:"actions,omitzero" api:"required"`
 	paramObj
 }
 
@@ -227,7 +227,7 @@ type BrowserComputerBatchParamsAction struct {
 	//
 	// Any of "click_mouse", "move_mouse", "type_text", "press_key", "scroll",
 	// "drag_mouse", "set_cursor", "sleep".
-	Type       string                                     `json:"type,omitzero,required"`
+	Type       string                                     `json:"type,omitzero" api:"required"`
 	ClickMouse BrowserComputerBatchParamsActionClickMouse `json:"click_mouse,omitzero"`
 	DragMouse  BrowserComputerBatchParamsActionDragMouse  `json:"drag_mouse,omitzero"`
 	MoveMouse  BrowserComputerBatchParamsActionMoveMouse  `json:"move_mouse,omitzero"`
@@ -257,9 +257,9 @@ func init() {
 // The properties X, Y are required.
 type BrowserComputerBatchParamsActionClickMouse struct {
 	// X coordinate of the click position
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate of the click position
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// Number of times to repeat the click
 	NumClicks param.Opt[int64] `json:"num_clicks,omitzero"`
 	// Mouse button to interact with
@@ -296,7 +296,7 @@ func init() {
 type BrowserComputerBatchParamsActionDragMouse struct {
 	// Ordered list of [x, y] coordinate pairs to move through while dragging. Must
 	// contain at least 2 points.
-	Path [][]int64 `json:"path,omitzero,required"`
+	Path [][]int64 `json:"path,omitzero" api:"required"`
 	// Delay in milliseconds between button down and starting to move along the path.
 	Delay param.Opt[int64] `json:"delay,omitzero"`
 	// Delay in milliseconds between relative steps while dragging (not the initial
@@ -330,9 +330,9 @@ func init() {
 // The properties X, Y are required.
 type BrowserComputerBatchParamsActionMoveMouse struct {
 	// X coordinate to move the cursor to
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate to move the cursor to
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// Modifier keys to hold during the move
 	HoldKeys []string `json:"hold_keys,omitzero"`
 	paramObj
@@ -352,7 +352,7 @@ type BrowserComputerBatchParamsActionPressKey struct {
 	// xdotool (see X11 keysym definitions). Examples include "Return", "Shift",
 	// "Ctrl", "Alt", "F5". Items in this list could also be combinations, e.g.
 	// "Ctrl+t" or "Ctrl+Shift+Tab".
-	Keys []string `json:"keys,omitzero,required"`
+	Keys []string `json:"keys,omitzero" api:"required"`
 	// Duration to hold the keys down in milliseconds. If omitted or 0, keys are
 	// tapped.
 	Duration param.Opt[int64] `json:"duration,omitzero"`
@@ -372,9 +372,9 @@ func (r *BrowserComputerBatchParamsActionPressKey) UnmarshalJSON(data []byte) er
 // The properties X, Y are required.
 type BrowserComputerBatchParamsActionScroll struct {
 	// X coordinate at which to perform the scroll
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate at which to perform the scroll
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
 	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
 	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
@@ -395,7 +395,7 @@ func (r *BrowserComputerBatchParamsActionScroll) UnmarshalJSON(data []byte) erro
 // The property Hidden is required.
 type BrowserComputerBatchParamsActionSetCursor struct {
 	// Whether the cursor should be hidden or visible
-	Hidden bool `json:"hidden,required"`
+	Hidden bool `json:"hidden" api:"required"`
 	paramObj
 }
 
@@ -412,7 +412,7 @@ func (r *BrowserComputerBatchParamsActionSetCursor) UnmarshalJSON(data []byte) e
 // The property DurationMs is required.
 type BrowserComputerBatchParamsActionSleep struct {
 	// Duration to sleep in milliseconds.
-	DurationMs int64 `json:"duration_ms,required"`
+	DurationMs int64 `json:"duration_ms" api:"required"`
 	paramObj
 }
 
@@ -427,7 +427,7 @@ func (r *BrowserComputerBatchParamsActionSleep) UnmarshalJSON(data []byte) error
 // The property Text is required.
 type BrowserComputerBatchParamsActionTypeText struct {
 	// Text to type on the browser instance
-	Text string `json:"text,required"`
+	Text string `json:"text" api:"required"`
 	// Delay in milliseconds between keystrokes
 	Delay param.Opt[int64] `json:"delay,omitzero"`
 	paramObj
@@ -457,13 +457,13 @@ func (r *BrowserComputerCaptureScreenshotParams) UnmarshalJSON(data []byte) erro
 // The properties Height, Width, X, Y are required.
 type BrowserComputerCaptureScreenshotParamsRegion struct {
 	// Height of the region in pixels
-	Height int64 `json:"height,required"`
+	Height int64 `json:"height" api:"required"`
 	// Width of the region in pixels
-	Width int64 `json:"width,required"`
+	Width int64 `json:"width" api:"required"`
 	// X coordinate of the region's top-left corner
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate of the region's top-left corner
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	paramObj
 }
 
@@ -477,9 +477,9 @@ func (r *BrowserComputerCaptureScreenshotParamsRegion) UnmarshalJSON(data []byte
 
 type BrowserComputerClickMouseParams struct {
 	// X coordinate of the click position
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate of the click position
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// Number of times to repeat the click
 	NumClicks param.Opt[int64] `json:"num_clicks,omitzero"`
 	// Mouse button to interact with
@@ -526,7 +526,7 @@ const (
 type BrowserComputerDragMouseParams struct {
 	// Ordered list of [x, y] coordinate pairs to move through while dragging. Must
 	// contain at least 2 points.
-	Path [][]int64 `json:"path,omitzero,required"`
+	Path [][]int64 `json:"path,omitzero" api:"required"`
 	// Delay in milliseconds between button down and starting to move along the path.
 	Delay param.Opt[int64] `json:"delay,omitzero"`
 	// Delay in milliseconds between relative steps while dragging (not the initial
@@ -562,9 +562,9 @@ const (
 
 type BrowserComputerMoveMouseParams struct {
 	// X coordinate to move the cursor to
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate to move the cursor to
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// Modifier keys to hold during the move
 	HoldKeys []string `json:"hold_keys,omitzero"`
 	paramObj
@@ -583,7 +583,7 @@ type BrowserComputerPressKeyParams struct {
 	// xdotool (see X11 keysym definitions). Examples include "Return", "Shift",
 	// "Ctrl", "Alt", "F5". Items in this list could also be combinations, e.g.
 	// "Ctrl+t" or "Ctrl+Shift+Tab".
-	Keys []string `json:"keys,omitzero,required"`
+	Keys []string `json:"keys,omitzero" api:"required"`
 	// Duration to hold the keys down in milliseconds. If omitted or 0, keys are
 	// tapped.
 	Duration param.Opt[int64] `json:"duration,omitzero"`
@@ -602,9 +602,9 @@ func (r *BrowserComputerPressKeyParams) UnmarshalJSON(data []byte) error {
 
 type BrowserComputerScrollParams struct {
 	// X coordinate at which to perform the scroll
-	X int64 `json:"x,required"`
+	X int64 `json:"x" api:"required"`
 	// Y coordinate at which to perform the scroll
-	Y int64 `json:"y,required"`
+	Y int64 `json:"y" api:"required"`
 	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
 	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
 	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
@@ -624,7 +624,7 @@ func (r *BrowserComputerScrollParams) UnmarshalJSON(data []byte) error {
 
 type BrowserComputerSetCursorVisibilityParams struct {
 	// Whether the cursor should be hidden or visible
-	Hidden bool `json:"hidden,required"`
+	Hidden bool `json:"hidden" api:"required"`
 	paramObj
 }
 
@@ -638,7 +638,7 @@ func (r *BrowserComputerSetCursorVisibilityParams) UnmarshalJSON(data []byte) er
 
 type BrowserComputerTypeTextParams struct {
 	// Text to type on the browser instance
-	Text string `json:"text,required"`
+	Text string `json:"text" api:"required"`
 	// Delay in milliseconds between keystrokes
 	Delay param.Opt[int64] `json:"delay,omitzero"`
 	paramObj

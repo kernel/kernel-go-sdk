@@ -158,7 +158,7 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body Bro
 // Deprecated: deprecated
 type BrowserPersistence struct {
 	// DEPRECATED: Unique identifier for the persistent browser session.
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -189,7 +189,7 @@ func (r BrowserPersistence) ToParam() BrowserPersistenceParam {
 // The property ID is required.
 type BrowserPersistenceParam struct {
 	// DEPRECATED: Unique identifier for the persistent browser session.
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	paramObj
 }
 
@@ -204,13 +204,13 @@ func (r *BrowserPersistenceParam) UnmarshalJSON(data []byte) error {
 // Browser profile metadata.
 type Profile struct {
 	// Unique identifier for the profile
-	ID string `json:"id,required"`
+	ID string `json:"id" api:"required"`
 	// Timestamp when the profile was created
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Timestamp when the profile was last used
 	LastUsedAt time.Time `json:"last_used_at" format:"date-time"`
 	// Optional, easier-to-reference name for the profile
-	Name string `json:"name,nullable"`
+	Name string `json:"name" api:"nullable"`
 	// Timestamp when the profile was last updated
 	UpdatedAt time.Time `json:"updated_at" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -233,17 +233,17 @@ func (r *Profile) UnmarshalJSON(data []byte) error {
 
 type BrowserNewResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
-	CdpWsURL string `json:"cdp_ws_url,required"`
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
-	Headless bool `json:"headless,required"`
+	Headless bool `json:"headless" api:"required"`
 	// Unique identifier for the browser session
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
-	Stealth bool `json:"stealth,required"`
+	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
-	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -299,17 +299,17 @@ func (r *BrowserNewResponse) UnmarshalJSON(data []byte) error {
 
 type BrowserGetResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
-	CdpWsURL string `json:"cdp_ws_url,required"`
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
-	Headless bool `json:"headless,required"`
+	Headless bool `json:"headless" api:"required"`
 	// Unique identifier for the browser session
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
-	Stealth bool `json:"stealth,required"`
+	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
-	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -365,17 +365,17 @@ func (r *BrowserGetResponse) UnmarshalJSON(data []byte) error {
 
 type BrowserUpdateResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
-	CdpWsURL string `json:"cdp_ws_url,required"`
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
-	Headless bool `json:"headless,required"`
+	Headless bool `json:"headless" api:"required"`
 	// Unique identifier for the browser session
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
-	Stealth bool `json:"stealth,required"`
+	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
-	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -431,17 +431,17 @@ func (r *BrowserUpdateResponse) UnmarshalJSON(data []byte) error {
 
 type BrowserListResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
-	CdpWsURL string `json:"cdp_ws_url,required"`
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
-	CreatedAt time.Time `json:"created_at,required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
-	Headless bool `json:"headless,required"`
+	Headless bool `json:"headless" api:"required"`
 	// Unique identifier for the browser session
-	SessionID string `json:"session_id,required"`
+	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
-	Stealth bool `json:"stealth,required"`
+	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
-	TimeoutSeconds int64 `json:"timeout_seconds,required"`
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -617,7 +617,7 @@ const (
 
 type BrowserDeleteParams struct {
 	// Persistent browser identifier
-	PersistentID string `query:"persistent_id,required" json:"-"`
+	PersistentID string `query:"persistent_id" api:"required" json:"-"`
 	paramObj
 }
 
@@ -631,7 +631,7 @@ func (r BrowserDeleteParams) URLQuery() (v url.Values, err error) {
 
 type BrowserLoadExtensionsParams struct {
 	// List of extensions to upload and activate
-	Extensions []BrowserLoadExtensionsParamsExtension `json:"extensions,omitzero,required"`
+	Extensions []BrowserLoadExtensionsParamsExtension `json:"extensions,omitzero" api:"required"`
 	paramObj
 }
 
@@ -656,10 +656,10 @@ func (r BrowserLoadExtensionsParams) MarshalMultipart() (data []byte, contentTyp
 // The properties Name, ZipFile are required.
 type BrowserLoadExtensionsParamsExtension struct {
 	// Folder name to place the extension under /home/kernel/extensions/<name>
-	Name string `json:"name,required"`
+	Name string `json:"name" api:"required"`
 	// Zip archive containing an unpacked Chromium extension (must include
 	// manifest.json)
-	ZipFile io.Reader `json:"zip_file,omitzero,required" format:"binary"`
+	ZipFile io.Reader `json:"zip_file,omitzero" api:"required" format:"binary"`
 	paramObj
 }
 
