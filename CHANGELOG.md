@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.40.0 (2026-02-26)
+
+Full Changelog: [v0.39.0...v0.40.0](https://github.com/kernel/kernel-go-sdk/compare/v0.39.0...v0.40.0)
+
+### Features
+
+* show pool browsers in dashboard and API ([587b290](https://github.com/kernel/kernel-go-sdk/commit/587b2902ed1d5e618c050b4a05a255e08858ff1c))
+
 ## 0.39.0 (2026-02-25)
 
 Full Changelog: [v0.38.0...v0.39.0](https://github.com/kernel/kernel-go-sdk/compare/v0.38.0...v0.39.0)
