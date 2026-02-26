@@ -254,6 +254,8 @@ type BrowserPoolAcquireResponse struct {
 	//
 	// Deprecated: deprecated
 	Persistence BrowserPersistence `json:"persistence"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
@@ -280,6 +282,7 @@ type BrowserPoolAcquireResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
+		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		Viewport           respjson.Field

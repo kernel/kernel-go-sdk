@@ -201,6 +201,27 @@ func (r *BrowserPersistenceParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Browser pool this session was acquired from, if any.
+type BrowserPoolRef struct {
+	// Browser pool ID
+	ID string `json:"id" api:"required"`
+	// Browser pool name, if set
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserPoolRef) RawJSON() string { return r.JSON.raw }
+func (r *BrowserPoolRef) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Browser profile metadata.
 type Profile struct {
 	// Unique identifier for the profile
@@ -257,6 +278,8 @@ type BrowserNewResponse struct {
 	//
 	// Deprecated: deprecated
 	Persistence BrowserPersistence `json:"persistence"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
@@ -283,6 +306,7 @@ type BrowserNewResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
+		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		Viewport           respjson.Field
@@ -323,6 +347,8 @@ type BrowserGetResponse struct {
 	//
 	// Deprecated: deprecated
 	Persistence BrowserPersistence `json:"persistence"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
@@ -349,6 +375,7 @@ type BrowserGetResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
+		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		Viewport           respjson.Field
@@ -389,6 +416,8 @@ type BrowserUpdateResponse struct {
 	//
 	// Deprecated: deprecated
 	Persistence BrowserPersistence `json:"persistence"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
@@ -415,6 +444,7 @@ type BrowserUpdateResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
+		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		Viewport           respjson.Field
@@ -455,6 +485,8 @@ type BrowserListResponse struct {
 	//
 	// Deprecated: deprecated
 	Persistence BrowserPersistence `json:"persistence"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
@@ -481,6 +513,7 @@ type BrowserListResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Persistence        respjson.Field
+		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		Viewport           respjson.Field
