@@ -567,6 +567,8 @@ type InvocationListBrowsersResponseBrowser struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
 	// but the following configurations are known-good and fully tested: 2560x1440@10,
@@ -592,6 +594,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string

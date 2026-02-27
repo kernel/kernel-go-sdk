@@ -222,6 +222,24 @@ func (r *BrowserPoolRef) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Session usage metrics.
+type BrowserUsage struct {
+	// Time in milliseconds the session was actively running.
+	UptimeMs int64 `json:"uptime_ms" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		UptimeMs    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserUsage) RawJSON() string { return r.JSON.raw }
+func (r *BrowserUsage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Browser profile metadata.
 type Profile struct {
 	// Unique identifier for the profile
@@ -284,6 +302,8 @@ type BrowserNewResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
 	// but the following configurations are known-good and fully tested: 2560x1440@10,
@@ -309,6 +329,7 @@ type BrowserNewResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -353,6 +374,8 @@ type BrowserGetResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
 	// but the following configurations are known-good and fully tested: 2560x1440@10,
@@ -378,6 +401,7 @@ type BrowserGetResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -422,6 +446,8 @@ type BrowserUpdateResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
 	// but the following configurations are known-good and fully tested: 2560x1440@10,
@@ -447,6 +473,7 @@ type BrowserUpdateResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -491,6 +518,8 @@ type BrowserListResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
 	// but the following configurations are known-good and fully tested: 2560x1440@10,
@@ -516,6 +545,7 @@ type BrowserListResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
