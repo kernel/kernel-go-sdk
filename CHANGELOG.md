@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.41.0 (2026-02-27)
+
+Full Changelog: [v0.40.0...v0.41.0](https://github.com/kernel/kernel-go-sdk/compare/v0.40.0...v0.41.0)
+
+### Features
+
+* Return uptime_ms for deleted browser sessions ([a22343e](https://github.com/kernel/kernel-go-sdk/commit/a22343ec31502653057ce247be6177155ad4d651))
+
 ## 0.40.0 (2026-02-26)
 
 Full Changelog: [v0.39.0...v0.40.0](https://github.com/kernel/kernel-go-sdk/compare/v0.39.0...v0.40.0)
