@@ -104,6 +104,8 @@ type AppListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of apps to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search apps by name.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter results by version label.
 	Version param.Opt[string] `query:"version,omitzero" json:"-"`
 	paramObj

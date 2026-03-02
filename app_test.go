@@ -30,6 +30,7 @@ func TestAppListWithOptionalParams(t *testing.T) {
 		AppName: kernel.String("app_name"),
 		Limit:   kernel.Int(1),
 		Offset:  kernel.Int(0),
+		Query:   kernel.String("query"),
 		Version: kernel.String("version"),
 	})
 	if err != nil {
