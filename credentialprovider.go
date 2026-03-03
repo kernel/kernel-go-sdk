@@ -19,6 +19,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Configure external credential providers like 1Password.
+//
 // CredentialProviderService contains methods and other services that help with
 // interacting with the kernel API.
 //

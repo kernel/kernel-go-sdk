@@ -16,17 +16,27 @@ import (
 // interacting with the kernel API. You should not instantiate this client
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
-	Options             []option.RequestOption
-	Deployments         DeploymentService
-	Apps                AppService
-	Invocations         InvocationService
-	Browsers            BrowserService
-	Profiles            ProfileService
-	Auth                AuthService
-	Proxies             ProxyService
-	Extensions          ExtensionService
-	BrowserPools        BrowserPoolService
-	Credentials         CredentialService
+	Options []option.RequestOption
+	// Create and manage app deployments and stream deployment events.
+	Deployments DeploymentService
+	// List applications and versions.
+	Apps AppService
+	// Invoke actions and stream or query invocation status and events.
+	Invocations InvocationService
+	// Create and manage browser sessions.
+	Browsers BrowserService
+	// Create, list, retrieve, and delete browser profiles.
+	Profiles ProfileService
+	Auth     AuthService
+	// Create and manage proxy configurations for routing browser traffic.
+	Proxies ProxyService
+	// Create, list, retrieve, and delete browser extensions.
+	Extensions ExtensionService
+	// Create and manage browser pools for acquiring and releasing browsers.
+	BrowserPools BrowserPoolService
+	// Create and manage credentials for authentication.
+	Credentials CredentialService
+	// Configure external credential providers like 1Password.
 	CredentialProviders CredentialProviderService
 }
 

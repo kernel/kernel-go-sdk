@@ -18,6 +18,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared"
 )
 
+// Create and manage browser pools for acquiring and releasing browsers.
+//
 // BrowserPoolService contains methods and other services that help with
 // interacting with the kernel API.
 //

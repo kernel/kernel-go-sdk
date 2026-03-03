@@ -26,6 +26,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared"
 )
 
+// Create and manage browser sessions.
+//
 // BrowserService contains methods and other services that help with interacting
 // with the kernel API.
 //
@@ -33,12 +35,17 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewBrowserService] method instead.
 type BrowserService struct {
-	Options    []option.RequestOption
-	Replays    BrowserReplayService
-	Fs         BrowserFService
-	Process    BrowserProcessService
-	Logs       BrowserLogService
-	Computer   BrowserComputerService
+	Options []option.RequestOption
+	// Record and manage browser session video replays.
+	Replays BrowserReplayService
+	// Read, write, and manage files on the browser instance.
+	Fs BrowserFService
+	// Execute and manage processes on the browser instance.
+	Process BrowserProcessService
+	// Stream logs from the browser instance.
+	Logs     BrowserLogService
+	Computer BrowserComputerService
+	// Execute Playwright code against the browser instance.
 	Playwright BrowserPlaywrightService
 }
 

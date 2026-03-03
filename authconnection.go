@@ -25,6 +25,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared/constant"
 )
 
+// Create and manage auth connections for automated credential capture and login.
+//
 // AuthConnectionService contains methods and other services that help with
 // interacting with the kernel API.
 //

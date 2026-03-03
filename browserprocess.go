@@ -18,6 +18,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/ssestream"
 )
 
+// Execute and manage processes on the browser instance.
+//
 // BrowserProcessService contains methods and other services that help with
 // interacting with the kernel API.
 //

@@ -23,6 +23,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Read, write, and manage files on the browser instance.
+//
 // BrowserFService contains methods and other services that help with interacting
 // with the kernel API.
 //
@@ -31,7 +33,8 @@ import (
 // the [NewBrowserFService] method instead.
 type BrowserFService struct {
 	Options []option.RequestOption
-	Watch   BrowserFWatchService
+	// Read, write, and manage files on the browser instance.
+	Watch BrowserFWatchService
 }
 
 // NewBrowserFService generates a new service that applies the given options to

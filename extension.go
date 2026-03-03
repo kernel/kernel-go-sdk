@@ -23,6 +23,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Create, list, retrieve, and delete browser extensions.
+//
 // ExtensionService contains methods and other services that help with interacting
 // with the kernel API.
 //

@@ -16,6 +16,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Execute Playwright code against the browser instance.
+//
 // BrowserPlaywrightService contains methods and other services that help with
 // interacting with the kernel API.
 //

@@ -19,6 +19,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared/constant"
 )
 
+// List applications and versions.
+//
 // AppService contains methods and other services that help with interacting with
 // the kernel API.
 //

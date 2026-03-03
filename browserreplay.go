@@ -17,6 +17,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Record and manage browser session video replays.
+//
 // BrowserReplayService contains methods and other services that help with
 // interacting with the kernel API.
 //
