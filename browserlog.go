@@ -18,6 +18,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared"
 )
 
+// Stream logs from the browser instance.
+//
 // BrowserLogService contains methods and other services that help with interacting
 // with the kernel API.
 //
