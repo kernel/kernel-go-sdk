@@ -30,7 +30,7 @@ func MarshalRoot(value any, writer *multipart.Writer) error {
 	e := &encoder{
 		root:       true,
 		dateFormat: time.RFC3339,
-		arrayFmt:   "comma",
+		arrayFmt:   "indices:dots",
 	}
 	return e.marshal(value, writer)
 }
