@@ -127,6 +127,18 @@ func (r *BrowserComputerService) PressKey(ctx context.Context, id string, body B
 	return
 }
 
+// Read text from the clipboard on the browser instance
+func (r *BrowserComputerService) ReadClipboard(ctx context.Context, id string, opts ...option.RequestOption) (res *BrowserComputerReadClipboardResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("browsers/%s/computer/clipboard/read", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return
+}
+
 // Scroll the mouse wheel at a position on the host computer
 func (r *BrowserComputerService) Scroll(ctx context.Context, id string, body BrowserComputerScrollParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -165,6 +177,19 @@ func (r *BrowserComputerService) TypeText(ctx context.Context, id string, body B
 	return
 }
 
+// Write text to the clipboard on the browser instance
+func (r *BrowserComputerService) WriteClipboard(ctx context.Context, id string, body BrowserComputerWriteClipboardParams, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return
+	}
+	path := fmt.Sprintf("browsers/%s/computer/clipboard/write", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
+	return
+}
+
 type BrowserComputerGetMousePositionResponse struct {
 	// X coordinate of the cursor
 	X int64 `json:"x" api:"required"`
@@ -182,6 +207,23 @@ type BrowserComputerGetMousePositionResponse struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserComputerGetMousePositionResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserComputerGetMousePositionResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserComputerReadClipboardResponse struct {
+	// Current clipboard text content
+	Text string `json:"text" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Text        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserComputerReadClipboardResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserComputerReadClipboardResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -649,5 +691,19 @@ func (r BrowserComputerTypeTextParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserComputerTypeTextParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserComputerWriteClipboardParams struct {
+	// Text to write to the system clipboard
+	Text string `json:"text" api:"required"`
+	paramObj
+}
+
+func (r BrowserComputerWriteClipboardParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserComputerWriteClipboardParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserComputerWriteClipboardParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
