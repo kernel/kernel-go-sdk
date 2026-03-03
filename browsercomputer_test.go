@@ -53,9 +53,11 @@ func TestBrowserComputerBatch(t *testing.T) {
 					StepsPerSegment: kernel.Int(1),
 				},
 				MoveMouse: kernel.BrowserComputerBatchParamsActionMoveMouse{
-					X:        0,
-					Y:        0,
-					HoldKeys: []string{"string"},
+					X:          0,
+					Y:          0,
+					DurationMs: kernel.Int(50),
+					HoldKeys:   []string{"string"},
+					Smooth:     kernel.Bool(true),
 				},
 				PressKey: kernel.BrowserComputerBatchParamsActionPressKey{
 					Keys:     []string{"string"},
@@ -244,9 +246,11 @@ func TestBrowserComputerMoveMouseWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.BrowserComputerMoveMouseParams{
-			X:        0,
-			Y:        0,
-			HoldKeys: []string{"string"},
+			X:          0,
+			Y:          0,
+			DurationMs: kernel.Int(50),
+			HoldKeys:   []string{"string"},
+			Smooth:     kernel.Bool(true),
 		},
 	)
 	if err != nil {
