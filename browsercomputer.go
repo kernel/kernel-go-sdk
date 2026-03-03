@@ -375,6 +375,11 @@ type BrowserComputerBatchParamsActionMoveMouse struct {
 	X int64 `json:"x" api:"required"`
 	// Y coordinate to move the cursor to
 	Y int64 `json:"y" api:"required"`
+	// Target total duration in milliseconds for the mouse movement when smooth=true.
+	// Omit for automatic timing based on distance.
+	DurationMs param.Opt[int64] `json:"duration_ms,omitzero"`
+	// Use human-like Bezier curve path instead of instant mouse movement.
+	Smooth param.Opt[bool] `json:"smooth,omitzero"`
 	// Modifier keys to hold during the move
 	HoldKeys []string `json:"hold_keys,omitzero"`
 	paramObj
@@ -607,6 +612,11 @@ type BrowserComputerMoveMouseParams struct {
 	X int64 `json:"x" api:"required"`
 	// Y coordinate to move the cursor to
 	Y int64 `json:"y" api:"required"`
+	// Target total duration in milliseconds for the mouse movement when smooth=true.
+	// Omit for automatic timing based on distance.
+	DurationMs param.Opt[int64] `json:"duration_ms,omitzero"`
+	// Use human-like Bezier curve path instead of instant mouse movement.
+	Smooth param.Opt[bool] `json:"smooth,omitzero"`
 	// Modifier keys to hold during the move
 	HoldKeys []string `json:"hold_keys,omitzero"`
 	paramObj
