@@ -22,6 +22,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Create and manage credentials for authentication.
+//
 // CredentialService contains methods and other services that help with interacting
 // with the kernel API.
 //

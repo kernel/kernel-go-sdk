@@ -17,6 +17,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/ssestream"
 )
 
+// Read, write, and manage files on the browser instance.
+//
 // BrowserFWatchService contains methods and other services that help with
 // interacting with the kernel API.
 //

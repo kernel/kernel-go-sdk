@@ -13,7 +13,8 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewAuthService] method instead.
 type AuthService struct {
-	Options     []option.RequestOption
+	Options []option.RequestOption
+	// Create and manage auth connections for automated credential capture and login.
 	Connections AuthConnectionService
 }
 

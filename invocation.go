@@ -24,6 +24,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared/constant"
 )
 
+// Invoke actions and stream or query invocation status and events.
+//
 // InvocationService contains methods and other services that help with interacting
 // with the kernel API.
 //

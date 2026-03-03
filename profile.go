@@ -18,6 +18,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/param"
 )
 
+// Create, list, retrieve, and delete browser profiles.
+//
 // ProfileService contains methods and other services that help with interacting
 // with the kernel API.
 //

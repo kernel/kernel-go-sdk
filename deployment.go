@@ -28,6 +28,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared/constant"
 )
 
+// Create and manage app deployments and stream deployment events.
+//
 // DeploymentService contains methods and other services that help with interacting
 // with the kernel API.
 //

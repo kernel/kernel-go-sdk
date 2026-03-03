@@ -18,6 +18,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Create and manage proxy configurations for routing browser traffic.
+//
 // ProxyService contains methods and other services that help with interacting with
 // the kernel API.
 //
