@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.42.1 (2026-03-05)
+
+Full Changelog: [v0.42.0...v0.42.1](https://github.com/kernel/kernel-go-sdk/compare/v0.42.0...v0.42.1)
+
+### Features
+
+* [kernel-1028] add api clipboard support ([12e68a1](https://github.com/kernel/kernel-go-sdk/commit/12e68a109a129985f55d0660b858f9840c6c8c0d))
+* add force flag to viewport resize to bypass live view/recording check ([d387238](https://github.com/kernel/kernel-go-sdk/commit/d387238e5da1f24f8b54a4be84d484da90fe1226))
+* expose smooth mouse movement via public API ([0e0f2ac](https://github.com/kernel/kernel-go-sdk/commit/0e0f2ac548b6155a2e7af9825e16b6a5662ec8cf))
+
+
+### Bug Fixes
+
+* use indices:dots arrayFmt in MarshalRoot for correct multipart array encoding ([11a7720](https://github.com/kernel/kernel-go-sdk/commit/11a7720da7982b30d072d88f86d1c77db1d4902f))
+
+
+### Chores
+
+* **internal:** codegen related update ([3c706a4](https://github.com/kernel/kernel-go-sdk/commit/3c706a4e55213c5da4fdf256c77d716729c7f658))
+
 ## 0.42.0 (2026-03-02)
 
 Full Changelog: [v0.41.0...v0.42.0](https://github.com/kernel/kernel-go-sdk/compare/v0.41.0...v0.42.0)
