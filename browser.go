@@ -639,7 +639,7 @@ type BrowserUpdateParams struct {
 	// already have a profile loaded.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Viewport configuration to apply to the browser session.
-	Viewport shared.BrowserViewportParam `json:"viewport,omitzero"`
+	Viewport BrowserUpdateParamsViewport `json:"viewport,omitzero"`
 	paramObj
 }
 
@@ -649,6 +649,24 @@ func (r BrowserUpdateParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *BrowserUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Viewport configuration to apply to the browser session.
+type BrowserUpdateParamsViewport struct {
+	// If true, allow the viewport change even when a live view or recording/replay is
+	// active. Active recordings will be gracefully stopped and restarted at the new
+	// resolution as separate segments. If false (default), the resize is refused when
+	// a live view or recording is active.
+	Force param.Opt[bool] `json:"force,omitzero"`
+	shared.BrowserViewportParam
+}
+
+func (r BrowserUpdateParamsViewport) MarshalJSON() (data []byte, err error) {
+	type shadow struct {
+		*BrowserUpdateParamsViewport
+		MarshalJSON bool `json:"-"` // Prevent inheriting [json.Marshaler] from the embedded field
+	}
+	return param.MarshalObject(r, shadow{&r, false})
 }
 
 type BrowserListParams struct {

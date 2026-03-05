@@ -116,10 +116,13 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID: kernel.String("proxy_id"),
-			Viewport: shared.BrowserViewportParam{
-				Height:      800,
-				Width:       1280,
-				RefreshRate: kernel.Int(60),
+			Viewport: kernel.BrowserUpdateParamsViewport{
+				BrowserViewportParam: shared.BrowserViewportParam{
+					Height:      800,
+					Width:       1280,
+					RefreshRate: kernel.Int(60),
+				},
+				Force: kernel.Bool(true),
 			},
 		},
 	)
