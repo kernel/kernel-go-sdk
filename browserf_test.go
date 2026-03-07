@@ -324,7 +324,7 @@ func TestBrowserFUpload(t *testing.T) {
 		kernel.BrowserFUploadParams{
 			Files: []kernel.BrowserFUploadParamsFile{{
 				DestPath: "/J!",
-				File:     io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+				File:     io.Reader(bytes.NewBuffer([]byte("Example data"))),
 			}},
 		},
 	)
@@ -355,7 +355,7 @@ func TestBrowserFUploadZip(t *testing.T) {
 		"id",
 		kernel.BrowserFUploadZipParams{
 			DestPath: "/J!",
-			ZipFile:  io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+			ZipFile:  io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		},
 	)
 	if err != nil {
@@ -383,7 +383,7 @@ func TestBrowserFWriteFileWithOptionalParams(t *testing.T) {
 	err := client.Browsers.Fs.WriteFile(
 		context.TODO(),
 		"id",
-		io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		kernel.BrowserFWriteFileParams{
 			Path: "/J!",
 			Mode: kernel.String("0611"),
