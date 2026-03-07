@@ -231,7 +231,7 @@ func TestBrowserLoadExtensions(t *testing.T) {
 		kernel.BrowserLoadExtensionsParams{
 			Extensions: []kernel.BrowserLoadExtensionsParamsExtension{{
 				Name:    "name",
-				ZipFile: io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+				ZipFile: io.Reader(bytes.NewBuffer([]byte("Example data"))),
 			}},
 		},
 	)

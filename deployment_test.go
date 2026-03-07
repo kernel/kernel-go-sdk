@@ -33,7 +33,7 @@ func TestDeploymentNewWithOptionalParams(t *testing.T) {
 		EnvVars: map[string]string{
 			"FOO": "bar",
 		},
-		File:   io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		File:   io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		Force:  kernel.Bool(false),
 		Region: kernel.DeploymentNewParamsRegionAwsUsEast1a,
 		Source: kernel.DeploymentNewParamsSource{

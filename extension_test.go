@@ -148,7 +148,7 @@ func TestExtensionUploadWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Extensions.Upload(context.TODO(), kernel.ExtensionUploadParams{
-		File: io.Reader(bytes.NewBuffer([]byte("some file contents"))),
+		File: io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		Name: kernel.String("name"),
 	})
 	if err != nil {
