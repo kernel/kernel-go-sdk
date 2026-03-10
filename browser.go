@@ -290,6 +290,8 @@ type BrowserNewResponse struct {
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -328,6 +330,7 @@ type BrowserNewResponse struct {
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
@@ -362,6 +365,8 @@ type BrowserGetResponse struct {
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -400,6 +405,7 @@ type BrowserGetResponse struct {
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
@@ -434,6 +440,8 @@ type BrowserUpdateResponse struct {
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -472,6 +480,7 @@ type BrowserUpdateResponse struct {
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
@@ -506,6 +515,8 @@ type BrowserListResponse struct {
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -544,6 +555,7 @@ type BrowserListResponse struct {
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
