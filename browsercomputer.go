@@ -341,6 +341,12 @@ type BrowserComputerBatchParamsActionDragMouse struct {
 	Path [][]int64 `json:"path,omitzero" api:"required"`
 	// Delay in milliseconds between button down and starting to move along the path.
 	Delay param.Opt[int64] `json:"delay,omitzero"`
+	// Target total duration in milliseconds for the entire drag movement when
+	// smooth=true. Omit for automatic timing based on total path length.
+	DurationMs param.Opt[int64] `json:"duration_ms,omitzero"`
+	// Use human-like Bezier curves between path waypoints instead of linear
+	// interpolation. When true, steps_per_segment and step_delay_ms are ignored.
+	Smooth param.Opt[bool] `json:"smooth,omitzero"`
 	// Delay in milliseconds between relative steps while dragging (not the initial
 	// delay).
 	StepDelayMs param.Opt[int64] `json:"step_delay_ms,omitzero"`
@@ -576,6 +582,12 @@ type BrowserComputerDragMouseParams struct {
 	Path [][]int64 `json:"path,omitzero" api:"required"`
 	// Delay in milliseconds between button down and starting to move along the path.
 	Delay param.Opt[int64] `json:"delay,omitzero"`
+	// Target total duration in milliseconds for the entire drag movement when
+	// smooth=true. Omit for automatic timing based on total path length.
+	DurationMs param.Opt[int64] `json:"duration_ms,omitzero"`
+	// Use human-like Bezier curves between path waypoints instead of linear
+	// interpolation. When true, steps_per_segment and step_delay_ms are ignored.
+	Smooth param.Opt[bool] `json:"smooth,omitzero"`
 	// Delay in milliseconds between relative steps while dragging (not the initial
 	// delay).
 	StepDelayMs param.Opt[int64] `json:"step_delay_ms,omitzero"`
