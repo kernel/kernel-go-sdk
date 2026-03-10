@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.43.0 (2026-03-10)
+
+Full Changelog: [v0.42.1...v0.43.0](https://github.com/kernel/kernel-go-sdk/compare/v0.42.1...v0.43.0)
+
+### Features
+
+* Add webdriver_ws_url and metro webdriver session proxy ([4e7c5d5](https://github.com/kernel/kernel-go-sdk/commit/4e7c5d567427e28035b489fcbf6afcef0f1775c7))
+
+
+### Chores
+
+* **ci:** skip uploading artifacts on stainless-internal branches ([0586ec1](https://github.com/kernel/kernel-go-sdk/commit/0586ec11323a030954b76b8dde236db6817f5141))
+* **internal:** codegen related update ([63ecb44](https://github.com/kernel/kernel-go-sdk/commit/63ecb4436a223ba865230b94353a4f654205a4e2))
+* update placeholder string ([82510c4](https://github.com/kernel/kernel-go-sdk/commit/82510c497a99e3a671b695667cc59aa66b8605ac))
+
 ## 0.42.1 (2026-03-05)
 
 Full Changelog: [v0.42.0...v0.42.1](https://github.com/kernel/kernel-go-sdk/compare/v0.42.0...v0.42.1)
