@@ -550,6 +550,8 @@ type InvocationListBrowsersResponseBrowser struct {
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
@@ -588,6 +590,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
 		BrowserLiveViewURL respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
