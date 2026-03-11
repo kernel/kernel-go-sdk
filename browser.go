@@ -69,7 +69,7 @@ func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "browsers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get information about a browser session.
@@ -77,11 +77,11 @@ func (r *BrowserService) Get(ctx context.Context, id string, query BrowserGetPar
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a browser session.
@@ -89,11 +89,11 @@ func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpda
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List all browser sessions with pagination support. Use status parameter to
@@ -130,7 +130,7 @@ func (r *BrowserService) Delete(ctx context.Context, body BrowserDeleteParams, o
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	path := "browsers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Delete a browser session by ID
@@ -139,11 +139,11 @@ func (r *BrowserService) DeleteByID(ctx context.Context, id string, opts ...opti
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Loads one or more unpacked extensions and restarts Chromium on the browser
@@ -153,11 +153,11 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body Bro
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/extensions", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.

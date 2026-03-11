@@ -48,11 +48,11 @@ func (r *BrowserFWatchService) EventsStreaming(ctx context.Context, watchID stri
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if query.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[BrowserFWatchEventsResponse](nil, err)
 	}
 	if watchID == "" {
 		err = errors.New("missing required watch_id parameter")
-		return
+		return ssestream.NewStream[BrowserFWatchEventsResponse](nil, err)
 	}
 	path := fmt.Sprintf("browsers/%s/fs/watch/%s/events", query.ID, watchID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)
@@ -64,11 +64,11 @@ func (r *BrowserFWatchService) Start(ctx context.Context, id string, body Browse
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/watch", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Stop watching a directory
@@ -77,15 +77,15 @@ func (r *BrowserFWatchService) Stop(ctx context.Context, watchID string, body Br
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	if watchID == "" {
 		err = errors.New("missing required watch_id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/watch/%s", body.ID, watchID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Filesystem change event.

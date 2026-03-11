@@ -45,7 +45,7 @@ func (r *ProfileService) New(ctx context.Context, body ProfileNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "profiles"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve details for a single profile by its ID or name.
@@ -53,11 +53,11 @@ func (r *ProfileService) Get(ctx context.Context, idOrName string, opts ...optio
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("profiles/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List profiles with optional filtering and pagination.
@@ -89,11 +89,11 @@ func (r *ProfileService) Delete(ctx context.Context, idOrName string, opts ...op
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("profiles/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Download the profile. Profiles are JSON files containing the pieces of state
@@ -103,11 +103,11 @@ func (r *ProfileService) Download(ctx context.Context, idOrName string, opts ...
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("profiles/%s/download", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type ProfileNewParams struct {

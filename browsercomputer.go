@@ -43,11 +43,11 @@ func (r *BrowserComputerService) Batch(ctx context.Context, id string, body Brow
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/batch", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Capture a screenshot of the browser instance
@@ -56,11 +56,11 @@ func (r *BrowserComputerService) CaptureScreenshot(ctx context.Context, id strin
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "image/png")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/screenshot", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Simulate a mouse click action on the browser instance
@@ -69,11 +69,11 @@ func (r *BrowserComputerService) ClickMouse(ctx context.Context, id string, body
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/click_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Drag the mouse along a path
@@ -82,11 +82,11 @@ func (r *BrowserComputerService) DragMouse(ctx context.Context, id string, body 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/drag_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Get the current mouse cursor position on the browser instance
@@ -94,11 +94,11 @@ func (r *BrowserComputerService) GetMousePosition(ctx context.Context, id string
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/get_mouse_position", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Move the mouse cursor to the specified coordinates on the browser instance
@@ -107,11 +107,11 @@ func (r *BrowserComputerService) MoveMouse(ctx context.Context, id string, body 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/move_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Press one or more keys on the host computer
@@ -120,11 +120,11 @@ func (r *BrowserComputerService) PressKey(ctx context.Context, id string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/press_key", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Read text from the clipboard on the browser instance
@@ -132,11 +132,11 @@ func (r *BrowserComputerService) ReadClipboard(ctx context.Context, id string, o
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/clipboard/read", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Scroll the mouse wheel at a position on the host computer
@@ -145,11 +145,11 @@ func (r *BrowserComputerService) Scroll(ctx context.Context, id string, body Bro
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/scroll", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Set cursor visibility
@@ -157,11 +157,11 @@ func (r *BrowserComputerService) SetCursorVisibility(ctx context.Context, id str
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/cursor", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Type text on the browser instance
@@ -170,11 +170,11 @@ func (r *BrowserComputerService) TypeText(ctx context.Context, id string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/type", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Write text to the clipboard on the browser instance
@@ -183,11 +183,11 @@ func (r *BrowserComputerService) WriteClipboard(ctx context.Context, id string, 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/clipboard/write", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 type BrowserComputerGetMousePositionResponse struct {

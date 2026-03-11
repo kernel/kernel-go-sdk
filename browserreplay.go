@@ -43,11 +43,11 @@ func (r *BrowserReplayService) List(ctx context.Context, id string, opts ...opti
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/replays", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Download or stream the specified replay recording.
@@ -56,15 +56,15 @@ func (r *BrowserReplayService) Download(ctx context.Context, replayID string, qu
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "video/mp4")}, opts...)
 	if query.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if replayID == "" {
 		err = errors.New("missing required replay_id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/replays/%s", query.ID, replayID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Start recording the browser session and return a replay ID.
@@ -72,11 +72,11 @@ func (r *BrowserReplayService) Start(ctx context.Context, id string, body Browse
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/replays", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Stop the specified replay recording and persist the video.
@@ -85,15 +85,15 @@ func (r *BrowserReplayService) Stop(ctx context.Context, replayID string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	if replayID == "" {
 		err = errors.New("missing required replay_id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/replays/%s/stop", body.ID, replayID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Information about a browser replay recording.

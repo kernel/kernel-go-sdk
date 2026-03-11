@@ -49,7 +49,7 @@ func (r *BrowserLogService) StreamStreaming(ctx context.Context, id string, quer
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[shared.LogEvent](nil, err)
 	}
 	path := fmt.Sprintf("browsers/%s/logs/stream", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)

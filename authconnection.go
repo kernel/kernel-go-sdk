@@ -52,7 +52,7 @@ func (r *AuthConnectionService) New(ctx context.Context, body AuthConnectionNewP
 	opts = slices.Concat(r.Options, opts)
 	path := "auth/connections"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve an auth connection by its ID. Includes current flow state if a login is
@@ -61,11 +61,11 @@ func (r *AuthConnectionService) Get(ctx context.Context, id string, opts ...opti
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("auth/connections/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List auth connections with optional filters for profile_name and domain.
@@ -101,11 +101,11 @@ func (r *AuthConnectionService) Delete(ctx context.Context, id string, opts ...o
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("auth/connections/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Establishes a Server-Sent Events (SSE) stream that delivers real-time login flow
@@ -120,7 +120,7 @@ func (r *AuthConnectionService) FollowStreaming(ctx context.Context, id string, 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[AuthConnectionFollowResponseUnion](nil, err)
 	}
 	path := fmt.Sprintf("auth/connections/%s/events", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)
@@ -134,11 +134,11 @@ func (r *AuthConnectionService) Login(ctx context.Context, id string, body AuthC
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("auth/connections/%s/login", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Submits field values for the login form. Poll the auth connection to track
@@ -147,11 +147,11 @@ func (r *AuthConnectionService) Submit(ctx context.Context, id string, body Auth
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("auth/connections/%s/submit", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Response from starting a login flow
