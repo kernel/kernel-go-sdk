@@ -44,7 +44,7 @@ func (r *BrowserPoolService) New(ctx context.Context, body BrowserPoolNewParams,
 	opts = slices.Concat(r.Options, opts)
 	path := "browser_pools"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve details for a single browser pool by its ID or name.
@@ -52,11 +52,11 @@ func (r *BrowserPoolService) Get(ctx context.Context, idOrName string, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browser_pools/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Updates the configuration used to create browsers in the pool.
@@ -64,11 +64,11 @@ func (r *BrowserPoolService) Update(ctx context.Context, idOrName string, body B
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browser_pools/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List browser pools owned by the caller's organization.
@@ -76,7 +76,7 @@ func (r *BrowserPoolService) List(ctx context.Context, opts ...option.RequestOpt
 	opts = slices.Concat(r.Options, opts)
 	path := "browser_pools"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete a browser pool and all browsers in it. By default, deletion is blocked if
@@ -86,11 +86,11 @@ func (r *BrowserPoolService) Delete(ctx context.Context, idOrName string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browser_pools/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Long-polling endpoint to acquire a browser from the pool. Returns immediately
@@ -101,11 +101,11 @@ func (r *BrowserPoolService) Acquire(ctx context.Context, idOrName string, body 
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browser_pools/%s/acquire", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Destroys all idle browsers in the pool; leased browsers are not affected.
@@ -114,11 +114,11 @@ func (r *BrowserPoolService) Flush(ctx context.Context, idOrName string, opts ..
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browser_pools/%s/flush", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Release a browser back to the pool, optionally recreating the browser instance.
@@ -127,11 +127,11 @@ func (r *BrowserPoolService) Release(ctx context.Context, idOrName string, body 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browser_pools/%s/release", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // A browser pool containing multiple identically configured browsers.

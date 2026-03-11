@@ -49,7 +49,7 @@ func (r *ExtensionService) List(ctx context.Context, opts ...option.RequestOptio
 	opts = slices.Concat(r.Options, opts)
 	path := "extensions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete an extension by its ID or by its name.
@@ -58,11 +58,11 @@ func (r *ExtensionService) Delete(ctx context.Context, idOrName string, opts ...
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("extensions/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Download the extension as a ZIP archive by ID or name.
@@ -71,11 +71,11 @@ func (r *ExtensionService) Download(ctx context.Context, idOrName string, opts .
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("extensions/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Returns a ZIP archive containing the unpacked extension fetched from the Chrome
@@ -85,7 +85,7 @@ func (r *ExtensionService) DownloadFromChromeStore(ctx context.Context, query Ex
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
 	path := "extensions/from_chrome_store"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Upload a zip file containing an unpacked browser extension. Optionally provide a
@@ -94,7 +94,7 @@ func (r *ExtensionService) Upload(ctx context.Context, body ExtensionUploadParam
 	opts = slices.Concat(r.Options, opts)
 	path := "extensions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // A browser extension uploaded to Kernel.

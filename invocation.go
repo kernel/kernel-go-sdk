@@ -50,7 +50,7 @@ func (r *InvocationService) New(ctx context.Context, body InvocationNewParams, o
 	opts = slices.Concat(r.Options, opts)
 	path := "invocations"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get details about an invocation's status and output.
@@ -58,11 +58,11 @@ func (r *InvocationService) Get(ctx context.Context, id string, opts ...option.R
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("invocations/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update an invocation's status or output. This can be used to cancel an
@@ -71,11 +71,11 @@ func (r *InvocationService) Update(ctx context.Context, id string, body Invocati
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("invocations/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List invocations. Optionally filter by application name, action name, status,
@@ -109,11 +109,11 @@ func (r *InvocationService) DeleteBrowsers(ctx context.Context, id string, opts 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("invocations/%s/browsers", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Establishes a Server-Sent Events (SSE) stream that delivers real-time logs and
@@ -128,7 +128,7 @@ func (r *InvocationService) FollowStreaming(ctx context.Context, id string, quer
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[InvocationFollowResponseUnion](nil, err)
 	}
 	path := fmt.Sprintf("invocations/%s/events", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
@@ -140,11 +140,11 @@ func (r *InvocationService) ListBrowsers(ctx context.Context, id string, opts ..
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("invocations/%s/browsers", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // An event representing the current state of an invocation.

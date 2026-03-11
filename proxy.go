@@ -44,7 +44,7 @@ func (r *ProxyService) New(ctx context.Context, body ProxyNewParams, opts ...opt
 	opts = slices.Concat(r.Options, opts)
 	path := "proxies"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve a proxy belonging to the caller's organization by ID.
@@ -52,11 +52,11 @@ func (r *ProxyService) Get(ctx context.Context, id string, opts ...option.Reques
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("proxies/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List proxies owned by the caller's organization.
@@ -64,7 +64,7 @@ func (r *ProxyService) List(ctx context.Context, opts ...option.RequestOption) (
 	opts = slices.Concat(r.Options, opts)
 	path := "proxies"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Soft delete a proxy. Sessions referencing it are not modified.
@@ -73,11 +73,11 @@ func (r *ProxyService) Delete(ctx context.Context, id string, opts ...option.Req
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("proxies/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Run a health check on the proxy to verify it's working.
@@ -85,11 +85,11 @@ func (r *ProxyService) Check(ctx context.Context, id string, opts ...option.Requ
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("proxies/%s/check", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Configuration for routing traffic through a proxy.

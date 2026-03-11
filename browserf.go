@@ -53,11 +53,11 @@ func (r *BrowserFService) NewDirectory(ctx context.Context, id string, body Brow
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/create_directory", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Delete a directory
@@ -66,11 +66,11 @@ func (r *BrowserFService) DeleteDirectory(ctx context.Context, id string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/delete_directory", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Delete a file
@@ -79,11 +79,11 @@ func (r *BrowserFService) DeleteFile(ctx context.Context, id string, body Browse
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/delete_file", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Returns a ZIP file containing the contents of the specified directory.
@@ -92,11 +92,11 @@ func (r *BrowserFService) DownloadDirZip(ctx context.Context, id string, query B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/zip")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/download_dir_zip", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Get information about a file or directory
@@ -104,11 +104,11 @@ func (r *BrowserFService) FileInfo(ctx context.Context, id string, query Browser
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/file_info", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // List files in a directory
@@ -116,11 +116,11 @@ func (r *BrowserFService) ListFiles(ctx context.Context, id string, query Browse
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/list_files", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Move or rename a file or directory
@@ -129,11 +129,11 @@ func (r *BrowserFService) Move(ctx context.Context, id string, body BrowserFMove
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/move", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Read file contents
@@ -142,11 +142,11 @@ func (r *BrowserFService) ReadFile(ctx context.Context, id string, query Browser
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/read_file", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Set file or directory permissions/ownership
@@ -155,11 +155,11 @@ func (r *BrowserFService) SetFilePermissions(ctx context.Context, id string, bod
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/set_file_permissions", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Allows uploading single or multiple files to the remote filesystem.
@@ -168,11 +168,11 @@ func (r *BrowserFService) Upload(ctx context.Context, id string, body BrowserFUp
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/upload", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Upload a zip file and extract its contents to the specified destination path.
@@ -181,11 +181,11 @@ func (r *BrowserFService) UploadZip(ctx context.Context, id string, body Browser
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/upload_zip", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Write or create a file
@@ -194,11 +194,11 @@ func (r *BrowserFService) WriteFile(ctx context.Context, id string, contents io.
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*"), option.WithRequestBody("application/octet-stream", contents)}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/fs/write_file", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, nil, nil, opts...)
-	return
+	return err
 }
 
 type BrowserFFileInfoResponse struct {
