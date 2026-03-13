@@ -428,9 +428,11 @@ type BrowserComputerBatchParamsActionScroll struct {
 	X int64 `json:"x" api:"required"`
 	// Y coordinate at which to perform the scroll
 	Y int64 `json:"y" api:"required"`
-	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
+	// Horizontal scroll amount in xdotool "wheel units." Positive scrolls right,
+	// negative scrolls left.
 	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
-	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
+	// Vertical scroll amount in xdotool "wheel units." Positive scrolls down, negative
+	// scrolls up.
 	DeltaY param.Opt[int64] `json:"delta_y,omitzero"`
 	// Modifier keys to hold during the scroll
 	HoldKeys []string `json:"hold_keys,omitzero"`
@@ -669,9 +671,11 @@ type BrowserComputerScrollParams struct {
 	X int64 `json:"x" api:"required"`
 	// Y coordinate at which to perform the scroll
 	Y int64 `json:"y" api:"required"`
-	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
+	// Horizontal scroll amount in xdotool "wheel units." Positive scrolls right,
+	// negative scrolls left.
 	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
-	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
+	// Vertical scroll amount in xdotool "wheel units." Positive scrolls down, negative
+	// scrolls up.
 	DeltaY param.Opt[int64] `json:"delta_y,omitzero"`
 	// Modifier keys to hold during the scroll
 	HoldKeys []string `json:"hold_keys,omitzero"`
