@@ -557,7 +557,7 @@ type InvocationListBrowsersResponseBrowser struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session.
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
