@@ -254,7 +254,8 @@ type BrowserPoolAcquireResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether GPU acceleration is enabled for the browser session.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`

@@ -297,7 +297,8 @@ type BrowserNewResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether GPU acceleration is enabled for the browser session.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -376,7 +377,8 @@ type BrowserGetResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether GPU acceleration is enabled for the browser session.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -455,7 +457,8 @@ type BrowserUpdateResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether GPU acceleration is enabled for the browser session.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -534,7 +537,8 @@ type BrowserListResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether GPU acceleration is enabled for the browser session.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -595,7 +599,7 @@ func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
 
 type BrowserNewParams struct {
 	// If true, enables GPU acceleration for the browser session. Requires Start-Up or
-	// Enterprise plan.
+	// Enterprise plan and headless=false.
 	GPU param.Opt[bool] `json:"gpu,omitzero"`
 	// If true, launches the browser using a headless image (no VNC/GUI). Defaults to
 	// false.
