@@ -44,11 +44,11 @@ func (r *BrowserProcessService) Exec(ctx context.Context, id string, body Browse
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/process/exec", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Send signal to process
@@ -56,15 +56,15 @@ func (r *BrowserProcessService) Kill(ctx context.Context, processID string, para
 	opts = slices.Concat(r.Options, opts)
 	if params.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if processID == "" {
 		err = errors.New("missing required process_id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/process/%s/kill", params.ID, processID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Resize a PTY-backed process terminal
@@ -72,15 +72,15 @@ func (r *BrowserProcessService) Resize(ctx context.Context, processID string, pa
 	opts = slices.Concat(r.Options, opts)
 	if params.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if processID == "" {
 		err = errors.New("missing required process_id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/process/%s/resize", params.ID, processID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Execute a command asynchronously
@@ -88,11 +88,11 @@ func (r *BrowserProcessService) Spawn(ctx context.Context, id string, body Brows
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/process/spawn", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get process status
@@ -100,15 +100,15 @@ func (r *BrowserProcessService) Status(ctx context.Context, processID string, qu
 	opts = slices.Concat(r.Options, opts)
 	if query.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if processID == "" {
 		err = errors.New("missing required process_id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/process/%s/status", query.ID, processID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Write to process stdin
@@ -116,15 +116,15 @@ func (r *BrowserProcessService) Stdin(ctx context.Context, processID string, par
 	opts = slices.Concat(r.Options, opts)
 	if params.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	if processID == "" {
 		err = errors.New("missing required process_id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/process/%s/stdin", params.ID, processID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Stream process stdout via SSE
@@ -137,11 +137,11 @@ func (r *BrowserProcessService) StdoutStreamStreaming(ctx context.Context, proce
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if query.ID == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[BrowserProcessStdoutStreamResponse](nil, err)
 	}
 	if processID == "" {
 		err = errors.New("missing required process_id parameter")
-		return
+		return ssestream.NewStream[BrowserProcessStdoutStreamResponse](nil, err)
 	}
 	path := fmt.Sprintf("browsers/%s/process/%s/stdout/stream", query.ID, processID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)

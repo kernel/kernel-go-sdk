@@ -45,11 +45,11 @@ func (r *BrowserPlaywrightService) Execute(ctx context.Context, id string, body 
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/playwright/execute", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Result of Playwright code execution

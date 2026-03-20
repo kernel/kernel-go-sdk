@@ -52,7 +52,7 @@ func (r *AuthConnectionService) New(ctx context.Context, body AuthConnectionNewP
 	opts = slices.Concat(r.Options, opts)
 	path := "auth/connections"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve an auth connection by its ID. Includes current flow state if a login is
@@ -61,11 +61,24 @@ func (r *AuthConnectionService) Get(ctx context.Context, id string, opts ...opti
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("auth/connections/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
+}
+
+// Update an auth connection's configuration. Only the fields provided will be
+// updated.
+func (r *AuthConnectionService) Update(ctx context.Context, id string, body AuthConnectionUpdateParams, opts ...option.RequestOption) (res *ManagedAuth, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("auth/connections/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return res, err
 }
 
 // List auth connections with optional filters for profile_name and domain.
@@ -101,11 +114,11 @@ func (r *AuthConnectionService) Delete(ctx context.Context, id string, opts ...o
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("auth/connections/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Establishes a Server-Sent Events (SSE) stream that delivers real-time login flow
@@ -120,7 +133,7 @@ func (r *AuthConnectionService) FollowStreaming(ctx context.Context, id string, 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[AuthConnectionFollowResponseUnion](nil, err)
 	}
 	path := fmt.Sprintf("auth/connections/%s/events", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)
@@ -134,11 +147,11 @@ func (r *AuthConnectionService) Login(ctx context.Context, id string, body AuthC
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("auth/connections/%s/login", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Submits field values for the login form. Poll the auth connection to track
@@ -147,11 +160,11 @@ func (r *AuthConnectionService) Submit(ctx context.Context, id string, body Auth
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("auth/connections/%s/submit", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Response from starting a login flow
@@ -288,6 +301,9 @@ type ManagedAuth struct {
 	PostLoginURL string `json:"post_login_url" format:"uri"`
 	// ID of the proxy associated with this connection, if any.
 	ProxyID string `json:"proxy_id"`
+	// Non-MFA choices presented during the auth flow, such as account selection or org
+	// pickers (present when flow_step=awaiting_input).
+	SignInOptions []ManagedAuthSignInOption `json:"sign_in_options" api:"nullable"`
 	// SSO provider being used (e.g., google, github, microsoft)
 	SSOProvider string `json:"sso_provider" api:"nullable"`
 	// Visible error message from the website (e.g., 'Incorrect password'). Present
@@ -320,6 +336,7 @@ type ManagedAuth struct {
 		PendingSSOButtons     respjson.Field
 		PostLoginURL          respjson.Field
 		ProxyID               respjson.Field
+		SignInOptions         respjson.Field
 		SSOProvider           respjson.Field
 		WebsiteError          respjson.Field
 		ExtraFields           map[string]respjson.Field
@@ -496,6 +513,31 @@ func (r *ManagedAuthPendingSSOButton) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A non-MFA choice presented during the auth flow (e.g. account selection, org
+// picker)
+type ManagedAuthSignInOption struct {
+	// Unique identifier for this option (used to submit selection back)
+	ID string `json:"id" api:"required"`
+	// Display text for the option
+	Label string `json:"label" api:"required"`
+	// Additional context such as email address or org name
+	Description string `json:"description" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Label       respjson.Field
+		Description respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthSignInOption) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthSignInOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Request to create an auth connection for a profile and domain
 //
 // The properties Domain, ProfileName are required.
@@ -596,13 +638,93 @@ func (r *ManagedAuthCreateRequestProxyParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Request to submit field values, click an SSO button, or select an MFA method.
-// Provide exactly one of fields, sso_button_selector, or mfa_option_id.
+// Request to update an auth connection's configuration
+type ManagedAuthUpdateRequestParam struct {
+	// Interval in seconds between automatic health checks
+	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
+	// Login page URL. Set to empty string to clear.
+	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
+	// Whether to save credentials after every successful login
+	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
+	// Additional domains valid for this auth flow (replaces existing list)
+	AllowedDomains []string `json:"allowed_domains,omitzero"`
+	// Reference to credentials for the auth connection. Use one of:
+	//
+	// - { name } for Kernel credentials
+	// - { provider, path } for external provider item
+	// - { provider, auto: true } for external provider domain lookup
+	Credential ManagedAuthUpdateRequestCredentialParam `json:"credential,omitzero"`
+	// Proxy selection. Provide either id or name. The proxy must belong to the
+	// caller's org.
+	Proxy ManagedAuthUpdateRequestProxyParam `json:"proxy,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Reference to credentials for the auth connection. Use one of:
+//
+// - { name } for Kernel credentials
+// - { provider, path } for external provider item
+// - { provider, auto: true } for external provider domain lookup
+type ManagedAuthUpdateRequestCredentialParam struct {
+	// If true, lookup by domain from the specified provider
+	Auto param.Opt[bool] `json:"auto,omitzero"`
+	// Kernel credential name
+	Name param.Opt[string] `json:"name,omitzero"`
+	// Provider-specific path (e.g., "VaultName/ItemName" for 1Password)
+	Path param.Opt[string] `json:"path,omitzero"`
+	// External provider name (e.g., "my-1p")
+	Provider param.Opt[string] `json:"provider,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestCredentialParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestCredentialParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestCredentialParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Proxy selection. Provide either id or name. The proxy must belong to the
+// caller's org.
+type ManagedAuthUpdateRequestProxyParam struct {
+	// Proxy ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Proxy name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestProxyParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestProxyParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestProxyParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Request to submit field values, click an SSO button, select an MFA method, or
+// select a sign-in option. Provide exactly one of fields, sso_button_selector,
+// sso_provider, mfa_option_id, or sign_in_option_id.
 type SubmitFieldsRequestParam struct {
-	// Optional MFA option ID if user selected an MFA method
+	// The MFA method type to select (when mfa_options were returned)
 	MfaOptionID param.Opt[string] `json:"mfa_option_id,omitzero"`
-	// Optional XPath selector if user chose to click an SSO button instead
+	// The sign-in option ID to select (when sign_in_options were returned)
+	SignInOptionID param.Opt[string] `json:"sign_in_option_id,omitzero"`
+	// XPath selector for the SSO button to click (ODA). Use sso_provider instead for
+	// CUA.
 	SSOButtonSelector param.Opt[string] `json:"sso_button_selector,omitzero"`
+	// SSO provider to click, matching the provider field from pending_sso_buttons
+	// (e.g., "google", "github"). Cannot be used with sso_button_selector.
+	SSOProvider param.Opt[string] `json:"sso_provider,omitzero"`
 	// Map of field name to value
 	Fields map[string]string `json:"fields,omitzero"`
 	paramObj
@@ -671,6 +793,8 @@ type AuthConnectionFollowResponseUnion struct {
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	PostLoginURL string `json:"post_login_url"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
+	SignInOptions []AuthConnectionFollowResponseManagedAuthStateSignInOption `json:"sign_in_options"`
+	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	WebsiteError string `json:"website_error"`
 	// This field is from variant [shared.ErrorEvent].
 	Error shared.ErrorModel `json:"error"`
@@ -689,6 +813,7 @@ type AuthConnectionFollowResponseUnion struct {
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
 		PostLoginURL          respjson.Field
+		SignInOptions         respjson.Field
 		WebsiteError          respjson.Field
 		Error                 respjson.Field
 		raw                   string
@@ -786,6 +911,9 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	PendingSSOButtons []AuthConnectionFollowResponseManagedAuthStatePendingSSOButton `json:"pending_sso_buttons"`
 	// URL where the browser landed after successful login.
 	PostLoginURL string `json:"post_login_url" format:"uri"`
+	// Non-MFA choices presented during the auth flow, such as account selection or org
+	// pickers (present when flow_step=AWAITING_INPUT).
+	SignInOptions []AuthConnectionFollowResponseManagedAuthStateSignInOption `json:"sign_in_options"`
 	// Visible error message from the website (e.g., 'Incorrect password'). Present
 	// when the website displays an error during login.
 	WebsiteError string `json:"website_error"`
@@ -805,6 +933,7 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
 		PostLoginURL          respjson.Field
+		SignInOptions         respjson.Field
 		WebsiteError          respjson.Field
 		ExtraFields           map[string]respjson.Field
 		raw                   string
@@ -915,6 +1044,31 @@ func (r *AuthConnectionFollowResponseManagedAuthStatePendingSSOButton) Unmarshal
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A non-MFA choice presented during the auth flow (e.g. account selection, org
+// picker)
+type AuthConnectionFollowResponseManagedAuthStateSignInOption struct {
+	// Unique identifier for this option (used to submit selection back)
+	ID string `json:"id" api:"required"`
+	// Display text for the option
+	Label string `json:"label" api:"required"`
+	// Additional context such as email address or org name
+	Description string `json:"description" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Label       respjson.Field
+		Description respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthConnectionFollowResponseManagedAuthStateSignInOption) RawJSON() string { return r.JSON.raw }
+func (r *AuthConnectionFollowResponseManagedAuthStateSignInOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type AuthConnectionNewParams struct {
 	// Request to create an auth connection for a profile and domain
 	ManagedAuthCreateRequest ManagedAuthCreateRequestParam
@@ -926,6 +1080,19 @@ func (r AuthConnectionNewParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *AuthConnectionNewParams) UnmarshalJSON(data []byte) error {
 	return json.Unmarshal(data, &r.ManagedAuthCreateRequest)
+}
+
+type AuthConnectionUpdateParams struct {
+	// Request to update an auth connection's configuration
+	ManagedAuthUpdateRequest ManagedAuthUpdateRequestParam
+	paramObj
+}
+
+func (r AuthConnectionUpdateParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.ManagedAuthUpdateRequest)
+}
+func (r *AuthConnectionUpdateParams) UnmarshalJSON(data []byte) error {
+	return json.Unmarshal(data, &r.ManagedAuthUpdateRequest)
 }
 
 type AuthConnectionListParams struct {
@@ -983,8 +1150,9 @@ func (r *AuthConnectionLoginParamsProxy) UnmarshalJSON(data []byte) error {
 }
 
 type AuthConnectionSubmitParams struct {
-	// Request to submit field values, click an SSO button, or select an MFA method.
-	// Provide exactly one of fields, sso_button_selector, or mfa_option_id.
+	// Request to submit field values, click an SSO button, select an MFA method, or
+	// select a sign-in option. Provide exactly one of fields, sso_button_selector,
+	// sso_provider, mfa_option_id, or sign_in_option_id.
 	SubmitFieldsRequest SubmitFieldsRequestParam
 	paramObj
 }

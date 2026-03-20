@@ -69,7 +69,7 @@ func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "browsers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get information about a browser session.
@@ -77,11 +77,11 @@ func (r *BrowserService) Get(ctx context.Context, id string, query BrowserGetPar
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a browser session.
@@ -89,11 +89,11 @@ func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpda
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List all browser sessions with pagination support. Use status parameter to
@@ -130,7 +130,7 @@ func (r *BrowserService) Delete(ctx context.Context, body BrowserDeleteParams, o
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	path := "browsers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Delete a browser session by ID
@@ -139,11 +139,11 @@ func (r *BrowserService) DeleteByID(ctx context.Context, id string, opts ...opti
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Loads one or more unpacked extensions and restarts Chromium on the browser
@@ -153,11 +153,11 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body Bro
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/extensions", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
@@ -297,7 +297,8 @@ type BrowserNewResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -314,9 +315,13 @@ type BrowserNewResponse struct {
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -372,7 +377,8 @@ type BrowserGetResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -389,9 +395,13 @@ type BrowserGetResponse struct {
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -447,7 +457,8 @@ type BrowserUpdateResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -464,9 +475,13 @@ type BrowserUpdateResponse struct {
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -522,7 +537,8 @@ type BrowserListResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -539,9 +555,13 @@ type BrowserListResponse struct {
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -578,8 +598,8 @@ func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserNewParams struct {
-	// If true, launches a hardware-accelerated browser with GPU rendering. Requires
-	// Start-Up or Enterprise plan.
+	// If true, enables GPU acceleration for the browser session. Requires Start-Up or
+	// Enterprise plan and headless=false.
 	GPU param.Opt[bool] `json:"gpu,omitzero"`
 	// If true, launches the browser using a headless image (no VNC/GUI). Defaults to
 	// false.
@@ -610,9 +630,13 @@ type BrowserNewParams struct {
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep

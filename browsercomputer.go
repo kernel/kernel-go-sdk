@@ -43,11 +43,11 @@ func (r *BrowserComputerService) Batch(ctx context.Context, id string, body Brow
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/batch", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Capture a screenshot of the browser instance
@@ -56,11 +56,11 @@ func (r *BrowserComputerService) CaptureScreenshot(ctx context.Context, id strin
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "image/png")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/screenshot", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Simulate a mouse click action on the browser instance
@@ -69,11 +69,11 @@ func (r *BrowserComputerService) ClickMouse(ctx context.Context, id string, body
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/click_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Drag the mouse along a path
@@ -82,11 +82,11 @@ func (r *BrowserComputerService) DragMouse(ctx context.Context, id string, body 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/drag_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Get the current mouse cursor position on the browser instance
@@ -94,11 +94,11 @@ func (r *BrowserComputerService) GetMousePosition(ctx context.Context, id string
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/get_mouse_position", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Move the mouse cursor to the specified coordinates on the browser instance
@@ -107,11 +107,11 @@ func (r *BrowserComputerService) MoveMouse(ctx context.Context, id string, body 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/move_mouse", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Press one or more keys on the host computer
@@ -120,11 +120,11 @@ func (r *BrowserComputerService) PressKey(ctx context.Context, id string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/press_key", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Read text from the clipboard on the browser instance
@@ -132,11 +132,11 @@ func (r *BrowserComputerService) ReadClipboard(ctx context.Context, id string, o
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/clipboard/read", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Scroll the mouse wheel at a position on the host computer
@@ -145,11 +145,11 @@ func (r *BrowserComputerService) Scroll(ctx context.Context, id string, body Bro
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/scroll", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Set cursor visibility
@@ -157,11 +157,11 @@ func (r *BrowserComputerService) SetCursorVisibility(ctx context.Context, id str
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/cursor", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Type text on the browser instance
@@ -170,11 +170,11 @@ func (r *BrowserComputerService) TypeText(ctx context.Context, id string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/type", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Write text to the clipboard on the browser instance
@@ -183,11 +183,11 @@ func (r *BrowserComputerService) WriteClipboard(ctx context.Context, id string, 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browsers/%s/computer/clipboard/write", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 type BrowserComputerGetMousePositionResponse struct {
@@ -341,6 +341,12 @@ type BrowserComputerBatchParamsActionDragMouse struct {
 	Path [][]int64 `json:"path,omitzero" api:"required"`
 	// Delay in milliseconds between button down and starting to move along the path.
 	Delay param.Opt[int64] `json:"delay,omitzero"`
+	// Target total duration in milliseconds for the entire drag movement when
+	// smooth=true. Omit for automatic timing based on total path length.
+	DurationMs param.Opt[int64] `json:"duration_ms,omitzero"`
+	// Use human-like Bezier curves between path waypoints instead of linear
+	// interpolation. When true, steps_per_segment and step_delay_ms are ignored.
+	Smooth param.Opt[bool] `json:"smooth,omitzero"`
 	// Delay in milliseconds between relative steps while dragging (not the initial
 	// delay).
 	StepDelayMs param.Opt[int64] `json:"step_delay_ms,omitzero"`
@@ -422,9 +428,11 @@ type BrowserComputerBatchParamsActionScroll struct {
 	X int64 `json:"x" api:"required"`
 	// Y coordinate at which to perform the scroll
 	Y int64 `json:"y" api:"required"`
-	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
+	// Horizontal scroll amount in xdotool "wheel units." Positive scrolls right,
+	// negative scrolls left.
 	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
-	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
+	// Vertical scroll amount in xdotool "wheel units." Positive scrolls down, negative
+	// scrolls up.
 	DeltaY param.Opt[int64] `json:"delta_y,omitzero"`
 	// Modifier keys to hold during the scroll
 	HoldKeys []string `json:"hold_keys,omitzero"`
@@ -576,6 +584,12 @@ type BrowserComputerDragMouseParams struct {
 	Path [][]int64 `json:"path,omitzero" api:"required"`
 	// Delay in milliseconds between button down and starting to move along the path.
 	Delay param.Opt[int64] `json:"delay,omitzero"`
+	// Target total duration in milliseconds for the entire drag movement when
+	// smooth=true. Omit for automatic timing based on total path length.
+	DurationMs param.Opt[int64] `json:"duration_ms,omitzero"`
+	// Use human-like Bezier curves between path waypoints instead of linear
+	// interpolation. When true, steps_per_segment and step_delay_ms are ignored.
+	Smooth param.Opt[bool] `json:"smooth,omitzero"`
 	// Delay in milliseconds between relative steps while dragging (not the initial
 	// delay).
 	StepDelayMs param.Opt[int64] `json:"step_delay_ms,omitzero"`
@@ -657,9 +671,11 @@ type BrowserComputerScrollParams struct {
 	X int64 `json:"x" api:"required"`
 	// Y coordinate at which to perform the scroll
 	Y int64 `json:"y" api:"required"`
-	// Horizontal scroll amount. Positive scrolls right, negative scrolls left.
+	// Horizontal scroll amount in xdotool "wheel units." Positive scrolls right,
+	// negative scrolls left.
 	DeltaX param.Opt[int64] `json:"delta_x,omitzero"`
-	// Vertical scroll amount. Positive scrolls down, negative scrolls up.
+	// Vertical scroll amount in xdotool "wheel units." Positive scrolls down, negative
+	// scrolls up.
 	DeltaY param.Opt[int64] `json:"delta_y,omitzero"`
 	// Modifier keys to hold during the scroll
 	HoldKeys []string `json:"hold_keys,omitzero"`

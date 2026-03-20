@@ -44,7 +44,7 @@ func (r *BrowserPoolService) New(ctx context.Context, body BrowserPoolNewParams,
 	opts = slices.Concat(r.Options, opts)
 	path := "browser_pools"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve details for a single browser pool by its ID or name.
@@ -52,11 +52,11 @@ func (r *BrowserPoolService) Get(ctx context.Context, idOrName string, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browser_pools/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Updates the configuration used to create browsers in the pool.
@@ -64,11 +64,11 @@ func (r *BrowserPoolService) Update(ctx context.Context, idOrName string, body B
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browser_pools/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List browser pools owned by the caller's organization.
@@ -76,7 +76,7 @@ func (r *BrowserPoolService) List(ctx context.Context, opts ...option.RequestOpt
 	opts = slices.Concat(r.Options, opts)
 	path := "browser_pools"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete a browser pool and all browsers in it. By default, deletion is blocked if
@@ -86,11 +86,11 @@ func (r *BrowserPoolService) Delete(ctx context.Context, idOrName string, body B
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browser_pools/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, nil, opts...)
-	return
+	return err
 }
 
 // Long-polling endpoint to acquire a browser from the pool. Returns immediately
@@ -101,11 +101,11 @@ func (r *BrowserPoolService) Acquire(ctx context.Context, idOrName string, body 
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("browser_pools/%s/acquire", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Destroys all idle browsers in the pool; leased browsers are not affected.
@@ -114,11 +114,11 @@ func (r *BrowserPoolService) Flush(ctx context.Context, idOrName string, opts ..
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browser_pools/%s/flush", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Release a browser back to the pool, optionally recreating the browser instance.
@@ -127,11 +127,11 @@ func (r *BrowserPoolService) Release(ctx context.Context, idOrName string, body 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("browser_pools/%s/release", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
-	return
+	return err
 }
 
 // A browser pool containing multiple identically configured browsers.
@@ -198,9 +198,13 @@ type BrowserPoolBrowserPoolConfig struct {
 	// are destroyed. Defaults to 600 seconds if not specified
 	TimeoutSeconds int64 `json:"timeout_seconds"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -250,7 +254,8 @@ type BrowserPoolAcquireResponse struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -267,9 +272,13 @@ type BrowserPoolAcquireResponse struct {
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -335,9 +344,13 @@ type BrowserPoolNewParams struct {
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep
@@ -387,9 +400,13 @@ type BrowserPoolUpdateParams struct {
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep

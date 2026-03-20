@@ -50,7 +50,7 @@ func (r *InvocationService) New(ctx context.Context, body InvocationNewParams, o
 	opts = slices.Concat(r.Options, opts)
 	path := "invocations"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get details about an invocation's status and output.
@@ -58,11 +58,11 @@ func (r *InvocationService) Get(ctx context.Context, id string, opts ...option.R
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("invocations/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update an invocation's status or output. This can be used to cancel an
@@ -71,11 +71,11 @@ func (r *InvocationService) Update(ctx context.Context, id string, body Invocati
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("invocations/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List invocations. Optionally filter by application name, action name, status,
@@ -109,11 +109,11 @@ func (r *InvocationService) DeleteBrowsers(ctx context.Context, id string, opts 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("invocations/%s/browsers", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Establishes a Server-Sent Events (SSE) stream that delivers real-time logs and
@@ -128,7 +128,7 @@ func (r *InvocationService) FollowStreaming(ctx context.Context, id string, quer
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return ssestream.NewStream[InvocationFollowResponseUnion](nil, err)
 	}
 	path := fmt.Sprintf("invocations/%s/events", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
@@ -140,11 +140,11 @@ func (r *InvocationService) ListBrowsers(ctx context.Context, id string, opts ..
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("invocations/%s/browsers", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // An event representing the current state of an invocation.
@@ -557,7 +557,8 @@ type InvocationListBrowsersResponseBrowser struct {
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
-	// Whether the browser session has hardware-accelerated GPU rendering.
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
@@ -574,9 +575,13 @@ type InvocationListBrowsersResponseBrowser struct {
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
-	// image defaults apply (1920x1080@25). Arbitrary viewport dimensions are accepted,
-	// but the following configurations are known-good and fully tested: 2560x1440@10,
-	// 1920x1080@25, 1920x1200@25, 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60.
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60. For GPU images, recommended
+	// presets use one of these resolutions with refresh rates 60, 30, 25, or 10:
+	// 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800, 1280x720, 1368x768,
+	// 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250, 768x1024, 800x1600.
 	// Viewports outside this list may exhibit unstable live view or recording
 	// behavior. If refresh_rate is not provided, it will be automatically determined
 	// based on the resolution (higher resolutions use lower refresh rates to keep

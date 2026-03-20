@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.44.0 (2026-03-20)
+
+Full Changelog: [v0.43.0...v0.44.0](https://github.com/kernel/kernel-go-sdk/compare/v0.43.0...v0.44.0)
+
+### Features
+
+* Add GPU viewport presets and GPU encoder defaults ([5096099](https://github.com/kernel/kernel-go-sdk/commit/5096099db1afd3d90b384423c8daf18576e167c7))
+* Adds description to OAS spec for docs about delta_x, delta_y ([5d60a03](https://github.com/kernel/kernel-go-sdk/commit/5d60a03c51ab0a14ae115552909c09a43f730631))
+* Drop headless GPU support and disable pooling ([188a32b](https://github.com/kernel/kernel-go-sdk/commit/188a32bf2e2bfb3e0aa33a595b2477557db168ea))
+* Enhance managed authentication with CUA support and new features ([b1c79e6](https://github.com/kernel/kernel-go-sdk/commit/b1c79e61fba350ba9324c8ebaa2205f7ca96332a))
+* expose smooth drag mouse movement via public API ([1bcd6f5](https://github.com/kernel/kernel-go-sdk/commit/1bcd6f5635cbd6bf4073efdbf9b3e97471cff826))
+* Rename hardware acceleration UI/docs wording to GPU acceleration ([d225ff6](https://github.com/kernel/kernel-go-sdk/commit/d225ff61b6d63308babf283816ac60ad2902f91e))
+
+
+### Chores
+
+* **internal:** minor cleanup ([2e50750](https://github.com/kernel/kernel-go-sdk/commit/2e507500fb10787ef597819c04bef36baecef0bf))
+* **internal:** tweak CI branches ([3a66a84](https://github.com/kernel/kernel-go-sdk/commit/3a66a8427998fe16353cbff5b14f4822e2f278ff))
+* **internal:** use explicit returns ([4023de1](https://github.com/kernel/kernel-go-sdk/commit/4023de1ca30ac2bd31a4003941b35ad0e75b8a86))
+* **internal:** use explicit returns in more places ([503a87c](https://github.com/kernel/kernel-go-sdk/commit/503a87cf7e6c0ffc76c1c063ff90f419ad0c78db))
+
 ## 0.43.0 (2026-03-10)
 
 Full Changelog: [v0.42.1...v0.43.0](https://github.com/kernel/kernel-go-sdk/compare/v0.42.1...v0.43.0)

@@ -46,7 +46,7 @@ func (r *CredentialProviderService) New(ctx context.Context, body CredentialProv
 	opts = slices.Concat(r.Options, opts)
 	path := "org/credential_providers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve a credential provider by its ID.
@@ -54,11 +54,11 @@ func (r *CredentialProviderService) Get(ctx context.Context, id string, opts ...
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("org/credential_providers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a credential provider's configuration.
@@ -66,11 +66,11 @@ func (r *CredentialProviderService) Update(ctx context.Context, id string, body 
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("org/credential_providers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List external credential providers configured for the organization.
@@ -78,7 +78,7 @@ func (r *CredentialProviderService) List(ctx context.Context, opts ...option.Req
 	opts = slices.Concat(r.Options, opts)
 	path := "org/credential_providers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete a credential provider by its ID.
@@ -87,11 +87,11 @@ func (r *CredentialProviderService) Delete(ctx context.Context, id string, opts 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("org/credential_providers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Returns available credential items (e.g., 1Password login items) from the
@@ -100,11 +100,11 @@ func (r *CredentialProviderService) ListItems(ctx context.Context, id string, op
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("org/credential_providers/%s/items", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Validate the credential provider's token and list accessible vaults.
@@ -112,11 +112,11 @@ func (r *CredentialProviderService) Test(ctx context.Context, id string, opts ..
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("org/credential_providers/%s/test", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Request to create an external credential provider

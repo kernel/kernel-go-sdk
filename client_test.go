@@ -39,7 +39,7 @@ func TestUserAgentHeader(t *testing.T) {
 			},
 		}),
 	)
-	client.Browsers.New(context.Background(), kernel.BrowserNewParams{
+	_, _ = client.Browsers.New(context.Background(), kernel.BrowserNewParams{
 		Stealth: kernel.Bool(true),
 	})
 	if userAgent != fmt.Sprintf("Kernel/Go %s", internal.PackageVersion) {

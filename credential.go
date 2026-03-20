@@ -48,7 +48,7 @@ func (r *CredentialService) New(ctx context.Context, body CredentialNewParams, o
 	opts = slices.Concat(r.Options, opts)
 	path := "credentials"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Retrieve a credential by its ID or name. Credential values are not returned.
@@ -56,11 +56,11 @@ func (r *CredentialService) Get(ctx context.Context, idOrName string, opts ...op
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("credentials/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a credential's name or values. When values are provided, they are merged
@@ -69,11 +69,11 @@ func (r *CredentialService) Update(ctx context.Context, idOrName string, body Cr
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("credentials/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List credentials owned by the caller's organization. Credential values are not
@@ -107,11 +107,11 @@ func (r *CredentialService) Delete(ctx context.Context, idOrName string, opts ..
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("credentials/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Returns the current 6-digit TOTP code for a credential with a configured
@@ -121,11 +121,11 @@ func (r *CredentialService) TotpCode(ctx context.Context, idOrName string, opts 
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("credentials/%s/totp-code", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Request to create a new credential
