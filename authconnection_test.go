@@ -78,6 +78,50 @@ func TestAuthConnectionGet(t *testing.T) {
 	}
 }
 
+func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Auth.Connections.Update(
+		context.TODO(),
+		"id",
+		kernel.AuthConnectionUpdateParams{
+			ManagedAuthUpdateRequest: kernel.ManagedAuthUpdateRequestParam{
+				AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
+				Credential: kernel.ManagedAuthUpdateRequestCredentialParam{
+					Auto:     kernel.Bool(true),
+					Name:     kernel.String("my-netflix-creds"),
+					Path:     kernel.String("Personal/Netflix"),
+					Provider: kernel.String("my-1p"),
+				},
+				HealthCheckInterval: kernel.Int(3600),
+				LoginURL:            kernel.String("https://netflix.com/login"),
+				Proxy: kernel.ManagedAuthUpdateRequestProxyParam{
+					ID:   kernel.String("id"),
+					Name: kernel.String("name"),
+				},
+				SaveCredentials: kernel.Bool(true),
+			},
+		},
+	)
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestAuthConnectionListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -184,7 +228,9 @@ func TestAuthConnectionSubmitWithOptionalParams(t *testing.T) {
 					"password": "secret",
 				},
 				MfaOptionID:       kernel.String("sms"),
+				SignInOptionID:    kernel.String("work-account"),
 				SSOButtonSelector: kernel.String("xpath=//button[contains(text(), 'Continue with Google')]"),
+				SSOProvider:       kernel.String("google"),
 			},
 		},
 	)
