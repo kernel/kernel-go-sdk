@@ -130,7 +130,7 @@ type DeploymentStateEvent struct {
 	// Deployment record information.
 	Deployment DeploymentStateEventDeployment `json:"deployment" api:"required"`
 	// Event type identifier (always "deployment_state").
-	Event constant.DeploymentState `json:"event" api:"required"`
+	Event constant.DeploymentState `json:"event" default:"deployment_state"`
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -156,7 +156,7 @@ type DeploymentStateEventDeployment struct {
 	// Timestamp when the deployment was created
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region" api:"required"`
+	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
@@ -197,7 +197,7 @@ type DeploymentNewResponse struct {
 	// Timestamp when the deployment was created
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region" api:"required"`
+	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
@@ -249,7 +249,7 @@ type DeploymentGetResponse struct {
 	// Timestamp when the deployment was created
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region" api:"required"`
+	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
@@ -301,7 +301,7 @@ type DeploymentListResponse struct {
 	// Timestamp when the deployment was created
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region" api:"required"`
+	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
 	// Current status of the deployment
 	//
 	// Any of "queued", "in_progress", "running", "failed", "stopped".
@@ -433,9 +433,9 @@ type DeploymentFollowResponseAppVersionSummaryEvent struct {
 	// Name of the application
 	AppName string `json:"app_name" api:"required"`
 	// Event type identifier (always "app_version_summary").
-	Event constant.AppVersionSummary `json:"event" api:"required"`
+	Event constant.AppVersionSummary `json:"event" default:"app_version_summary"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region" api:"required"`
+	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// Version label for the application

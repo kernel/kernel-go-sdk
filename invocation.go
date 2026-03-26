@@ -150,7 +150,7 @@ func (r *InvocationService) ListBrowsers(ctx context.Context, id string, opts ..
 // An event representing the current state of an invocation.
 type InvocationStateEvent struct {
 	// Event type identifier (always "invocation_state").
-	Event      constant.InvocationState       `json:"event" api:"required"`
+	Event      constant.InvocationState       `json:"event" default:"invocation_state"`
 	Invocation InvocationStateEventInvocation `json:"invocation" api:"required"`
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
