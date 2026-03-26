@@ -875,7 +875,7 @@ func (r *AuthConnectionFollowResponseUnion) UnmarshalJSON(data []byte) error {
 // An event representing the current state of a managed auth flow.
 type AuthConnectionFollowResponseManagedAuthState struct {
 	// Event type identifier (always "managed_auth_state").
-	Event constant.ManagedAuthState `json:"event" api:"required"`
+	Event constant.ManagedAuthState `json:"event" default:"managed_auth_state"`
 	// Current flow status.
 	//
 	// Any of "IN_PROGRESS", "SUCCESS", "FAILED", "EXPIRED", "CANCELED".

@@ -257,7 +257,7 @@ func (r *ErrorDetail) UnmarshalJSON(data []byte) error {
 type ErrorEvent struct {
 	Error ErrorModel `json:"error" api:"required"`
 	// Event type identifier (always "error").
-	Event constant.Error `json:"event" api:"required"`
+	Event constant.Error `json:"event" default:"error"`
 	// Time the error occurred.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -307,7 +307,7 @@ func (r *ErrorModel) UnmarshalJSON(data []byte) error {
 // Heartbeat event sent periodically to keep SSE connection alive.
 type HeartbeatEvent struct {
 	// Event type identifier (always "sse_heartbeat").
-	Event constant.SseHeartbeat `json:"event" api:"required"`
+	Event constant.SseHeartbeat `json:"event" default:"sse_heartbeat"`
 	// Time the heartbeat was sent.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -331,7 +331,7 @@ func (HeartbeatEvent) ImplAuthConnectionFollowResponseUnion() {}
 // A log entry from the application.
 type LogEvent struct {
 	// Event type identifier (always "log").
-	Event constant.Log `json:"event" api:"required"`
+	Event constant.Log `json:"event" default:"log"`
 	// Log message text.
 	Message string `json:"message" api:"required"`
 	// Time the log entry was produced.
