@@ -173,6 +173,11 @@ type BrowserPoolBrowserPoolConfig struct {
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
 	Size int64 `json:"size" api:"required"`
+	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
+	// Keys are Chrome enterprise policy names; values must match their expected types.
+	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
+	// https://chromeenterprise.google/policies/
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtension `json:"extensions"`
 	// Percentage of the pool to fill per minute. Defaults to 10%.
@@ -213,6 +218,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Size              respjson.Field
+		ChromePolicy      respjson.Field
 		Extensions        respjson.Field
 		FillRatePerMinute respjson.Field
 		Headless          respjson.Field
@@ -337,6 +343,11 @@ type BrowserPoolNewParams struct {
 	// Default idle timeout in seconds for browsers acquired from this pool before they
 	// are destroyed. Defaults to 600 seconds if not specified
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
+	// Keys are Chrome enterprise policy names; values must match their expected types.
+	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
+	// https://chromeenterprise.google/policies/
+	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If
@@ -393,6 +404,11 @@ type BrowserPoolUpdateParams struct {
 	// Default idle timeout in seconds for browsers acquired from this pool before they
 	// are destroyed. Defaults to 600 seconds if not specified
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
+	// Keys are Chrome enterprise policy names; values must match their expected types.
+	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
+	// https://chromeenterprise.google/policies/
+	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If

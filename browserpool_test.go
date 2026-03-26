@@ -29,6 +29,9 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.BrowserPools.New(context.TODO(), kernel.BrowserPoolNewParams{
 		Size: 10,
+		ChromePolicy: map[string]any{
+			"foo": "bar",
+		},
 		Extensions: []shared.BrowserExtensionParam{{
 			ID:   kernel.String("id"),
 			Name: kernel.String("name"),
@@ -100,7 +103,10 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id_or_name",
 		kernel.BrowserPoolUpdateParams{
-			Size:           10,
+			Size: 10,
+			ChromePolicy: map[string]any{
+				"foo": "bar",
+			},
 			DiscardAllIdle: kernel.Bool(false),
 			Extensions: []shared.BrowserExtensionParam{{
 				ID:   kernel.String("id"),
