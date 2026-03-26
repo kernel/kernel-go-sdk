@@ -76,7 +76,7 @@ type AppListResponse struct {
 	// Environment variables configured for this app version
 	EnvVars map[string]string `json:"env_vars" api:"required"`
 	// Deployment region code
-	Region constant.AwsUsEast1a `json:"region" api:"required"`
+	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
 	// Version label for the application
 	Version string `json:"version" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
