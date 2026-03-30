@@ -110,6 +110,7 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserUpdateParams{
+			DisableDefaultProxy: kernel.Bool(true),
 			Profile: shared.BrowserProfileParam{
 				ID:          kernel.String("id"),
 				Name:        kernel.String("name"),
