@@ -671,6 +671,9 @@ type BrowserUpdateParams struct {
 	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
 	// proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// If true, stealth browsers connect directly instead of using the default stealth
+	// proxy.
+	DisableDefaultProxy param.Opt[bool] `json:"disable_default_proxy,omitzero"`
 	// Profile to load into the browser session. Only allowed if the session does not
 	// already have a profile loaded.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
