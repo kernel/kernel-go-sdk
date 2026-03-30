@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.45.0 (2026-03-30)
+
+Full Changelog: [v0.44.0...v0.45.0](https://github.com/kernel/kernel-go-sdk/compare/v0.44.0...v0.45.0)
+
+### Features
+
+* [kernel-1008] browser pools add custom policy ([e740db7](https://github.com/kernel/kernel-go-sdk/commit/e740db79ec07414b5b0b5ff3be98b9e089a9bb45))
+* Add disable_default_proxy for stealth browsers ([f584af5](https://github.com/kernel/kernel-go-sdk/commit/f584af5155e3fe8bb6dd87f48e1c5ee6cfe47111))
+* **internal:** support comma format in multipart form encoding ([74f5c6a](https://github.com/kernel/kernel-go-sdk/commit/74f5c6a22be0f953416968dfc92b0354f66d5cd9))
+
+
+### Bug Fixes
+
+* prevent duplicate ? in query params ([66d97d3](https://github.com/kernel/kernel-go-sdk/commit/66d97d350f30d933b1cd4596da6e3fb4cac8c4a1))
+
+
+### Chores
+
+* **ci:** skip lint on metadata-only changes ([8296238](https://github.com/kernel/kernel-go-sdk/commit/8296238ce0b45903e3d40420100aa29a3ab105fd))
+* **ci:** support opting out of skipping builds on metadata-only commits ([708da0f](https://github.com/kernel/kernel-go-sdk/commit/708da0fffff51a8f20905f9983e5beb1181a6a48))
+* **client:** fix multipart serialisation of Default() fields ([cabda49](https://github.com/kernel/kernel-go-sdk/commit/cabda49a25334cd3fa3fc747f69b8a515e2b77d9))
+* **internal:** support default value struct tag ([dd77af4](https://github.com/kernel/kernel-go-sdk/commit/dd77af45f77a98e96f5d140bb737377f1d72456a))
+* **internal:** update gitignore ([48baab7](https://github.com/kernel/kernel-go-sdk/commit/48baab7aa0e23ed519a08b52142927340a8d451b))
+* remove unnecessary error check for url parsing ([05d2048](https://github.com/kernel/kernel-go-sdk/commit/05d2048b0cc9027c63a4036b9f722044423f4e25))
+* update docs for api:"required" ([abfd988](https://github.com/kernel/kernel-go-sdk/commit/abfd9883774e74c2d4c2cc482377364432318e27))
+
 ## 0.44.0 (2026-03-20)
 
 Full Changelog: [v0.43.0...v0.44.0](https://github.com/kernel/kernel-go-sdk/compare/v0.43.0...v0.44.0)
