@@ -1079,7 +1079,7 @@ func (r AuthConnectionNewParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.ManagedAuthCreateRequest)
 }
 func (r *AuthConnectionNewParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.ManagedAuthCreateRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type AuthConnectionUpdateParams struct {
@@ -1092,7 +1092,7 @@ func (r AuthConnectionUpdateParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.ManagedAuthUpdateRequest)
 }
 func (r *AuthConnectionUpdateParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.ManagedAuthUpdateRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type AuthConnectionListParams struct {
@@ -1161,5 +1161,5 @@ func (r AuthConnectionSubmitParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.SubmitFieldsRequest)
 }
 func (r *AuthConnectionSubmitParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.SubmitFieldsRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
