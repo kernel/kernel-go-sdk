@@ -4,7 +4,6 @@ package kernel
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -323,7 +322,7 @@ func (r CredentialProviderNewParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.CreateCredentialProviderRequest)
 }
 func (r *CredentialProviderNewParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.CreateCredentialProviderRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type CredentialProviderUpdateParams struct {
@@ -336,5 +335,5 @@ func (r CredentialProviderUpdateParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.UpdateCredentialProviderRequest)
 }
 func (r *CredentialProviderUpdateParams) UnmarshalJSON(data []byte) error {
-	return json.Unmarshal(data, &r.UpdateCredentialProviderRequest)
+	return apijson.UnmarshalRoot(data, r)
 }
