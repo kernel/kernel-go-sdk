@@ -80,15 +80,20 @@ func (r *ProxyService) Delete(ctx context.Context, id string, opts ...option.Req
 	return err
 }
 
-// Run a health check on the proxy to verify it's working.
-func (r *ProxyService) Check(ctx context.Context, id string, opts ...option.RequestOption) (res *ProxyCheckResponse, err error) {
+// Run a health check on the proxy to verify it's working. Optionally specify a URL
+// to test reachability against a specific target. For ISP and datacenter proxies,
+// this reliably tests whether the target site is reachable from the proxy's stable
+// exit IP. For residential and mobile proxies, the exit node varies between
+// requests, so this validates proxy configuration and connectivity rather than
+// guaranteeing site-specific reachability.
+func (r *ProxyService) Check(ctx context.Context, id string, body ProxyCheckParams, opts ...option.RequestOption) (res *ProxyCheckResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
 	path := fmt.Sprintf("proxies/%s/check", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -1584,3 +1589,26 @@ const (
 	ProxyNewParamsProtocolHTTP  ProxyNewParamsProtocol = "http"
 	ProxyNewParamsProtocolHTTPS ProxyNewParamsProtocol = "https"
 )
+
+type ProxyCheckParams struct {
+	// An optional URL to test reachability against. If provided, the proxy check will
+	// test connectivity to this URL instead of the default test URLs. Only HTTP and
+	// HTTPS schemes are allowed, and the URL must resolve to a public IP address. For
+	// ISP and datacenter proxies, the exit IP is stable, so a successful check
+	// reliably indicates that subsequent browser sessions will reach the target site
+	// with the same IP. For residential and mobile proxies, the exit node changes
+	// between requests, so a successful check validates proxy configuration but does
+	// not guarantee that a subsequent browser session will use the same exit IP or
+	// reach the same site — it is useful for verifying credentials and connectivity,
+	// not for predicting site-specific behavior.
+	URL param.Opt[string] `json:"url,omitzero"`
+	paramObj
+}
+
+func (r ProxyCheckParams) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyCheckParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ProxyCheckParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
