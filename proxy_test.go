@@ -115,7 +115,7 @@ func TestProxyDelete(t *testing.T) {
 	}
 }
 
-func TestProxyCheck(t *testing.T) {
+func TestProxyCheckWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -128,7 +128,13 @@ func TestProxyCheck(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Proxies.Check(context.TODO(), "id")
+	_, err := client.Proxies.Check(
+		context.TODO(),
+		"id",
+		kernel.ProxyCheckParams{
+			URL: kernel.String("url"),
+		},
+	)
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
