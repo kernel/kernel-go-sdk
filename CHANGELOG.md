@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.46.0 (2026-04-06)
+
+Full Changelog: [v0.45.0...v0.46.0](https://github.com/kernel/kernel-go-sdk/compare/v0.45.0...v0.46.0)
+
+### Features
+
+* Add optional url parameter to proxy check endpoint ([084975a](https://github.com/kernel/kernel-go-sdk/commit/084975a54df1144592e3f61655ee423df3d38393))
+
+
+### Bug Fixes
+
+* fix issue with unmarshaling in some cases ([6f721ac](https://github.com/kernel/kernel-go-sdk/commit/6f721ac3da13678eb476f8231617510e8f0b9e34))
+
 ## 0.45.0 (2026-03-30)
 
 Full Changelog: [v0.44.0...v0.45.0](https://github.com/kernel/kernel-go-sdk/compare/v0.44.0...v0.45.0)
