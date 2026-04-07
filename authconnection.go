@@ -46,8 +46,9 @@ func NewAuthConnectionService(opts ...option.RequestOption) (r AuthConnectionSer
 	return
 }
 
-// Creates an auth connection for a profile and domain combination. Returns 409
-// Conflict if an auth connection already exists for the given profile and domain.
+// Creates an auth connection for a profile and domain combination. If the provided
+// profile_name does not exist, it is created automatically. Returns 409 Conflict
+// if an auth connection already exists for the given profile and domain.
 func (r *AuthConnectionService) New(ctx context.Context, body AuthConnectionNewParams, opts ...option.RequestOption) (res *ManagedAuth, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "auth/connections"
@@ -292,6 +293,8 @@ type ManagedAuth struct {
 	LastAuthAt time.Time `json:"last_auth_at" format:"date-time"`
 	// Browser live view URL for debugging (present when flow in progress)
 	LiveViewURL string `json:"live_view_url" api:"nullable" format:"uri"`
+	// Optional login page URL to skip discovery
+	LoginURL string `json:"login_url" format:"uri"`
 	// MFA method options (present when flow_step=awaiting_input and MFA selection
 	// required)
 	MfaOptions []ManagedAuthMfaOption `json:"mfa_options" api:"nullable"`
@@ -332,6 +335,7 @@ type ManagedAuth struct {
 		HostedURL             respjson.Field
 		LastAuthAt            respjson.Field
 		LiveViewURL           respjson.Field
+		LoginURL              respjson.Field
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
 		PostLoginURL          respjson.Field
@@ -544,7 +548,8 @@ func (r *ManagedAuthSignInOption) UnmarshalJSON(data []byte) error {
 type ManagedAuthCreateRequestParam struct {
 	// Domain for authentication
 	Domain string `json:"domain" api:"required"`
-	// Name of the profile to manage authentication for
+	// Name of the profile to manage authentication for. If the profile does not exist,
+	// it is created automatically.
 	ProfileName string `json:"profile_name" api:"required"`
 	// Interval in seconds between automatic health checks. When set, the system
 	// periodically verifies the authentication status and triggers re-authentication
