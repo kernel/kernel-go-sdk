@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.47.0 (2026-04-07)
+
+Full Changelog: [v0.46.0...v0.47.0](https://github.com/kernel/kernel-go-sdk/compare/v0.46.0...v0.47.0)
+
+### Features
+
+* Include login_url in managed auth connection response ([795989c](https://github.com/kernel/kernel-go-sdk/commit/795989c703df9fc5bd740eeb69538a4a4cec7cee))
+
 ## 0.46.0 (2026-04-06)
 
 Full Changelog: [v0.45.0...v0.46.0](https://github.com/kernel/kernel-go-sdk/compare/v0.45.0...v0.46.0)
