@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.48.0 (2026-04-10)
+
+Full Changelog: [v0.47.0...v0.48.0](https://github.com/kernel/kernel-go-sdk/compare/v0.47.0...v0.48.0)
+
+### Features
+
+* [kernel-1116] add base_url field to browser session response ([6e52972](https://github.com/kernel/kernel-go-sdk/commit/6e529727c5fc0a122df257f58a2fa3dd285f66a7))
+
+
+### Chores
+
+* retrigger Stainless codegen for projects resource ([3e1b78f](https://github.com/kernel/kernel-go-sdk/commit/3e1b78f44879ed57afb128c103276a9bcf84a209))
+
 ## 0.47.0 (2026-04-07)
 
 Full Changelog: [v0.46.0...v0.47.0](https://github.com/kernel/kernel-go-sdk/compare/v0.46.0...v0.47.0)
