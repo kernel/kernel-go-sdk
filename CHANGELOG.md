@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.49.0 (2026-04-10)
+
+Full Changelog: [v0.48.0...v0.49.0](https://github.com/kernel/kernel-go-sdk/compare/v0.48.0...v0.49.0)
+
+### Features
+
+* Neil/kernel 1180 fuzzy matching for browser pools ([9b784cb](https://github.com/kernel/kernel-go-sdk/commit/9b784cb70c17efb0540fb28420c1f73d1c57942d))
+* Raise replay framerate limit from 20 to 60 fps ([f095149](https://github.com/kernel/kernel-go-sdk/commit/f095149c6a25040b1c6b5f2b12d5a43fab736eb8))
+
 ## 0.48.0 (2026-04-10)
 
 Full Changelog: [v0.47.0...v0.48.0](https://github.com/kernel/kernel-go-sdk/compare/v0.47.0...v0.48.0)
