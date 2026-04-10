@@ -312,6 +312,40 @@ Methods:
 - <code title="delete /credentials/{id_or_name}">client.Credentials.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="get /credentials/{id_or_name}/totp-code">client.Credentials.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialService.TotpCode">TotpCode</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialTotpCodeResponse">CredentialTotpCodeResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# Projects
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreateProjectRequestParam">CreateProjectRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#UpdateProjectRequestParam">UpdateProjectRequestParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Project">Project</a>
+
+Methods:
+
+- <code title="post /projects">client.Projects.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectNewParams">ProjectNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Project">Project</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /projects/{id}">client.Projects.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Project">Project</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /projects/{id}">client.Projects.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectUpdateParams">ProjectUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Project">Project</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /projects">client.Projects.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectListParams">ProjectListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Project">Project</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /projects/{id}">client.Projects.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+
+## Limits
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#UpdateProjectLimitsRequestParam">UpdateProjectLimitsRequestParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>
+
+Methods:
+
+- <code title="get /projects/{id}/limits">client.Projects.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /projects/{id}/limits">client.Projects.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitUpdateParams">ProjectLimitUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # CredentialProviders
 
 Params Types:
