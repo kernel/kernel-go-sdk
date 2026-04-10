@@ -156,7 +156,8 @@ type BrowserReplayDownloadParams struct {
 }
 
 type BrowserReplayStartParams struct {
-	// Recording framerate in fps.
+	// Recording framerate in fps. Values above 20 require GPU to be enabled on the
+	// browser session.
 	Framerate param.Opt[int64] `json:"framerate,omitzero"`
 	// Maximum recording duration in seconds.
 	MaxDurationInSeconds param.Opt[int64] `json:"max_duration_in_seconds,omitzero"`
