@@ -36,6 +36,8 @@ type Client struct {
 	BrowserPools BrowserPoolService
 	// Create and manage credentials for authentication.
 	Credentials CredentialService
+	// Create and manage projects for resource isolation within an organization.
+	Projects ProjectService
 	// Configure external credential providers like 1Password.
 	CredentialProviders CredentialProviderService
 }
@@ -72,6 +74,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Extensions = NewExtensionService(opts...)
 	r.BrowserPools = NewBrowserPoolService(opts...)
 	r.Credentials = NewCredentialService(opts...)
+	r.Projects = NewProjectService(opts...)
 	r.CredentialProviders = NewCredentialProviderService(opts...)
 
 	return
