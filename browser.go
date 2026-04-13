@@ -133,6 +133,20 @@ func (r *BrowserService) Delete(ctx context.Context, body BrowserDeleteParams, o
 	return err
 }
 
+// Sends an HTTP request through Chrome's HTTP request stack, inheriting the
+// browser's TLS fingerprint, cookies, proxy configuration, and headers. Returns a
+// structured JSON response with status, headers, body, and timing.
+func (r *BrowserService) Curl(ctx context.Context, id string, body BrowserCurlParams, opts ...option.RequestOption) (res *BrowserCurlResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s/curl", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Delete a browser session by ID
 func (r *BrowserService) DeleteByID(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -609,6 +623,33 @@ func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Structured response from the browser curl request.
+type BrowserCurlResponse struct {
+	// Response body (UTF-8 string or base64 depending on request).
+	Body string `json:"body" api:"required"`
+	// Total request duration in milliseconds.
+	DurationMs int64 `json:"duration_ms" api:"required"`
+	// Response headers (multi-value).
+	Headers map[string][]string `json:"headers" api:"required"`
+	// HTTP status code from target.
+	Status int64 `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		DurationMs  respjson.Field
+		Headers     respjson.Field
+		Status      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCurlResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCurlResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserNewParams struct {
 	// If true, enables GPU acceleration for the browser session. Requires Start-Up or
 	// Enterprise plan and headless=false.
@@ -769,6 +810,55 @@ func (r BrowserDeleteParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+type BrowserCurlParams struct {
+	// Target URL (must be http or https).
+	URL string `json:"url" api:"required"`
+	// Request body (for POST/PUT/PATCH).
+	Body param.Opt[string] `json:"body,omitzero"`
+	// Request timeout in milliseconds.
+	TimeoutMs param.Opt[int64] `json:"timeout_ms,omitzero"`
+	// Custom headers merged with browser defaults.
+	Headers map[string]string `json:"headers,omitzero"`
+	// HTTP method.
+	//
+	// Any of "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS".
+	Method BrowserCurlParamsMethod `json:"method,omitzero"`
+	// Encoding for the response body. Use base64 for binary content.
+	//
+	// Any of "utf8", "base64".
+	ResponseEncoding BrowserCurlParamsResponseEncoding `json:"response_encoding,omitzero"`
+	paramObj
+}
+
+func (r BrowserCurlParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserCurlParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserCurlParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// HTTP method.
+type BrowserCurlParamsMethod string
+
+const (
+	BrowserCurlParamsMethodGet     BrowserCurlParamsMethod = "GET"
+	BrowserCurlParamsMethodHead    BrowserCurlParamsMethod = "HEAD"
+	BrowserCurlParamsMethodPost    BrowserCurlParamsMethod = "POST"
+	BrowserCurlParamsMethodPut     BrowserCurlParamsMethod = "PUT"
+	BrowserCurlParamsMethodPatch   BrowserCurlParamsMethod = "PATCH"
+	BrowserCurlParamsMethodDelete  BrowserCurlParamsMethod = "DELETE"
+	BrowserCurlParamsMethodOptions BrowserCurlParamsMethod = "OPTIONS"
+)
+
+// Encoding for the response body. Use base64 for binary content.
+type BrowserCurlParamsResponseEncoding string
+
+const (
+	BrowserCurlParamsResponseEncodingUtf8   BrowserCurlParamsResponseEncoding = "utf8"
+	BrowserCurlParamsResponseEncodingBase64 BrowserCurlParamsResponseEncoding = "base64"
+)
 
 type BrowserLoadExtensionsParams struct {
 	// List of extensions to upload and activate
