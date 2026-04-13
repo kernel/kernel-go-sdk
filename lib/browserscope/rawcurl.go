@@ -8,24 +8,24 @@ import (
 )
 
 // RawCURLRoundTripper implements browser-egress HTTP by tunneling through the
-// kernel-images /curl/raw endpoint on the metro kernel base URL.
+// browser session base_url /curl/raw endpoint.
 type RawCURLRoundTripper struct {
-	kernelBaseURL string
-	jwt           string
-	underlying    http.RoundTripper
+	browserBaseURL string
+	jwt            string
+	underlying     http.RoundTripper
 }
 
 // NewRawCURLRoundTripper returns an [http.RoundTripper] that maps each request
-// to {kernelBase}/curl/raw?jwt=...&url=<absolute-target>, preserving method,
+// to {base_url}/curl/raw?jwt=...&url=<absolute-target>, preserving method,
 // headers, and body. The caller's request URL must be an absolute http(s) URL.
-func NewRawCURLRoundTripper(kernelBaseURL, jwt string, underlying http.RoundTripper) *RawCURLRoundTripper {
+func NewRawCURLRoundTripper(browserBaseURL, jwt string, underlying http.RoundTripper) *RawCURLRoundTripper {
 	if underlying == nil {
 		underlying = http.DefaultTransport
 	}
 	return &RawCURLRoundTripper{
-		kernelBaseURL: strings.TrimRight(strings.TrimSpace(kernelBaseURL), "/"),
-		jwt:           strings.TrimSpace(jwt),
-		underlying:    underlying,
+		browserBaseURL: strings.TrimRight(strings.TrimSpace(browserBaseURL), "/"),
+		jwt:            strings.TrimSpace(jwt),
+		underlying:     underlying,
 	}
 }
 
@@ -37,15 +37,15 @@ func (t *RawCURLRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	if req.URL.Scheme != "http" && req.URL.Scheme != "https" {
 		return nil, fmt.Errorf("browserscope: raw curl requires http or https scheme")
 	}
-	if t.kernelBaseURL == "" {
-		return nil, fmt.Errorf("browserscope: kernel base url is required")
+	if t.browserBaseURL == "" {
+		return nil, fmt.Errorf("browserscope: browser base_url is required")
 	}
 	if t.jwt == "" {
 		return nil, fmt.Errorf("browserscope: jwt is required for raw curl")
 	}
 
 	target := req.URL.String()
-	proxyURL, err := url.Parse(t.kernelBaseURL + "/curl/raw")
+	proxyURL, err := url.Parse(t.browserBaseURL + "/curl/raw")
 	if err != nil {
 		return nil, err
 	}

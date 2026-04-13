@@ -3,7 +3,7 @@ package browserscope
 import "testing"
 
 func TestJWTFromWebSocketURL(t *testing.T) {
-	const u = "wss://metro.example/browser/cdp?jwt=abc123&foo=bar"
+	const u = "wss://browser.example/browser/cdp?jwt=abc123&foo=bar"
 	j, err := JWTFromWebSocketURL(u)
 	if err != nil {
 		t.Fatal(err)
@@ -14,7 +14,7 @@ func TestJWTFromWebSocketURL(t *testing.T) {
 }
 
 func TestJWTFromWebSocketURLMissing(t *testing.T) {
-	_, err := JWTFromWebSocketURL("wss://metro.example/browser/cdp")
+	_, err := JWTFromWebSocketURL("wss://browser.example/browser/cdp")
 	if err == nil {
 		t.Fatal("expected error")
 	}

@@ -40,7 +40,7 @@ func TestForBrowserRewritesToKernelPaths(t *testing.T) {
 	b := &BrowserGetResponse{
 		SessionID: "sid-1",
 		BaseURL:   srv.URL + "/browser/kernel",
-		CdpWsURL:  "wss://x/browser/cdp?jwt=metro-jwt",
+		CdpWsURL:  "wss://x/browser/cdp?jwt=session-jwt",
 	}
 
 	sess, err := c.ForBrowser(b)

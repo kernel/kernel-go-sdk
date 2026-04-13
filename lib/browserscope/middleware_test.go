@@ -8,8 +8,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-func TestMetroKernelMiddleware(t *testing.T) {
-	mw := MetroKernelMiddleware("sess1", "tok")
+func TestBrowserSessionMiddleware(t *testing.T) {
+	mw := BrowserSessionMiddleware("sess1", "tok")
 	var final *http.Request
 	next := func(req *http.Request) (*http.Response, error) {
 		final = req
@@ -35,8 +35,8 @@ func TestMetroKernelMiddleware(t *testing.T) {
 	}
 }
 
-func TestMetroKernelMiddlewarePreservesExistingJWT(t *testing.T) {
-	mw := MetroKernelMiddleware("sess1", "tok")
+func TestBrowserSessionMiddlewarePreservesExistingJWT(t *testing.T) {
+	mw := BrowserSessionMiddleware("sess1", "tok")
 	var final *http.Request
 	next := func(req *http.Request) (*http.Response, error) {
 		final = req
@@ -52,6 +52,6 @@ func TestMetroKernelMiddlewarePreservesExistingJWT(t *testing.T) {
 	}
 }
 
-func TestMetroKernelMiddlewareType(t *testing.T) {
-	var _ option.Middleware = MetroKernelMiddleware("a", "b")
+func TestBrowserSessionMiddlewareType(t *testing.T) {
+	var _ option.Middleware = BrowserSessionMiddleware("a", "b")
 }
