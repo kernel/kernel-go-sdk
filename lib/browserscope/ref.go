@@ -33,7 +33,7 @@ func (r Ref) Normalize() (Ref, error) {
 		if src == "" {
 			return Ref{}, fmt.Errorf("browserscope: jwt or cdp_ws_url is required")
 		}
-		jwt, err := JWTFromWebSocketURL(src)
+		jwt, err := jwtFromWebSocketURL(src)
 		if err != nil {
 			return Ref{}, err
 		}

@@ -6,9 +6,9 @@ import (
 	"strings"
 )
 
-// JWTFromWebSocketURL extracts the session jwt query parameter from a browser
+// jwtFromWebSocketURL extracts the session jwt query parameter from a browser
 // websocket URL (for example cdp_ws_url or webdriver_ws_url).
-func JWTFromWebSocketURL(wsURL string) (string, error) {
+func jwtFromWebSocketURL(wsURL string) (string, error) {
 	wsURL = strings.TrimSpace(wsURL)
 	if wsURL == "" {
 		return "", fmt.Errorf("browserscope: empty websocket url")
