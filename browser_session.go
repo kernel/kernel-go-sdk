@@ -10,7 +10,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-// BrowserSessionClient is a metro-scoped view of a browser session. Subresources
+// BrowserSessionClient is a browser-scoped view of a browser session. Subresources
 // use the session base_url and do not repeat the browser id in method
 // signatures. SessionID is exposed for future routing extensions.
 type BrowserSessionClient struct {
@@ -31,7 +31,7 @@ type BrowserSessionClient struct {
 func (b *BrowserSessionClient) SessionID() string { return b.sessionID }
 
 // HTTPClient returns an [http.Client] that performs egress HTTP through the
-// browser's Chrome network stack via the metro kernel /curl/raw proxy. Each
+// browser's Chrome network stack via the browser session /curl/raw proxy. Each
 // request must use an absolute http(s) URL; it is not rewritten to expose
 // /curl/raw in the public API.
 func (b *BrowserSessionClient) HTTPClient() *http.Client {
@@ -72,7 +72,7 @@ func (c *Client) ForBrowser(v any, opts ...option.RequestOption) (*BrowserSessio
 		c.Options,
 		[]option.RequestOption{
 			option.WithBaseURL(norm.BaseURL),
-			option.WithMiddleware(browserscope.MetroKernelMiddleware(norm.SessionID, norm.JWT)),
+			option.WithMiddleware(browserscope.BrowserSessionMiddleware(norm.SessionID, norm.JWT)),
 		},
 		opts,
 	)

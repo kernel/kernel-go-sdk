@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// Ref identifies a browser session for metro-scoped HTTP calls. SessionID is
-// reserved for future client-side routing; metro requests rewrite
-// /browser/kernel/browsers/{SessionID}/ to /browser/kernel/.
+// Ref identifies a browser session for browser-scoped HTTP calls. SessionID is
+// reserved for future client-side routing; browser-scoped requests rewrite
+// the /browsers/{SessionID}/ path segment against the returned base_url.
 type Ref struct {
 	SessionID string
 	BaseURL   string

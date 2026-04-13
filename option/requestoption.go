@@ -56,7 +56,7 @@ type HTTPClient interface {
 // For custom uses cases, it is recommended to provide an [*http.Client] with a custom
 // [http.RoundTripper] as its transport, rather than directly implementing [HTTPClient].
 func WithHTTPClient(client HTTPClient) RequestOption {
-	return requestconfig.RequestOptionFunc(func(r *requestconfig.RequestConfig) error {
+	return requestconfig.PreRequestOptionFunc(func(r *requestconfig.RequestConfig) error {
 		if client == nil {
 			return fmt.Errorf("requestoption: custom http client cannot be nil")
 		}
