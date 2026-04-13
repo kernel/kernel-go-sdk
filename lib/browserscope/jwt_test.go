@@ -1,0 +1,21 @@
+package browserscope
+
+import "testing"
+
+func TestJWTFromWebSocketURL(t *testing.T) {
+	const u = "wss://metro.example/browser/cdp?jwt=abc123&foo=bar"
+	j, err := JWTFromWebSocketURL(u)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if j != "abc123" {
+		t.Fatalf("jwt: got %q want abc123", j)
+	}
+}
+
+func TestJWTFromWebSocketURLMissing(t *testing.T) {
+	_, err := JWTFromWebSocketURL("wss://metro.example/browser/cdp")
+	if err == nil {
+		t.Fatal("expected error")
+	}
+}
