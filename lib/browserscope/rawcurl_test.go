@@ -17,7 +17,7 @@ func TestRawCURLRoundTripper(t *testing.T) {
 	}))
 	defer up.Close()
 
-	rt := NewRawCURLRoundTripper(up.URL+"/browser/kernel", "jwt1", http.DefaultTransport)
+	rt := newRawCURLRoundTripper(up.URL+"/browser/kernel", "jwt1", http.DefaultTransport)
 
 	client := &http.Client{Transport: rt}
 	req, err := http.NewRequest(http.MethodGet, "https://example.org/foo?bar=1", nil)
@@ -45,7 +45,7 @@ func TestRawCURLRoundTripper(t *testing.T) {
 }
 
 func TestRawCURLRoundTripperRelativeURL(t *testing.T) {
-	rt := NewRawCURLRoundTripper("https://x/browser/kernel", "j", http.DefaultTransport)
+	rt := newRawCURLRoundTripper("https://x/browser/kernel", "j", http.DefaultTransport)
 	req, _ := http.NewRequest(http.MethodGet, "/relative", nil)
 	_, err := rt.RoundTrip(req)
 	if err == nil {

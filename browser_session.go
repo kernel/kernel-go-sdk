@@ -37,22 +37,9 @@ func (b *BrowserSessionClient) SessionID() string { return b.sessionID }
 func (b *BrowserSessionClient) HTTPClient() *http.Client {
 	cfg, err := requestconfig.PreRequestOptions(b.opts...)
 	if err != nil {
-		return &http.Client{
-			Transport: browserscope.NewRawCURLRoundTripper(b.kernelBase, b.jwt, nil),
-		}
+		return browserscope.HTTPClient(b.kernelBase, b.jwt, nil)
 	}
-	underlying := cfg.HTTPClient
-	if underlying == nil {
-		underlying = http.DefaultClient
-	}
-	rt := underlying.Transport
-	if rt == nil {
-		rt = http.DefaultTransport
-	}
-	return &http.Client{
-		Transport: browserscope.NewRawCURLRoundTripper(b.kernelBase, b.jwt, rt),
-		Timeout:   underlying.Timeout,
-	}
+	return browserscope.HTTPClient(b.kernelBase, b.jwt, cfg.HTTPClient)
 }
 
 // ForBrowser returns a [BrowserSessionClient] for the given browser value.

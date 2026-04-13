@@ -17,10 +17,26 @@ type RawCURLRoundTripper struct {
 
 var _ http.RoundTripper = (*RawCURLRoundTripper)(nil)
 
-// NewRawCURLRoundTripper returns an [http.RoundTripper] that maps each request
+// HTTPClient returns an [http.Client] that performs browser egress HTTP via the
+// browser session base_url and internal /curl/raw path.
+func HTTPClient(browserBaseURL, jwt string, underlying *http.Client) *http.Client {
+	if underlying == nil {
+		underlying = http.DefaultClient
+	}
+	rt := underlying.Transport
+	if rt == nil {
+		rt = http.DefaultTransport
+	}
+	return &http.Client{
+		Transport: newRawCURLRoundTripper(browserBaseURL, jwt, rt),
+		Timeout:   underlying.Timeout,
+	}
+}
+
+// newRawCURLRoundTripper returns an [http.RoundTripper] that maps each request
 // to {base_url}/curl/raw?jwt=...&url=<absolute-target>, preserving method,
 // headers, and body. The caller's request URL must be an absolute http(s) URL.
-func NewRawCURLRoundTripper(browserBaseURL, jwt string, underlying http.RoundTripper) *RawCURLRoundTripper {
+func newRawCURLRoundTripper(browserBaseURL, jwt string, underlying http.RoundTripper) *RawCURLRoundTripper {
 	if underlying == nil {
 		underlying = http.DefaultTransport
 	}
