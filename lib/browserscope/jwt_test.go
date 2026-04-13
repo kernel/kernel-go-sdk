@@ -4,7 +4,7 @@ import "testing"
 
 func TestJWTFromWebSocketURL(t *testing.T) {
 	const u = "wss://browser.example/browser/cdp?jwt=abc123&foo=bar"
-	j, err := JWTFromWebSocketURL(u)
+	j, err := jwtFromWebSocketURL(u)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -14,7 +14,7 @@ func TestJWTFromWebSocketURL(t *testing.T) {
 }
 
 func TestJWTFromWebSocketURLMissing(t *testing.T) {
-	_, err := JWTFromWebSocketURL("wss://browser.example/browser/cdp")
+	_, err := jwtFromWebSocketURL("wss://browser.example/browser/cdp")
 	if err == nil {
 		t.Fatal("expected error")
 	}

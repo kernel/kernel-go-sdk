@@ -15,6 +15,8 @@ type RawCURLRoundTripper struct {
 	underlying     http.RoundTripper
 }
 
+var _ http.RoundTripper = (*RawCURLRoundTripper)(nil)
+
 // NewRawCURLRoundTripper returns an [http.RoundTripper] that maps each request
 // to {base_url}/curl/raw?jwt=...&url=<absolute-target>, preserving method,
 // headers, and body. The caller's request URL must be an absolute http(s) URL.

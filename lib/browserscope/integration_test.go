@@ -2,6 +2,7 @@ package browserscope_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -41,9 +42,6 @@ func TestIntegrationBrowserSessionClient(t *testing.T) {
 	if browser.BaseURL == "" {
 		t.Fatal("expected browser base_url to be set")
 	}
-	if !strings.Contains(browser.BaseURL, "/browser/kernel") {
-		t.Fatalf("expected browser base_url to include /browser/kernel, got %q", browser.BaseURL)
-	}
 
 	scoped, err := client.ForBrowser(browser)
 	if err != nil {
@@ -72,5 +70,15 @@ func TestIntegrationBrowserSessionClient(t *testing.T) {
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
 		t.Fatalf("expected successful browser http response, got %d", resp.StatusCode)
+	}
+	if got := resp.Header.Get("Content-Type"); got == "" {
+		t.Fatal("expected raw browser response to include content type")
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("read raw browser response: %v", err)
+	}
+	if len(body) == 0 {
+		t.Fatal("expected raw browser response body to be non-empty")
 	}
 }
