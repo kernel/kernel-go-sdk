@@ -190,6 +190,42 @@ func TestBrowserDelete(t *testing.T) {
 	}
 }
 
+func TestBrowserCurlWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Browsers.Curl(
+		context.TODO(),
+		"id",
+		kernel.BrowserCurlParams{
+			URL:  "url",
+			Body: kernel.String("body"),
+			Headers: map[string]string{
+				"foo": "string",
+			},
+			Method:           kernel.BrowserCurlParamsMethodGet,
+			ResponseEncoding: kernel.BrowserCurlParamsResponseEncodingUtf8,
+			TimeoutMs:        kernel.Int(1000),
+		},
+	)
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestBrowserDeleteByID(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
