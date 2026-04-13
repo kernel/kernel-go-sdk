@@ -1,5 +1,7 @@
 package kernel
 
+//go:generate go run ./internal/genbrowsersessionservices -output browser_session_services_gen.go
+
 import (
 	"fmt"
 	"net/http"
@@ -9,23 +11,6 @@ import (
 	"github.com/kernel/kernel-go-sdk/lib/browserscope"
 	"github.com/kernel/kernel-go-sdk/option"
 )
-
-// BrowserSessionClient is a browser-scoped view of a browser session. Subresources
-// use the session base_url and do not repeat the browser id in method
-// signatures. SessionID is exposed for future routing extensions.
-type BrowserSessionClient struct {
-	sessionID  string
-	opts       []option.RequestOption
-	kernelBase string
-	jwt        string
-
-	Replays    BrowserSessionReplayService
-	Fs         BrowserSessionFService
-	Process    BrowserSessionProcessService
-	Logs       BrowserSessionLogService
-	Computer   BrowserSessionComputerService
-	Playwright BrowserSessionPlaywrightService
-}
 
 // SessionID returns the control-plane browser session id.
 func (b *BrowserSessionClient) SessionID() string { return b.sessionID }
@@ -64,23 +49,7 @@ func (c *Client) ForBrowser(v any, opts ...option.RequestOption) (*BrowserSessio
 		opts,
 	)
 
-	innerFs := NewBrowserFService(scoped...)
-	return &BrowserSessionClient{
-		sessionID:  norm.SessionID,
-		opts:       scoped,
-		kernelBase: norm.BaseURL,
-		jwt:        norm.JWT,
-		Replays:    BrowserSessionReplayService{inner: NewBrowserReplayService(scoped...), id: norm.SessionID},
-		Fs: BrowserSessionFService{
-			inner: innerFs,
-			id:    norm.SessionID,
-			Watch: BrowserSessionFWatchService{inner: innerFs.Watch, id: norm.SessionID},
-		},
-		Process:    BrowserSessionProcessService{inner: NewBrowserProcessService(scoped...), id: norm.SessionID},
-		Logs:       BrowserSessionLogService{inner: NewBrowserLogService(scoped...), id: norm.SessionID},
-		Computer:   BrowserSessionComputerService{inner: NewBrowserComputerService(scoped...), id: norm.SessionID},
-		Playwright: BrowserSessionPlaywrightService{inner: NewBrowserPlaywrightService(scoped...), id: norm.SessionID},
-	}, nil
+	return newBrowserSessionClient(norm.SessionID, norm.BaseURL, norm.JWT, scoped), nil
 }
 
 func browserSessionRefFrom(v any) (browserscope.Ref, error) {
