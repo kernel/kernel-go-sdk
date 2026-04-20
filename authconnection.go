@@ -405,6 +405,9 @@ type ManagedAuthDiscoveredField struct {
 	//
 	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
 	Type string `json:"type" api:"required"`
+	// Contextual help text near the field that tells the user what to enter (e.g.,
+	// "Enter the phone ending in (**_) _**-\*\*92")
+	Hint string `json:"hint"`
 	// If this field is associated with an MFA option, the type of that option (e.g.,
 	// password field linked to "Enter password" option)
 	//
@@ -420,6 +423,7 @@ type ManagedAuthDiscoveredField struct {
 		Name          respjson.Field
 		Selector      respjson.Field
 		Type          respjson.Field
+		Hint          respjson.Field
 		LinkedMfaType respjson.Field
 		Placeholder   respjson.Field
 		Required      respjson.Field
@@ -963,6 +967,9 @@ type AuthConnectionFollowResponseManagedAuthStateDiscoveredField struct {
 	//
 	// Any of "text", "email", "password", "tel", "number", "url", "code", "totp".
 	Type string `json:"type" api:"required"`
+	// Contextual help text near the field that tells the user what to enter (e.g.,
+	// "Enter the phone ending in (**_) _**-\*\*92")
+	Hint string `json:"hint"`
 	// If this field is associated with an MFA option, the type of that option (e.g.,
 	// password field linked to "Enter password" option)
 	//
@@ -978,6 +985,7 @@ type AuthConnectionFollowResponseManagedAuthStateDiscoveredField struct {
 		Name          respjson.Field
 		Selector      respjson.Field
 		Type          respjson.Field
+		Hint          respjson.Field
 		LinkedMfaType respjson.Field
 		Placeholder   respjson.Field
 		Required      respjson.Field
