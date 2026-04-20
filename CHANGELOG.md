@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.50.0 (2026-04-20)
+
+Full Changelog: [v0.49.0...v0.50.0](https://github.com/kernel/kernel-go-sdk/compare/v0.49.0...v0.50.0)
+
+### Features
+
+* add POST /browsers/{id}/curl and /curl/raw endpoints ([94b52ae](https://github.com/kernel/kernel-go-sdk/commit/94b52aeac38b20c8ea60e3c016443e0ccc680451))
+* remove paid plan gating from project endpoints ([f3cbeb3](https://github.com/kernel/kernel-go-sdk/commit/f3cbeb32ca629fefbadaf5449acd0d7aa438e4c5))
+
+
+### Bug Fixes
+
+* include MFA and sign-in options in CUA SSO-only step response ([45db2eb](https://github.com/kernel/kernel-go-sdk/commit/45db2ebc96e4d6fbeec34cc43ed13ad4d0bd7de2))
+
 ## 0.49.0 (2026-04-10)
 
 Full Changelog: [v0.48.0...v0.49.0](https://github.com/kernel/kernel-go-sdk/compare/v0.48.0...v0.49.0)
