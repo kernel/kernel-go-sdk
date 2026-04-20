@@ -45,8 +45,8 @@ func NewProjectService(opts ...option.RequestOption) (r ProjectService) {
 	return
 }
 
-// Create a new project within the authenticated organization. Requires a paid plan
-// and the projects feature flag.
+// Create a new project within the authenticated organization. Requires the
+// projects feature flag.
 func (r *ProjectService) New(ctx context.Context, body ProjectNewParams, opts ...option.RequestOption) (res *Project, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "projects"
