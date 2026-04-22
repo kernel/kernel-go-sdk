@@ -13,8 +13,8 @@ func main() {
 	ctx := context.Background()
 	client := kernel.NewClient(
 		kernel.WithBrowserRouting(kernel.BrowserRoutingConfig{
-			Enabled:                true,
-			DirectToVMSubresources: []string{"process"},
+			Enabled:      true,
+			Subresources: []string{"process"},
 		}),
 	)
 

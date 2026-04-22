@@ -27,8 +27,8 @@ func TestIntegrationBrowserRouting(t *testing.T) {
 		option.WithAPIKey(apiKey),
 		option.WithBaseURL(baseURL),
 		kernel.WithBrowserRouting(kernel.BrowserRoutingConfig{
-			Enabled:                true,
-			DirectToVMSubresources: []string{"process"},
+			Enabled:      true,
+			Subresources: []string{"process"},
 		}),
 	)
 

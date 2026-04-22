@@ -45,7 +45,7 @@ func TestBrowserRoutingWarmsCacheAndRoutesAllowlistedSubresources(t *testing.T) 
 		option.WithBaseURL(srv.URL),
 		option.WithAPIKey("sk_test"),
 		option.WithHTTPClient(srv.Client()),
-		WithBrowserRouting(BrowserRoutingConfig{Enabled: true, DirectToVMSubresources: []string{"process"}}),
+		WithBrowserRouting(BrowserRoutingConfig{Enabled: true, Subresources: []string{"process"}}),
 	)
 
 	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
@@ -97,7 +97,7 @@ func TestBrowserRoutingSkipsSubresourcesOutsideConfiguredAllowlist(t *testing.T)
 		option.WithBaseURL(srv.URL),
 		option.WithAPIKey("sk_test"),
 		option.WithHTTPClient(srv.Client()),
-		WithBrowserRouting(BrowserRoutingConfig{Enabled: true, DirectToVMSubresources: []string{"computer"}}),
+		WithBrowserRouting(BrowserRoutingConfig{Enabled: true, Subresources: []string{"computer"}}),
 	)
 
 	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
