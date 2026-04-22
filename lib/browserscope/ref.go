@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// Ref identifies a browser session for browser-scoped HTTP calls. SessionID is
-// reserved for future client-side routing; browser-scoped requests rewrite
-// the /browsers/{SessionID}/ path segment against the returned base_url.
+// Ref identifies a browser session for direct-to-VM HTTP calls. SessionID is
+// reserved for future client-side routing; allowlisted requests rewrite the
+// /browsers/{SessionID}/ path segment against the returned base_url.
 type Ref struct {
 	SessionID string
 	BaseURL   string

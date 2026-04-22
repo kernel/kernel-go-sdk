@@ -29,7 +29,7 @@ func TestBrowserSessionHTTPClientRawCurl(t *testing.T) {
 		option.WithHTTPClient(srv.Client()),
 	)
 
-	primeBrowserRouteCache(c.Options, browserscope.Ref{
+	storeBrowserRouteCache(c.Options, browserscope.Ref{
 		SessionID: "sid",
 		BaseURL:   srv.URL + "/browser/kernel",
 		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",
@@ -63,7 +63,7 @@ func TestBrowserSessionHTTPClientRequiresCachedRoute(t *testing.T) {
 		option.WithAPIKey("sk"),
 	)
 
-	primeBrowserRouteCache(c.Options, browserscope.Ref{
+	storeBrowserRouteCache(c.Options, browserscope.Ref{
 		SessionID: "sid",
 		BaseURL:   "https://browser-session.test/browser/kernel",
 		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",

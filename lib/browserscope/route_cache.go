@@ -62,20 +62,6 @@ func (c *RouteCache) Delete(sessionID string) {
 	delete(c.routes, sessionID)
 }
 
-// Prime validates the browser reference and stores it in the cache.
-func (c *RouteCache) Prime(ref Ref) error {
-	norm, err := ref.Normalize()
-	if err != nil {
-		return err
-	}
-	c.Store(Route{
-		SessionID: norm.SessionID,
-		BaseURL:   norm.BaseURL,
-		JWT:       norm.JWT,
-	})
-	return nil
-}
-
 // DirectVMRoutingMiddleware rewrites allowlisted browser subresource requests to
 // the browser VM using cached base_url and jwt data.
 func DirectVMRoutingMiddleware(cache *RouteCache, directToVMSubresources []string) option.Middleware {
