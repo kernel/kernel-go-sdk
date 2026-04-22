@@ -8,8 +8,8 @@ import (
 
 // BrowserRoutingConfig controls which browser subresources route directly to the browser VM.
 type BrowserRoutingConfig struct {
-	Enabled                bool
-	DirectToVMSubresources []string
+	Enabled      bool
+	Subresources []string
 }
 
 type browserRoutingOption struct {
@@ -30,7 +30,7 @@ func (o *browserRoutingOption) Apply(r *requestconfig.RequestConfig) error {
 	if !o.config.Enabled {
 		return nil
 	}
-	r.Middlewares = append(r.Middlewares, browserscope.DirectVMRoutingMiddleware(o.cache, o.config.DirectToVMSubresources))
+	r.Middlewares = append(r.Middlewares, browserscope.DirectVMRoutingMiddleware(o.cache, o.config.Subresources))
 	return nil
 }
 
