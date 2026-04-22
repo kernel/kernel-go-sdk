@@ -6,7 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/kernel/kernel-go-sdk/lib/browserscope"
+	"github.com/kernel/kernel-go-sdk/lib/browserrouting"
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
@@ -29,7 +29,7 @@ func TestBrowserSessionHTTPClientRawCurl(t *testing.T) {
 		option.WithHTTPClient(srv.Client()),
 	)
 
-	storeBrowserRouteCache(c.Options, browserscope.Ref{
+	storeBrowserRouteCache(c.Options, browserrouting.Ref{
 		SessionID: "sid",
 		BaseURL:   srv.URL + "/browser/kernel",
 		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",
@@ -63,7 +63,7 @@ func TestBrowserSessionHTTPClientRequiresCachedRoute(t *testing.T) {
 		option.WithAPIKey("sk"),
 	)
 
-	storeBrowserRouteCache(c.Options, browserscope.Ref{
+	storeBrowserRouteCache(c.Options, browserrouting.Ref{
 		SessionID: "sid",
 		BaseURL:   "https://browser-session.test/browser/kernel",
 		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",

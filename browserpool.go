@@ -255,7 +255,7 @@ type BrowserPoolAcquireResponse struct {
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Websocket URL for WebDriver BiDi connections to the browser session
 	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
-	// Direct-to-VM HTTP base URL for this browser session.
+	// Metro-API HTTP base URL for this browser session.
 	BaseURL string `json:"base_url"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
