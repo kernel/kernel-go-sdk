@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/kernel/kernel-go-sdk/lib/browserscope"
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
@@ -17,6 +18,8 @@ import (
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
 	Options []option.RequestOption
+	// BrowserRouteCache stores cached base_url and jwt data for direct-to-VM routing.
+	BrowserRouteCache *browserscope.RouteCache
 	// Create and manage app deployments and stream deployment events.
 	Deployments DeploymentService
 	// List applications and versions.
@@ -61,8 +64,15 @@ func DefaultClientOptions() []option.RequestOption {
 // the services and requests that this client makes.
 func NewClient(opts ...option.RequestOption) (r Client) {
 	opts = append(DefaultClientOptions(), opts...)
+	cache := browserscope.NewRouteCache()
+	for _, opt := range opts {
+		if routing, ok := opt.(*browserRoutingOption); ok {
+			routing.cache = cache
+		}
+	}
+	opts = append(opts, withBrowserRouteCache(cache))
 
-	r = Client{Options: opts}
+	r = Client{Options: opts, BrowserRouteCache: cache}
 
 	r.Deployments = NewDeploymentService(opts...)
 	r.Apps = NewAppService(opts...)

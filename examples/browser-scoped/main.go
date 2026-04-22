@@ -11,7 +11,12 @@ import (
 
 func main() {
 	ctx := context.Background()
-	client := kernel.NewClient()
+	client := kernel.NewClient(
+		kernel.WithBrowserRouting(kernel.BrowserRoutingConfig{
+			Enabled:                true,
+			DirectToVMSubresources: []string{"process"},
+		}),
+	)
 
 	browser, err := client.Browsers.New(ctx, kernel.BrowserNewParams{
 		Headless: kernel.Bool(true),
@@ -23,12 +28,10 @@ func main() {
 		_ = client.Browsers.DeleteByID(context.Background(), browser.SessionID)
 	}()
 
-	scoped, err := client.ForBrowser(browser)
+	httpClient, err := client.Browsers.HTTPClient(browser.SessionID)
 	if err != nil {
 		panic(err)
 	}
-
-	httpClient := scoped.HTTPClient()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
 	if err != nil {
 		panic(err)

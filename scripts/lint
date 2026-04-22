@@ -4,12 +4,6 @@ set -e
 
 cd "$(dirname "$0")/.."
 
-echo "==> Regenerating browser-scoped bindings"
-./scripts/generate-browser-session
-
-echo "==> Verifying generated browser-scoped bindings are committed"
-git diff --exit-code -- browser_session_services_gen.go
-
 echo "==> Running Go build"
 go build ./...
 
