@@ -61,11 +61,24 @@ func browserRouteCacheFromOptions(opts []option.RequestOption) *browserscope.Rou
 	return nil
 }
 
-func primeBrowserRouteCache(opts []option.RequestOption, refs ...browserscope.Ref) {
+func storeBrowserRouteCache(opts []option.RequestOption, refs ...browserscope.Ref) {
 	cache := browserRouteCacheFromOptions(opts)
 	for _, ref := range refs {
-		if cache != nil {
-			_ = cache.Prime(ref)
+		route, ok := browserRouteFromRef(ref)
+		if cache != nil && ok {
+			cache.Store(route)
 		}
 	}
+}
+
+func browserRouteFromRef(ref browserscope.Ref) (browserscope.Route, bool) {
+	norm, err := ref.Normalize()
+	if err != nil {
+		return browserscope.Route{}, false
+	}
+	return browserscope.Route{
+		SessionID: norm.SessionID,
+		BaseURL:   norm.BaseURL,
+		JWT:       norm.JWT,
+	}, true
 }

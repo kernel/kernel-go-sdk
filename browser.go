@@ -71,7 +71,7 @@ func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ..
 	path := "browsers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	if err == nil && res != nil {
-		primeBrowserRouteCache(opts, browserscope.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
+		storeBrowserRouteCache(opts, browserscope.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
 	}
 	return res, err
 }
@@ -86,7 +86,7 @@ func (r *BrowserService) Get(ctx context.Context, id string, query BrowserGetPar
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	if err == nil && res != nil {
-		primeBrowserRouteCache(opts, browserscope.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
+		storeBrowserRouteCache(opts, browserscope.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
 	}
 	return res, err
 }
@@ -101,7 +101,7 @@ func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpda
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	if err == nil && res != nil {
-		primeBrowserRouteCache(opts, browserscope.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
+		storeBrowserRouteCache(opts, browserscope.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
 	}
 	return res, err
 }
@@ -123,7 +123,7 @@ func (r *BrowserService) List(ctx context.Context, query BrowserListParams, opts
 	}
 	res.SetPageConfig(cfg, raw)
 	for _, item := range res.Items {
-		primeBrowserRouteCache(opts, browserscope.Ref{SessionID: item.SessionID, BaseURL: item.BaseURL, CdpWsURL: item.CdpWsURL})
+		storeBrowserRouteCache(opts, browserscope.Ref{SessionID: item.SessionID, BaseURL: item.BaseURL, CdpWsURL: item.CdpWsURL})
 	}
 	return res, nil
 }
@@ -343,7 +343,7 @@ type BrowserNewResponse struct {
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Websocket URL for WebDriver BiDi connections to the browser session
 	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
-	// Metro-API HTTP base URL for this browser session.
+	// Direct-to-VM HTTP base URL for this browser session.
 	BaseURL string `json:"base_url"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
@@ -426,7 +426,7 @@ type BrowserGetResponse struct {
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Websocket URL for WebDriver BiDi connections to the browser session
 	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
-	// Metro-API HTTP base URL for this browser session.
+	// Direct-to-VM HTTP base URL for this browser session.
 	BaseURL string `json:"base_url"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
@@ -509,7 +509,7 @@ type BrowserUpdateResponse struct {
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Websocket URL for WebDriver BiDi connections to the browser session
 	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
-	// Metro-API HTTP base URL for this browser session.
+	// Direct-to-VM HTTP base URL for this browser session.
 	BaseURL string `json:"base_url"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
@@ -592,7 +592,7 @@ type BrowserListResponse struct {
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
 	// Websocket URL for WebDriver BiDi connections to the browser session
 	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
-	// Metro-API HTTP base URL for this browser session.
+	// Direct-to-VM HTTP base URL for this browser session.
 	BaseURL string `json:"base_url"`
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
