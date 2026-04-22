@@ -2,7 +2,7 @@ package kernel
 
 import (
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
-	"github.com/kernel/kernel-go-sdk/lib/browserscope"
+	"github.com/kernel/kernel-go-sdk/lib/browserrouting"
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
@@ -13,12 +13,12 @@ type BrowserRoutingConfig struct {
 }
 
 type browserRoutingOption struct {
-	cache  *browserscope.RouteCache
+	cache  *browserrouting.RouteCache
 	config BrowserRoutingConfig
 }
 
 type browserRouteCacheOption struct {
-	cache *browserscope.RouteCache
+	cache *browserrouting.RouteCache
 }
 
 // WithBrowserRouting enables direct-to-VM routing for the configured browser subresources.
@@ -30,11 +30,11 @@ func (o *browserRoutingOption) Apply(r *requestconfig.RequestConfig) error {
 	if !o.config.Enabled {
 		return nil
 	}
-	r.Middlewares = append(r.Middlewares, browserscope.DirectVMRoutingMiddleware(o.cache, o.config.Subresources))
+	r.Middlewares = append(r.Middlewares, browserrouting.DirectVMRoutingMiddleware(o.cache, o.config.Subresources))
 	return nil
 }
 
-func (o *browserRoutingOption) browserRouteCache() *browserscope.RouteCache {
+func (o *browserRoutingOption) browserRouteCache() *browserrouting.RouteCache {
 	return o.cache
 }
 
@@ -42,17 +42,17 @@ func (o *browserRouteCacheOption) Apply(*requestconfig.RequestConfig) error {
 	return nil
 }
 
-func (o *browserRouteCacheOption) browserRouteCache() *browserscope.RouteCache {
+func (o *browserRouteCacheOption) browserRouteCache() *browserrouting.RouteCache {
 	return o.cache
 }
 
-func withBrowserRouteCache(cache *browserscope.RouteCache) option.RequestOption {
+func withBrowserRouteCache(cache *browserrouting.RouteCache) option.RequestOption {
 	return &browserRouteCacheOption{cache: cache}
 }
 
-func browserRouteCacheFromOptions(opts []option.RequestOption) *browserscope.RouteCache {
+func browserRouteCacheFromOptions(opts []option.RequestOption) *browserrouting.RouteCache {
 	for _, opt := range opts {
-		if carrier, ok := opt.(interface{ browserRouteCache() *browserscope.RouteCache }); ok {
+		if carrier, ok := opt.(interface{ browserRouteCache() *browserrouting.RouteCache }); ok {
 			if cache := carrier.browserRouteCache(); cache != nil {
 				return cache
 			}
@@ -61,7 +61,7 @@ func browserRouteCacheFromOptions(opts []option.RequestOption) *browserscope.Rou
 	return nil
 }
 
-func storeBrowserRouteCache(opts []option.RequestOption, refs ...browserscope.Ref) {
+func storeBrowserRouteCache(opts []option.RequestOption, refs ...browserrouting.Ref) {
 	cache := browserRouteCacheFromOptions(opts)
 	for _, ref := range refs {
 		route, ok := browserRouteFromRef(ref)
@@ -71,12 +71,12 @@ func storeBrowserRouteCache(opts []option.RequestOption, refs ...browserscope.Re
 	}
 }
 
-func browserRouteFromRef(ref browserscope.Ref) (browserscope.Route, bool) {
+func browserRouteFromRef(ref browserrouting.Ref) (browserrouting.Route, bool) {
 	norm, err := ref.Normalize()
 	if err != nil {
-		return browserscope.Route{}, false
+		return browserrouting.Route{}, false
 	}
-	return browserscope.Route{
+	return browserrouting.Route{
 		SessionID: norm.SessionID,
 		BaseURL:   norm.BaseURL,
 		JWT:       norm.JWT,
