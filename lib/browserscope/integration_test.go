@@ -13,7 +13,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-func TestIntegrationBrowserSessionClient(t *testing.T) {
+func TestIntegrationBrowserRouting(t *testing.T) {
 	apiKey := strings.TrimSpace(os.Getenv("KERNEL_API_KEY"))
 	baseURL := strings.TrimSpace(os.Getenv("KERNEL_BASE_URL"))
 	if apiKey == "" || baseURL == "" {
@@ -26,6 +26,10 @@ func TestIntegrationBrowserSessionClient(t *testing.T) {
 	client := kernel.NewClient(
 		option.WithAPIKey(apiKey),
 		option.WithBaseURL(baseURL),
+		kernel.WithBrowserRouting(kernel.BrowserRoutingConfig{
+			Enabled:                true,
+			DirectToVMSubresources: []string{"process"},
+		}),
 	)
 
 	browser, err := client.Browsers.New(ctx, kernel.BrowserNewParams{
@@ -43,12 +47,7 @@ func TestIntegrationBrowserSessionClient(t *testing.T) {
 		t.Fatal("expected browser base_url to be set")
 	}
 
-	scoped, err := client.ForBrowser(browser)
-	if err != nil {
-		t.Fatalf("for browser: %v", err)
-	}
-
-	execRes, err := scoped.Process.Exec(ctx, kernel.BrowserProcessExecParams{
+	execRes, err := client.Browsers.Process.Exec(ctx, browser.SessionID, kernel.BrowserProcessExecParams{
 		Command: "echo",
 		Args:    []string{"hello"},
 	})
@@ -63,7 +62,11 @@ func TestIntegrationBrowserSessionClient(t *testing.T) {
 	if err != nil {
 		t.Fatalf("new request: %v", err)
 	}
-	resp, err := scoped.HTTPClient().Do(req)
+	httpClient, err := client.Browsers.HTTPClient(browser.SessionID)
+	if err != nil {
+		t.Fatalf("browser http client: %v", err)
+	}
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		t.Fatalf("browser http client: %v", err)
 	}

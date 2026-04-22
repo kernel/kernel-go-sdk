@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kernel/kernel-go-sdk/lib/browserscope"
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
@@ -28,16 +29,16 @@ func TestBrowserSessionHTTPClientRawCurl(t *testing.T) {
 		option.WithHTTPClient(srv.Client()),
 	)
 
-	sess, err := c.ForBrowser(&BrowserGetResponse{
+	primeBrowserRouteCache(c.Options, browserscope.Ref{
 		SessionID: "sid",
 		BaseURL:   srv.URL + "/browser/kernel",
 		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",
 	})
+
+	hc, err := c.Browsers.HTTPClient("sid")
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	hc := sess.HTTPClient()
 	req, err := http.NewRequest(http.MethodGet, "https://httpbin.org/get", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -53,5 +54,24 @@ func TestBrowserSessionHTTPClientRawCurl(t *testing.T) {
 	}
 	if sawRaw == "" {
 		t.Fatal("expected raw query on curl/raw")
+	}
+}
+
+func TestBrowserSessionHTTPClientRequiresCachedRoute(t *testing.T) {
+	c := NewClient(
+		option.WithBaseURL("https://api.example/"),
+		option.WithAPIKey("sk"),
+	)
+
+	primeBrowserRouteCache(c.Options, browserscope.Ref{
+		SessionID: "sid",
+		BaseURL:   "https://browser-session.test/browser/kernel",
+		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",
+	})
+	c.BrowserRouteCache.Delete("sid")
+
+	_, err := c.Browsers.HTTPClient("sid")
+	if err == nil {
+		t.Fatal("expected cached route lookup failure")
 	}
 }
