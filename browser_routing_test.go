@@ -1,0 +1,150 @@
+package kernel
+
+import (
+	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"testing"
+
+	"github.com/kernel/kernel-go-sdk/option"
+)
+
+func TestBrowserRoutingWarmsCacheAndRoutesAllowlistedSubresources(t *testing.T) {
+	t.Setenv(browserRoutingSubresourcesEnv, "process")
+
+	var calls []struct {
+		Path string
+		Auth string
+	}
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, struct {
+			Path string
+			Auth string
+		}{Path: r.URL.Path + "?" + r.URL.RawQuery, Auth: r.Header.Get("Authorization")})
+
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/browsers":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"session_id": "sess-1",
+				"base_url":   srv.URL + "/browser/kernel",
+				"cdp_ws_url": "wss://browser-session.test/browser/cdp?jwt=token-abc",
+			})
+		default:
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"duration_ms": 1,
+				"exit_code":   0,
+				"stderr_b64":  "",
+				"stdout_b64":  "",
+			})
+		}
+	}))
+	defer srv.Close()
+
+	client := NewClient(
+		option.WithBaseURL(srv.URL),
+		option.WithAPIKey("sk_test"),
+		option.WithHTTPClient(srv.Client()),
+	)
+
+	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Browsers.Process.Exec(context.Background(), "sess-1", BrowserProcessExecParams{Command: "echo"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if route, ok := client.BrowserRouteCache.Load("sess-1"); !ok || route.JWT != "token-abc" {
+		t.Fatalf("expected warmed browser route cache, got %#v ok=%v", route, ok)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("expected 2 calls, got %d", len(calls))
+	}
+	if calls[1].Path != "/browser/kernel/process/exec?jwt=token-abc" {
+		t.Fatalf("expected direct VM path, got %q", calls[1].Path)
+	}
+	if calls[1].Auth != "" {
+		t.Fatalf("expected authorization header removed, got %q", calls[1].Auth)
+	}
+}
+
+func TestBrowserRoutingSkipsSubresourcesOutsideConfiguredAllowlist(t *testing.T) {
+	t.Setenv(browserRoutingSubresourcesEnv, "computer")
+
+	var paths []string
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/browsers":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"session_id": "sess-1",
+				"base_url":   srv.URL + "/browser/kernel",
+				"cdp_ws_url": "wss://browser-session.test/browser/cdp?jwt=token-abc",
+			})
+		default:
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"duration_ms": 1,
+				"exit_code":   0,
+				"stderr_b64":  "",
+				"stdout_b64":  "",
+			})
+		}
+	}))
+	defer srv.Close()
+
+	client := NewClient(
+		option.WithBaseURL(srv.URL),
+		option.WithAPIKey("sk_test"),
+		option.WithHTTPClient(srv.Client()),
+	)
+
+	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Browsers.Process.Exec(context.Background(), "sess-1", BrowserProcessExecParams{Command: "echo"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if got := paths[len(paths)-1]; got != "/browsers/sess-1/process/exec" {
+		t.Fatalf("expected control-plane path, got %q", got)
+	}
+}
+
+func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurl(t *testing.T) {
+	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
+	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !ok {
+			_ = os.Unsetenv(browserRoutingSubresourcesEnv)
+			return
+		}
+		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
+	})
+	if got := browserRoutingSubresourcesFromEnv(); len(got) != 1 || got[0] != "curl" {
+		t.Fatalf("expected default subresources [curl], got %#v", got)
+	}
+
+	t.Setenv(browserRoutingSubresourcesEnv, "")
+	if got := browserRoutingSubresourcesFromEnv(); len(got) != 0 {
+		t.Fatalf("expected empty env to disable routing, got %#v", got)
+	}
+
+	t.Setenv(browserRoutingSubresourcesEnv, "curl, process")
+	got := browserRoutingSubresourcesFromEnv()
+	want := []string{"curl", "process"}
+	if len(got) != len(want) {
+		t.Fatalf("expected %v, got %#v", want, got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("expected %v, got %#v", want, got)
+		}
+	}
+}
