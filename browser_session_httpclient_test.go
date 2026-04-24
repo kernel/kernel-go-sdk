@@ -1,11 +1,13 @@
 package kernel
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/lib/browserrouting"
 	"github.com/kernel/kernel-go-sdk/option"
 )
@@ -73,5 +75,29 @@ func TestBrowserSessionHTTPClientRequiresCachedRoute(t *testing.T) {
 	_, err := c.Browsers.HTTPClient("sid")
 	if err == nil {
 		t.Fatal("expected cached route lookup failure")
+	}
+}
+
+func TestBrowserHTTPClientPropagatesRequestConfigError(t *testing.T) {
+	c := NewClient(
+		option.WithBaseURL("https://api.example/"),
+		option.WithAPIKey("sk"),
+	)
+
+	storeBrowserRouteCache(c.Options, browserrouting.Ref{
+		SessionID: "sid",
+		BaseURL:   "https://browser-session.test/browser/kernel",
+		CdpWsURL:  "wss://x/browser/cdp?jwt=j1",
+	})
+
+	wantErr := errors.New("request config failed")
+	hc, err := c.Browsers.HTTPClient("sid", requestconfig.RequestOptionFunc(func(*requestconfig.RequestConfig) error {
+		return wantErr
+	}))
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("expected error %q, got %v", wantErr, err)
+	}
+	if hc != nil {
+		t.Fatal("expected nil client when request config fails")
 	}
 }

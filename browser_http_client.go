@@ -27,7 +27,7 @@ func (r *BrowserService) HTTPClient(id string, opts ...option.RequestOption) (*h
 
 	cfg, err := requestconfig.NewRequestConfig(context.Background(), http.MethodGet, "https://example.com", nil, nil, opts...)
 	if err != nil {
-		return browserrouting.NewHTTPClient(route.BaseURL, route.JWT, nil), nil
+		return nil, err
 	}
 
 	return browserrouting.NewHTTPClient(route.BaseURL, route.JWT, cfg.HTTPClient), nil
