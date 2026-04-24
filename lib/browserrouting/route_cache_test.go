@@ -53,12 +53,28 @@ func TestDirectVMRoutingMiddlewareClearsStaleRawPath(t *testing.T) {
 	}
 }
 
-func TestParseBrowserMetadataPathRejectsSubresourcePaths(t *testing.T) {
-	if sessionID, ok := parseBrowserMetadataPath("/browsers/sess-1/process/exec"); ok || sessionID != "" {
-		t.Fatalf("expected subresource path to be rejected, got sessionID=%q ok=%v", sessionID, ok)
+func TestParseCacheLifecycleRejectsBrowserSubresourcePaths(t *testing.T) {
+	cases := []string{
+		"/browsers/sess-1/process/exec",
+		"/browsers/sess-1/browsers",
 	}
-	if sessionID, ok := parseBrowserMetadataPath("/browsers/sess-1/browsers"); ok || sessionID != "" {
-		t.Fatalf("expected nested browsers subresource path to be rejected, got sessionID=%q ok=%v", sessionID, ok)
+
+	for _, path := range cases {
+		reqURL, err := url.Parse("https://api.example" + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		lifecycle, err := parseCacheLifecycle(&http.Request{
+			Method: http.MethodGet,
+			URL:    reqURL,
+			Header: http.Header{},
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if lifecycle.sniffResponse || lifecycle.evictSessionID != "" {
+			t.Fatalf("expected subresource path %q to be ignored, got %#v", path, lifecycle)
+		}
 	}
 }
 
@@ -140,6 +156,41 @@ func TestDirectVMRoutingMiddlewarePopulatesCacheFromNestedJSONResponse(t *testin
 	}
 }
 
+func TestDirectVMRoutingMiddlewarePopulatesCacheFromBrowserPoolAcquireResponse(t *testing.T) {
+	cache := NewRouteCache()
+	middleware := DirectVMRoutingMiddleware(cache, nil)
+	body := `{"session_id":"sess-3","base_url":"https://browser.example/browser/kernel","cdp_ws_url":"wss://browser.example/browser/cdp?jwt=jwt-345"}`
+
+	reqURL, err := url.Parse("https://api.example/browser_pools/pool-1/acquire")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{},
+	}
+
+	_, err = middleware(req, func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body:       io.NopCloser(strings.NewReader(body)),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	route, ok := cache.Load("sess-3")
+	if !ok {
+		t.Fatal("expected browser pool acquire response to warm the cache")
+	}
+	if route.JWT != "jwt-345" {
+		t.Fatalf("expected browser pool acquire jwt to be cached, got %q", route.JWT)
+	}
+}
+
 func TestDirectVMRoutingMiddlewareSkipsCacheSniffingForNonBrowserMetadataPaths(t *testing.T) {
 	cache := NewRouteCache()
 	middleware := DirectVMRoutingMiddleware(cache, nil)
@@ -203,6 +254,53 @@ func TestDirectVMRoutingMiddlewareEvictsCacheOnSuccessfulBrowserDelete(t *testin
 
 	if _, ok := cache.Load("sess-1"); ok {
 		t.Fatal("expected successful browser delete to evict cached route")
+	}
+}
+
+func TestDirectVMRoutingMiddlewareEvictsCacheOnSuccessfulBrowserPoolRelease(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+	middleware := DirectVMRoutingMiddleware(cache, nil)
+	releaseBody := `{"session_id":"sess-1","reuse":false}`
+
+	reqURL, err := url.Parse("https://api.example/browser_pools/pool-1/release")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method:        http.MethodPost,
+		URL:           reqURL,
+		Header:        http.Header{"Content-Type": []string{"application/json"}},
+		Body:          io.NopCloser(strings.NewReader(releaseBody)),
+		ContentLength: int64(len(releaseBody)),
+	}
+
+	var gotRequestBody string
+	_, err = middleware(req, func(next *http.Request) (*http.Response, error) {
+		body, err := io.ReadAll(next.Body)
+		if err != nil {
+			return nil, err
+		}
+		gotRequestBody = string(body)
+		return &http.Response{
+			StatusCode: http.StatusNoContent,
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader("")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if gotRequestBody != releaseBody {
+		t.Fatalf("expected release request body to be preserved, got %q", gotRequestBody)
+	}
+	if _, ok := cache.Load("sess-1"); ok {
+		t.Fatal("expected successful browser pool release to evict cached route")
 	}
 }
 
