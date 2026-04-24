@@ -19,7 +19,6 @@ import (
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
 	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
-	"github.com/kernel/kernel-go-sdk/lib/browserrouting"
 	"github.com/kernel/kernel-go-sdk/option"
 	"github.com/kernel/kernel-go-sdk/packages/pagination"
 	"github.com/kernel/kernel-go-sdk/packages/param"
@@ -70,9 +69,6 @@ func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "browsers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	if err == nil && res != nil {
-		storeBrowserRouteCache(opts, browserrouting.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
-	}
 	return res, err
 }
 
@@ -85,9 +81,6 @@ func (r *BrowserService) Get(ctx context.Context, id string, query BrowserGetPar
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	if err == nil && res != nil {
-		storeBrowserRouteCache(opts, browserrouting.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
-	}
 	return res, err
 }
 
@@ -100,9 +93,6 @@ func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpda
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	if err == nil && res != nil {
-		storeBrowserRouteCache(opts, browserrouting.Ref{SessionID: res.SessionID, BaseURL: res.BaseURL, CdpWsURL: res.CdpWsURL})
-	}
 	return res, err
 }
 
@@ -122,9 +112,6 @@ func (r *BrowserService) List(ctx context.Context, query BrowserListParams, opts
 		return nil, err
 	}
 	res.SetPageConfig(cfg, raw)
-	for _, item := range res.Items {
-		storeBrowserRouteCache(opts, browserrouting.Ref{SessionID: item.SessionID, BaseURL: item.BaseURL, CdpWsURL: item.CdpWsURL})
-	}
 	return res, nil
 }
 
@@ -170,11 +157,6 @@ func (r *BrowserService) DeleteByID(ctx context.Context, id string, opts ...opti
 	}
 	path := fmt.Sprintf("browsers/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	if err == nil {
-		if cache := browserRouteCacheFromOptions(opts); cache != nil {
-			cache.Delete(id)
-		}
-	}
 	return err
 }
 

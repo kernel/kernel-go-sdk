@@ -1,6 +1,10 @@
 package browserrouting
 
 import (
+	"bytes"
+	"encoding/json"
+	"io"
+	"mime"
 	"net/http"
 	"net/url"
 	"strings"
@@ -73,39 +77,156 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 	}
 
 	return func(req *http.Request, next option.MiddlewareNext) (*http.Response, error) {
+		cacheSessionID, cacheablePath := parseBrowserMetadataPath(req.URL.Path)
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
 		if !ok {
-			return next(req)
+			res, err := next(req)
+			if err != nil {
+				return res, err
+			}
+			if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
+				cache.Delete(cacheSessionID)
+			}
+			if cacheablePath {
+				if err := sniffAndPopulateCache(res, cache); err != nil {
+					return nil, err
+				}
+			}
+			return res, nil
 		}
-		if _, ok := allowed[subresource]; !ok {
-			return next(req)
-		}
-		route, ok := cache.Load(sessionID)
-		if !ok {
-			return next(req)
-		}
+		if _, ok := allowed[subresource]; ok {
+			route, ok := cache.Load(sessionID)
+			if ok {
+				base, err := url.Parse(route.BaseURL)
+				if err != nil {
+					return nil, err
+				}
+				req.Header.Del("Authorization")
+				if route.JWT != "" {
+					q := req.URL.Query()
+					if q.Get("jwt") == "" {
+						q.Set("jwt", route.JWT)
+						req.URL.RawQuery = q.Encode()
+					}
+				}
 
-		base, err := url.Parse(route.BaseURL)
-		if err != nil {
-			return nil, err
-		}
-		req.Header.Del("Authorization")
-		if route.JWT != "" {
-			q := req.URL.Query()
-			if q.Get("jwt") == "" {
-				q.Set("jwt", route.JWT)
-				req.URL.RawQuery = q.Encode()
+				req.URL.Scheme = base.Scheme
+				req.URL.Host = base.Host
+				req.Host = base.Host
+				req.URL.Path = joinURLPath(base.Path, subresource, suffix)
+				req.URL.RawPath = ""
 			}
 		}
 
-		req.URL.Scheme = base.Scheme
-		req.URL.Host = base.Host
-		req.Host = base.Host
-		req.URL.Path = joinURLPath(base.Path, subresource, suffix)
-		req.URL.RawPath = ""
-
-		return next(req)
+		res, err := next(req)
+		if err != nil {
+			return res, err
+		}
+		if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
+			cache.Delete(cacheSessionID)
+		}
+		if cacheablePath {
+			if err := sniffAndPopulateCache(res, cache); err != nil {
+				return nil, err
+			}
+		}
+		return res, nil
 	}
+}
+
+func parseBrowserMetadataPath(path string) (sessionID string, ok bool) {
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	for i := 0; i < len(parts); i++ {
+		if parts[i] != "browsers" {
+			continue
+		}
+		switch len(parts) - i {
+		case 1:
+			return "", true
+		case 2:
+			if parts[i+1] == "" {
+				return "", false
+			}
+			return parts[i+1], true
+		}
+	}
+	return "", false
+}
+
+func sniffAndPopulateCache(res *http.Response, cache *RouteCache) error {
+	if res == nil || res.Body == nil || cache == nil || !isSuccessfulResponse(res) || !isJSONResponse(res.Header) {
+		return nil
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return err
+	}
+	_ = res.Body.Close()
+	res.Body = io.NopCloser(bytes.NewReader(body))
+	res.ContentLength = int64(len(body))
+
+	var value any
+	if err := json.Unmarshal(body, &value); err != nil {
+		return nil
+	}
+	populateCache(value, cache)
+	return nil
+}
+
+func isSuccessfulResponse(res *http.Response) bool {
+	return res != nil && res.StatusCode >= 200 && res.StatusCode < 300
+}
+
+func isJSONResponse(header http.Header) bool {
+	mediaType, _, _ := mime.ParseMediaType(header.Get("Content-Type"))
+	return strings.Contains(mediaType, "application/json") || strings.HasSuffix(mediaType, "+json")
+}
+
+func populateCache(value any, cache *RouteCache) {
+	if route, ok := routeFromValue(value); ok {
+		cache.Store(route)
+	}
+
+	switch value := value.(type) {
+	case []any:
+		for _, item := range value {
+			populateCache(item, cache)
+		}
+	case map[string]any:
+		for _, child := range value {
+			if child != nil {
+				populateCache(child, cache)
+			}
+		}
+	}
+}
+
+func routeFromValue(value any) (Route, bool) {
+	record, ok := value.(map[string]any)
+	if !ok {
+		return Route{}, false
+	}
+
+	sessionID, _ := record["session_id"].(string)
+	baseURL, _ := record["base_url"].(string)
+	jwt, _ := record["jwt"].(string)
+	cdpWsURL, _ := record["cdp_ws_url"].(string)
+	ref, err := (Ref{
+		SessionID: sessionID,
+		BaseURL:   baseURL,
+		JWT:       jwt,
+		CdpWsURL:  cdpWsURL,
+	}).Normalize()
+	if err != nil {
+		return Route{}, false
+	}
+
+	return Route{
+		SessionID: ref.SessionID,
+		BaseURL:   ref.BaseURL,
+		JWT:       ref.JWT,
+	}, true
 }
 
 func parseDirectVMPath(path string) (sessionID, subresource, suffix string, ok bool) {
