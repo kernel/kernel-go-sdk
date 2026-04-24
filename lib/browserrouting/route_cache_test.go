@@ -205,3 +205,40 @@ func TestDirectVMRoutingMiddlewareEvictsCacheOnSuccessfulBrowserDelete(t *testin
 		t.Fatal("expected successful browser delete to evict cached route")
 	}
 }
+
+func TestDirectVMRoutingMiddlewareDeleteWinsOverJSONCacheSniff(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+	middleware := DirectVMRoutingMiddleware(cache, nil)
+
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodDelete,
+		URL:    reqURL,
+		Header: http.Header{},
+	}
+
+	_, err = middleware(req, func(*http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Header:     http.Header{"Content-Type": []string{"application/json"}},
+			Body: io.NopCloser(strings.NewReader(
+				`{"session_id":"sess-1","base_url":"https://browser.example/browser/kernel","cdp_ws_url":"wss://browser.example/browser/cdp?jwt=jwt-123"}`,
+			)),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, ok := cache.Load("sess-1"); ok {
+		t.Fatal("expected delete response to leave cached route evicted")
+	}
+}
