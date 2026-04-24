@@ -11,12 +11,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	client := kernel.NewClient(
-		kernel.WithBrowserRouting(kernel.BrowserRoutingConfig{
-			Enabled:      true,
-			Subresources: []string{"process"},
-		}),
-	)
+	client := kernel.NewClient()
 
 	browser, err := client.Browsers.New(ctx, kernel.BrowserNewParams{
 		Headless: kernel.Bool(true),

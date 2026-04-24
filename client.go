@@ -65,17 +65,10 @@ func DefaultClientOptions() []option.RequestOption {
 func NewClient(opts ...option.RequestOption) (r Client) {
 	opts = append(DefaultClientOptions(), opts...)
 	cache := browserrouting.NewRouteCache()
-	nextOpts := make([]option.RequestOption, 0, len(opts)+1)
-	for _, opt := range opts {
-		if routing, ok := opt.(*browserRoutingOption); ok {
-			cloned := *routing
-			cloned.cache = cache
-			nextOpts = append(nextOpts, &cloned)
-			continue
-		}
-		nextOpts = append(nextOpts, opt)
-	}
-	opts = append(nextOpts, withBrowserRouteCache(cache))
+	opts = append(opts,
+		withBrowserRouteCache(cache),
+		withBrowserRoutingSubresources(cache, browserRoutingSubresourcesFromEnv()),
+	)
 
 	r = Client{Options: opts, BrowserRouteCache: cache}
 
