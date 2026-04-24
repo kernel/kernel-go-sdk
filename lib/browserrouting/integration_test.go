@@ -19,6 +19,7 @@ func TestIntegrationBrowserRouting(t *testing.T) {
 	if apiKey == "" || baseURL == "" {
 		t.Skip("set KERNEL_API_KEY and KERNEL_BASE_URL to run integration test")
 	}
+	t.Setenv("KERNEL_BROWSER_ROUTING_SUBRESOURCES", "process")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
@@ -26,10 +27,6 @@ func TestIntegrationBrowserRouting(t *testing.T) {
 	client := kernel.NewClient(
 		option.WithAPIKey(apiKey),
 		option.WithBaseURL(baseURL),
-		kernel.WithBrowserRouting(kernel.BrowserRoutingConfig{
-			Enabled:      true,
-			Subresources: []string{"process"},
-		}),
 	)
 
 	browser, err := client.Browsers.New(ctx, kernel.BrowserNewParams{

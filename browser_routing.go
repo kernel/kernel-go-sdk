@@ -1,36 +1,31 @@
 package kernel
 
 import (
+	"os"
+	"strings"
+
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/lib/browserrouting"
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-// BrowserRoutingConfig controls which browser subresources route directly to the browser VM.
-type BrowserRoutingConfig struct {
-	Enabled      bool
-	Subresources []string
-}
+const browserRoutingSubresourcesEnv = "KERNEL_BROWSER_ROUTING_SUBRESOURCES"
 
 type browserRoutingOption struct {
-	cache  *browserrouting.RouteCache
-	config BrowserRoutingConfig
+	cache        *browserrouting.RouteCache
+	subresources []string
 }
 
 type browserRouteCacheOption struct {
 	cache *browserrouting.RouteCache
 }
 
-// WithBrowserRouting enables direct-to-VM routing for the configured browser subresources.
-func WithBrowserRouting(config BrowserRoutingConfig) option.RequestOption {
-	return &browserRoutingOption{config: config}
+func withBrowserRoutingSubresources(cache *browserrouting.RouteCache, subresources []string) option.RequestOption {
+	return &browserRoutingOption{cache: cache, subresources: subresources}
 }
 
 func (o *browserRoutingOption) Apply(r *requestconfig.RequestConfig) error {
-	if !o.config.Enabled {
-		return nil
-	}
-	r.Middlewares = append(r.Middlewares, browserrouting.DirectVMRoutingMiddleware(o.cache, o.config.Subresources))
+	r.Middlewares = append(r.Middlewares, browserrouting.DirectVMRoutingMiddleware(o.cache, o.subresources))
 	return nil
 }
 
@@ -81,4 +76,22 @@ func browserRouteFromRef(ref browserrouting.Ref) (browserrouting.Route, bool) {
 		BaseURL:   norm.BaseURL,
 		JWT:       norm.JWT,
 	}, true
+}
+
+func browserRoutingSubresourcesFromEnv() []string {
+	raw, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
+	if !ok {
+		return []string{"curl"}
+	}
+	if strings.TrimSpace(raw) == "" {
+		return []string{}
+	}
+
+	subresources := make([]string, 0)
+	for _, part := range strings.Split(raw, ",") {
+		if trimmed := strings.TrimSpace(part); trimmed != "" {
+			subresources = append(subresources, trimmed)
+		}
+	}
+	return subresources
 }
