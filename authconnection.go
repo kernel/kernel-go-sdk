@@ -246,6 +246,10 @@ type ManagedAuth struct {
 	// - OneLogin: \*.onelogin.com
 	// - Ping Identity: _.pingone.com, _.pingidentity.com
 	AllowedDomains []string `json:"allowed_domains"`
+	// ID of the underlying browser session driving the current flow (present when flow
+	// in progress). Use this to inspect or terminate the browser session via the
+	// `/browsers` API.
+	BrowserSessionID string `json:"browser_session_id" api:"nullable"`
 	// Whether automatic re-authentication is possible (has credential, selectors, and
 	// login_url)
 	CanReauth bool `json:"can_reauth"`
@@ -320,6 +324,7 @@ type ManagedAuth struct {
 		SaveCredentials       respjson.Field
 		Status                respjson.Field
 		AllowedDomains        respjson.Field
+		BrowserSessionID      respjson.Field
 		CanReauth             respjson.Field
 		CanReauthReason       respjson.Field
 		Credential            respjson.Field
