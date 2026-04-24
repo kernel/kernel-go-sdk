@@ -135,13 +135,13 @@ func parseBrowserMetadataPath(path string) (sessionID string, ok bool) {
 }
 
 func finalizeResponse(req *http.Request, res *http.Response, cache *RouteCache, cacheSessionID string, cacheablePath bool) (*http.Response, error) {
-	if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
-		cache.Delete(cacheSessionID)
-	}
 	if cacheablePath {
 		if err := sniffAndPopulateCache(res, cache); err != nil {
 			return nil, err
 		}
+	}
+	if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
+		cache.Delete(cacheSessionID)
 	}
 	return res, nil
 }
