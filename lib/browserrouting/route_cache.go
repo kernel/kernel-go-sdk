@@ -26,6 +26,11 @@ type RouteCache struct {
 	routes map[string]Route
 }
 
+type cacheLifecycle struct {
+	sniffResponse  bool
+	evictSessionID string
+}
+
 // NewRouteCache returns an empty browser route cache.
 func NewRouteCache() *RouteCache {
 	return &RouteCache{routes: map[string]Route{}}
@@ -77,7 +82,10 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 	}
 
 	return func(req *http.Request, next option.MiddlewareNext) (*http.Response, error) {
-		cacheSessionID, cacheablePath := parseBrowserMetadataPath(req.URL.Path)
+		lifecycle, err := parseCacheLifecycle(req)
+		if err != nil {
+			return nil, err
+		}
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
 		if ok {
 			if _, ok := allowed[subresource]; ok {
@@ -109,39 +117,103 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		if err != nil {
 			return res, err
 		}
-		return finalizeResponse(req, res, cache, cacheSessionID, cacheablePath)
+		return finalizeResponse(res, cache, lifecycle)
 	}
 }
 
-func parseBrowserMetadataPath(path string) (sessionID string, ok bool) {
-	parts := strings.Split(strings.Trim(path, "/"), "/")
+func parseCacheLifecycle(req *http.Request) (cacheLifecycle, error) {
+	if req == nil || req.URL == nil {
+		return cacheLifecycle{}, nil
+	}
+
+	parts := strings.Split(strings.Trim(req.URL.Path, "/"), "/")
 	for i := 0; i < len(parts); i++ {
-		if parts[i] != "browsers" {
-			continue
-		}
-		switch len(parts) - i {
-		case 1:
-			return "", true
-		case 2:
-			if parts[i+1] == "" {
-				return "", false
-			}
-			return parts[i+1], true
-		default:
-			return "", false
+		switch parts[i] {
+		case "browsers":
+			return parseBrowserCacheLifecycle(req.Method, parts, i), nil
+		case "browser_pools":
+			return parseBrowserPoolCacheLifecycle(req, parts, i)
 		}
 	}
-	return "", false
+	return cacheLifecycle{}, nil
 }
 
-func finalizeResponse(req *http.Request, res *http.Response, cache *RouteCache, cacheSessionID string, cacheablePath bool) (*http.Response, error) {
-	if cacheablePath {
+func parseBrowserCacheLifecycle(method string, parts []string, index int) cacheLifecycle {
+	switch len(parts) - index {
+	case 1:
+		return cacheLifecycle{sniffResponse: true}
+	case 2:
+		if parts[index+1] == "" {
+			return cacheLifecycle{}
+		}
+		lifecycle := cacheLifecycle{sniffResponse: true}
+		if method == http.MethodDelete {
+			lifecycle.evictSessionID = parts[index+1]
+		}
+		return lifecycle
+	default:
+		return cacheLifecycle{}
+	}
+}
+
+func parseBrowserPoolCacheLifecycle(req *http.Request, parts []string, index int) (cacheLifecycle, error) {
+	switch len(parts) - index {
+	case 3:
+		if parts[index+1] == "" || parts[index+2] == "" {
+			return cacheLifecycle{}, nil
+		}
+		switch parts[index+2] {
+		case "acquire":
+			if req.Method != http.MethodPost {
+				return cacheLifecycle{}, nil
+			}
+			return cacheLifecycle{sniffResponse: true}, nil
+		case "release":
+			if req.Method != http.MethodPost {
+				return cacheLifecycle{}, nil
+			}
+			sessionID, err := parseBrowserPoolReleaseSessionID(req)
+			if err != nil {
+				return cacheLifecycle{}, err
+			}
+			return cacheLifecycle{evictSessionID: sessionID}, nil
+		default:
+			return cacheLifecycle{}, nil
+		}
+	default:
+		return cacheLifecycle{}, nil
+	}
+}
+
+func parseBrowserPoolReleaseSessionID(req *http.Request) (string, error) {
+	if req == nil || req.Body == nil {
+		return "", nil
+	}
+
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return "", err
+	}
+	_ = req.Body.Close()
+	req.Body = io.NopCloser(bytes.NewReader(body))
+	req.ContentLength = int64(len(body))
+
+	var payload map[string]any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return "", nil
+	}
+	sessionID, _ := payload["session_id"].(string)
+	return strings.TrimSpace(sessionID), nil
+}
+
+func finalizeResponse(res *http.Response, cache *RouteCache, lifecycle cacheLifecycle) (*http.Response, error) {
+	if lifecycle.sniffResponse {
 		if err := sniffAndPopulateCache(res, cache); err != nil {
 			return nil, err
 		}
 	}
-	if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
-		cache.Delete(cacheSessionID)
+	if lifecycle.evictSessionID != "" && isSuccessfulResponse(res) {
+		cache.Delete(lifecycle.evictSessionID)
 	}
 	return res, nil
 }
