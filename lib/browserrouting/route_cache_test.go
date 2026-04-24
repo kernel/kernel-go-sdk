@@ -53,6 +53,15 @@ func TestDirectVMRoutingMiddlewareClearsStaleRawPath(t *testing.T) {
 	}
 }
 
+func TestParseBrowserMetadataPathRejectsSubresourcePaths(t *testing.T) {
+	if sessionID, ok := parseBrowserMetadataPath("/browsers/sess-1/process/exec"); ok || sessionID != "" {
+		t.Fatalf("expected subresource path to be rejected, got sessionID=%q ok=%v", sessionID, ok)
+	}
+	if sessionID, ok := parseBrowserMetadataPath("/browsers/sess-1/browsers"); ok || sessionID != "" {
+		t.Fatalf("expected nested browsers subresource path to be rejected, got sessionID=%q ok=%v", sessionID, ok)
+	}
+}
+
 func TestDirectVMRoutingMiddlewarePopulatesCacheFromJSONResponse(t *testing.T) {
 	cache := NewRouteCache()
 	middleware := DirectVMRoutingMiddleware(cache, nil)

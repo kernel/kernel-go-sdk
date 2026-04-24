@@ -79,42 +79,29 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 	return func(req *http.Request, next option.MiddlewareNext) (*http.Response, error) {
 		cacheSessionID, cacheablePath := parseBrowserMetadataPath(req.URL.Path)
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
-		if !ok {
-			res, err := next(req)
-			if err != nil {
-				return res, err
-			}
-			if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
-				cache.Delete(cacheSessionID)
-			}
-			if cacheablePath {
-				if err := sniffAndPopulateCache(res, cache); err != nil {
-					return nil, err
-				}
-			}
-			return res, nil
-		}
-		if _, ok := allowed[subresource]; ok {
-			route, ok := cache.Load(sessionID)
-			if ok {
-				base, err := url.Parse(route.BaseURL)
-				if err != nil {
-					return nil, err
-				}
-				req.Header.Del("Authorization")
-				if route.JWT != "" {
-					q := req.URL.Query()
-					if q.Get("jwt") == "" {
-						q.Set("jwt", route.JWT)
-						req.URL.RawQuery = q.Encode()
+		if ok {
+			if _, ok := allowed[subresource]; ok {
+				route, ok := cache.Load(sessionID)
+				if ok {
+					base, err := url.Parse(route.BaseURL)
+					if err != nil {
+						return nil, err
 					}
-				}
+					req.Header.Del("Authorization")
+					if route.JWT != "" {
+						q := req.URL.Query()
+						if q.Get("jwt") == "" {
+							q.Set("jwt", route.JWT)
+							req.URL.RawQuery = q.Encode()
+						}
+					}
 
-				req.URL.Scheme = base.Scheme
-				req.URL.Host = base.Host
-				req.Host = base.Host
-				req.URL.Path = joinURLPath(base.Path, subresource, suffix)
-				req.URL.RawPath = ""
+					req.URL.Scheme = base.Scheme
+					req.URL.Host = base.Host
+					req.Host = base.Host
+					req.URL.Path = joinURLPath(base.Path, subresource, suffix)
+					req.URL.RawPath = ""
+				}
 			}
 		}
 
@@ -122,15 +109,7 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		if err != nil {
 			return res, err
 		}
-		if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
-			cache.Delete(cacheSessionID)
-		}
-		if cacheablePath {
-			if err := sniffAndPopulateCache(res, cache); err != nil {
-				return nil, err
-			}
-		}
-		return res, nil
+		return finalizeResponse(req, res, cache, cacheSessionID, cacheablePath)
 	}
 }
 
@@ -148,9 +127,23 @@ func parseBrowserMetadataPath(path string) (sessionID string, ok bool) {
 				return "", false
 			}
 			return parts[i+1], true
+		default:
+			return "", false
 		}
 	}
 	return "", false
+}
+
+func finalizeResponse(req *http.Request, res *http.Response, cache *RouteCache, cacheSessionID string, cacheablePath bool) (*http.Response, error) {
+	if req.Method == http.MethodDelete && cacheSessionID != "" && isSuccessfulResponse(res) {
+		cache.Delete(cacheSessionID)
+	}
+	if cacheablePath {
+		if err := sniffAndPopulateCache(res, cache); err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func sniffAndPopulateCache(res *http.Response, cache *RouteCache) error {
