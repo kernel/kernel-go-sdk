@@ -270,7 +270,10 @@ type ManagedAuth struct {
 	// Instructions for external action (present when
 	// flow_step=awaiting_external_action)
 	ExternalActionMessage string `json:"external_action_message" api:"nullable"`
-	// When the current flow expires (null when no flow in progress)
+	// When the current flow expires (null when no flow in progress). A flow past this
+	// timestamp is no longer valid and its `flow_status` will be `EXPIRED`. Clients
+	// may start a new login to supersede a stale `IN_PROGRESS` flow past this
+	// timestamp.
 	FlowExpiresAt time.Time `json:"flow_expires_at" api:"nullable" format:"date-time"`
 	// Current flow status (null when no flow in progress)
 	//
@@ -293,8 +296,18 @@ type ManagedAuth struct {
 	HealthCheckInterval int64 `json:"health_check_interval" api:"nullable"`
 	// URL to redirect user to for hosted login (present when flow in progress)
 	HostedURL string `json:"hosted_url" api:"nullable" format:"uri"`
-	// When the profile was last successfully authenticated
+	// Deprecated alias for `last_auth_check_at`. Despite the name, this is the last
+	// health-check timestamp, not the last successful authentication. Use
+	// `last_auth_check_at` instead.
+	//
+	// Deprecated: deprecated
 	LastAuthAt time.Time `json:"last_auth_at" format:"date-time"`
+	// When the most recent auth health check ran for this connection, regardless of
+	// outcome. Updated on every health check and does not by itself indicate that the
+	// profile is currently authenticated - use `status` for that. May be newer than
+	// `flow_expires_at` when a flow is still in progress because health checks
+	// continue to run in parallel.
+	LastAuthCheckAt time.Time `json:"last_auth_check_at" format:"date-time"`
 	// Browser live view URL for debugging (present when flow in progress)
 	LiveViewURL string `json:"live_view_url" api:"nullable" format:"uri"`
 	// Optional login page URL to skip discovery
@@ -339,6 +352,7 @@ type ManagedAuth struct {
 		HealthCheckInterval   respjson.Field
 		HostedURL             respjson.Field
 		LastAuthAt            respjson.Field
+		LastAuthCheckAt       respjson.Field
 		LiveViewURL           respjson.Field
 		LoginURL              respjson.Field
 		MfaOptions            respjson.Field
