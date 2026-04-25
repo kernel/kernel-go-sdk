@@ -1,5 +1,48 @@
 # Changelog
 
+## 0.51.0 (2026-04-25)
+
+Full Changelog: [v0.50.0...v0.51.0](https://github.com/kernel/kernel-go-sdk/compare/v0.50.0...v0.51.0)
+
+### Features
+
+* add browser-scoped session client ([ef994b4](https://github.com/kernel/kernel-go-sdk/commit/ef994b4d6189ee0cdb3ad6e002816e0d77c7db48))
+* Expire stuck IN_PROGRESS managed auth sessions via background worker ([f441a6f](https://github.com/kernel/kernel-go-sdk/commit/f441a6fa6f51f5ceb9fab1248a568025079752cf))
+* Expose browser_session_id on managed auth connection ([e23defc](https://github.com/kernel/kernel-go-sdk/commit/e23defc4abad6e49ae854ead1d1a015a2ecad097))
+* generate browser-scoped service bindings ([b6a77bc](https://github.com/kernel/kernel-go-sdk/commit/b6a77bc656e6480e1bee0932fcc3b5beb40bcb10))
+
+
+### Bug Fixes
+
+* align browser-scoped routing with base_url ([64f7f81](https://github.com/kernel/kernel-go-sdk/commit/64f7f811a2f3d7c657ad56a1f34a8bea0206e585))
+* clean up go browser routing follow-ups ([77bda33](https://github.com/kernel/kernel-go-sdk/commit/77bda33323c48a60ab652bf42a39cc2bc1f909a0))
+* keep browser pool routing in sync with cache ([4f754d1](https://github.com/kernel/kernel-go-sdk/commit/4f754d13f38e5b545de8d84cb26de28f6f2f892a))
+* make browser route deletion win over sniffing ([0e44ff3](https://github.com/kernel/kernel-go-sdk/commit/0e44ff363c53b1225d48313be6376b2cda7b057f))
+* propagate browser HTTP client config errors ([1ec1358](https://github.com/kernel/kernel-go-sdk/commit/1ec1358150d20982fc582c634e68f42322d1fa4c))
+* remove old go browser scope package ([d594f39](https://github.com/kernel/kernel-go-sdk/commit/d594f39a352e2ad5639807f222bb16535cce72c6))
+* tighten browser route metadata parsing ([b293866](https://github.com/kernel/kernel-go-sdk/commit/b293866537bddb183ad7e8d014c0e2c298d715a9))
+* tighten browser-scoped helper surface ([3e3e33f](https://github.com/kernel/kernel-go-sdk/commit/3e3e33f031d8460662da8a368467a3dcc6a0ec3f))
+
+
+### Chores
+
+* **internal:** more robust bootstrap script ([c0430e3](https://github.com/kernel/kernel-go-sdk/commit/c0430e3e2952f10648ed0181edf85a69230e9279))
+
+
+### Documentation
+
+* add browser-scoped raw http example ([92dc96e](https://github.com/kernel/kernel-go-sdk/commit/92dc96e99e14eeb9eb6881115f330369bb3c7542))
+
+
+### Refactors
+
+* move browser route cache sync into middleware ([62078d3](https://github.com/kernel/kernel-go-sdk/commit/62078d3213dbe4ede9600968b48d5c8e7aa118e4))
+* move go browser routing rollout to env ([681e57f](https://github.com/kernel/kernel-go-sdk/commit/681e57f34b3199a4d720fb517da08b3bbd6bc0fb))
+* narrow browser-scoped helper exports ([0ac61ef](https://github.com/kernel/kernel-go-sdk/commit/0ac61ef0532e6682eed740765975775767e28a10))
+* remove browser session wrapper layer ([3452e53](https://github.com/kernel/kernel-go-sdk/commit/3452e537737576fdb645a4e5de0d9147e50cb33b))
+* rename browser routing subresources config ([909c377](https://github.com/kernel/kernel-go-sdk/commit/909c377e21adddbaede526ba2a356352652e947b))
+* simplify direct-to-vm route caching ([6bdf25f](https://github.com/kernel/kernel-go-sdk/commit/6bdf25f058d2e0bb552bd47ba4478222d97aa254))
+
 ## 0.50.0 (2026-04-20)
 
 Full Changelog: [v0.49.0...v0.50.0](https://github.com/kernel/kernel-go-sdk/compare/v0.49.0...v0.50.0)
