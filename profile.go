@@ -96,8 +96,7 @@ func (r *ProfileService) Delete(ctx context.Context, idOrName string, opts ...op
 	return err
 }
 
-// Download the profile. Profiles are JSON files containing the pieces of state
-// that we save.
+// Returns a zstd-compressed tar file of the full user-data directory.
 func (r *ProfileService) Download(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
