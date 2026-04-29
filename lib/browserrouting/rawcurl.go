@@ -23,14 +23,23 @@ func NewHTTPClient(browserBaseURL, jwt string, underlying *http.Client) *http.Cl
 	if underlying == nil {
 		underlying = http.DefaultClient
 	}
-	rt := underlying.Transport
+	rt := rawCURLUnderlyingTransport(underlying.Transport)
 	if rt == nil {
-		rt = http.DefaultTransport
+		rt = rawCURLUnderlyingTransport(http.DefaultTransport)
 	}
 	return &http.Client{
 		Transport: newRawCURLRoundTripper(browserBaseURL, jwt, rt),
 		Timeout:   underlying.Timeout,
 	}
+}
+
+func rawCURLUnderlyingTransport(rt http.RoundTripper) http.RoundTripper {
+	if transport, ok := rt.(*http.Transport); ok {
+		clone := transport.Clone()
+		clone.DisableCompression = true
+		return clone
+	}
+	return rt
 }
 
 // newRawCURLRoundTripper returns an [http.RoundTripper] that maps each request
@@ -76,6 +85,18 @@ func (t *RawCURLRoundTripper) RoundTrip(req *http.Request) (*http.Response, erro
 	out.URL = proxyURL
 	out.Host = proxyURL.Host
 	out.RequestURI = ""
+	if !hasHeader(out.Header, "User-Agent") {
+		out.Header["User-Agent"] = nil
+	}
 
 	return t.underlying.RoundTrip(out)
+}
+
+func hasHeader(headers http.Header, name string) bool {
+	for key := range headers {
+		if strings.EqualFold(key, name) {
+			return true
+		}
+	}
+	return false
 }
