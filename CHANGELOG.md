@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.52.0 (2026-04-29)
+
+Full Changelog: [v0.51.0...v0.52.0](https://github.com/kernel/kernel-go-sdk/compare/v0.51.0...v0.52.0)
+
+### Features
+
+* **go:** add default http client with timeout ([a999228](https://github.com/kernel/kernel-go-sdk/commit/a999228cc4426709eb1561f6cf46d51833509014))
+* profile download: 409 for empty profile + surface API errors in dashboard ([c14aef2](https://github.com/kernel/kernel-go-sdk/commit/c14aef289c5418906fb003893a728ec11cf549cc))
+* support setting headers via env ([728fe39](https://github.com/kernel/kernel-go-sdk/commit/728fe3931a9a8b9f7de3ef6f338c3872fb67c4b1))
+
 ## 0.51.0 (2026-04-25)
 
 Full Changelog: [v0.50.0...v0.51.0](https://github.com/kernel/kernel-go-sdk/compare/v0.50.0...v0.51.0)
