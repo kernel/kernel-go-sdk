@@ -430,7 +430,7 @@ type ManagedAuthDiscoveredField struct {
 	// If this field is associated with an MFA option, the type of that option (e.g.,
 	// password field linked to "Enter password" option)
 	//
-	// Any of "sms", "call", "email", "totp", "push", "password".
+	// Any of "sms", "call", "email", "totp", "push", "password", "switch".
 	LinkedMfaType string `json:"linked_mfa_type" api:"nullable"`
 	// Field placeholder
 	Placeholder string `json:"placeholder"`
@@ -491,9 +491,11 @@ const (
 type ManagedAuthMfaOption struct {
 	// The visible option text
 	Label string `json:"label" api:"required"`
-	// The MFA delivery method type (includes password for auth method selection pages)
+	// The MFA delivery method type. Includes 'password' for auth method selection
+	// pages and 'switch' for generic method-switcher links like "Use another method"
+	// that do not name a specific method.
 	//
-	// Any of "sms", "call", "email", "totp", "push", "password".
+	// Any of "sms", "call", "email", "totp", "push", "password", "switch".
 	Type string `json:"type" api:"required"`
 	// Additional instructions from the site
 	Description string `json:"description" api:"nullable"`
@@ -992,7 +994,7 @@ type AuthConnectionFollowResponseManagedAuthStateDiscoveredField struct {
 	// If this field is associated with an MFA option, the type of that option (e.g.,
 	// password field linked to "Enter password" option)
 	//
-	// Any of "sms", "call", "email", "totp", "push", "password".
+	// Any of "sms", "call", "email", "totp", "push", "password", "switch".
 	LinkedMfaType string `json:"linked_mfa_type" api:"nullable"`
 	// Field placeholder
 	Placeholder string `json:"placeholder"`
@@ -1025,9 +1027,11 @@ func (r *AuthConnectionFollowResponseManagedAuthStateDiscoveredField) UnmarshalJ
 type AuthConnectionFollowResponseManagedAuthStateMfaOption struct {
 	// The visible option text
 	Label string `json:"label" api:"required"`
-	// The MFA delivery method type (includes password for auth method selection pages)
+	// The MFA delivery method type. Includes 'password' for auth method selection
+	// pages and 'switch' for generic method-switcher links like "Use another method"
+	// that do not name a specific method.
 	//
-	// Any of "sms", "call", "email", "totp", "push", "password".
+	// Any of "sms", "call", "email", "totp", "push", "password", "switch".
 	Type string `json:"type" api:"required"`
 	// Additional instructions from the site
 	Description string `json:"description" api:"nullable"`
