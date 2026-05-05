@@ -108,7 +108,7 @@ type ExtensionListResponse struct {
 	// Timestamp when the extension was last used
 	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
-	// organization.
+	// project.
 	Name string `json:"name" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -139,7 +139,7 @@ type ExtensionUploadResponse struct {
 	// Timestamp when the extension was last used
 	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
-	// organization.
+	// project.
 	Name string `json:"name" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -190,7 +190,7 @@ const (
 type ExtensionUploadParams struct {
 	// ZIP file containing the browser extension.
 	File io.Reader `json:"file,omitzero" api:"required" format:"binary"`
-	// Optional unique name within the organization to reference this extension.
+	// Optional unique name within the project to reference this extension.
 	Name param.Opt[string] `json:"name,omitzero"`
 	paramObj
 }

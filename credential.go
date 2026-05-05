@@ -133,7 +133,7 @@ func (r *CredentialService) TotpCode(ctx context.Context, idOrName string, opts 
 type CreateCredentialRequestParam struct {
 	// Target domain this credential is for
 	Domain string `json:"domain" api:"required"`
-	// Unique name for the credential within the organization
+	// Unique name for the credential within the project
 	Name string `json:"name" api:"required"`
 	// Field name to value mapping (e.g., username, password)
 	Values map[string]string `json:"values,omitzero" api:"required"`
@@ -164,7 +164,7 @@ type Credential struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Target domain this credential is for
 	Domain string `json:"domain" api:"required"`
-	// Unique name for the credential within the organization
+	// Unique name for the credential within the project
 	Name string `json:"name" api:"required"`
 	// When the credential was last updated
 	UpdatedAt time.Time `json:"updated_at" api:"required" format:"date-time"`
