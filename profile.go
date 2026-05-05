@@ -110,7 +110,7 @@ func (r *ProfileService) Download(ctx context.Context, idOrName string, opts ...
 }
 
 type ProfileNewParams struct {
-	// Optional name of the profile. Must be unique within the organization.
+	// Optional name of the profile. Must be unique within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
 	paramObj
 }

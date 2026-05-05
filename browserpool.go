@@ -187,7 +187,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	// If true, launches the browser in kiosk mode to hide address bar and tabs in live
 	// view.
 	KioskMode bool `json:"kiosk_mode"`
-	// Optional name for the browser pool. Must be unique within the organization.
+	// Optional name for the browser pool. Must be unique within the project.
 	Name string `json:"name"`
 	// Profile selection for the browser session. Provide either id or name. If
 	// specified, the matching profile will be loaded into the browser session.
@@ -335,7 +335,7 @@ type BrowserPoolNewParams struct {
 	// If true, launches the browser in kiosk mode to hide address bar and tabs in live
 	// view.
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
-	// Optional name for the browser pool. Must be unique within the organization.
+	// Optional name for the browser pool. Must be unique within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
@@ -396,7 +396,7 @@ type BrowserPoolUpdateParams struct {
 	// If true, launches the browser in kiosk mode to hide address bar and tabs in live
 	// view.
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
-	// Optional name for the browser pool. Must be unique within the organization.
+	// Optional name for the browser pool. Must be unique within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
