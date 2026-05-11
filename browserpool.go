@@ -196,6 +196,12 @@ type BrowserPoolBrowserPoolConfig struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID string `json:"proxy_id"`
+	// Optional URL to navigate to when a new browser is warmed into the pool.
+	// Best-effort: failures to navigate do not fail pool fill. Only applied to
+	// newly-warmed browsers — browsers reused via release/acquire keep whatever URL
+	// the previous lease left them on. Accepts any URL Chromium can resolve, including
+	// chrome:// pages.
+	StartURL string `json:"start_url"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
 	Stealth bool `json:"stealth"`
@@ -226,6 +232,7 @@ type BrowserPoolBrowserPoolConfig struct {
 		Name              respjson.Field
 		Profile           respjson.Field
 		ProxyID           respjson.Field
+		StartURL          respjson.Field
 		Stealth           respjson.Field
 		TimeoutSeconds    respjson.Field
 		Viewport          respjson.Field
@@ -277,6 +284,9 @@ type BrowserPoolAcquireResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging — navigation is best-effort and may have failed.
+	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -310,6 +320,7 @@ type BrowserPoolAcquireResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		StartURL           respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
@@ -340,6 +351,12 @@ type BrowserPoolNewParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Optional URL to navigate to when a new browser is warmed into the pool.
+	// Best-effort: failures to navigate do not fail pool fill. Only applied to
+	// newly-warmed browsers — browsers reused via release/acquire keep whatever URL
+	// the previous lease left them on. Accepts any URL Chromium can resolve, including
+	// chrome:// pages.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
@@ -401,6 +418,12 @@ type BrowserPoolUpdateParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Optional URL to navigate to when a new browser is warmed into the pool.
+	// Best-effort: failures to navigate do not fail pool fill. Only applied to
+	// newly-warmed browsers — browsers reused via release/acquire keep whatever URL
+	// the previous lease left them on. Accepts any URL Chromium can resolve, including
+	// chrome:// pages.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`

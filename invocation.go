@@ -574,6 +574,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging — navigation is best-effort and may have failed.
+	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -607,6 +610,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		StartURL           respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
