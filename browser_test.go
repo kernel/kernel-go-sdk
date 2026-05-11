@@ -47,6 +47,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			SaveChanges: kernel.Bool(true),
 		},
 		ProxyID:        kernel.String("proxy_id"),
+		StartURL:       kernel.String("https://example.com"),
 		Stealth:        kernel.Bool(true),
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{

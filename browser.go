@@ -328,6 +328,9 @@ type BrowserNewResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging — navigation is best-effort and may have failed.
+	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -361,6 +364,7 @@ type BrowserNewResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		StartURL           respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
@@ -411,6 +415,9 @@ type BrowserGetResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging — navigation is best-effort and may have failed.
+	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -444,6 +451,7 @@ type BrowserGetResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		StartURL           respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
@@ -494,6 +502,9 @@ type BrowserUpdateResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging — navigation is best-effort and may have failed.
+	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -527,6 +538,7 @@ type BrowserUpdateResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		StartURL           respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
@@ -577,6 +589,9 @@ type BrowserListResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging — navigation is best-effort and may have failed.
+	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -610,6 +625,7 @@ type BrowserListResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
+		StartURL           respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
@@ -665,6 +681,12 @@ type BrowserNewParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Optional URL to navigate to immediately after the browser is created.
+	// Best-effort: failures to navigate do not fail browser creation. Any pre-existing
+	// tabs are reduced to a single tab which is then navigated. Accepts any URL
+	// Chromium can resolve, including chrome:// pages. Ignored when reusing an
+	// existing persistent session.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
