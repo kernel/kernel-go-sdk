@@ -46,6 +46,7 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 			SaveChanges: kernel.Bool(true),
 		},
 		ProxyID:        kernel.String("proxy_id"),
+		StartURL:       kernel.String("https://example.com"),
 		Stealth:        kernel.Bool(true),
 		TimeoutSeconds: kernel.Int(60),
 		Viewport: shared.BrowserViewportParam{
@@ -122,6 +123,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID:        kernel.String("proxy_id"),
+			StartURL:       kernel.String("https://example.com"),
 			Stealth:        kernel.Bool(true),
 			TimeoutSeconds: kernel.Int(60),
 			Viewport: shared.BrowserViewportParam{
