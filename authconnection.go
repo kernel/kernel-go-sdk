@@ -221,8 +221,8 @@ type ManagedAuth struct {
 	Domain string `json:"domain" api:"required"`
 	// Name of the profile associated with this auth connection
 	ProfileName string `json:"profile_name" api:"required"`
-	// Whether browser sessions for this connection are recorded by default for
-	// debugging. Can be overridden per-login.
+	// Whether to record browser session replays for this connection by default. Useful
+	// for debugging login flows. Can be overridden per-login.
 	RecordSession bool `json:"record_session" api:"required"`
 	// Whether credentials are saved after every successful login. One-time codes
 	// (TOTP, SMS, etc.) are not saved.
