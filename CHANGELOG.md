@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.53.0 (2026-05-12)
+
+Full Changelog: [v0.52.0...v0.53.0](https://github.com/kernel/kernel-go-sdk/compare/v0.52.0...v0.53.0)
+
+### Features
+
+* Add 'switch' MFA option type for generic method-switcher links ([b6c0d17](https://github.com/kernel/kernel-go-sdk/commit/b6c0d174ffaf8f5a0788f8c16a2fded6b56add76))
+* Add opt-in record_session flag to managed auth ([5673b41](https://github.com/kernel/kernel-go-sdk/commit/5673b41f0cc5d6233dbaf9875bc20b84b7cc7762))
+* **api:** server-side search on GET /projects ([81a050d](https://github.com/kernel/kernel-go-sdk/commit/81a050d64651caf4fefc58ce25a13c65ffe05bea))
+* browser_pools: add start_url config (KERNEL-1217 PR 2) ([b2c8f95](https://github.com/kernel/kernel-go-sdk/commit/b2c8f951ddde27daf1285b78a1ce6a7fc01d74ef))
+* managed-auth: surface awaiting_external_action even when fallback actions exist ([c1a9ba4](https://github.com/kernel/kernel-go-sdk/commit/c1a9ba4038b690875a5c8c5198d20671e27acec4))
+* Scope name uniqueness to project for profiles, session_pools, extensions, credentials ([be3c6bd](https://github.com/kernel/kernel-go-sdk/commit/be3c6bd46f8826cf5d17523bb1aa79c77d9a8d39))
+
+
+### Bug Fixes
+
+* **go:** avoid panic when http.DefaultTransport is wrapped ([15e7a88](https://github.com/kernel/kernel-go-sdk/commit/15e7a8860af570cb968ed0153742c86af85c9909))
+
+
+### Chores
+
+* avoid embedding reflect.Type for dead code elimination ([c267709](https://github.com/kernel/kernel-go-sdk/commit/c2677092b3f611e3470f5b6730f32fe896e2d688))
+* redact api-key headers in debug logs ([405d242](https://github.com/kernel/kernel-go-sdk/commit/405d242dd4564cb133cc036b7693169df2537e3b))
+
 ## 0.52.0 (2026-04-29)
 
 Full Changelog: [v0.51.0...v0.52.0](https://github.com/kernel/kernel-go-sdk/compare/v0.51.0...v0.52.0)
