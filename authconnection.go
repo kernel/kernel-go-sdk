@@ -261,7 +261,8 @@ type ManagedAuth struct {
 	// - { provider, path } for external provider item
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCredential `json:"credential"`
-	// Fields awaiting input (present when flow_step=awaiting_input)
+	// Fields awaiting input (present when flow_step=awaiting_input; may also be
+	// present with awaiting_external_action as fallback actions)
 	DiscoveredFields []ManagedAuthDiscoveredField `json:"discovered_fields" api:"nullable"`
 	// Machine-readable error code (present when flow_status=failed)
 	ErrorCode string `json:"error_code" api:"nullable"`
@@ -312,17 +313,19 @@ type ManagedAuth struct {
 	LiveViewURL string `json:"live_view_url" api:"nullable" format:"uri"`
 	// Optional login page URL to skip discovery
 	LoginURL string `json:"login_url" format:"uri"`
-	// MFA method options (present when flow_step=awaiting_input and MFA selection
-	// required)
+	// MFA method options (present when flow_step=awaiting_input; may also be present
+	// with awaiting_external_action as fallback actions)
 	MfaOptions []ManagedAuthMfaOption `json:"mfa_options" api:"nullable"`
-	// SSO buttons available (present when flow_step=awaiting_input)
+	// SSO buttons available (present when flow_step=awaiting_input; may also be
+	// present with awaiting_external_action as fallback actions)
 	PendingSSOButtons []ManagedAuthPendingSSOButton `json:"pending_sso_buttons" api:"nullable"`
 	// URL where the browser landed after successful login
 	PostLoginURL string `json:"post_login_url" format:"uri"`
 	// ID of the proxy associated with this connection, if any.
 	ProxyID string `json:"proxy_id"`
 	// Non-MFA choices presented during the auth flow, such as account selection or org
-	// pickers (present when flow_step=awaiting_input).
+	// pickers (present when flow_step=awaiting_input; may also be present with
+	// awaiting_external_action as fallback actions).
 	SignInOptions []ManagedAuthSignInOption `json:"sign_in_options" api:"nullable"`
 	// SSO provider being used (e.g., google, github, microsoft)
 	SSOProvider string `json:"sso_provider" api:"nullable"`
@@ -917,7 +920,8 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	FlowStep string `json:"flow_step" api:"required"`
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
-	// Fields awaiting input (present when flow_step=AWAITING_INPUT).
+	// Fields awaiting input (present when flow_step=AWAITING_INPUT; may also be
+	// present with AWAITING_EXTERNAL_ACTION as fallback actions).
 	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
 	// Machine-readable error code (present when flow_status=FAILED).
 	ErrorCode string `json:"error_code"`
@@ -934,15 +938,17 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	HostedURL string `json:"hosted_url" format:"uri"`
 	// Browser live view URL for debugging.
 	LiveViewURL string `json:"live_view_url" format:"uri"`
-	// MFA method options (present when flow_step=AWAITING_INPUT and MFA selection
-	// required).
+	// MFA method options (present when flow_step=AWAITING_INPUT; may also be present
+	// with AWAITING_EXTERNAL_ACTION as fallback actions).
 	MfaOptions []AuthConnectionFollowResponseManagedAuthStateMfaOption `json:"mfa_options"`
-	// SSO buttons available (present when flow_step=AWAITING_INPUT).
+	// SSO buttons available (present when flow_step=AWAITING_INPUT; may also be
+	// present with AWAITING_EXTERNAL_ACTION as fallback actions).
 	PendingSSOButtons []AuthConnectionFollowResponseManagedAuthStatePendingSSOButton `json:"pending_sso_buttons"`
 	// URL where the browser landed after successful login.
 	PostLoginURL string `json:"post_login_url" format:"uri"`
 	// Non-MFA choices presented during the auth flow, such as account selection or org
-	// pickers (present when flow_step=AWAITING_INPUT).
+	// pickers (present when flow_step=AWAITING_INPUT; may also be present with
+	// AWAITING_EXTERNAL_ACTION as fallback actions).
 	SignInOptions []AuthConnectionFollowResponseManagedAuthStateSignInOption `json:"sign_in_options"`
 	// Visible error message from the website (e.g., 'Incorrect password'). Present
 	// when the website displays an error during login.
