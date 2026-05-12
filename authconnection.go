@@ -221,6 +221,9 @@ type ManagedAuth struct {
 	Domain string `json:"domain" api:"required"`
 	// Name of the profile associated with this auth connection
 	ProfileName string `json:"profile_name" api:"required"`
+	// Whether browser sessions for this connection are recorded by default for
+	// debugging. Can be overridden per-login.
+	RecordSession bool `json:"record_session" api:"required"`
 	// Whether credentials are saved after every successful login. One-time codes
 	// (TOTP, SMS, etc.) are not saved.
 	SaveCredentials bool `json:"save_credentials" api:"required"`
@@ -337,6 +340,7 @@ type ManagedAuth struct {
 		ID                    respjson.Field
 		Domain                respjson.Field
 		ProfileName           respjson.Field
+		RecordSession         respjson.Field
 		SaveCredentials       respjson.Field
 		Status                respjson.Field
 		AllowedDomains        respjson.Field
@@ -587,6 +591,9 @@ type ManagedAuthCreateRequestParam struct {
 	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
 	// Optional login page URL to skip discovery
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
+	// Whether to record browser sessions for this connection by default. Useful for
+	// debugging. Can be overridden per-login. Defaults to false.
+	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
 	// Whether to save credentials after every successful login. Defaults to true.
 	// One-time codes (TOTP, SMS, etc.) are not saved.
 	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
@@ -677,6 +684,8 @@ type ManagedAuthUpdateRequestParam struct {
 	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
 	// Login page URL. Set to empty string to clear.
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
+	// Whether to record browser sessions for this connection by default
+	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
 	// Whether to save credentials after every successful login
 	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
 	// Additional domains valid for this auth flow (replaces existing list)
@@ -1159,6 +1168,9 @@ func (r AuthConnectionListParams) URLQuery() (v url.Values, err error) {
 }
 
 type AuthConnectionLoginParams struct {
+	// Override the connection's default for recording this login's browser session.
+	// When omitted, the connection's record_session default is used.
+	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
 	// Proxy selection. Provide either id or name. The proxy must belong to the
 	// caller's org.
 	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`

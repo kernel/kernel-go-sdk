@@ -43,6 +43,7 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
 			},
+			RecordSession:   kernel.Bool(false),
 			SaveCredentials: kernel.Bool(true),
 		},
 	})
@@ -109,6 +110,7 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 					ID:   kernel.String("id"),
 					Name: kernel.String("name"),
 				},
+				RecordSession:   kernel.Bool(false),
 				SaveCredentials: kernel.Bool(true),
 			},
 		},
@@ -194,6 +196,7 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
 			},
+			RecordSession: kernel.Bool(true),
 		},
 	)
 	if err != nil {
