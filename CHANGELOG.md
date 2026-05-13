@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.53.1 (2026-05-13)
+
+Full Changelog: [v0.53.0...v0.53.1](https://github.com/kernel/kernel-go-sdk/compare/v0.53.0...v0.53.1)
+
 ## 0.53.0 (2026-05-12)
 
 Full Changelog: [v0.52.0...v0.53.0](https://github.com/kernel/kernel-go-sdk/compare/v0.52.0...v0.53.0)
