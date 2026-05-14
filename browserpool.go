@@ -196,11 +196,9 @@ type BrowserPoolBrowserPoolConfig struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID string `json:"proxy_id"`
-	// Optional URL to navigate to when a new browser is warmed into the pool.
-	// Best-effort: failures to navigate do not fail pool fill. Only applied to
-	// newly-warmed browsers — browsers reused via release/acquire keep whatever URL
-	// the previous lease left them on. Accepts any URL Chromium can resolve, including
-	// chrome:// pages.
+	// Optional URL to open when a browser is created for the pool. Navigation is
+	// best-effort, so navigation failures do not prevent the pool from filling. Reused
+	// browsers keep the page left by the previous lease.
 	StartURL string `json:"start_url"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
@@ -284,8 +282,7 @@ type BrowserPoolAcquireResponse struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
-	// URL the session was asked to navigate to on creation, if any. Recorded for
-	// debugging — navigation is best-effort and may have failed.
+	// Start URL requested for the session, if provided.
 	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
@@ -351,11 +348,9 @@ type BrowserPoolNewParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
-	// Optional URL to navigate to when a new browser is warmed into the pool.
-	// Best-effort: failures to navigate do not fail pool fill. Only applied to
-	// newly-warmed browsers — browsers reused via release/acquire keep whatever URL
-	// the previous lease left them on. Accepts any URL Chromium can resolve, including
-	// chrome:// pages.
+	// Optional URL to open when a browser is created for the pool. Navigation is
+	// best-effort, so navigation failures do not prevent the pool from filling. Reused
+	// browsers keep the page left by the previous lease.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
@@ -418,11 +413,9 @@ type BrowserPoolUpdateParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
-	// Optional URL to navigate to when a new browser is warmed into the pool.
-	// Best-effort: failures to navigate do not fail pool fill. Only applied to
-	// newly-warmed browsers — browsers reused via release/acquire keep whatever URL
-	// the previous lease left them on. Accepts any URL Chromium can resolve, including
-	// chrome:// pages.
+	// Optional URL to open when a browser is created for the pool. Navigation is
+	// best-effort, so navigation failures do not prevent the pool from filling. Reused
+	// browsers keep the page left by the previous lease.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
