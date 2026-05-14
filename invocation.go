@@ -574,8 +574,7 @@ type InvocationListBrowsersResponseBrowser struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
-	// URL the session was asked to navigate to on creation, if any. Recorded for
-	// debugging — navigation is best-effort and may have failed.
+	// Start URL requested for the session, if provided.
 	StartURL string `json:"start_url"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
