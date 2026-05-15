@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.55.0 (2026-05-15)
+
+Full Changelog: [v0.53.0...v0.55.0](https://github.com/kernel/kernel-go-sdk/compare/v0.53.0...v0.55.0)
+
+### Features
+
+* Add health check and auto-reauth controls for managed auth connections ([e381d8e](https://github.com/kernel/kernel-go-sdk/commit/e381d8ed28c0d4fe978c0d27d724c0bc9b43d3d5))
+* **client:** optimize json encoder for internal types ([e7f4365](https://github.com/kernel/kernel-go-sdk/commit/e7f436591debbdedd4150a0a4b2fcbdce2320cd1))
+* Polish start URL OpenAPI descriptions ([2d82565](https://github.com/kernel/kernel-go-sdk/commit/2d82565e34904922fa4a6b87e076bb1790af43bd))
+
 ## 0.53.0 (2026-05-12)
 
 Full Changelog: [v0.52.0...v0.53.0](https://github.com/kernel/kernel-go-sdk/compare/v0.52.0...v0.53.0)
