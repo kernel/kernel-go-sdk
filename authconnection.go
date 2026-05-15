@@ -249,6 +249,14 @@ type ManagedAuth struct {
 	// - OneLogin: \*.onelogin.com
 	// - Ping Identity: _.pingone.com, _.pingidentity.com
 	AllowedDomains []string `json:"allowed_domains"`
+	// Whether automatic re-authentication is permitted for this connection. This is an
+	// opt-in flag only — it does not check whether re-auth is actually feasible. Even
+	// when true, re-auth only runs when the system has what it needs to perform it
+	// (for example, saved credentials for the required login fields), and only after a
+	// scheduled health check detects an expired session — so this flag has no effect
+	// when `health_checks` is false. When false, expired sessions detected by a health
+	// check are marked as `NEEDS_AUTH` instead of attempting re-auth.
+	AutoReauth bool `json:"auto_reauth"`
 	// ID of the underlying browser session driving the current flow (present when flow
 	// in progress). Use this to inspect or terminate the browser session via the
 	// `/browsers` API.
@@ -298,6 +306,12 @@ type ManagedAuth struct {
 	// depends on your plan: Enterprise: 300 (5 minutes), Startup: 1200 (20 minutes),
 	// Hobbyist: 3600 (1 hour).
 	HealthCheckInterval int64 `json:"health_check_interval" api:"nullable"`
+	// Whether periodic health checks are enabled for this connection. When false, the
+	// system will not automatically verify authentication status, and `auto_reauth`
+	// has no effect on the automatic flow (since re-auth is only triggered by a failed
+	// scheduled health check). Manually triggering a health check via the API still
+	// works regardless of this setting.
+	HealthChecks bool `json:"health_checks"`
 	// URL to redirect user to for hosted login (present when flow in progress)
 	HostedURL string `json:"hosted_url" api:"nullable" format:"uri"`
 	// Deprecated alias for `last_auth_check_at`. Despite the name, this is the last
@@ -344,6 +358,7 @@ type ManagedAuth struct {
 		SaveCredentials       respjson.Field
 		Status                respjson.Field
 		AllowedDomains        respjson.Field
+		AutoReauth            respjson.Field
 		BrowserSessionID      respjson.Field
 		CanReauth             respjson.Field
 		CanReauthReason       respjson.Field
@@ -357,6 +372,7 @@ type ManagedAuth struct {
 		FlowStep              respjson.Field
 		FlowType              respjson.Field
 		HealthCheckInterval   respjson.Field
+		HealthChecks          respjson.Field
 		HostedURL             respjson.Field
 		LastAuthAt            respjson.Field
 		LastAuthCheckAt       respjson.Field
@@ -583,12 +599,26 @@ type ManagedAuthCreateRequestParam struct {
 	// Name of the profile to manage authentication for. If the profile does not exist,
 	// it is created automatically.
 	ProfileName string `json:"profile_name" api:"required"`
+	// Whether to permit automatic re-authentication when a scheduled health check
+	// detects an expired session. This is an opt-in flag only — it does not check
+	// whether re-auth is actually feasible. Even when true, re-auth only runs when the
+	// system has what it needs to perform it (for example, saved credentials for the
+	// required login fields), and only after a scheduled health check detects an
+	// expired session — so this flag has no effect when `health_checks` is false. When
+	// false, expired sessions are marked as `NEEDS_AUTH` instead of attempting
+	// re-auth. Defaults to true.
+	AutoReauth param.Opt[bool] `json:"auto_reauth,omitzero"`
 	// Interval in seconds between automatic health checks. When set, the system
 	// periodically verifies the authentication status and triggers re-authentication
 	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour). The minimum
 	// depends on your plan: Enterprise: 300 (5 minutes), Startup: 1200 (20 minutes),
 	// Hobbyist: 3600 (1 hour).
 	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
+	// Whether to enable periodic health checks. When false, the system will not
+	// automatically verify authentication status, and `auto_reauth` has no effect on
+	// the automatic flow (since re-auth is only triggered by a failed scheduled health
+	// check). Defaults to true.
+	HealthChecks param.Opt[bool] `json:"health_checks,omitzero"`
 	// Optional login page URL to skip discovery
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
 	// Whether to record browser sessions for this connection by default. Useful for
@@ -680,8 +710,21 @@ func (r *ManagedAuthCreateRequestProxyParam) UnmarshalJSON(data []byte) error {
 
 // Request to update an auth connection's configuration
 type ManagedAuthUpdateRequestParam struct {
+	// Whether automatic re-authentication is permitted for this connection. This is an
+	// opt-in flag only — it does not check whether re-auth is actually feasible. Even
+	// when true, re-auth only runs when the system has what it needs to perform it
+	// (for example, saved credentials for the required login fields), and only after a
+	// scheduled health check detects an expired session — so this flag has no effect
+	// when `health_checks` is false. When false, expired sessions detected by a health
+	// check are marked as `NEEDS_AUTH` instead of attempting re-auth.
+	AutoReauth param.Opt[bool] `json:"auto_reauth,omitzero"`
 	// Interval in seconds between automatic health checks
 	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
+	// Whether periodic health checks are enabled. When set to false, the system will
+	// not automatically verify authentication status, and `auto_reauth` has no effect
+	// on the automatic flow (since re-auth is only triggered by a failed scheduled
+	// health check).
+	HealthChecks param.Opt[bool] `json:"health_checks,omitzero"`
 	// Login page URL. Set to empty string to clear.
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
 	// Whether to record browser sessions for this connection by default

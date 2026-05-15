@@ -31,6 +31,7 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 			Domain:         "netflix.com",
 			ProfileName:    "user-123",
 			AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
+			AutoReauth:     kernel.Bool(true),
 			Credential: kernel.ManagedAuthCreateRequestCredentialParam{
 				Auto:     kernel.Bool(true),
 				Name:     kernel.String("my-netflix-creds"),
@@ -38,6 +39,7 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 				Provider: kernel.String("my-1p"),
 			},
 			HealthCheckInterval: kernel.Int(3600),
+			HealthChecks:        kernel.Bool(true),
 			LoginURL:            kernel.String("https://netflix.com/login"),
 			Proxy: kernel.ManagedAuthCreateRequestProxyParam{
 				ID:   kernel.String("id"),
@@ -98,6 +100,7 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 		kernel.AuthConnectionUpdateParams{
 			ManagedAuthUpdateRequest: kernel.ManagedAuthUpdateRequestParam{
 				AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
+				AutoReauth:     kernel.Bool(true),
 				Credential: kernel.ManagedAuthUpdateRequestCredentialParam{
 					Auto:     kernel.Bool(true),
 					Name:     kernel.String("my-netflix-creds"),
@@ -105,6 +108,7 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 					Provider: kernel.String("my-1p"),
 				},
 				HealthCheckInterval: kernel.Int(3600),
+				HealthChecks:        kernel.Bool(true),
 				LoginURL:            kernel.String("https://netflix.com/login"),
 				Proxy: kernel.ManagedAuthUpdateRequestProxyParam{
 					ID:   kernel.String("id"),
