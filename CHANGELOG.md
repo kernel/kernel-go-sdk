@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.56.0 (2026-05-18)
+
+Full Changelog: [v0.55.0...v0.56.0](https://github.com/kernel/kernel-go-sdk/compare/v0.55.0...v0.56.0)
+
+### Features
+
+* Expose POST /projects in public API ([6f165cd](https://github.com/kernel/kernel-go-sdk/commit/6f165cd1c8bec73f9948c1ee881ca981a32c0ba4))
+
 ## 0.55.0 (2026-05-15)
 
 Full Changelog: [v0.53.0...v0.55.0](https://github.com/kernel/kernel-go-sdk/compare/v0.53.0...v0.55.0)
