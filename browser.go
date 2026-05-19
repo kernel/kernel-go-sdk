@@ -311,6 +311,10 @@ type BrowserNewResponse struct {
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
@@ -356,6 +360,7 @@ type BrowserNewResponse struct {
 		WebdriverWsURL     respjson.Field
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
@@ -397,6 +402,10 @@ type BrowserGetResponse struct {
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
@@ -442,6 +451,7 @@ type BrowserGetResponse struct {
 		WebdriverWsURL     respjson.Field
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
@@ -483,6 +493,10 @@ type BrowserUpdateResponse struct {
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
@@ -528,6 +542,7 @@ type BrowserUpdateResponse struct {
 		WebdriverWsURL     respjson.Field
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
@@ -569,6 +584,10 @@ type BrowserListResponse struct {
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
@@ -614,6 +633,7 @@ type BrowserListResponse struct {
 		WebdriverWsURL     respjson.Field
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
@@ -690,6 +710,12 @@ type BrowserNewParams struct {
 	// check for inactivity every 5 seconds, so the actual timeout behavior you will
 	// see is +/- 5 seconds around the specified value.
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// Custom Chrome enterprise policy overrides applied to this browser session. Keys
+	// are Chrome enterprise policy names; values must match their expected types.
+	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). Ignored
+	// when reusing an existing persistent session. See
+	// https://chromeenterprise.google/policies/
+	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
 	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
