@@ -265,6 +265,10 @@ type BrowserPoolAcquireResponse struct {
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
@@ -310,6 +314,7 @@ type BrowserPoolAcquireResponse struct {
 		WebdriverWsURL     respjson.Field
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
