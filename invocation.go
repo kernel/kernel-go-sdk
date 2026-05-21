@@ -578,8 +578,14 @@ type InvocationListBrowsersResponseBrowser struct {
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
-	// Start URL requested for the session, if provided.
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
 	StartURL string `json:"start_url"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -615,6 +621,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
