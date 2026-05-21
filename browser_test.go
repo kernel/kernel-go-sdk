@@ -49,9 +49,25 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			Name:        kernel.String("name"),
 			SaveChanges: kernel.Bool(true),
 		},
-		ProxyID:        kernel.String("proxy_id"),
-		StartURL:       kernel.String("https://example.com"),
-		Stealth:        kernel.Bool(true),
+		ProxyID:  kernel.String("proxy_id"),
+		StartURL: kernel.String("https://example.com"),
+		Stealth:  kernel.Bool(true),
+		Telemetry: kernel.BrowserTelemetryConfigParam{
+			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+				Console: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Network: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Page: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+			},
+		},
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
 			Height:      800,
@@ -121,6 +137,22 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID: kernel.String("proxy_id"),
+			Telemetry: kernel.BrowserTelemetryConfigParam{
+				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Network: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+				},
+			},
 			Viewport: kernel.BrowserUpdateParamsViewport{
 				BrowserViewportParam: shared.BrowserViewportParam{
 					Height:      800,
