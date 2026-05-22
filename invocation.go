@@ -568,10 +568,6 @@ type InvocationListBrowsersResponseBrowser struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	//
-	// Deprecated: deprecated
-	Persistence BrowserPersistence `json:"persistence"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -616,7 +612,6 @@ type InvocationListBrowsersResponseBrowser struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
-		Persistence        respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
