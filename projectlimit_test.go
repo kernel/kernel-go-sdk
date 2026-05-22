@@ -56,7 +56,6 @@ func TestProjectLimitUpdateWithOptionalParams(t *testing.T) {
 			UpdateProjectLimitsRequest: kernel.UpdateProjectLimitsRequestParam{
 				MaxConcurrentInvocations: kernel.Int(0),
 				MaxConcurrentSessions:    kernel.Int(0),
-				MaxPersistentSessions:    kernel.Int(0),
 				MaxPooledSessions:        kernel.Int(0),
 			},
 		},

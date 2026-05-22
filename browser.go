@@ -5,7 +5,6 @@ package kernel
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -124,18 +123,6 @@ func (r *BrowserService) ListAutoPaging(ctx context.Context, query BrowserListPa
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// DEPRECATED: Use DELETE /browsers/{id} instead. Delete a persistent browser
-// session by its persistent_id.
-//
-// Deprecated: deprecated
-func (r *BrowserService) Delete(ctx context.Context, body BrowserDeleteParams, opts ...option.RequestOption) (err error) {
-	opts = slices.Concat(r.Options, opts)
-	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	path := "browsers"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, nil, opts...)
-	return err
-}
-
 // Sends an HTTP request through Chrome's HTTP request stack, inheriting the
 // browser's TLS fingerprint, cookies, proxy configuration, and headers. Returns a
 // structured JSON response with status, headers, body, and timing.
@@ -175,54 +162,6 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body Bro
 	path := fmt.Sprintf("browsers/%s/extensions", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
-}
-
-// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-//
-// Deprecated: deprecated
-type BrowserPersistence struct {
-	// DEPRECATED: Unique identifier for the persistent browser session.
-	ID string `json:"id" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID          respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r BrowserPersistence) RawJSON() string { return r.JSON.raw }
-func (r *BrowserPersistence) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ToParam converts this BrowserPersistence to a BrowserPersistenceParam.
-//
-// Warning: the fields of the param type will not be present. ToParam should only
-// be used at the last possible moment before sending a request. Test for this with
-// BrowserPersistenceParam.Overrides()
-func (r BrowserPersistence) ToParam() BrowserPersistenceParam {
-	return param.Override[BrowserPersistenceParam](json.RawMessage(r.RawJSON()))
-}
-
-// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-//
-// Deprecated: deprecated
-//
-// The property ID is required.
-type BrowserPersistenceParam struct {
-	// DEPRECATED: Unique identifier for the persistent browser session.
-	ID string `json:"id" api:"required"`
-	paramObj
-}
-
-func (r BrowserPersistenceParam) MarshalJSON() (data []byte, err error) {
-	type shadow BrowserPersistenceParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *BrowserPersistenceParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
 }
 
 // Browser pool this session was acquired from, if any.
@@ -325,10 +264,6 @@ type BrowserNewResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	//
-	// Deprecated: deprecated
-	Persistence BrowserPersistence `json:"persistence"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -373,7 +308,6 @@ type BrowserNewResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
-		Persistence        respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -423,10 +357,6 @@ type BrowserGetResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	//
-	// Deprecated: deprecated
-	Persistence BrowserPersistence `json:"persistence"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -471,7 +401,6 @@ type BrowserGetResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
-		Persistence        respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -521,10 +450,6 @@ type BrowserUpdateResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	//
-	// Deprecated: deprecated
-	Persistence BrowserPersistence `json:"persistence"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -569,7 +494,6 @@ type BrowserUpdateResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
-		Persistence        respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -619,10 +543,6 @@ type BrowserListResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	//
-	// Deprecated: deprecated
-	Persistence BrowserPersistence `json:"persistence"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -667,7 +587,6 @@ type BrowserListResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
-		Persistence        respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -743,14 +662,11 @@ type BrowserNewParams struct {
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to this browser session. Keys
 	// are Chrome enterprise policy names; values must match their expected types.
-	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). Ignored
-	// when reusing an existing persistent session. See
+	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
 	// https://chromeenterprise.google/policies/
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	Persistence BrowserPersistenceParam `json:"persistence,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
@@ -878,20 +794,6 @@ const (
 	BrowserListParamsStatusDeleted BrowserListParamsStatus = "deleted"
 	BrowserListParamsStatusAll     BrowserListParamsStatus = "all"
 )
-
-type BrowserDeleteParams struct {
-	// Persistent browser identifier
-	PersistentID string `query:"persistent_id" api:"required" json:"-"`
-	paramObj
-}
-
-// URLQuery serializes [BrowserDeleteParams]'s query parameters as `url.Values`.
-func (r BrowserDeleteParams) URLQuery() (v url.Values, err error) {
-	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
-		ArrayFormat:  apiquery.ArrayQueryFormatComma,
-		NestedFormat: apiquery.NestedQueryFormatBrackets,
-	})
-}
 
 type BrowserCurlParams struct {
 	// Target URL (must be http or https).
