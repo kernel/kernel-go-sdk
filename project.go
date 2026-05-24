@@ -48,7 +48,7 @@ func NewProjectService(opts ...option.RequestOption) (r ProjectService) {
 // Create a new project within the authenticated organization.
 func (r *ProjectService) New(ctx context.Context, body ProjectNewParams, opts ...option.RequestOption) (res *Project, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "projects"
+	path := "org/projects"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
@@ -60,7 +60,7 @@ func (r *ProjectService) Get(ctx context.Context, id string, opts ...option.Requ
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("projects/%s", id)
+	path := fmt.Sprintf("org/projects/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
@@ -72,7 +72,7 @@ func (r *ProjectService) Update(ctx context.Context, id string, body ProjectUpda
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("projects/%s", id)
+	path := fmt.Sprintf("org/projects/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
@@ -82,7 +82,7 @@ func (r *ProjectService) List(ctx context.Context, query ProjectListParams, opts
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
-	path := "projects"
+	path := "org/projects"
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
 	if err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (r *ProjectService) Delete(ctx context.Context, id string, opts ...option.R
 		err = errors.New("missing required id parameter")
 		return err
 	}
-	path := fmt.Sprintf("projects/%s", id)
+	path := fmt.Sprintf("org/projects/%s", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
 }
