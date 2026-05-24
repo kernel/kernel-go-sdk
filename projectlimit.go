@@ -46,7 +46,7 @@ func (r *ProjectLimitService) Get(ctx context.Context, id string, opts ...option
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("projects/%s/limits", id)
+	path := fmt.Sprintf("org/projects/%s/limits", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
@@ -60,7 +60,7 @@ func (r *ProjectLimitService) Update(ctx context.Context, id string, body Projec
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("projects/%s/limits", id)
+	path := fmt.Sprintf("org/projects/%s/limits", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
