@@ -30,6 +30,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Browsers.New(context.TODO(), kernel.BrowserNewParams{
+		ChromePolicy: map[string]any{
+			"foo": "bar",
+		},
 		Extensions: []shared.BrowserExtensionParam{{
 			ID:   kernel.String("id"),
 			Name: kernel.String("name"),
@@ -38,17 +41,31 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		Headless:     kernel.Bool(false),
 		InvocationID: kernel.String("rr33xuugxj9h0bkf1rdt2bet"),
 		KioskMode:    kernel.Bool(true),
-		Persistence: kernel.BrowserPersistenceParam{
-			ID: "my-awesome-browser-for-user-1234",
-		},
 		Profile: shared.BrowserProfileParam{
 			ID:          kernel.String("id"),
 			Name:        kernel.String("name"),
 			SaveChanges: kernel.Bool(true),
 		},
-		ProxyID:        kernel.String("proxy_id"),
-		StartURL:       kernel.String("https://example.com"),
-		Stealth:        kernel.Bool(true),
+		ProxyID:  kernel.String("proxy_id"),
+		StartURL: kernel.String("https://example.com"),
+		Stealth:  kernel.Bool(true),
+		Telemetry: kernel.BrowserTelemetryRequestConfigParam{
+			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+				Console: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Network: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Page: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+			},
+			Enabled: kernel.Bool(true),
+		},
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
 			Height:      800,
@@ -118,6 +135,23 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID: kernel.String("proxy_id"),
+			Telemetry: kernel.BrowserTelemetryRequestConfigParam{
+				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Network: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+				},
+				Enabled: kernel.Bool(true),
+			},
 			Viewport: kernel.BrowserUpdateParamsViewport{
 				BrowserViewportParam: shared.BrowserViewportParam{
 					Height:      800,
@@ -156,31 +190,6 @@ func TestBrowserListWithOptionalParams(t *testing.T) {
 		Offset:         kernel.Int(0),
 		Query:          kernel.String("query"),
 		Status:         kernel.BrowserListParamsStatusActive,
-	})
-	if err != nil {
-		var apierr *kernel.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestBrowserDelete(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := kernel.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	err := client.Browsers.Delete(context.TODO(), kernel.BrowserDeleteParams{
-		PersistentID: "persistent_id",
 	})
 	if err != nil {
 		var apierr *kernel.Error

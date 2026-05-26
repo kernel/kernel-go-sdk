@@ -557,6 +557,10 @@ type InvocationListBrowsersResponseBrowser struct {
 	// Remote URL for live viewing the browser session. Only available for non-headless
 	// browsers.
 	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
@@ -564,18 +568,20 @@ type InvocationListBrowsersResponseBrowser struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
-	// DEPRECATED: Use timeout_seconds (up to 72 hours) and Profiles instead.
-	//
-	// Deprecated: deprecated
-	Persistence BrowserPersistence `json:"persistence"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
-	// Start URL requested for the session, if provided.
+	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
 	StartURL string `json:"start_url"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
@@ -602,14 +608,15 @@ type InvocationListBrowsersResponseBrowser struct {
 		WebdriverWsURL     respjson.Field
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
-		Persistence        respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field

@@ -261,11 +261,47 @@ type ManagedAuth struct {
 	// in progress). Use this to inspect or terminate the browser session via the
 	// `/browsers` API.
 	BrowserSessionID string `json:"browser_session_id" api:"nullable"`
-	// Whether automatic re-authentication is possible (has credential, selectors, and
-	// login_url)
+	// Whether Kernel can automatically re-authenticate this connection when the
+	// session expires. Requires a prior successful login plus either a Kernel
+	// credential or an external credential reference. See `can_reauth_reason` for the
+	// specific outcome.
 	CanReauth bool `json:"can_reauth"`
-	// Reason why automatic re-authentication is or is not possible
-	CanReauthReason string `json:"can_reauth_reason"`
+	// Machine-readable reason for the current value of `can_reauth`. Affirmative
+	// values (re-auth is possible):
+	//
+	//   - `external_credential` — an external credential provider is attached
+	//   - `cua_has_credential` — CUA flow with a stored credential
+	//   - `has_credential` — Kernel credential is attached (optimistic; plan viability
+	//     not checked)
+	//   - `viable_plans_found` — at least one stored login plan can be replayed
+	//   - `no_requirements_recorded` — no recorded credential requirements to fail
+	//     against
+	//   - `requirements_satisfiable` — recorded requirements can be met by the attached
+	//     credential
+	//
+	// Negative values (a human must complete the login flow):
+	//
+	//   - `no_prior_successful_login` — connection has never completed a successful
+	//     login
+	//   - `no_credential` — no Kernel or external credential attached
+	//   - `no_viable_plans` — credential attached but no replayable login plan exists
+	//     yet
+	//   - `viable_plans_require_external_action` — stored plans need an external step
+	//     (email link, push, etc.)
+	//   - `requires_external_action` — recorded requirements include an external step
+	//   - `requires_totp_without_secret` — flow needs a TOTP code but no TOTP secret is
+	//     stored
+	//   - `requires_sms_code` — flow needs an SMS code that cannot be received
+	//     automatically
+	//   - `requires_email_code` — flow needs an email code that cannot be received
+	//     automatically
+	//
+	// Any of "external_credential", "cua_has_credential", "has_credential",
+	// "viable_plans_found", "no_requirements_recorded", "requirements_satisfiable",
+	// "no_prior_successful_login", "no_credential", "no_viable_plans",
+	// "viable_plans_require_external_action", "requires_external_action",
+	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code".
+	CanReauthReason ManagedAuthCanReauthReason `json:"can_reauth_reason"`
 	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
@@ -402,6 +438,54 @@ type ManagedAuthStatus string
 const (
 	ManagedAuthStatusAuthenticated ManagedAuthStatus = "AUTHENTICATED"
 	ManagedAuthStatusNeedsAuth     ManagedAuthStatus = "NEEDS_AUTH"
+)
+
+// Machine-readable reason for the current value of `can_reauth`. Affirmative
+// values (re-auth is possible):
+//
+//   - `external_credential` — an external credential provider is attached
+//   - `cua_has_credential` — CUA flow with a stored credential
+//   - `has_credential` — Kernel credential is attached (optimistic; plan viability
+//     not checked)
+//   - `viable_plans_found` — at least one stored login plan can be replayed
+//   - `no_requirements_recorded` — no recorded credential requirements to fail
+//     against
+//   - `requirements_satisfiable` — recorded requirements can be met by the attached
+//     credential
+//
+// Negative values (a human must complete the login flow):
+//
+//   - `no_prior_successful_login` — connection has never completed a successful
+//     login
+//   - `no_credential` — no Kernel or external credential attached
+//   - `no_viable_plans` — credential attached but no replayable login plan exists
+//     yet
+//   - `viable_plans_require_external_action` — stored plans need an external step
+//     (email link, push, etc.)
+//   - `requires_external_action` — recorded requirements include an external step
+//   - `requires_totp_without_secret` — flow needs a TOTP code but no TOTP secret is
+//     stored
+//   - `requires_sms_code` — flow needs an SMS code that cannot be received
+//     automatically
+//   - `requires_email_code` — flow needs an email code that cannot be received
+//     automatically
+type ManagedAuthCanReauthReason string
+
+const (
+	ManagedAuthCanReauthReasonExternalCredential               ManagedAuthCanReauthReason = "external_credential"
+	ManagedAuthCanReauthReasonCuaHasCredential                 ManagedAuthCanReauthReason = "cua_has_credential"
+	ManagedAuthCanReauthReasonHasCredential                    ManagedAuthCanReauthReason = "has_credential"
+	ManagedAuthCanReauthReasonViablePlansFound                 ManagedAuthCanReauthReason = "viable_plans_found"
+	ManagedAuthCanReauthReasonNoRequirementsRecorded           ManagedAuthCanReauthReason = "no_requirements_recorded"
+	ManagedAuthCanReauthReasonRequirementsSatisfiable          ManagedAuthCanReauthReason = "requirements_satisfiable"
+	ManagedAuthCanReauthReasonNoPriorSuccessfulLogin           ManagedAuthCanReauthReason = "no_prior_successful_login"
+	ManagedAuthCanReauthReasonNoCredential                     ManagedAuthCanReauthReason = "no_credential"
+	ManagedAuthCanReauthReasonNoViablePlans                    ManagedAuthCanReauthReason = "no_viable_plans"
+	ManagedAuthCanReauthReasonViablePlansRequireExternalAction ManagedAuthCanReauthReason = "viable_plans_require_external_action"
+	ManagedAuthCanReauthReasonRequiresExternalAction           ManagedAuthCanReauthReason = "requires_external_action"
+	ManagedAuthCanReauthReasonRequiresTotpWithoutSecret        ManagedAuthCanReauthReason = "requires_totp_without_secret"
+	ManagedAuthCanReauthReasonRequiresSMSCode                  ManagedAuthCanReauthReason = "requires_sms_code"
+	ManagedAuthCanReauthReasonRequiresEmailCode                ManagedAuthCanReauthReason = "requires_email_code"
 )
 
 // Reference to credentials for the auth connection. Use one of:

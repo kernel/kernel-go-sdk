@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.57.0 (2026-05-26)
+
+Full Changelog: [v0.56.0...v0.57.0](https://github.com/kernel/kernel-go-sdk/compare/v0.56.0...v0.57.0)
+
+### Features
+
+* [kernel-1116] browser events api integration ([e0a367b](https://github.com/kernel/kernel-go-sdk/commit/e0a367b4fd596424dc913c9e999831ae1fdc068e))
+* api: dual-route /projects under /org/projects, deprecate /projects ([166c834](https://github.com/kernel/kernel-go-sdk/commit/166c83456a6c1eaf5a28b821383576eacbec3a3a))
+* **api:** type can_reauth_reason as an enum on ManagedAuth ([61f5842](https://github.com/kernel/kernel-go-sdk/commit/61f5842a55a7e846c6cf04f6d2c2dd7df5b40862))
+* browsers: accept chrome_policy on POST /browsers (KERNEL-1216) ([6f29adc](https://github.com/kernel/kernel-go-sdk/commit/6f29adc513752623a3ea761195005f5a50d46e5b))
+* EOL persistent browsers: openapi limits ([b79f2fd](https://github.com/kernel/kernel-go-sdk/commit/b79f2fd415108f84cf99377bd3b4c60e64af1ba3))
+* Support telemetry enabled request config ([ba2ff70](https://github.com/kernel/kernel-go-sdk/commit/ba2ff705279a32f8a3d91ca85696e398923ebe43))
+
 ## 0.56.0 (2026-05-18)
 
 Full Changelog: [v0.55.0...v0.56.0](https://github.com/kernel/kernel-go-sdk/compare/v0.55.0...v0.56.0)

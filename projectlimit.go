@@ -46,7 +46,7 @@ func (r *ProjectLimitService) Get(ctx context.Context, id string, opts ...option
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("projects/%s/limits", id)
+	path := fmt.Sprintf("org/projects/%s/limits", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
@@ -60,7 +60,7 @@ func (r *ProjectLimitService) Update(ctx context.Context, id string, body Projec
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("projects/%s/limits", id)
+	path := fmt.Sprintf("org/projects/%s/limits", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
@@ -72,9 +72,6 @@ type ProjectLimits struct {
 	// Maximum concurrent browser sessions for this project. Null means no
 	// project-level cap.
 	MaxConcurrentSessions int64 `json:"max_concurrent_sessions" api:"nullable"`
-	// Maximum persistent browser sessions for this project. Null means no
-	// project-level cap.
-	MaxPersistentSessions int64 `json:"max_persistent_sessions" api:"nullable"`
 	// Maximum pooled sessions capacity for this project. Null means no project-level
 	// cap.
 	MaxPooledSessions int64 `json:"max_pooled_sessions" api:"nullable"`
@@ -82,7 +79,6 @@ type ProjectLimits struct {
 	JSON struct {
 		MaxConcurrentInvocations respjson.Field
 		MaxConcurrentSessions    respjson.Field
-		MaxPersistentSessions    respjson.Field
 		MaxPooledSessions        respjson.Field
 		ExtraFields              map[string]respjson.Field
 		raw                      string
@@ -102,9 +98,6 @@ type UpdateProjectLimitsRequestParam struct {
 	// Maximum concurrent browser sessions for this project. Set to 0 to remove the
 	// cap; omit to leave unchanged.
 	MaxConcurrentSessions param.Opt[int64] `json:"max_concurrent_sessions,omitzero"`
-	// Maximum persistent browser sessions for this project. Set to 0 to remove the
-	// cap; omit to leave unchanged.
-	MaxPersistentSessions param.Opt[int64] `json:"max_persistent_sessions,omitzero"`
 	// Maximum pooled sessions capacity for this project. Set to 0 to remove the cap;
 	// omit to leave unchanged.
 	MaxPooledSessions param.Opt[int64] `json:"max_pooled_sessions,omitzero"`
