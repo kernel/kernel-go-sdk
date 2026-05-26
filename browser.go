@@ -671,10 +671,12 @@ type BrowserNewParams struct {
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
-	// Telemetry configuration for the browser session. If provided, telemetry capture
-	// starts with the specified category filter when the session is created. If
-	// omitted, no telemetry capture is started.
-	Telemetry BrowserTelemetryConfigParam `json:"telemetry,omitzero"`
+	// Telemetry configuration for the browser session. Set enabled to true to start
+	// capture using VM defaults, or provide browser category settings. If omitted,
+	// null, set to an empty object ({}), set to enabled: false without browser
+	// category settings, or all four categories are explicitly disabled, capture is
+	// not started.
+	Telemetry BrowserTelemetryRequestConfigParam `json:"telemetry,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -724,10 +726,11 @@ type BrowserUpdateParams struct {
 	// already have a profile loaded.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
-	// leave the existing configuration unchanged (no-op). To enable capture for all
-	// categories using VM defaults, set browser to an empty object ({"browser": {}}).
-	// To stop capture, set every category's enabled to false.
-	Telemetry BrowserTelemetryConfigParam `json:"telemetry,omitzero"`
+	// leave the existing configuration unchanged. Set enabled to true to enable
+	// capture using VM defaults. Set enabled to false to stop capture. Provide browser
+	// category settings for per-category updates. Explicitly disabling all four
+	// categories also stops capture.
+	Telemetry BrowserTelemetryRequestConfigParam `json:"telemetry,omitzero"`
 	// Viewport configuration to apply to the browser session.
 	Viewport BrowserUpdateParamsViewport `json:"viewport,omitzero"`
 	paramObj

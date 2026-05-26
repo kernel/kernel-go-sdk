@@ -1628,9 +1628,9 @@ func (r *BrowserTelemetryCategoryConfigParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Telemetry configuration for a browser session.
+// Active telemetry configuration for a browser session.
 type BrowserTelemetryConfig struct {
-	// Per-category enable/disable flags. If omitted, all categories are captured.
+	// Per-category enable/disable flags.
 	Browser BrowserTelemetryCategoriesConfig `json:"browser"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1643,30 +1643,6 @@ type BrowserTelemetryConfig struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserTelemetryConfig) RawJSON() string { return r.JSON.raw }
 func (r *BrowserTelemetryConfig) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ToParam converts this BrowserTelemetryConfig to a BrowserTelemetryConfigParam.
-//
-// Warning: the fields of the param type will not be present. ToParam should only
-// be used at the last possible moment before sending a request. Test for this with
-// BrowserTelemetryConfigParam.Overrides()
-func (r BrowserTelemetryConfig) ToParam() BrowserTelemetryConfigParam {
-	return param.Override[BrowserTelemetryConfigParam](json.RawMessage(r.RawJSON()))
-}
-
-// Telemetry configuration for a browser session.
-type BrowserTelemetryConfigParam struct {
-	// Per-category enable/disable flags. If omitted, all categories are captured.
-	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
-	paramObj
-}
-
-func (r BrowserTelemetryConfigParam) MarshalJSON() (data []byte, err error) {
-	type shadow BrowserTelemetryConfigParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *BrowserTelemetryConfigParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2103,6 +2079,27 @@ type BrowserTelemetryEventUnionData struct {
 }
 
 func (r *BrowserTelemetryEventUnionData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Telemetry request configuration for a browser session.
+type BrowserTelemetryRequestConfigParam struct {
+	// Request shortcut for browser telemetry capture. True enables capture using VM
+	// defaults. False stops capture on update and starts no capture on create. Cannot
+	// be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category enable/disable flags. If enabled is true and browser is omitted or
+	// empty, the VM default category set is used. Explicitly disabling all four
+	// categories stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r BrowserTelemetryRequestConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserTelemetryRequestConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserTelemetryRequestConfigParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

@@ -49,7 +49,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		ProxyID:  kernel.String("proxy_id"),
 		StartURL: kernel.String("https://example.com"),
 		Stealth:  kernel.Bool(true),
-		Telemetry: kernel.BrowserTelemetryConfigParam{
+		Telemetry: kernel.BrowserTelemetryRequestConfigParam{
 			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 				Console: kernel.BrowserTelemetryCategoryConfigParam{
 					Enabled: kernel.Bool(true),
@@ -64,6 +64,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 					Enabled: kernel.Bool(true),
 				},
 			},
+			Enabled: kernel.Bool(true),
 		},
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
@@ -134,7 +135,7 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID: kernel.String("proxy_id"),
-			Telemetry: kernel.BrowserTelemetryConfigParam{
+			Telemetry: kernel.BrowserTelemetryRequestConfigParam{
 				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 					Console: kernel.BrowserTelemetryCategoryConfigParam{
 						Enabled: kernel.Bool(true),
@@ -149,6 +150,7 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 						Enabled: kernel.Bool(true),
 					},
 				},
+				Enabled: kernel.Bool(true),
 			},
 			Viewport: kernel.BrowserUpdateParamsViewport{
 				BrowserViewportParam: shared.BrowserViewportParam{
