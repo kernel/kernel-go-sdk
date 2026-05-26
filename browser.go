@@ -660,6 +660,12 @@ type BrowserNewParams struct {
 	// check for inactivity every 5 seconds, so the actual timeout behavior you will
 	// see is +/- 5 seconds around the specified value.
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// Telemetry configuration for the browser session. Set enabled to true to start
+	// capture using VM defaults, or provide browser category settings. If omitted,
+	// null, set to an empty object ({}), set to enabled: false without browser
+	// category settings, or all four categories are explicitly disabled, capture is
+	// not started.
+	Telemetry BrowserNewParamsTelemetry `json:"telemetry,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to this browser session. Keys
 	// are Chrome enterprise policy names; values must match their expected types.
 	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
@@ -671,12 +677,6 @@ type BrowserNewParams struct {
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
-	// Telemetry configuration for the browser session. Set enabled to true to start
-	// capture using VM defaults, or provide browser category settings. If omitted,
-	// null, set to an empty object ({}), set to enabled: false without browser
-	// category settings, or all four categories are explicitly disabled, capture is
-	// not started.
-	Telemetry BrowserTelemetryRequestConfigParam `json:"telemetry,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -701,6 +701,32 @@ func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Telemetry configuration for the browser session. Set enabled to true to start
+// capture using VM defaults, or provide browser category settings. If omitted,
+// null, set to an empty object ({}), set to enabled: false without browser
+// category settings, or all four categories are explicitly disabled, capture is
+// not started.
+type BrowserNewParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture using VM
+	// defaults unless browser category settings are provided. False stops capture on
+	// update and starts no capture on create. enabled=false cannot be combined with
+	// browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category enable/disable flags. If enabled is true and browser is omitted or
+	// empty, the VM default category set is used. Explicitly disabling all four
+	// categories stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParamsTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserGetParams struct {
 	// When true, includes soft-deleted browser sessions in the lookup.
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
@@ -722,15 +748,15 @@ type BrowserUpdateParams struct {
 	// If true, stealth browsers connect directly instead of using the default stealth
 	// proxy.
 	DisableDefaultProxy param.Opt[bool] `json:"disable_default_proxy,omitzero"`
-	// Profile to load into the browser session. Only allowed if the session does not
-	// already have a profile loaded.
-	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
 	// leave the existing configuration unchanged. Set enabled to true to enable
 	// capture using VM defaults. Set enabled to false to stop capture. Provide browser
 	// category settings for per-category updates. Explicitly disabling all four
 	// categories also stops capture.
-	Telemetry BrowserTelemetryRequestConfigParam `json:"telemetry,omitzero"`
+	Telemetry BrowserUpdateParamsTelemetry `json:"telemetry,omitzero"`
+	// Profile to load into the browser session. Only allowed if the session does not
+	// already have a profile loaded.
+	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Viewport configuration to apply to the browser session.
 	Viewport BrowserUpdateParamsViewport `json:"viewport,omitzero"`
 	paramObj
@@ -741,6 +767,32 @@ func (r BrowserUpdateParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserUpdateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
+// leave the existing configuration unchanged. Set enabled to true to enable
+// capture using VM defaults. Set enabled to false to stop capture. Provide browser
+// category settings for per-category updates. Explicitly disabling all four
+// categories also stops capture.
+type BrowserUpdateParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture using VM
+	// defaults unless browser category settings are provided. False stops capture on
+	// update and starts no capture on create. enabled=false cannot be combined with
+	// browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category enable/disable flags. If enabled is true and browser is omitted or
+	// empty, the VM default category set is used. Explicitly disabling all four
+	// categories stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParamsTelemetry) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

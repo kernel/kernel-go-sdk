@@ -95,7 +95,6 @@ Params Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCategoriesConfigParam">BrowserTelemetryCategoriesConfigParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCategoryConfigParam">BrowserTelemetryCategoryConfigParam</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryRequestConfigParam">BrowserTelemetryRequestConfigParam</a>
 
 Response Types:
 
