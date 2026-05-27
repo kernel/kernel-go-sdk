@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.58.0 (2026-05-27)
+
+Full Changelog: [v0.57.0...v0.58.0](https://github.com/kernel/kernel-go-sdk/compare/v0.57.0...v0.58.0)
+
+### Features
+
+* [codex] Expose API keys in SDK config ([bfed2b8](https://github.com/kernel/kernel-go-sdk/commit/bfed2b81450681bb0a053d233f2cc1ecf65762c8))
+* Fix API key request model SDK metadata ([ebc9f45](https://github.com/kernel/kernel-go-sdk/commit/ebc9f45e57aef38964be31942fcf0e8ad554b37b))
+* Support telemetry enabled request config and fix SDK metadata ([53bff5e](https://github.com/kernel/kernel-go-sdk/commit/53bff5ecd62bda11e2fac6db87e0ffaec3edad44))
+
+
+### Chores
+
+* refresh Go SDK release PR ([fe23a23](https://github.com/kernel/kernel-go-sdk/commit/fe23a23c3918c8ee086ecca4e9f9915d57b439b9))
+
 ## 0.57.0 (2026-05-26)
 
 Full Changelog: [v0.56.0...v0.57.0](https://github.com/kernel/kernel-go-sdk/compare/v0.56.0...v0.57.0)
