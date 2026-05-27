@@ -2082,27 +2082,6 @@ func (r *BrowserTelemetryEventUnionData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Telemetry request configuration for a browser session.
-type BrowserTelemetryRequestConfigParam struct {
-	// Request shortcut for browser telemetry capture. True enables capture using VM
-	// defaults. False stops capture on update and starts no capture on create. Cannot
-	// be combined with browser category settings.
-	Enabled param.Opt[bool] `json:"enabled,omitzero"`
-	// Per-category enable/disable flags. If enabled is true and browser is omitted or
-	// empty, the VM default category set is used. Explicitly disabling all four
-	// categories stops capture on update and starts no capture on create.
-	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
-	paramObj
-}
-
-func (r BrowserTelemetryRequestConfigParam) MarshalJSON() (data []byte, err error) {
-	type shadow BrowserTelemetryRequestConfigParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *BrowserTelemetryRequestConfigParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Envelope wrapping a browser telemetry event with its monotonic sequence number.
 // Each SSE data: frame carries one envelope as JSON. The seq value is also emitted
 // as the SSE id: field so clients can pass it as Last-Event-ID on reconnect.

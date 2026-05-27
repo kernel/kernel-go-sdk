@@ -49,7 +49,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		ProxyID:  kernel.String("proxy_id"),
 		StartURL: kernel.String("https://example.com"),
 		Stealth:  kernel.Bool(true),
-		Telemetry: kernel.BrowserTelemetryRequestConfigParam{
+		Telemetry: kernel.BrowserNewParamsTelemetry{
 			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 				Console: kernel.BrowserTelemetryCategoryConfigParam{
 					Enabled: kernel.Bool(true),
@@ -135,7 +135,7 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID: kernel.String("proxy_id"),
-			Telemetry: kernel.BrowserTelemetryRequestConfigParam{
+			Telemetry: kernel.BrowserUpdateParamsTelemetry{
 				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 					Console: kernel.BrowserTelemetryCategoryConfigParam{
 						Enabled: kernel.Bool(true),
