@@ -27,11 +27,9 @@ func TestAPIKeyNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.APIKeys.New(context.TODO(), kernel.APIKeyNewParams{
-		CreateAPIKeyRequest: kernel.CreateAPIKeyRequestParam{
-			Name:         "staging",
-			DaysToExpire: kernel.Int(30),
-			ProjectID:    kernel.String("proj_abc123"),
-		},
+		Name:         "staging",
+		DaysToExpire: kernel.Int(30),
+		ProjectID:    kernel.String("proj_abc123"),
 	})
 	if err != nil {
 		var apierr *kernel.Error
@@ -82,9 +80,7 @@ func TestAPIKeyUpdate(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.APIKeyUpdateParams{
-			UpdateAPIKeyRequest: kernel.UpdateAPIKeyRequestParam{
-				Name: "new-api-name",
-			},
+			Name: "new-api-name",
 		},
 	)
 	if err != nil {
