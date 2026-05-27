@@ -167,14 +167,14 @@ const (
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyNewResponseConfigUnion struct {
 	Country string `json:"country"`
-	Asn     string `json:"asn"`
-	City    string `json:"city"`
+	// This field is from variant [ProxyNewResponseConfigResidentialProxyConfig].
+	Asn  string `json:"asn"`
+	City string `json:"city"`
 	// This field is from variant [ProxyNewResponseConfigResidentialProxyConfig].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	Zip   string `json:"zip"`
-	// This field is from variant [ProxyNewResponseConfigMobileProxyConfig].
-	Carrier string `json:"carrier"`
+	// This field is from variant [ProxyNewResponseConfigResidentialProxyConfig].
+	Zip string `json:"zip"`
 	// This field is from variant [ProxyNewResponseConfigCustomProxyConfig].
 	Host string `json:"host"`
 	// This field is from variant [ProxyNewResponseConfigCustomProxyConfig].
@@ -190,7 +190,6 @@ type ProxyNewResponseConfigUnion struct {
 		Os          respjson.Field
 		State       respjson.Field
 		Zip         respjson.Field
-		Carrier     respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
 		HasPassword respjson.Field
@@ -307,36 +306,17 @@ func (r *ProxyNewResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byte
 
 // Configuration for mobile proxies.
 type ProxyNewResponseConfigMobileProxyConfig struct {
-	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
-	Asn string `json:"asn"`
-	// Mobile carrier.
-	//
-	// Any of "a1", "aircel", "airtel", "att", "celcom", "chinamobile", "claro",
-	// "comcast", "cox", "digi", "dt", "docomo", "dtac", "etisalat", "idea",
-	// "kyivstar", "meo", "megafon", "mtn", "mtnza", "mts", "optus", "orange", "qwest",
-	// "reliance_jio", "robi", "sprint", "telefonica", "telstra", "tmobile", "tigo",
-	// "tim", "verizon", "vimpelcom", "vodacomza", "vodafone", "vivo", "zain",
-	// "vivabo", "telenormyanmar", "kcelljsc", "swisscom", "singtel", "asiacell",
-	// "windit", "cellc", "ooredoo", "drei", "umobile", "cableone", "proximus",
-	// "tele2", "mobitel", "o2", "bouygues", "free", "sfr", "digicel".
-	Carrier string `json:"carrier"`
-	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
-	// provided.
+	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
 	Country string `json:"country"`
-	// Two-letter state code.
+	// US-only state code. Mobile carrier routing can make observed geo vary.
 	State string `json:"state"`
-	// US ZIP code.
-	Zip string `json:"zip"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Asn         respjson.Field
-		Carrier     respjson.Field
 		City        respjson.Field
 		Country     respjson.Field
 		State       respjson.Field
-		Zip         respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -461,14 +441,14 @@ const (
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyGetResponseConfigUnion struct {
 	Country string `json:"country"`
-	Asn     string `json:"asn"`
-	City    string `json:"city"`
+	// This field is from variant [ProxyGetResponseConfigResidentialProxyConfig].
+	Asn  string `json:"asn"`
+	City string `json:"city"`
 	// This field is from variant [ProxyGetResponseConfigResidentialProxyConfig].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	Zip   string `json:"zip"`
-	// This field is from variant [ProxyGetResponseConfigMobileProxyConfig].
-	Carrier string `json:"carrier"`
+	// This field is from variant [ProxyGetResponseConfigResidentialProxyConfig].
+	Zip string `json:"zip"`
 	// This field is from variant [ProxyGetResponseConfigCustomProxyConfig].
 	Host string `json:"host"`
 	// This field is from variant [ProxyGetResponseConfigCustomProxyConfig].
@@ -484,7 +464,6 @@ type ProxyGetResponseConfigUnion struct {
 		Os          respjson.Field
 		State       respjson.Field
 		Zip         respjson.Field
-		Carrier     respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
 		HasPassword respjson.Field
@@ -601,36 +580,17 @@ func (r *ProxyGetResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byte
 
 // Configuration for mobile proxies.
 type ProxyGetResponseConfigMobileProxyConfig struct {
-	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
-	Asn string `json:"asn"`
-	// Mobile carrier.
-	//
-	// Any of "a1", "aircel", "airtel", "att", "celcom", "chinamobile", "claro",
-	// "comcast", "cox", "digi", "dt", "docomo", "dtac", "etisalat", "idea",
-	// "kyivstar", "meo", "megafon", "mtn", "mtnza", "mts", "optus", "orange", "qwest",
-	// "reliance_jio", "robi", "sprint", "telefonica", "telstra", "tmobile", "tigo",
-	// "tim", "verizon", "vimpelcom", "vodacomza", "vodafone", "vivo", "zain",
-	// "vivabo", "telenormyanmar", "kcelljsc", "swisscom", "singtel", "asiacell",
-	// "windit", "cellc", "ooredoo", "drei", "umobile", "cableone", "proximus",
-	// "tele2", "mobitel", "o2", "bouygues", "free", "sfr", "digicel".
-	Carrier string `json:"carrier"`
-	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
-	// provided.
+	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
 	Country string `json:"country"`
-	// Two-letter state code.
+	// US-only state code. Mobile carrier routing can make observed geo vary.
 	State string `json:"state"`
-	// US ZIP code.
-	Zip string `json:"zip"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Asn         respjson.Field
-		Carrier     respjson.Field
 		City        respjson.Field
 		Country     respjson.Field
 		State       respjson.Field
-		Zip         respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -755,14 +715,14 @@ const (
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyListResponseConfigUnion struct {
 	Country string `json:"country"`
-	Asn     string `json:"asn"`
-	City    string `json:"city"`
+	// This field is from variant [ProxyListResponseConfigResidentialProxyConfig].
+	Asn  string `json:"asn"`
+	City string `json:"city"`
 	// This field is from variant [ProxyListResponseConfigResidentialProxyConfig].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	Zip   string `json:"zip"`
-	// This field is from variant [ProxyListResponseConfigMobileProxyConfig].
-	Carrier string `json:"carrier"`
+	// This field is from variant [ProxyListResponseConfigResidentialProxyConfig].
+	Zip string `json:"zip"`
 	// This field is from variant [ProxyListResponseConfigCustomProxyConfig].
 	Host string `json:"host"`
 	// This field is from variant [ProxyListResponseConfigCustomProxyConfig].
@@ -778,7 +738,6 @@ type ProxyListResponseConfigUnion struct {
 		Os          respjson.Field
 		State       respjson.Field
 		Zip         respjson.Field
-		Carrier     respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
 		HasPassword respjson.Field
@@ -895,36 +854,17 @@ func (r *ProxyListResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byt
 
 // Configuration for mobile proxies.
 type ProxyListResponseConfigMobileProxyConfig struct {
-	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
-	Asn string `json:"asn"`
-	// Mobile carrier.
-	//
-	// Any of "a1", "aircel", "airtel", "att", "celcom", "chinamobile", "claro",
-	// "comcast", "cox", "digi", "dt", "docomo", "dtac", "etisalat", "idea",
-	// "kyivstar", "meo", "megafon", "mtn", "mtnza", "mts", "optus", "orange", "qwest",
-	// "reliance_jio", "robi", "sprint", "telefonica", "telstra", "tmobile", "tigo",
-	// "tim", "verizon", "vimpelcom", "vodacomza", "vodafone", "vivo", "zain",
-	// "vivabo", "telenormyanmar", "kcelljsc", "swisscom", "singtel", "asiacell",
-	// "windit", "cellc", "ooredoo", "drei", "umobile", "cableone", "proximus",
-	// "tele2", "mobitel", "o2", "bouygues", "free", "sfr", "digicel".
-	Carrier string `json:"carrier"`
-	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
-	// provided.
+	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
 	Country string `json:"country"`
-	// Two-letter state code.
+	// US-only state code. Mobile carrier routing can make observed geo vary.
 	State string `json:"state"`
-	// US ZIP code.
-	Zip string `json:"zip"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Asn         respjson.Field
-		Carrier     respjson.Field
 		City        respjson.Field
 		Country     respjson.Field
 		State       respjson.Field
-		Zip         respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1049,14 +989,14 @@ const (
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyCheckResponseConfigUnion struct {
 	Country string `json:"country"`
-	Asn     string `json:"asn"`
-	City    string `json:"city"`
+	// This field is from variant [ProxyCheckResponseConfigResidentialProxyConfig].
+	Asn  string `json:"asn"`
+	City string `json:"city"`
 	// This field is from variant [ProxyCheckResponseConfigResidentialProxyConfig].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	Zip   string `json:"zip"`
-	// This field is from variant [ProxyCheckResponseConfigMobileProxyConfig].
-	Carrier string `json:"carrier"`
+	// This field is from variant [ProxyCheckResponseConfigResidentialProxyConfig].
+	Zip string `json:"zip"`
 	// This field is from variant [ProxyCheckResponseConfigCustomProxyConfig].
 	Host string `json:"host"`
 	// This field is from variant [ProxyCheckResponseConfigCustomProxyConfig].
@@ -1072,7 +1012,6 @@ type ProxyCheckResponseConfigUnion struct {
 		Os          respjson.Field
 		State       respjson.Field
 		Zip         respjson.Field
-		Carrier     respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
 		HasPassword respjson.Field
@@ -1189,36 +1128,17 @@ func (r *ProxyCheckResponseConfigResidentialProxyConfig) UnmarshalJSON(data []by
 
 // Configuration for mobile proxies.
 type ProxyCheckResponseConfigMobileProxyConfig struct {
-	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
-	Asn string `json:"asn"`
-	// Mobile carrier.
-	//
-	// Any of "a1", "aircel", "airtel", "att", "celcom", "chinamobile", "claro",
-	// "comcast", "cox", "digi", "dt", "docomo", "dtac", "etisalat", "idea",
-	// "kyivstar", "meo", "megafon", "mtn", "mtnza", "mts", "optus", "orange", "qwest",
-	// "reliance_jio", "robi", "sprint", "telefonica", "telstra", "tmobile", "tigo",
-	// "tim", "verizon", "vimpelcom", "vodacomza", "vodafone", "vivo", "zain",
-	// "vivabo", "telenormyanmar", "kcelljsc", "swisscom", "singtel", "asiacell",
-	// "windit", "cellc", "ooredoo", "drei", "umobile", "cableone", "proximus",
-	// "tele2", "mobitel", "o2", "bouygues", "free", "sfr", "digicel".
-	Carrier string `json:"carrier"`
-	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
-	// provided.
+	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
 	Country string `json:"country"`
-	// Two-letter state code.
+	// US-only state code. Mobile carrier routing can make observed geo vary.
 	State string `json:"state"`
-	// US ZIP code.
-	Zip string `json:"zip"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Asn         respjson.Field
-		Carrier     respjson.Field
 		City        respjson.Field
 		Country     respjson.Field
 		State       respjson.Field
-		Zip         respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1351,6 +1271,14 @@ func (u *ProxyNewParamsConfigUnion) asAny() any {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u ProxyNewParamsConfigUnion) GetAsn() *string {
+	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Asn.Valid() {
+		return &vt.Asn.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetOs() *string {
 	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil {
 		return &vt.Os
@@ -1359,9 +1287,9 @@ func (u ProxyNewParamsConfigUnion) GetOs() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u ProxyNewParamsConfigUnion) GetCarrier() *string {
-	if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil {
-		return &vt.Carrier
+func (u ProxyNewParamsConfigUnion) GetZip() *string {
+	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Zip.Valid() {
+		return &vt.Zip.Value
 	}
 	return nil
 }
@@ -1413,16 +1341,6 @@ func (u ProxyNewParamsConfigUnion) GetCountry() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u ProxyNewParamsConfigUnion) GetAsn() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Asn.Valid() {
-		return &vt.Asn.Value
-	} else if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil && vt.Asn.Valid() {
-		return &vt.Asn.Value
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetCity() *string {
 	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.City.Valid() {
 		return &vt.City.Value
@@ -1438,16 +1356,6 @@ func (u ProxyNewParamsConfigUnion) GetState() *string {
 		return &vt.State.Value
 	} else if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil && vt.State.Valid() {
 		return &vt.State.Value
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u ProxyNewParamsConfigUnion) GetZip() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Zip.Valid() {
-		return &vt.Zip.Value
-	} else if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil && vt.Zip.Valid() {
-		return &vt.Zip.Value
 	}
 	return nil
 }
@@ -1520,28 +1428,12 @@ func init() {
 
 // Configuration for mobile proxies.
 type ProxyNewParamsConfigMobileProxyConfig struct {
-	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
-	Asn param.Opt[string] `json:"asn,omitzero"`
-	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
-	// provided.
+	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City param.Opt[string] `json:"city,omitzero"`
 	// ISO 3166 country code
 	Country param.Opt[string] `json:"country,omitzero"`
-	// Two-letter state code.
+	// US-only state code. Mobile carrier routing can make observed geo vary.
 	State param.Opt[string] `json:"state,omitzero"`
-	// US ZIP code.
-	Zip param.Opt[string] `json:"zip,omitzero"`
-	// Mobile carrier.
-	//
-	// Any of "a1", "aircel", "airtel", "att", "celcom", "chinamobile", "claro",
-	// "comcast", "cox", "digi", "dt", "docomo", "dtac", "etisalat", "idea",
-	// "kyivstar", "meo", "megafon", "mtn", "mtnza", "mts", "optus", "orange", "qwest",
-	// "reliance_jio", "robi", "sprint", "telefonica", "telstra", "tmobile", "tigo",
-	// "tim", "verizon", "vimpelcom", "vodacomza", "vodafone", "vivo", "zain",
-	// "vivabo", "telenormyanmar", "kcelljsc", "swisscom", "singtel", "asiacell",
-	// "windit", "cellc", "ooredoo", "drei", "umobile", "cableone", "proximus",
-	// "tele2", "mobitel", "o2", "bouygues", "free", "sfr", "digicel".
-	Carrier string `json:"carrier,omitzero"`
 	paramObj
 }
 
@@ -1551,12 +1443,6 @@ func (r ProxyNewParamsConfigMobileProxyConfig) MarshalJSON() (data []byte, err e
 }
 func (r *ProxyNewParamsConfigMobileProxyConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[ProxyNewParamsConfigMobileProxyConfig](
-		"carrier", "a1", "aircel", "airtel", "att", "celcom", "chinamobile", "claro", "comcast", "cox", "digi", "dt", "docomo", "dtac", "etisalat", "idea", "kyivstar", "meo", "megafon", "mtn", "mtnza", "mts", "optus", "orange", "qwest", "reliance_jio", "robi", "sprint", "telefonica", "telstra", "tmobile", "tigo", "tim", "verizon", "vimpelcom", "vodacomza", "vodafone", "vivo", "zain", "vivabo", "telenormyanmar", "kcelljsc", "swisscom", "singtel", "asiacell", "windit", "cellc", "ooredoo", "drei", "umobile", "cableone", "proximus", "tele2", "mobitel", "o2", "bouygues", "free", "sfr", "digicel",
-	)
 }
 
 // Configuration for a custom proxy (e.g., private proxy server).
