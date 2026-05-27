@@ -39,6 +39,8 @@ type Client struct {
 	Credentials CredentialService
 	// Create and manage projects for resource isolation within an organization.
 	Projects ProjectService
+	// Create and manage API keys for organization and project-scoped access.
+	APIKeys APIKeyService
 	// Configure external credential providers like 1Password.
 	CredentialProviders CredentialProviderService
 }
@@ -84,6 +86,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.BrowserPools = NewBrowserPoolService(opts...)
 	r.Credentials = NewCredentialService(opts...)
 	r.Projects = NewProjectService(opts...)
+	r.APIKeys = NewAPIKeyService(opts...)
 	r.CredentialProviders = NewCredentialProviderService(opts...)
 
 	return

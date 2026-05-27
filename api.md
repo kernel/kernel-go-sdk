@@ -387,6 +387,26 @@ Methods:
 - <code title="get /org/projects/{id}/limits">client.Projects.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="patch /org/projects/{id}/limits">client.Projects.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitUpdateParams">ProjectLimitUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# APIKeys
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreateAPIKeyRequestParam">CreateAPIKeyRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#UpdateAPIKeyRequestParam">UpdateAPIKeyRequestParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreatedAPIKey">CreatedAPIKey</a>
+
+Methods:
+
+- <code title="post /org/api_keys">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyNewParams">APIKeyNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreatedAPIKey">CreatedAPIKey</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/api_keys/{id}">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /org/api_keys/{id}">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyUpdateParams">APIKeyUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/api_keys">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyListParams">APIKeyListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /org/api_keys/{id}">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+
 # CredentialProviders
 
 Params Types:
