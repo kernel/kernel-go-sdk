@@ -13,7 +13,6 @@ import (
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
 	"github.com/kernel/kernel-go-sdk/internal/apiquery"
-	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
 	"github.com/kernel/kernel-go-sdk/packages/pagination"
@@ -172,25 +171,6 @@ func (r *APIKeyCreatedBy) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The property Name is required.
-type CreateAPIKeyRequestParam struct {
-	// API key name (1-255 characters)
-	Name string `json:"name" api:"required"`
-	// Number of days until expiry, up to 3650. Use null for never.
-	DaysToExpire param.Opt[int64] `json:"days_to_expire,omitzero"`
-	// Unique project identifier
-	ProjectID param.Opt[string] `json:"project_id,omitzero"`
-	paramObj
-}
-
-func (r CreateAPIKeyRequestParam) MarshalJSON() (data []byte, err error) {
-	type shadow CreateAPIKeyRequestParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *CreateAPIKeyRequestParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // API key returned immediately after creation. Includes the plaintext key once.
 type CreatedAPIKey struct {
 	// Plaintext API key. Only returned once when the key is created.
@@ -210,40 +190,33 @@ func (r *CreatedAPIKey) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The property Name is required.
-type UpdateAPIKeyRequestParam struct {
-	// New API key name
-	Name string `json:"name" api:"required"`
-	paramObj
-}
-
-func (r UpdateAPIKeyRequestParam) MarshalJSON() (data []byte, err error) {
-	type shadow UpdateAPIKeyRequestParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *UpdateAPIKeyRequestParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 type APIKeyNewParams struct {
-	CreateAPIKeyRequest CreateAPIKeyRequestParam
+	// API key name (1-255 characters)
+	Name string `json:"name" api:"required"`
+	// Number of days until expiry, up to 3650. Use null for never.
+	DaysToExpire param.Opt[int64] `json:"days_to_expire,omitzero"`
+	// Unique project identifier
+	ProjectID param.Opt[string] `json:"project_id,omitzero"`
 	paramObj
 }
 
 func (r APIKeyNewParams) MarshalJSON() (data []byte, err error) {
-	return shimjson.Marshal(r.CreateAPIKeyRequest)
+	type shadow APIKeyNewParams
+	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *APIKeyNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 type APIKeyUpdateParams struct {
-	UpdateAPIKeyRequest UpdateAPIKeyRequestParam
+	// New API key name
+	Name string `json:"name" api:"required"`
 	paramObj
 }
 
 func (r APIKeyUpdateParams) MarshalJSON() (data []byte, err error) {
-	return shimjson.Marshal(r.UpdateAPIKeyRequest)
+	type shadow APIKeyUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *APIKeyUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)

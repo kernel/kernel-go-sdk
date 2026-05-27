@@ -389,11 +389,6 @@ Methods:
 
 # APIKeys
 
-Params Types:
-
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreateAPIKeyRequestParam">CreateAPIKeyRequestParam</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#UpdateAPIKeyRequestParam">UpdateAPIKeyRequestParam</a>
-
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>
