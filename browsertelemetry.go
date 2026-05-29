@@ -128,6 +128,7 @@ func (r *BrowserCallStackCallFrame) UnmarshalJSON(data []byte) error {
 // Runtime.exceptionThrown (uncaught exceptions) produces text, line, column,
 // source_url, and stack_trace. Fields not applicable to the source are absent.
 type BrowserConsoleErrorEvent struct {
+	Category constant.Console `json:"category" default:"console"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -141,6 +142,7 @@ type BrowserConsoleErrorEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -205,6 +207,7 @@ func (r *BrowserConsoleErrorEventData) UnmarshalJSON(data []byte) error {
 
 // A browser console log event (console.log, console.info, console.warn, etc.).
 type BrowserConsoleLogEvent struct {
+	Category constant.Console `json:"category" default:"console"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -218,6 +221,7 @@ type BrowserConsoleLogEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -366,6 +370,7 @@ type BrowserHTTPHeaders map[string]any
 
 // A browser user click event captured via injected page script.
 type BrowserInteractionClickEvent struct {
+	Category constant.Interaction `json:"category" default:"interaction"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -379,6 +384,7 @@ type BrowserInteractionClickEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -430,6 +436,7 @@ func (r *BrowserInteractionClickEventData) UnmarshalJSON(data []byte) error {
 
 // A browser keyboard event captured via injected page script.
 type BrowserInteractionKeyEvent struct {
+	Category constant.Interaction `json:"category" default:"interaction"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -443,6 +450,7 @@ type BrowserInteractionKeyEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -489,6 +497,7 @@ func (r *BrowserInteractionKeyEventData) UnmarshalJSON(data []byte) error {
 // A browser scroll settled event emitted after scroll position stops changing,
 // captured via injected page script.
 type BrowserInteractionScrollSettledEvent struct {
+	Category constant.Interaction `json:"category" default:"interaction"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -502,6 +511,7 @@ type BrowserInteractionScrollSettledEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -555,6 +565,7 @@ func (r *BrowserInteractionScrollSettledEventData) UnmarshalJSON(data []byte) er
 // monitor_reconnected arrives. Treat any in-progress computed state (network_idle,
 // page_layout_settled) as unreliable until then.
 type BrowserMonitorDisconnectedEvent struct {
+	Category constant.System `json:"category" default:"system"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -565,6 +576,7 @@ type BrowserMonitorDisconnectedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -602,6 +614,7 @@ func (r *BrowserMonitorDisconnectedEventData) UnmarshalJSON(data []byte) error {
 
 // The CDP session could not be initialized.
 type BrowserMonitorInitFailedEvent struct {
+	Category constant.System `json:"category" default:"system"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -612,6 +625,7 @@ type BrowserMonitorInitFailedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -648,6 +662,7 @@ func (r *BrowserMonitorInitFailedEventData) UnmarshalJSON(data []byte) error {
 // The CDP connection to Chrome could not be re-established after exhausting all
 // reconnection attempts. No further telemetry events will arrive on this session.
 type BrowserMonitorReconnectFailedEvent struct {
+	Category constant.System `json:"category" default:"system"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -658,6 +673,7 @@ type BrowserMonitorReconnectFailedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -698,6 +714,7 @@ func (r *BrowserMonitorReconnectFailedEventData) UnmarshalJSON(data []byte) erro
 // disconnection. Events emitted during the gap are lost. Computed state is reset,
 // so navigation and network tracking restart fresh from this point.
 type BrowserMonitorReconnectedEvent struct {
+	Category constant.System `json:"category" default:"system"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -708,6 +725,7 @@ type BrowserMonitorReconnectedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -743,6 +761,7 @@ func (r *BrowserMonitorReconnectedEventData) UnmarshalJSON(data []byte) error {
 
 // A periodic screenshot of the browser viewport.
 type BrowserMonitorScreenshotEvent struct {
+	Category constant.System `json:"category" default:"system"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -753,6 +772,7 @@ type BrowserMonitorScreenshotEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -789,6 +809,7 @@ func (r *BrowserMonitorScreenshotEventData) UnmarshalJSON(data []byte) error {
 // A browser network idle event emitted after a 500ms quiet period with no
 // in-flight HTTP requests.
 type BrowserNetworkIdleEvent struct {
+	Category constant.Network `json:"category" default:"network"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -802,6 +823,7 @@ type BrowserNetworkIdleEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -823,6 +845,7 @@ func (r *BrowserNetworkIdleEvent) UnmarshalJSON(data []byte) error {
 // loader_id, and resource_type are absent; BrowserEventContext is partially
 // populated in that case.
 type BrowserNetworkLoadingFailedEvent struct {
+	Category constant.Network `json:"category" default:"network"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -836,6 +859,7 @@ type BrowserNetworkLoadingFailedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -886,6 +910,7 @@ func (r *BrowserNetworkLoadingFailedEventData) UnmarshalJSON(data []byte) error 
 
 // A browser network request sent event.
 type BrowserNetworkRequestEvent struct {
+	Category constant.Network `json:"category" default:"network"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -899,6 +924,7 @@ type BrowserNetworkRequestEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -966,6 +992,7 @@ func (r *BrowserNetworkRequestEventData) UnmarshalJSON(data []byte) error {
 // A browser network response received event. Fired after the response body is
 // fully received, not when headers arrive.
 type BrowserNetworkResponseEvent struct {
+	Category constant.Network `json:"category" default:"network"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -979,6 +1006,7 @@ type BrowserNetworkResponseEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1041,6 +1069,7 @@ func (r *BrowserNetworkResponseEventData) UnmarshalJSON(data []byte) error {
 
 // A browser DOMContentLoaded event (CDP Page.domContentEventFired).
 type BrowserPageDomContentLoadedEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1054,6 +1083,7 @@ type BrowserPageDomContentLoadedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1096,6 +1126,7 @@ func (r *BrowserPageDomContentLoadedEventData) UnmarshalJSON(data []byte) error 
 // intervening layout shifts, indicating visual stability. Each layout shift resets
 // the 1-second timer.
 type BrowserPageLayoutSettledEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1109,6 +1140,7 @@ type BrowserPageLayoutSettledEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1127,6 +1159,7 @@ func (r *BrowserPageLayoutSettledEvent) UnmarshalJSON(data []byte) error {
 
 // A browser cumulative layout shift (CLS) event from the Performance Timeline API.
 type BrowserPageLayoutShiftEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1140,6 +1173,7 @@ type BrowserPageLayoutShiftEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1212,6 +1246,7 @@ func (r *BrowserPageLayoutShiftEventDataLayoutShiftDetails) UnmarshalJSON(data [
 // A browser Largest Contentful Paint (LCP) event from the Performance Timeline
 // API.
 type BrowserPageLcpEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1225,6 +1260,7 @@ type BrowserPageLcpEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1304,6 +1340,7 @@ func (r *BrowserPageLcpEventDataLcpDetails) UnmarshalJSON(data []byte) error {
 
 // A browser page load event (CDP Page.loadEventFired).
 type BrowserPageLoadEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1317,6 +1354,7 @@ type BrowserPageLoadEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1359,6 +1397,7 @@ func (r *BrowserPageLoadEventData) UnmarshalJSON(data []byte) error {
 // context fields inline but not nav_seq, as this event resets the navigation
 // epoch.
 type BrowserPageNavigationEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1369,6 +1408,7 @@ type BrowserPageNavigationEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1427,6 +1467,7 @@ func (r *BrowserPageNavigationEventData) UnmarshalJSON(data []byte) error {
 // the same navigation, indicating the page is loaded and visually stable.
 // Independent of network_idle; a single pending request does not block it.
 type BrowserPageNavigationSettledEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1440,6 +1481,7 @@ type BrowserPageNavigationSettledEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1462,6 +1504,7 @@ func (r *BrowserPageNavigationSettledEvent) UnmarshalJSON(data []byte) error {
 // compose BrowserEventContext. Consumers reading context fields generically should
 // treat it as a special case.
 type BrowserPageTabOpenedEvent struct {
+	Category constant.Page `json:"category" default:"page"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1472,6 +1515,7 @@ type BrowserPageTabOpenedEvent struct {
 	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Category    respjson.Field
 		Source      respjson.Field
 		Ts          respjson.Field
 		Type        respjson.Field
@@ -1663,6 +1707,7 @@ func (r *BrowserTelemetryConfig) UnmarshalJSON(data []byte) error {
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type BrowserTelemetryEventUnion struct {
+	Category string `json:"category"`
 	// This field is from variant [BrowserConsoleLogEvent].
 	Source BrowserEventSource `json:"source"`
 	Ts     int64              `json:"ts"`
@@ -1688,6 +1733,7 @@ type BrowserTelemetryEventUnion struct {
 	Data      BrowserTelemetryEventUnionData `json:"data"`
 	Truncated bool                           `json:"truncated"`
 	JSON      struct {
+		Category  respjson.Field
 		Source    respjson.Field
 		Ts        respjson.Field
 		Type      respjson.Field
