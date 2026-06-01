@@ -16,6 +16,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
+// Control mouse, keyboard, and screen on the browser instance.
+//
 // BrowserComputerService contains methods and other services that help with
 // interacting with the kernel API.
 //
