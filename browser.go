@@ -44,7 +44,8 @@ type BrowserService struct {
 	// Execute and manage processes on the browser instance.
 	Process BrowserProcessService
 	// Stream logs from the browser instance.
-	Logs     BrowserLogService
+	Logs BrowserLogService
+	// Control mouse, keyboard, and screen on the browser instance.
 	Computer BrowserComputerService
 	// Execute Playwright code against the browser instance.
 	Playwright BrowserPlaywrightService
