@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.61.0 (2026-06-03)
+
+Full Changelog: [v0.60.0...v0.61.0](https://github.com/kernel/kernel-go-sdk/compare/v0.60.0...v0.61.0)
+
+### Features
+
+* Add record_audio option to browser replay recording API ([c04e9d8](https://github.com/kernel/kernel-go-sdk/commit/c04e9d8896bfad648ea70fd7b9ecbf37293b1c82))
+
 ## 0.60.0 (2026-06-03)
 
 Full Changelog: [v0.59.0...v0.60.0](https://github.com/kernel/kernel-go-sdk/compare/v0.59.0...v0.60.0)
