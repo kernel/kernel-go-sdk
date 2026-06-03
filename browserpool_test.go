@@ -142,7 +142,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestBrowserPoolList(t *testing.T) {
+func TestBrowserPoolListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -155,7 +155,10 @@ func TestBrowserPoolList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.BrowserPools.List(context.TODO())
+	_, err := client.BrowserPools.List(context.TODO(), kernel.BrowserPoolListParams{
+		Limit:  kernel.Int(1),
+		Offset: kernel.Int(0),
+	})
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
