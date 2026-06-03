@@ -47,7 +47,9 @@ func withBrowserRouteCache(cache *browserrouting.RouteCache) option.RequestOptio
 
 func browserRouteCacheFromOptions(opts []option.RequestOption) *browserrouting.RouteCache {
 	for _, opt := range opts {
-		if carrier, ok := opt.(interface{ browserRouteCache() *browserrouting.RouteCache }); ok {
+		if carrier, ok := opt.(interface {
+			browserRouteCache() *browserrouting.RouteCache
+		}); ok {
 			if cache := carrier.browserRouteCache(); cache != nil {
 				return cache
 			}
@@ -81,7 +83,7 @@ func browserRouteFromRef(ref browserrouting.Ref) (browserrouting.Route, bool) {
 func browserRoutingSubresourcesFromEnv() []string {
 	raw, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
 	if !ok {
-		return []string{"curl"}
+		return []string{"curl", "telemetry"}
 	}
 	if strings.TrimSpace(raw) == "" {
 		return []string{}
