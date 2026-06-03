@@ -99,6 +99,7 @@ func TestBrowserReplayStartWithOptionalParams(t *testing.T) {
 		kernel.BrowserReplayStartParams{
 			Framerate:            kernel.Int(1),
 			MaxDurationInSeconds: kernel.Int(1),
+			RecordAudio:          kernel.Bool(true),
 		},
 	)
 	if err != nil {
