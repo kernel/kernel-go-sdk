@@ -62,7 +62,7 @@ func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string
 		err = errors.New("missing required id parameter")
 		return ssestream.NewStream[BrowserTelemetryStreamResponse](nil, err)
 	}
-	path := fmt.Sprintf("browsers/%s/telemetry", id)
+	path := fmt.Sprintf("browsers/%s/telemetry/stream", id)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)
 	return ssestream.NewStream[BrowserTelemetryStreamResponse](ssestream.NewDecoder(raw), err)
 }
