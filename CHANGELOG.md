@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.60.0 (2026-06-03)
+
+Full Changelog: [v0.59.0...v0.60.0](https://github.com/kernel/kernel-go-sdk/compare/v0.59.0...v0.60.0)
+
+### Features
+
+* Add API-backed API key management endpoints ([6ea145b](https://github.com/kernel/kernel-go-sdk/commit/6ea145bdd708bdcf2f264cf1c379d9d9ccaf3779))
+* Fix browser pool update schema ([370464e](https://github.com/kernel/kernel-go-sdk/commit/370464e57cee08cebdfa9a920681d68e0a6f4e14))
+* route browser telemetry directly to the VM by default ([105313c](https://github.com/kernel/kernel-go-sdk/commit/105313c08767599494267e665346b0ca0b561d66))
+
+
+### Bug Fixes
+
+* **ssestream:** skip empty SSE keepalive comment frames ([59bd952](https://github.com/kernel/kernel-go-sdk/commit/59bd952042fdf647481e4c71f86f71077b31fe86))
+
+
+### Refactors
+
+* **examples:** rename telemetry example to browser-telemetry ([3908ff5](https://github.com/kernel/kernel-go-sdk/commit/3908ff56aab71f925ce8d2a7e62259db6ce9a0ff))
+
 ## 0.59.0 (2026-06-03)
 
 Full Changelog: [v0.58.0...v0.59.0](https://github.com/kernel/kernel-go-sdk/compare/v0.58.0...v0.59.0)
