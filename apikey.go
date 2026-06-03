@@ -227,6 +227,17 @@ type APIKeyListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Case-insensitive substring match against API key name, creator, and project. API
+	// key identifiers and masked keys match by exact value or prefix.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Field to sort API keys by.
+	//
+	// Any of "created_at", "name", "expires_at".
+	SortBy APIKeyListParamsSortBy `query:"sort_by,omitzero" json:"-"`
+	// Sort direction for API keys.
+	//
+	// Any of "asc", "desc".
+	SortDirection APIKeyListParamsSortDirection `query:"sort_direction,omitzero" json:"-"`
 	paramObj
 }
 
@@ -237,3 +248,20 @@ func (r APIKeyListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Field to sort API keys by.
+type APIKeyListParamsSortBy string
+
+const (
+	APIKeyListParamsSortByCreatedAt APIKeyListParamsSortBy = "created_at"
+	APIKeyListParamsSortByName      APIKeyListParamsSortBy = "name"
+	APIKeyListParamsSortByExpiresAt APIKeyListParamsSortBy = "expires_at"
+)
+
+// Sort direction for API keys.
+type APIKeyListParamsSortDirection string
+
+const (
+	APIKeyListParamsSortDirectionAsc  APIKeyListParamsSortDirection = "asc"
+	APIKeyListParamsSortDirectionDesc APIKeyListParamsSortDirection = "desc"
+)

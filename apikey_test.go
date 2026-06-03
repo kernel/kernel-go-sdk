@@ -106,8 +106,11 @@ func TestAPIKeyListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.APIKeys.List(context.TODO(), kernel.APIKeyListParams{
-		Limit:  kernel.Int(100),
-		Offset: kernel.Int(0),
+		Limit:         kernel.Int(100),
+		Offset:        kernel.Int(0),
+		Query:         kernel.String("query"),
+		SortBy:        kernel.APIKeyListParamsSortByCreatedAt,
+		SortDirection: kernel.APIKeyListParamsSortDirectionAsc,
 	})
 	if err != nil {
 		var apierr *kernel.Error
