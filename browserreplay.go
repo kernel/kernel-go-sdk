@@ -161,6 +161,9 @@ type BrowserReplayStartParams struct {
 	Framerate param.Opt[int64] `json:"framerate,omitzero"`
 	// Maximum recording duration in seconds.
 	MaxDurationInSeconds param.Opt[int64] `json:"max_duration_in_seconds,omitzero"`
+	// Record audio in addition to video. When false (the default), the recording is
+	// video-only.
+	RecordAudio param.Opt[bool] `json:"record_audio,omitzero"`
 	paramObj
 }
 
