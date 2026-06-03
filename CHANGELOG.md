@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.59.0 (2026-06-03)
+
+Full Changelog: [v0.58.0...v0.59.0](https://github.com/kernel/kernel-go-sdk/compare/v0.58.0...v0.59.0)
+
+### Features
+
+* api: surface category field on browser telemetry events ([803734d](https://github.com/kernel/kernel-go-sdk/commit/803734d1179cb14da37173537fa25cb10995fd78))
+* **api:** move browser telemetry SSE stream to /browsers/{id}/telemetry/stream ([2c542d9](https://github.com/kernel/kernel-go-sdk/commit/2c542d922d4200170d630198cfac01173279c17e))
+* Support Byteful mobile proxies ([d7162b5](https://github.com/kernel/kernel-go-sdk/commit/d7162b5cbb1a39b46cb25ff9a0124a8584d3efaf))
+
+
+### Bug Fixes
+
+* **api:** move batch + get_mouse_position into Browser Computer Controls tag ([743624f](https://github.com/kernel/kernel-go-sdk/commit/743624f14a8d5fd86a7690d8f2525e38f671b355))
+
 ## 0.58.0 (2026-05-27)
 
 Full Changelog: [v0.57.0...v0.58.0](https://github.com/kernel/kernel-go-sdk/compare/v0.57.0...v0.58.0)
