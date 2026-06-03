@@ -104,7 +104,6 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id_or_name",
 		kernel.BrowserPoolUpdateParams{
-			Size: 10,
 			ChromePolicy: map[string]any{
 				"foo": "bar",
 			},
@@ -123,6 +122,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID:        kernel.String("proxy_id"),
+			Size:           kernel.Int(10),
 			StartURL:       kernel.String("https://example.com"),
 			Stealth:        kernel.Bool(true),
 			TimeoutSeconds: kernel.Int(60),
