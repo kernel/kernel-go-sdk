@@ -405,10 +405,6 @@ func (r *BrowserPoolNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserPoolUpdateParams struct {
-	// Number of browsers to maintain in the pool. The maximum size is determined by
-	// your organization's pooled sessions limit (the sum of all pool sizes cannot
-	// exceed your limit).
-	Size int64 `json:"size" api:"required"`
 	// Whether to discard all idle browsers and rebuild the pool immediately. Defaults
 	// to false.
 	DiscardAllIdle param.Opt[bool] `json:"discard_all_idle,omitzero"`
@@ -424,6 +420,10 @@ type BrowserPoolUpdateParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Number of browsers to maintain in the pool. The maximum size is determined by
+	// your organization's pooled sessions limit (the sum of all pool sizes cannot
+	// exceed your limit).
+	Size param.Opt[int64] `json:"size,omitzero"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
 	// newly-warmed browsers; browsers reused via release/acquire keep whatever URL the
