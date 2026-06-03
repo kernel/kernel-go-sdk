@@ -71,6 +71,68 @@ func TestBrowserRoutingWarmsCacheAndRoutesAllowlistedSubresources(t *testing.T) 
 	}
 }
 
+func TestBrowserRoutingRewritesTelemetryStreamToVM(t *testing.T) {
+	t.Setenv(browserRoutingSubresourcesEnv, "telemetry")
+
+	var calls []struct {
+		Path string
+		Auth string
+	}
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, struct {
+			Path string
+			Auth string
+		}{Path: r.URL.Path + "?" + r.URL.RawQuery, Auth: r.Header.Get("Authorization")})
+
+		switch r.URL.Path {
+		case "/browsers":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"session_id": "sess-1",
+				"base_url":   srv.URL + "/browser/kernel",
+				"cdp_ws_url": "wss://browser-session.test/browser/cdp?jwt=token-abc",
+			})
+		default:
+			// Telemetry stream is an SSE response; emit a single frame and close.
+			w.Header().Set("Content-Type", "text/event-stream")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("id: 1\ndata: {\"category\":\"api\"}\n\n"))
+		}
+	}))
+	defer srv.Close()
+
+	client := NewClient(
+		option.WithBaseURL(srv.URL),
+		option.WithAPIKey("sk_test"),
+		option.WithHTTPClient(srv.Client()),
+	)
+
+	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
+		t.Fatal(err)
+	}
+
+	stream := client.Browsers.Telemetry.StreamStreaming(context.Background(), "sess-1", BrowserTelemetryStreamParams{})
+	for stream.Next() {
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatal(err)
+	}
+
+	if route, ok := client.BrowserRouteCache.Load("sess-1"); !ok || route.JWT != "token-abc" {
+		t.Fatalf("expected warmed browser route cache, got %#v ok=%v", route, ok)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("expected 2 calls, got %d", len(calls))
+	}
+	if calls[1].Path != "/browser/kernel/telemetry/stream?jwt=token-abc" {
+		t.Fatalf("expected direct VM telemetry stream path, got %q", calls[1].Path)
+	}
+	if calls[1].Auth != "" {
+		t.Fatalf("expected authorization header removed, got %q", calls[1].Auth)
+	}
+}
+
 func TestBrowserRoutingSkipsSubresourcesOutsideConfiguredAllowlist(t *testing.T) {
 	t.Setenv(browserRoutingSubresourcesEnv, "computer")
 
@@ -127,8 +189,8 @@ func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurl(t *testing.T) {
 		}
 		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
 	})
-	if got := browserRoutingSubresourcesFromEnv(); len(got) != 1 || got[0] != "curl" {
-		t.Fatalf("expected default subresources [curl], got %#v", got)
+	if got := browserRoutingSubresourcesFromEnv(); len(got) != 2 || got[0] != "curl" || got[1] != "telemetry" {
+		t.Fatalf("expected default subresources [curl telemetry], got %#v", got)
 	}
 
 	t.Setenv(browserRoutingSubresourcesEnv, "")

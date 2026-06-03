@@ -67,6 +67,13 @@ func (s *eventStreamDecoder) Next() bool {
 
 		// Dispatch event on an empty line
 		if len(txt) == 0 {
+			// Skip blocks with no event type and no data, e.g. the server's ":\n\n"
+			// keepalive comment (sent every ~15s on an idle stream). Dispatching one
+			// would surface an empty Data buffer that fails to JSON-decode in Stream
+			// and would end the stream.
+			if event == "" && data.Len() == 0 {
+				continue
+			}
 			s.evt = Event{
 				Type: event,
 				Data: data.Bytes(),
