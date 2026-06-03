@@ -31,6 +31,45 @@ type cacheLifecycle struct {
 	evictSessionID string
 }
 
+// fallbackEndpoint identifies a routed subresource path that is eligible for
+// control-plane fallback, expressed against the parsed routed path
+// (subresource + suffix).
+type fallbackEndpoint struct {
+	subresource string
+	suffix      string
+}
+
+// fallbackEligibleEndpoints is the routing-layer registry of endpoints that
+// may fall back to the control plane when the VM reports the browser is gone.
+// Everything not listed here is fallback-OFF by default. Adding a future
+// eligible endpoint is a one-line edit here.
+var fallbackEligibleEndpoints = map[fallbackEndpoint]struct{}{
+	// PROSPECTIVE: GET /browsers/{id}/telemetry/events. The telemetry pull
+	// method does not exist yet; this pre-wires the opt-in so fallback works
+	// the moment that method ships.
+	{subresource: "telemetry", suffix: "/events"}: {},
+}
+
+// isFallbackEligible reports whether the parsed routed path opts into
+// control-plane fallback.
+func isFallbackEligible(subresource, suffix string) bool {
+	_, ok := fallbackEligibleEndpoints[fallbackEndpoint{subresource: subresource, suffix: suffix}]
+	return ok
+}
+
+// browserGoneCode is the JSON body code metro-api (kernel#2317) returns, with
+// HTTP 404, when a routed request targets a deleted/gone browser. A live VM's
+// own 404 does not carry this code, and transient/upstream failures stay 5xx.
+const browserGoneCode = "browser_gone"
+
+// originalRequest captures the control-plane-bound request before the routing
+// middleware mutates it, so it can be replayed verbatim on fallback.
+type originalRequest struct {
+	url           *url.URL
+	host          string
+	authorization []string
+}
+
 // NewRouteCache returns an empty browser route cache.
 func NewRouteCache() *RouteCache {
 	return &RouteCache{routes: map[string]Route{}}
@@ -86,6 +125,14 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		if err != nil {
 			return nil, err
 		}
+
+		var (
+			routed     bool
+			routedSess string
+			routedSub  string
+			routedSuf  string
+			snapshot   originalRequest
+		)
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
 		if ok {
 			if _, ok := allowed[subresource]; ok {
@@ -95,6 +142,15 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 					if err != nil {
 						return nil, err
 					}
+
+					// Snapshot the original control-plane-bound request before
+					// mutating it, so fallback can replay it verbatim.
+					snapshot = snapshotRequest(req)
+					routed = true
+					routedSess = sessionID
+					routedSub = subresource
+					routedSuf = suffix
+
 					req.Header.Del("Authorization")
 					if route.JWT != "" {
 						q := req.URL.Query()
@@ -117,8 +173,87 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		if err != nil {
 			return res, err
 		}
+
+		if routed && shouldFallbackToControlPlane(req.Method, routedSub, routedSuf, res) {
+			return controlPlaneFallback(req, next, cache, routedSess, snapshot)
+		}
+
 		return finalizeResponse(res, cache, lifecycle)
 	}
+}
+
+// snapshotRequest captures the control-plane-bound request state (URL, Host,
+// Authorization) before the routing middleware rewrites it.
+func snapshotRequest(req *http.Request) originalRequest {
+	snap := originalRequest{host: req.Host}
+	if req.URL != nil {
+		urlCopy := *req.URL
+		snap.url = &urlCopy
+	}
+	if auth, ok := req.Header["Authorization"]; ok {
+		snap.authorization = append([]string(nil), auth...)
+	}
+	return snap
+}
+
+// shouldFallbackToControlPlane reports whether a routed VM response warrants a
+// control-plane fallback. It is the single point that decides fallback, and
+// only inspects the body on a 404. On a 404 the body is buffered and restored
+// so callers that do NOT fall back still receive it intact.
+func shouldFallbackToControlPlane(method, subresource, suffix string, res *http.Response) bool {
+	if method != http.MethodGet {
+		return false
+	}
+	if !isFallbackEligible(subresource, suffix) {
+		return false
+	}
+	if res == nil || res.StatusCode != http.StatusNotFound {
+		return false
+	}
+	return responseHasBrowserGoneCode(res)
+}
+
+// responseHasBrowserGoneCode buffers the response body, restores it for later
+// callers, and reports whether its JSON body carries code == "browser_gone".
+func responseHasBrowserGoneCode(res *http.Response) bool {
+	if res == nil || res.Body == nil {
+		return false
+	}
+
+	body, err := io.ReadAll(res.Body)
+	if err != nil {
+		return false
+	}
+	_ = res.Body.Close()
+	res.Body = io.NopCloser(bytes.NewReader(body))
+	res.ContentLength = int64(len(body))
+
+	var payload struct {
+		Code string `json:"code"`
+	}
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return false
+	}
+	return payload.Code == browserGoneCode
+}
+
+// controlPlaneFallback evicts the authoritatively-gone route and replays the
+// original control-plane request exactly once, returning its response. It never
+// loops back through VM routing.
+func controlPlaneFallback(req *http.Request, next option.MiddlewareNext, cache *RouteCache, sessionID string, snapshot originalRequest) (*http.Response, error) {
+	cache.Delete(sessionID)
+
+	if snapshot.url != nil {
+		urlCopy := *snapshot.url
+		req.URL = &urlCopy
+	}
+	req.Host = snapshot.host
+	req.Header.Del("Authorization")
+	for _, value := range snapshot.authorization {
+		req.Header.Add("Authorization", value)
+	}
+
+	return next(req)
 }
 
 func parseCacheLifecycle(req *http.Request) (cacheLifecycle, error) {
