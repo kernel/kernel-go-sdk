@@ -7,12 +7,15 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
 	"github.com/kernel/kernel-go-sdk/packages/param"
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 	"github.com/kernel/kernel-go-sdk/shared"
@@ -72,11 +75,26 @@ func (r *BrowserPoolService) Update(ctx context.Context, idOrName string, body B
 }
 
 // List browser pools owned by the caller's organization.
-func (r *BrowserPoolService) List(ctx context.Context, opts ...option.RequestOption) (res *[]BrowserPool, err error) {
+func (r *BrowserPoolService) List(ctx context.Context, query BrowserPoolListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserPool], err error) {
+	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	path := "browser_pools"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return res, err
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// List browser pools owned by the caller's organization.
+func (r *BrowserPoolService) ListAutoPaging(ctx context.Context, query BrowserPoolListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserPool] {
+	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
 // Delete a browser pool and all browsers in it. By default, deletion is blocked if
@@ -469,6 +487,22 @@ func (r BrowserPoolUpdateParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *BrowserPoolUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserPoolListParams struct {
+	// Limit the number of browser pools to return.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Offset the number of browser pools to return.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BrowserPoolListParams]'s query parameters as `url.Values`.
+func (r BrowserPoolListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type BrowserPoolDeleteParams struct {
