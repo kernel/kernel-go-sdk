@@ -176,30 +176,28 @@ const (
 )
 
 // ProxyNewResponseConfigUnion contains all possible properties and values from
-// [ProxyNewResponseConfigDatacenterProxyConfig],
-// [ProxyNewResponseConfigIspProxyConfig],
-// [ProxyNewResponseConfigResidentialProxyConfig],
-// [ProxyNewResponseConfigMobileProxyConfig],
-// [ProxyNewResponseConfigCustomProxyConfig].
+// [ProxyNewResponseConfigDatacenter], [ProxyNewResponseConfigIsp],
+// [ProxyNewResponseConfigResidential], [ProxyNewResponseConfigMobile],
+// [ProxyNewResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyNewResponseConfigUnion struct {
 	Country string `json:"country"`
-	// This field is from variant [ProxyNewResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigResidential].
 	Asn  string `json:"asn"`
 	City string `json:"city"`
-	// This field is from variant [ProxyNewResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigResidential].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	// This field is from variant [ProxyNewResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigResidential].
 	Zip string `json:"zip"`
-	// This field is from variant [ProxyNewResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigCustom].
 	Host string `json:"host"`
-	// This field is from variant [ProxyNewResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigCustom].
 	Port int64 `json:"port"`
-	// This field is from variant [ProxyNewResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
-	// This field is from variant [ProxyNewResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyNewResponseConfigCustom].
 	Username string `json:"username"`
 	JSON     struct {
 		Country     respjson.Field
@@ -216,27 +214,27 @@ type ProxyNewResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyNewResponseConfigUnion) AsProxyNewResponseConfigDatacenterProxyConfig() (v ProxyNewResponseConfigDatacenterProxyConfig) {
+func (u ProxyNewResponseConfigUnion) AsDatacenter() (v ProxyNewResponseConfigDatacenter) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyNewResponseConfigUnion) AsProxyNewResponseConfigIspProxyConfig() (v ProxyNewResponseConfigIspProxyConfig) {
+func (u ProxyNewResponseConfigUnion) AsIsp() (v ProxyNewResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyNewResponseConfigUnion) AsProxyNewResponseConfigResidentialProxyConfig() (v ProxyNewResponseConfigResidentialProxyConfig) {
+func (u ProxyNewResponseConfigUnion) AsResidential() (v ProxyNewResponseConfigResidential) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyNewResponseConfigUnion) AsProxyNewResponseConfigMobileProxyConfig() (v ProxyNewResponseConfigMobileProxyConfig) {
+func (u ProxyNewResponseConfigUnion) AsMobile() (v ProxyNewResponseConfigMobile) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyNewResponseConfigUnion) AsProxyNewResponseConfigCustomProxyConfig() (v ProxyNewResponseConfigCustomProxyConfig) {
+func (u ProxyNewResponseConfigUnion) AsCustom() (v ProxyNewResponseConfigCustom) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -249,7 +247,7 @@ func (r *ProxyNewResponseConfigUnion) UnmarshalJSON(data []byte) error {
 }
 
 // Configuration for a datacenter proxy.
-type ProxyNewResponseConfigDatacenterProxyConfig struct {
+type ProxyNewResponseConfigDatacenter struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -261,13 +259,13 @@ type ProxyNewResponseConfigDatacenterProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyNewResponseConfigDatacenterProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyNewResponseConfigDatacenterProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyNewResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
+func (r *ProxyNewResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for an ISP proxy.
-type ProxyNewResponseConfigIspProxyConfig struct {
+type ProxyNewResponseConfigIsp struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -279,13 +277,13 @@ type ProxyNewResponseConfigIspProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyNewResponseConfigIspProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyNewResponseConfigIspProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyNewResponseConfigIsp) RawJSON() string { return r.JSON.raw }
+func (r *ProxyNewResponseConfigIsp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for residential proxies.
-type ProxyNewResponseConfigResidentialProxyConfig struct {
+type ProxyNewResponseConfigResidential struct {
 	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
 	Asn string `json:"asn"`
 	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
@@ -317,13 +315,13 @@ type ProxyNewResponseConfigResidentialProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyNewResponseConfigResidentialProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyNewResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyNewResponseConfigResidential) RawJSON() string { return r.JSON.raw }
+func (r *ProxyNewResponseConfigResidential) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for mobile proxies.
-type ProxyNewResponseConfigMobileProxyConfig struct {
+type ProxyNewResponseConfigMobile struct {
 	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
@@ -341,13 +339,13 @@ type ProxyNewResponseConfigMobileProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyNewResponseConfigMobileProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyNewResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyNewResponseConfigMobile) RawJSON() string { return r.JSON.raw }
+func (r *ProxyNewResponseConfigMobile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for a custom proxy (e.g., private proxy server).
-type ProxyNewResponseConfigCustomProxyConfig struct {
+type ProxyNewResponseConfigCustom struct {
 	// Proxy host address or IP.
 	Host string `json:"host" api:"required"`
 	// Proxy port.
@@ -368,8 +366,8 @@ type ProxyNewResponseConfigCustomProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyNewResponseConfigCustomProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyNewResponseConfigCustomProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyNewResponseConfigCustom) RawJSON() string { return r.JSON.raw }
+func (r *ProxyNewResponseConfigCustom) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -450,30 +448,28 @@ const (
 )
 
 // ProxyGetResponseConfigUnion contains all possible properties and values from
-// [ProxyGetResponseConfigDatacenterProxyConfig],
-// [ProxyGetResponseConfigIspProxyConfig],
-// [ProxyGetResponseConfigResidentialProxyConfig],
-// [ProxyGetResponseConfigMobileProxyConfig],
-// [ProxyGetResponseConfigCustomProxyConfig].
+// [ProxyGetResponseConfigDatacenter], [ProxyGetResponseConfigIsp],
+// [ProxyGetResponseConfigResidential], [ProxyGetResponseConfigMobile],
+// [ProxyGetResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyGetResponseConfigUnion struct {
 	Country string `json:"country"`
-	// This field is from variant [ProxyGetResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigResidential].
 	Asn  string `json:"asn"`
 	City string `json:"city"`
-	// This field is from variant [ProxyGetResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigResidential].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	// This field is from variant [ProxyGetResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigResidential].
 	Zip string `json:"zip"`
-	// This field is from variant [ProxyGetResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigCustom].
 	Host string `json:"host"`
-	// This field is from variant [ProxyGetResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigCustom].
 	Port int64 `json:"port"`
-	// This field is from variant [ProxyGetResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
-	// This field is from variant [ProxyGetResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyGetResponseConfigCustom].
 	Username string `json:"username"`
 	JSON     struct {
 		Country     respjson.Field
@@ -490,27 +486,27 @@ type ProxyGetResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyGetResponseConfigUnion) AsProxyGetResponseConfigDatacenterProxyConfig() (v ProxyGetResponseConfigDatacenterProxyConfig) {
+func (u ProxyGetResponseConfigUnion) AsDatacenter() (v ProxyGetResponseConfigDatacenter) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyGetResponseConfigUnion) AsProxyGetResponseConfigIspProxyConfig() (v ProxyGetResponseConfigIspProxyConfig) {
+func (u ProxyGetResponseConfigUnion) AsIsp() (v ProxyGetResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyGetResponseConfigUnion) AsProxyGetResponseConfigResidentialProxyConfig() (v ProxyGetResponseConfigResidentialProxyConfig) {
+func (u ProxyGetResponseConfigUnion) AsResidential() (v ProxyGetResponseConfigResidential) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyGetResponseConfigUnion) AsProxyGetResponseConfigMobileProxyConfig() (v ProxyGetResponseConfigMobileProxyConfig) {
+func (u ProxyGetResponseConfigUnion) AsMobile() (v ProxyGetResponseConfigMobile) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyGetResponseConfigUnion) AsProxyGetResponseConfigCustomProxyConfig() (v ProxyGetResponseConfigCustomProxyConfig) {
+func (u ProxyGetResponseConfigUnion) AsCustom() (v ProxyGetResponseConfigCustom) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -523,7 +519,7 @@ func (r *ProxyGetResponseConfigUnion) UnmarshalJSON(data []byte) error {
 }
 
 // Configuration for a datacenter proxy.
-type ProxyGetResponseConfigDatacenterProxyConfig struct {
+type ProxyGetResponseConfigDatacenter struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -535,13 +531,13 @@ type ProxyGetResponseConfigDatacenterProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyGetResponseConfigDatacenterProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyGetResponseConfigDatacenterProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyGetResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
+func (r *ProxyGetResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for an ISP proxy.
-type ProxyGetResponseConfigIspProxyConfig struct {
+type ProxyGetResponseConfigIsp struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -553,13 +549,13 @@ type ProxyGetResponseConfigIspProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyGetResponseConfigIspProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyGetResponseConfigIspProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyGetResponseConfigIsp) RawJSON() string { return r.JSON.raw }
+func (r *ProxyGetResponseConfigIsp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for residential proxies.
-type ProxyGetResponseConfigResidentialProxyConfig struct {
+type ProxyGetResponseConfigResidential struct {
 	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
 	Asn string `json:"asn"`
 	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
@@ -591,13 +587,13 @@ type ProxyGetResponseConfigResidentialProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyGetResponseConfigResidentialProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyGetResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyGetResponseConfigResidential) RawJSON() string { return r.JSON.raw }
+func (r *ProxyGetResponseConfigResidential) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for mobile proxies.
-type ProxyGetResponseConfigMobileProxyConfig struct {
+type ProxyGetResponseConfigMobile struct {
 	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
@@ -615,13 +611,13 @@ type ProxyGetResponseConfigMobileProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyGetResponseConfigMobileProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyGetResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyGetResponseConfigMobile) RawJSON() string { return r.JSON.raw }
+func (r *ProxyGetResponseConfigMobile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for a custom proxy (e.g., private proxy server).
-type ProxyGetResponseConfigCustomProxyConfig struct {
+type ProxyGetResponseConfigCustom struct {
 	// Proxy host address or IP.
 	Host string `json:"host" api:"required"`
 	// Proxy port.
@@ -642,8 +638,8 @@ type ProxyGetResponseConfigCustomProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyGetResponseConfigCustomProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyGetResponseConfigCustomProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyGetResponseConfigCustom) RawJSON() string { return r.JSON.raw }
+func (r *ProxyGetResponseConfigCustom) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -724,30 +720,28 @@ const (
 )
 
 // ProxyListResponseConfigUnion contains all possible properties and values from
-// [ProxyListResponseConfigDatacenterProxyConfig],
-// [ProxyListResponseConfigIspProxyConfig],
-// [ProxyListResponseConfigResidentialProxyConfig],
-// [ProxyListResponseConfigMobileProxyConfig],
-// [ProxyListResponseConfigCustomProxyConfig].
+// [ProxyListResponseConfigDatacenter], [ProxyListResponseConfigIsp],
+// [ProxyListResponseConfigResidential], [ProxyListResponseConfigMobile],
+// [ProxyListResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyListResponseConfigUnion struct {
 	Country string `json:"country"`
-	// This field is from variant [ProxyListResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyListResponseConfigResidential].
 	Asn  string `json:"asn"`
 	City string `json:"city"`
-	// This field is from variant [ProxyListResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyListResponseConfigResidential].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	// This field is from variant [ProxyListResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyListResponseConfigResidential].
 	Zip string `json:"zip"`
-	// This field is from variant [ProxyListResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyListResponseConfigCustom].
 	Host string `json:"host"`
-	// This field is from variant [ProxyListResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyListResponseConfigCustom].
 	Port int64 `json:"port"`
-	// This field is from variant [ProxyListResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyListResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
-	// This field is from variant [ProxyListResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyListResponseConfigCustom].
 	Username string `json:"username"`
 	JSON     struct {
 		Country     respjson.Field
@@ -764,27 +758,27 @@ type ProxyListResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyListResponseConfigUnion) AsProxyListResponseConfigDatacenterProxyConfig() (v ProxyListResponseConfigDatacenterProxyConfig) {
+func (u ProxyListResponseConfigUnion) AsDatacenter() (v ProxyListResponseConfigDatacenter) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyListResponseConfigUnion) AsProxyListResponseConfigIspProxyConfig() (v ProxyListResponseConfigIspProxyConfig) {
+func (u ProxyListResponseConfigUnion) AsIsp() (v ProxyListResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyListResponseConfigUnion) AsProxyListResponseConfigResidentialProxyConfig() (v ProxyListResponseConfigResidentialProxyConfig) {
+func (u ProxyListResponseConfigUnion) AsResidential() (v ProxyListResponseConfigResidential) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyListResponseConfigUnion) AsProxyListResponseConfigMobileProxyConfig() (v ProxyListResponseConfigMobileProxyConfig) {
+func (u ProxyListResponseConfigUnion) AsMobile() (v ProxyListResponseConfigMobile) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyListResponseConfigUnion) AsProxyListResponseConfigCustomProxyConfig() (v ProxyListResponseConfigCustomProxyConfig) {
+func (u ProxyListResponseConfigUnion) AsCustom() (v ProxyListResponseConfigCustom) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -797,7 +791,7 @@ func (r *ProxyListResponseConfigUnion) UnmarshalJSON(data []byte) error {
 }
 
 // Configuration for a datacenter proxy.
-type ProxyListResponseConfigDatacenterProxyConfig struct {
+type ProxyListResponseConfigDatacenter struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -809,13 +803,13 @@ type ProxyListResponseConfigDatacenterProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyListResponseConfigDatacenterProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyListResponseConfigDatacenterProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyListResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
+func (r *ProxyListResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for an ISP proxy.
-type ProxyListResponseConfigIspProxyConfig struct {
+type ProxyListResponseConfigIsp struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -827,13 +821,13 @@ type ProxyListResponseConfigIspProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyListResponseConfigIspProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyListResponseConfigIspProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyListResponseConfigIsp) RawJSON() string { return r.JSON.raw }
+func (r *ProxyListResponseConfigIsp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for residential proxies.
-type ProxyListResponseConfigResidentialProxyConfig struct {
+type ProxyListResponseConfigResidential struct {
 	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
 	Asn string `json:"asn"`
 	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
@@ -865,13 +859,13 @@ type ProxyListResponseConfigResidentialProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyListResponseConfigResidentialProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyListResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyListResponseConfigResidential) RawJSON() string { return r.JSON.raw }
+func (r *ProxyListResponseConfigResidential) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for mobile proxies.
-type ProxyListResponseConfigMobileProxyConfig struct {
+type ProxyListResponseConfigMobile struct {
 	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
@@ -889,13 +883,13 @@ type ProxyListResponseConfigMobileProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyListResponseConfigMobileProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyListResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyListResponseConfigMobile) RawJSON() string { return r.JSON.raw }
+func (r *ProxyListResponseConfigMobile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for a custom proxy (e.g., private proxy server).
-type ProxyListResponseConfigCustomProxyConfig struct {
+type ProxyListResponseConfigCustom struct {
 	// Proxy host address or IP.
 	Host string `json:"host" api:"required"`
 	// Proxy port.
@@ -916,8 +910,8 @@ type ProxyListResponseConfigCustomProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyListResponseConfigCustomProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyListResponseConfigCustomProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyListResponseConfigCustom) RawJSON() string { return r.JSON.raw }
+func (r *ProxyListResponseConfigCustom) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -998,30 +992,28 @@ const (
 )
 
 // ProxyCheckResponseConfigUnion contains all possible properties and values from
-// [ProxyCheckResponseConfigDatacenterProxyConfig],
-// [ProxyCheckResponseConfigIspProxyConfig],
-// [ProxyCheckResponseConfigResidentialProxyConfig],
-// [ProxyCheckResponseConfigMobileProxyConfig],
-// [ProxyCheckResponseConfigCustomProxyConfig].
+// [ProxyCheckResponseConfigDatacenter], [ProxyCheckResponseConfigIsp],
+// [ProxyCheckResponseConfigResidential], [ProxyCheckResponseConfigMobile],
+// [ProxyCheckResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyCheckResponseConfigUnion struct {
 	Country string `json:"country"`
-	// This field is from variant [ProxyCheckResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigResidential].
 	Asn  string `json:"asn"`
 	City string `json:"city"`
-	// This field is from variant [ProxyCheckResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigResidential].
 	Os    string `json:"os"`
 	State string `json:"state"`
-	// This field is from variant [ProxyCheckResponseConfigResidentialProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigResidential].
 	Zip string `json:"zip"`
-	// This field is from variant [ProxyCheckResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigCustom].
 	Host string `json:"host"`
-	// This field is from variant [ProxyCheckResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigCustom].
 	Port int64 `json:"port"`
-	// This field is from variant [ProxyCheckResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
-	// This field is from variant [ProxyCheckResponseConfigCustomProxyConfig].
+	// This field is from variant [ProxyCheckResponseConfigCustom].
 	Username string `json:"username"`
 	JSON     struct {
 		Country     respjson.Field
@@ -1038,27 +1030,27 @@ type ProxyCheckResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyCheckResponseConfigUnion) AsProxyCheckResponseConfigDatacenterProxyConfig() (v ProxyCheckResponseConfigDatacenterProxyConfig) {
+func (u ProxyCheckResponseConfigUnion) AsDatacenter() (v ProxyCheckResponseConfigDatacenter) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyCheckResponseConfigUnion) AsProxyCheckResponseConfigIspProxyConfig() (v ProxyCheckResponseConfigIspProxyConfig) {
+func (u ProxyCheckResponseConfigUnion) AsIsp() (v ProxyCheckResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyCheckResponseConfigUnion) AsProxyCheckResponseConfigResidentialProxyConfig() (v ProxyCheckResponseConfigResidentialProxyConfig) {
+func (u ProxyCheckResponseConfigUnion) AsResidential() (v ProxyCheckResponseConfigResidential) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyCheckResponseConfigUnion) AsProxyCheckResponseConfigMobileProxyConfig() (v ProxyCheckResponseConfigMobileProxyConfig) {
+func (u ProxyCheckResponseConfigUnion) AsMobile() (v ProxyCheckResponseConfigMobile) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ProxyCheckResponseConfigUnion) AsProxyCheckResponseConfigCustomProxyConfig() (v ProxyCheckResponseConfigCustomProxyConfig) {
+func (u ProxyCheckResponseConfigUnion) AsCustom() (v ProxyCheckResponseConfigCustom) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -1071,7 +1063,7 @@ func (r *ProxyCheckResponseConfigUnion) UnmarshalJSON(data []byte) error {
 }
 
 // Configuration for a datacenter proxy.
-type ProxyCheckResponseConfigDatacenterProxyConfig struct {
+type ProxyCheckResponseConfigDatacenter struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1083,13 +1075,13 @@ type ProxyCheckResponseConfigDatacenterProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyCheckResponseConfigDatacenterProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyCheckResponseConfigDatacenterProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyCheckResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
+func (r *ProxyCheckResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for an ISP proxy.
-type ProxyCheckResponseConfigIspProxyConfig struct {
+type ProxyCheckResponseConfigIsp struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1101,13 +1093,13 @@ type ProxyCheckResponseConfigIspProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyCheckResponseConfigIspProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyCheckResponseConfigIspProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyCheckResponseConfigIsp) RawJSON() string { return r.JSON.raw }
+func (r *ProxyCheckResponseConfigIsp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for residential proxies.
-type ProxyCheckResponseConfigResidentialProxyConfig struct {
+type ProxyCheckResponseConfigResidential struct {
 	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
 	Asn string `json:"asn"`
 	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
@@ -1139,13 +1131,13 @@ type ProxyCheckResponseConfigResidentialProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyCheckResponseConfigResidentialProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyCheckResponseConfigResidentialProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyCheckResponseConfigResidential) RawJSON() string { return r.JSON.raw }
+func (r *ProxyCheckResponseConfigResidential) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for mobile proxies.
-type ProxyCheckResponseConfigMobileProxyConfig struct {
+type ProxyCheckResponseConfigMobile struct {
 	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City string `json:"city"`
 	// ISO 3166 country code
@@ -1163,13 +1155,13 @@ type ProxyCheckResponseConfigMobileProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyCheckResponseConfigMobileProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyCheckResponseConfigMobileProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyCheckResponseConfigMobile) RawJSON() string { return r.JSON.raw }
+func (r *ProxyCheckResponseConfigMobile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for a custom proxy (e.g., private proxy server).
-type ProxyCheckResponseConfigCustomProxyConfig struct {
+type ProxyCheckResponseConfigCustom struct {
 	// Proxy host address or IP.
 	Host string `json:"host" api:"required"`
 	// Proxy port.
@@ -1190,8 +1182,8 @@ type ProxyCheckResponseConfigCustomProxyConfig struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ProxyCheckResponseConfigCustomProxyConfig) RawJSON() string { return r.JSON.raw }
-func (r *ProxyCheckResponseConfigCustomProxyConfig) UnmarshalJSON(data []byte) error {
+func (r ProxyCheckResponseConfigCustom) RawJSON() string { return r.JSON.raw }
+func (r *ProxyCheckResponseConfigCustom) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1254,43 +1246,43 @@ const (
 //
 // Use [param.IsOmitted] to confirm if a field is set.
 type ProxyNewParamsConfigUnion struct {
-	OfProxyNewsConfigDatacenterProxyConfig   *ProxyNewParamsConfigDatacenterProxyConfig   `json:",omitzero,inline"`
-	OfProxyNewsConfigIspProxyConfig          *ProxyNewParamsConfigIspProxyConfig          `json:",omitzero,inline"`
-	OfProxyNewsConfigResidentialProxyConfig  *ProxyNewParamsConfigResidentialProxyConfig  `json:",omitzero,inline"`
-	OfProxyNewsConfigMobileProxyConfig       *ProxyNewParamsConfigMobileProxyConfig       `json:",omitzero,inline"`
-	OfProxyNewsConfigCreateCustomProxyConfig *ProxyNewParamsConfigCreateCustomProxyConfig `json:",omitzero,inline"`
+	OfDatacenter  *ProxyNewParamsConfigDatacenter  `json:",omitzero,inline"`
+	OfIsp         *ProxyNewParamsConfigIsp         `json:",omitzero,inline"`
+	OfResidential *ProxyNewParamsConfigResidential `json:",omitzero,inline"`
+	OfMobile      *ProxyNewParamsConfigMobile      `json:",omitzero,inline"`
+	OfCustom      *ProxyNewParamsConfigCustom      `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u ProxyNewParamsConfigUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfProxyNewsConfigDatacenterProxyConfig,
-		u.OfProxyNewsConfigIspProxyConfig,
-		u.OfProxyNewsConfigResidentialProxyConfig,
-		u.OfProxyNewsConfigMobileProxyConfig,
-		u.OfProxyNewsConfigCreateCustomProxyConfig)
+	return param.MarshalUnion(u, u.OfDatacenter,
+		u.OfIsp,
+		u.OfResidential,
+		u.OfMobile,
+		u.OfCustom)
 }
 func (u *ProxyNewParamsConfigUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 func (u *ProxyNewParamsConfigUnion) asAny() any {
-	if !param.IsOmitted(u.OfProxyNewsConfigDatacenterProxyConfig) {
-		return u.OfProxyNewsConfigDatacenterProxyConfig
-	} else if !param.IsOmitted(u.OfProxyNewsConfigIspProxyConfig) {
-		return u.OfProxyNewsConfigIspProxyConfig
-	} else if !param.IsOmitted(u.OfProxyNewsConfigResidentialProxyConfig) {
-		return u.OfProxyNewsConfigResidentialProxyConfig
-	} else if !param.IsOmitted(u.OfProxyNewsConfigMobileProxyConfig) {
-		return u.OfProxyNewsConfigMobileProxyConfig
-	} else if !param.IsOmitted(u.OfProxyNewsConfigCreateCustomProxyConfig) {
-		return u.OfProxyNewsConfigCreateCustomProxyConfig
+	if !param.IsOmitted(u.OfDatacenter) {
+		return u.OfDatacenter
+	} else if !param.IsOmitted(u.OfIsp) {
+		return u.OfIsp
+	} else if !param.IsOmitted(u.OfResidential) {
+		return u.OfResidential
+	} else if !param.IsOmitted(u.OfMobile) {
+		return u.OfMobile
+	} else if !param.IsOmitted(u.OfCustom) {
+		return u.OfCustom
 	}
 	return nil
 }
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetAsn() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Asn.Valid() {
+	if vt := u.OfResidential; vt != nil && vt.Asn.Valid() {
 		return &vt.Asn.Value
 	}
 	return nil
@@ -1298,7 +1290,7 @@ func (u ProxyNewParamsConfigUnion) GetAsn() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetOs() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil {
+	if vt := u.OfResidential; vt != nil {
 		return &vt.Os
 	}
 	return nil
@@ -1306,7 +1298,7 @@ func (u ProxyNewParamsConfigUnion) GetOs() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetZip() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Zip.Valid() {
+	if vt := u.OfResidential; vt != nil && vt.Zip.Valid() {
 		return &vt.Zip.Value
 	}
 	return nil
@@ -1314,7 +1306,7 @@ func (u ProxyNewParamsConfigUnion) GetZip() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetHost() *string {
-	if vt := u.OfProxyNewsConfigCreateCustomProxyConfig; vt != nil {
+	if vt := u.OfCustom; vt != nil {
 		return &vt.Host
 	}
 	return nil
@@ -1322,7 +1314,7 @@ func (u ProxyNewParamsConfigUnion) GetHost() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetPort() *int64 {
-	if vt := u.OfProxyNewsConfigCreateCustomProxyConfig; vt != nil {
+	if vt := u.OfCustom; vt != nil {
 		return &vt.Port
 	}
 	return nil
@@ -1330,7 +1322,7 @@ func (u ProxyNewParamsConfigUnion) GetPort() *int64 {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetPassword() *string {
-	if vt := u.OfProxyNewsConfigCreateCustomProxyConfig; vt != nil && vt.Password.Valid() {
+	if vt := u.OfCustom; vt != nil && vt.Password.Valid() {
 		return &vt.Password.Value
 	}
 	return nil
@@ -1338,7 +1330,7 @@ func (u ProxyNewParamsConfigUnion) GetPassword() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetUsername() *string {
-	if vt := u.OfProxyNewsConfigCreateCustomProxyConfig; vt != nil && vt.Username.Valid() {
+	if vt := u.OfCustom; vt != nil && vt.Username.Valid() {
 		return &vt.Username.Value
 	}
 	return nil
@@ -1346,13 +1338,13 @@ func (u ProxyNewParamsConfigUnion) GetUsername() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetCountry() *string {
-	if vt := u.OfProxyNewsConfigDatacenterProxyConfig; vt != nil && vt.Country.Valid() {
+	if vt := u.OfDatacenter; vt != nil && vt.Country.Valid() {
 		return &vt.Country.Value
-	} else if vt := u.OfProxyNewsConfigIspProxyConfig; vt != nil && vt.Country.Valid() {
+	} else if vt := u.OfIsp; vt != nil && vt.Country.Valid() {
 		return &vt.Country.Value
-	} else if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.Country.Valid() {
+	} else if vt := u.OfResidential; vt != nil && vt.Country.Valid() {
 		return &vt.Country.Value
-	} else if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil && vt.Country.Valid() {
+	} else if vt := u.OfMobile; vt != nil && vt.Country.Valid() {
 		return &vt.Country.Value
 	}
 	return nil
@@ -1360,9 +1352,9 @@ func (u ProxyNewParamsConfigUnion) GetCountry() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetCity() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.City.Valid() {
+	if vt := u.OfResidential; vt != nil && vt.City.Valid() {
 		return &vt.City.Value
-	} else if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil && vt.City.Valid() {
+	} else if vt := u.OfMobile; vt != nil && vt.City.Valid() {
 		return &vt.City.Value
 	}
 	return nil
@@ -1370,46 +1362,46 @@ func (u ProxyNewParamsConfigUnion) GetCity() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetState() *string {
-	if vt := u.OfProxyNewsConfigResidentialProxyConfig; vt != nil && vt.State.Valid() {
+	if vt := u.OfResidential; vt != nil && vt.State.Valid() {
 		return &vt.State.Value
-	} else if vt := u.OfProxyNewsConfigMobileProxyConfig; vt != nil && vt.State.Valid() {
+	} else if vt := u.OfMobile; vt != nil && vt.State.Valid() {
 		return &vt.State.Value
 	}
 	return nil
 }
 
 // Configuration for a datacenter proxy.
-type ProxyNewParamsConfigDatacenterProxyConfig struct {
+type ProxyNewParamsConfigDatacenter struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country param.Opt[string] `json:"country,omitzero"`
 	paramObj
 }
 
-func (r ProxyNewParamsConfigDatacenterProxyConfig) MarshalJSON() (data []byte, err error) {
-	type shadow ProxyNewParamsConfigDatacenterProxyConfig
+func (r ProxyNewParamsConfigDatacenter) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyNewParamsConfigDatacenter
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ProxyNewParamsConfigDatacenterProxyConfig) UnmarshalJSON(data []byte) error {
+func (r *ProxyNewParamsConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for an ISP proxy.
-type ProxyNewParamsConfigIspProxyConfig struct {
+type ProxyNewParamsConfigIsp struct {
 	// ISO 3166 country code. Defaults to US if not provided.
 	Country param.Opt[string] `json:"country,omitzero"`
 	paramObj
 }
 
-func (r ProxyNewParamsConfigIspProxyConfig) MarshalJSON() (data []byte, err error) {
-	type shadow ProxyNewParamsConfigIspProxyConfig
+func (r ProxyNewParamsConfigIsp) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyNewParamsConfigIsp
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ProxyNewParamsConfigIspProxyConfig) UnmarshalJSON(data []byte) error {
+func (r *ProxyNewParamsConfigIsp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for residential proxies.
-type ProxyNewParamsConfigResidentialProxyConfig struct {
+type ProxyNewParamsConfigResidential struct {
 	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
 	Asn param.Opt[string] `json:"asn,omitzero"`
 	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
@@ -1430,22 +1422,22 @@ type ProxyNewParamsConfigResidentialProxyConfig struct {
 	paramObj
 }
 
-func (r ProxyNewParamsConfigResidentialProxyConfig) MarshalJSON() (data []byte, err error) {
-	type shadow ProxyNewParamsConfigResidentialProxyConfig
+func (r ProxyNewParamsConfigResidential) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyNewParamsConfigResidential
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ProxyNewParamsConfigResidentialProxyConfig) UnmarshalJSON(data []byte) error {
+func (r *ProxyNewParamsConfigResidential) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 func init() {
-	apijson.RegisterFieldValidator[ProxyNewParamsConfigResidentialProxyConfig](
+	apijson.RegisterFieldValidator[ProxyNewParamsConfigResidential](
 		"os", "windows", "macos", "android",
 	)
 }
 
 // Configuration for mobile proxies.
-type ProxyNewParamsConfigMobileProxyConfig struct {
+type ProxyNewParamsConfigMobile struct {
 	// Provider city alias. Mobile carrier routing can make observed geo vary.
 	City param.Opt[string] `json:"city,omitzero"`
 	// ISO 3166 country code
@@ -1455,18 +1447,18 @@ type ProxyNewParamsConfigMobileProxyConfig struct {
 	paramObj
 }
 
-func (r ProxyNewParamsConfigMobileProxyConfig) MarshalJSON() (data []byte, err error) {
-	type shadow ProxyNewParamsConfigMobileProxyConfig
+func (r ProxyNewParamsConfigMobile) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyNewParamsConfigMobile
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ProxyNewParamsConfigMobileProxyConfig) UnmarshalJSON(data []byte) error {
+func (r *ProxyNewParamsConfigMobile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for a custom proxy (e.g., private proxy server).
 //
 // The properties Host, Port are required.
-type ProxyNewParamsConfigCreateCustomProxyConfig struct {
+type ProxyNewParamsConfigCustom struct {
 	// Proxy host address or IP.
 	Host string `json:"host" api:"required"`
 	// Proxy port.
@@ -1478,11 +1470,11 @@ type ProxyNewParamsConfigCreateCustomProxyConfig struct {
 	paramObj
 }
 
-func (r ProxyNewParamsConfigCreateCustomProxyConfig) MarshalJSON() (data []byte, err error) {
-	type shadow ProxyNewParamsConfigCreateCustomProxyConfig
+func (r ProxyNewParamsConfigCustom) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyNewParamsConfigCustom
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ProxyNewParamsConfigCreateCustomProxyConfig) UnmarshalJSON(data []byte) error {
+func (r *ProxyNewParamsConfigCustom) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
