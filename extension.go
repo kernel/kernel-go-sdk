@@ -19,6 +19,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
 	"github.com/kernel/kernel-go-sdk/packages/param"
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
@@ -45,11 +46,26 @@ func NewExtensionService(opts ...option.RequestOption) (r ExtensionService) {
 }
 
 // List extensions owned by the caller's organization.
-func (r *ExtensionService) List(ctx context.Context, opts ...option.RequestOption) (res *[]ExtensionListResponse, err error) {
+func (r *ExtensionService) List(ctx context.Context, query ExtensionListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[ExtensionListResponse], err error) {
+	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	path := "extensions"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return res, err
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// List extensions owned by the caller's organization.
+func (r *ExtensionService) ListAutoPaging(ctx context.Context, query ExtensionListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[ExtensionListResponse] {
+	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
 // Delete an extension by its ID or by its name.
@@ -157,6 +173,22 @@ type ExtensionUploadResponse struct {
 func (r ExtensionUploadResponse) RawJSON() string { return r.JSON.raw }
 func (r *ExtensionUploadResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type ExtensionListParams struct {
+	// Limit the number of extensions to return.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Offset the number of extensions to return.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [ExtensionListParams]'s query parameters as `url.Values`.
+func (r ExtensionListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type ExtensionDownloadFromChromeStoreParams struct {
