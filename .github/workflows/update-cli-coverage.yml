@@ -87,60 +87,66 @@ jobs:
         with:
           go-version: 'stable'
 
+      - name: Get SDK version info
+        id: sdk-version
+        run: |
+          set -euo pipefail
+
+          # Get the latest tag if available, otherwise use commit SHA
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            echo "version=$LATEST_TAG" >> "$GITHUB_OUTPUT"
+            echo "SDK version: $LATEST_TAG"
+          else
+            CURRENT_SHA="${{ steps.pr-info.outputs.merge_sha || github.sha }}"
+            echo "version=$CURRENT_SHA" >> "$GITHUB_OUTPUT"
+            echo "SDK version: $CURRENT_SHA (no tag)"
+          fi
+
+          VERSION="${LATEST_TAG:-${{ steps.pr-info.outputs.merge_sha || github.sha }}}"
+          BRANCH_SUFFIX=$(echo "$VERSION" | tr -c 'A-Za-z0-9._-' '-' | sed 's/^-*//;s/-*$//')
+          echo "branch=cli-coverage-$BRANCH_SUFFIX" >> "$GITHUB_OUTPUT"
+          
+          # Get the module path from go.mod
+          MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
+          echo "module=$MODULE_PATH" >> "$GITHUB_OUTPUT"
+          echo "SDK module: $MODULE_PATH"
+          
+          # Determine the commit author (from PR info for manual dispatch, or from push event)
+          if [ -n "${{ steps.pr-info.outputs.pr_author }}" ]; then
+            echo "author=${{ steps.pr-info.outputs.pr_author }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Clone API repo
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
+          set -euo pipefail
           gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
 
       - name: Clone CLI repo
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          UPDATE_BRANCH: ${{ steps.sdk-version.outputs.branch }}
         run: |
-          gh repo clone kernel/cli /tmp/kernel-cli
-          cd /tmp/kernel-cli
-          
-          if git fetch origin cli-coverage-update 2>/dev/null; then
-            echo "Branch cli-coverage-update exists, checking it out..."
-            git checkout cli-coverage-update
-            git merge origin/main -m "Merge main into cli-coverage-update" --no-edit || true
-          else
-            echo "Branch cli-coverage-update does not exist, will create from main"
-          fi
+          set -euo pipefail
 
-      - name: Get SDK version info
-        id: sdk-version
-        run: |
-          # Get the latest tag if available, otherwise use commit SHA
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$LATEST_TAG" ]; then
-            echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
-            echo "SDK version: $LATEST_TAG"
-          else
-            CURRENT_SHA="${{ steps.pr-info.outputs.merge_sha || github.sha }}"
-            echo "version=$CURRENT_SHA" >> $GITHUB_OUTPUT
-            echo "SDK version: $CURRENT_SHA (no tag)"
-          fi
-          
-          # Get the module path from go.mod
-          MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
-          echo "module=$MODULE_PATH" >> $GITHUB_OUTPUT
-          echo "SDK module: $MODULE_PATH"
-          
-          # Determine the commit author (from PR info for manual dispatch, or from push event)
-          if [ -n "${{ steps.pr-info.outputs.pr_author }}" ]; then
-            echo "author=${{ steps.pr-info.outputs.pr_author }}" >> $GITHUB_OUTPUT
-          else
-            echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
-          fi
+          gh repo clone kernel/cli /tmp/kernel-cli -- --depth=1
+          cd /tmp/kernel-cli
+          git switch -c "$UPDATE_BRANCH"
+          echo "Created $UPDATE_BRANCH from kernel/cli main"
 
       - name: Compute SDK diff since CLI's current version
         id: sdk-diff
         run: |
+          set -euo pipefail
+
           # Extract the SDK version currently used by the CLI
-          OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | awk '{print $2}')
+          OLD_SDK_VERSION=$(cd /tmp/kernel-cli && go list -m -f '{{.Version}}' github.com/kernel/kernel-go-sdk)
           echo "CLI currently uses SDK version: $OLD_SDK_VERSION"
-          echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
+          echo "old_version=$OLD_SDK_VERSION" >> "$GITHUB_OUTPUT"
 
           NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
           echo "New SDK version: $NEW_SDK_VERSION"
@@ -163,7 +169,7 @@ jobs:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
-          BRANCH_PREFIX: cli-coverage-update
+          UPDATE_BRANCH: ${{ steps.sdk-version.outputs.branch }}
         run: |
           cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
 
@@ -178,7 +184,7 @@ jobs:
           - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
           - API Repo Location: /tmp/kernel-api
           - CLI Repo Location: /tmp/kernel-cli
-          - Update Branch Prefix: cli-coverage-update
+          - Update Branch: ${{ steps.sdk-version.outputs.branch }}
 
           # Background
           The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
@@ -285,12 +291,11 @@ jobs:
           7d. If you added no new commands or flags (SDK version bump only), skip this step.
 
           ## Step 8: Commit and Push
-          - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
-          - If you're on main, create/switch to the cli-coverage-update branch
+          - You should already be on the update branch: ${{ steps.sdk-version.outputs.branch }}
+          - The branch was freshly created from kernel/cli main for this SDK version. Do not reuse or merge the old cli-coverage-update branch.
           - Commit with message describing SDK version bump and any new commands/flags
           - Include test results in the commit message (e.g., 'Tested: browsers create --gpu, browsers computer get-mouse-position')
-          - IMPORTANT: Do NOT force push! Use regular \`git push origin cli-coverage-update\` to preserve existing work on the branch
-          - If push fails due to divergence, pull and rebase first: \`git pull --rebase origin cli-coverage-update\`
+          - Push with \`git push --force-with-lease origin HEAD:${{ steps.sdk-version.outputs.branch }}\`. This branch is automation-owned for this SDK version.
           - Create or update the PR in kernel/cli
 
           # SDK Method -> CLI Command Mapping Guide
@@ -362,10 +367,10 @@ jobs:
           implementations of this pattern.
 
           # Output Format
-          After pushing changes, create or update an evergreen PR using gh:
+          After pushing changes, create or update a PR for this SDK version using gh:
 
-          1. Check if an open PR already exists for the cli-coverage-update branch:
-             gh pr list --repo kernel/cli --head cli-coverage-update --state open --json number
+          1. Check if an open PR already exists for the update branch:
+             gh pr list --repo kernel/cli --head ${{ steps.sdk-version.outputs.branch }} --state open --json number
 
           2. If an open PR exists, update it. If not, create a new one.
 
