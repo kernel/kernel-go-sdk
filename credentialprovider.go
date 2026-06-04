@@ -7,13 +7,16 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 	"time"
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
 	"github.com/kernel/kernel-go-sdk/packages/param"
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
@@ -73,11 +76,26 @@ func (r *CredentialProviderService) Update(ctx context.Context, id string, body 
 }
 
 // List external credential providers configured for the organization.
-func (r *CredentialProviderService) List(ctx context.Context, opts ...option.RequestOption) (res *[]CredentialProvider, err error) {
+func (r *CredentialProviderService) List(ctx context.Context, query CredentialProviderListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[CredentialProvider], err error) {
+	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	path := "org/credential_providers"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return res, err
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// List external credential providers configured for the organization.
+func (r *CredentialProviderService) ListAutoPaging(ctx context.Context, query CredentialProviderListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[CredentialProvider] {
+	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
 // Delete a credential provider by its ID.
@@ -336,4 +354,21 @@ func (r CredentialProviderUpdateParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *CredentialProviderUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type CredentialProviderListParams struct {
+	// Limit the number of credential providers to return.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Offset the number of credential providers to return.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [CredentialProviderListParams]'s query parameters as
+// `url.Values`.
+func (r CredentialProviderListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
