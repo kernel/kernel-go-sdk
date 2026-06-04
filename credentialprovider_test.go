@@ -101,7 +101,7 @@ func TestCredentialProviderUpdateWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestCredentialProviderList(t *testing.T) {
+func TestCredentialProviderListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -114,7 +114,10 @@ func TestCredentialProviderList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.CredentialProviders.List(context.TODO())
+	_, err := client.CredentialProviders.List(context.TODO(), kernel.CredentialProviderListParams{
+		Limit:  kernel.Int(1),
+		Offset: kernel.Int(0),
+	})
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
