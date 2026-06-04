@@ -41,6 +41,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		Headless:     kernel.Bool(false),
 		InvocationID: kernel.String("rr33xuugxj9h0bkf1rdt2bet"),
 		KioskMode:    kernel.Bool(true),
+		Name:         kernel.String("amazon-scrape-1"),
 		Profile: shared.BrowserProfileParam{
 			ID:          kernel.String("id"),
 			Name:        kernel.String("name"),

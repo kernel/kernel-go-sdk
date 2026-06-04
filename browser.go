@@ -265,6 +265,8 @@ type BrowserNewResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -309,6 +311,7 @@ type BrowserNewResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Name               respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -358,6 +361,8 @@ type BrowserGetResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -402,6 +407,7 @@ type BrowserGetResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Name               respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -451,6 +457,8 @@ type BrowserUpdateResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -495,6 +503,7 @@ type BrowserUpdateResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Name               respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -544,6 +553,8 @@ type BrowserListResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -588,6 +599,7 @@ type BrowserListResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Name               respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProxyID            respjson.Field
@@ -645,6 +657,10 @@ type BrowserNewParams struct {
 	// If true, launches the browser in kiosk mode to hide address bar and tabs in live
 	// view.
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
+	// Optional human-readable name for the browser session, used to find it later in
+	// the dashboard. Must be unique among active sessions within the project. Set at
+	// creation time only.
+	Name param.Opt[string] `json:"name,omitzero"`
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
@@ -823,7 +839,7 @@ type BrowserListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
-	// Search browsers by session ID, profile ID, proxy ID, or pool name.
+	// Search browsers by name, session ID, profile ID, proxy ID, or pool name.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter sessions by status. "active" returns only active sessions (default),
 	// "deleted" returns only soft-deleted sessions, "all" returns both.
