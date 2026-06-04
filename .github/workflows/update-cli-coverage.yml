@@ -136,6 +136,7 @@ jobs:
           gh repo clone kernel/cli /tmp/kernel-cli -- --depth=1
           cd /tmp/kernel-cli
           git switch -c "$UPDATE_BRANCH"
+          git fetch origin "refs/heads/${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}" || true
           echo "Created $UPDATE_BRANCH from kernel/cli main"
 
       - name: Compute SDK diff since CLI's current version
@@ -295,7 +296,14 @@ jobs:
           - The branch was freshly created from kernel/cli main for this SDK version. Do not reuse or merge the old cli-coverage-update branch.
           - Commit with message describing SDK version bump and any new commands/flags
           - Include test results in the commit message (e.g., 'Tested: browsers create --gpu, browsers computer get-mouse-position')
-          - Push with \`git push --force-with-lease origin HEAD:${{ steps.sdk-version.outputs.branch }}\`. This branch is automation-owned for this SDK version.
+          - Push the automation-owned branch for this SDK version. If the remote branch exists, use an explicit lease; otherwise create it:
+            \`\`\`bash
+            if git show-ref --verify --quiet refs/remotes/origin/${{ steps.sdk-version.outputs.branch }}; then
+              git push --force-with-lease=refs/heads/${{ steps.sdk-version.outputs.branch }}:refs/remotes/origin/${{ steps.sdk-version.outputs.branch }} origin HEAD:${{ steps.sdk-version.outputs.branch }}
+            else
+              git push origin HEAD:${{ steps.sdk-version.outputs.branch }}
+            fi
+            \`\`\`
           - Create or update the PR in kernel/cli
 
           # SDK Method -> CLI Command Mapping Guide
