@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.62.0 (2026-06-04)
+
+Full Changelog: [v0.61.0...v0.62.0](https://github.com/kernel/kernel-go-sdk/compare/v0.61.0...v0.62.0)
+
+### Features
+
+* api: paginate GET /browser_pools ([ed9dc35](https://github.com/kernel/kernel-go-sdk/commit/ed9dc35f3071d978df1e53e77f333f4582f5752a))
+* api: paginate GET /extensions ([f48c9cb](https://github.com/kernel/kernel-go-sdk/commit/f48c9cb83ffd3479eb17c32cef049d703106763c))
+* api: paginate GET /org/credential_providers ([d72262b](https://github.com/kernel/kernel-go-sdk/commit/d72262bc8ef36d40e4a4f524a0276b5aad167160))
+* api: paginate GET /proxies ([cd37790](https://github.com/kernel/kernel-go-sdk/commit/cd37790a3ed1cb029adeed2493b1a0a22ca65944))
+
 ## 0.61.0 (2026-06-03)
 
 Full Changelog: [v0.60.0...v0.61.0](https://github.com/kernel/kernel-go-sdk/compare/v0.60.0...v0.61.0)
