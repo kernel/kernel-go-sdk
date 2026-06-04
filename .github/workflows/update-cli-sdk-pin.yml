@@ -1,0 +1,140 @@
+name: Update CLI SDK Pin
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Go SDK tag to pin in kernel/cli, for example v0.60.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update-cli-sdk-pin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve SDK version
+        id: sdk-version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          version="${RELEASE_TAG:-$INPUT_VERSION}"
+          if [ -z "$version" ]; then
+            echo "SDK version is required" >&2
+            exit 1
+          fi
+          if [[ "$version" != v* ]]; then
+            echo "SDK version must be a tag like v0.60.0, got: $version" >&2
+            exit 1
+          fi
+
+          branch="go-sdk-${version#v}"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "branch=$branch" >> "$GITHUB_OUTPUT"
+
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ADMIN_APP_ID }}
+          private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
+          owner: kernel
+
+      - name: Checkout CLI repo
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          gh repo clone kernel/cli kernel-cli -- --depth=1
+
+      - name: Configure git identity
+        run: |
+          set -euo pipefail
+          git config --global user.name "kernel-internal[bot]"
+          git config --global user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: kernel-cli/go.mod
+          cache-dependency-path: kernel-cli/go.sum
+
+      - name: Update CLI SDK dependency
+        id: update
+        working-directory: kernel-cli
+        env:
+          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
+          BRANCH: ${{ steps.sdk-version.outputs.branch }}
+        run: |
+          set -euo pipefail
+
+          git switch -c "$BRANCH"
+          go get "github.com/kernel/kernel-go-sdk@$SDK_VERSION"
+          go mod tidy
+
+          if git diff --quiet -- go.mod go.sum; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "kernel/cli already pins github.com/kernel/kernel-go-sdk@$SDK_VERSION"
+            exit 0
+          fi
+
+          make test
+
+          git add go.mod go.sum
+          git commit -m "Update Go SDK to $SDK_VERSION"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Push CLI branch
+        if: steps.update.outputs.changed == 'true'
+        working-directory: kernel-cli
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BRANCH: ${{ steps.sdk-version.outputs.branch }}
+        run: |
+          set -euo pipefail
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/kernel/cli.git"
+          git fetch origin "$BRANCH" || true
+          git push --force-with-lease origin "HEAD:$BRANCH"
+
+      - name: Create or update CLI PR
+        if: steps.update.outputs.changed == 'true'
+        working-directory: kernel-cli
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
+          BRANCH: ${{ steps.sdk-version.outputs.branch }}
+        run: |
+          set -euo pipefail
+
+          title="Update Go SDK to $SDK_VERSION"
+          body="$(cat <<EOF
+          Updates \`github.com/kernel/kernel-go-sdk\` to \`$SDK_VERSION\`.
+
+          This keeps the CLI pinned to the latest released Go SDK instead of lagging behind generated SDK releases.
+
+          Verified with:
+          - \`make test\`
+
+          Triggered by: kernel/kernel-go-sdk@$SDK_VERSION
+          EOF
+          )"
+
+          pr_number="$(gh pr list --repo kernel/cli --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [ -n "$pr_number" ]; then
+            gh pr edit "$pr_number" --repo kernel/cli --title "$title" --body "$body"
+            exit 0
+          fi
+
+          gh pr create \
+            --repo kernel/cli \
+            --head "$BRANCH" \
+            --base main \
+            --title "$title" \
+            --body "$body"
