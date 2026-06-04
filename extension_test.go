@@ -17,7 +17,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-func TestExtensionList(t *testing.T) {
+func TestExtensionListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -30,7 +30,10 @@ func TestExtensionList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Extensions.List(context.TODO())
+	_, err := client.Extensions.List(context.TODO(), kernel.ExtensionListParams{
+		Limit:  kernel.Int(1),
+		Offset: kernel.Int(0),
+	})
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
