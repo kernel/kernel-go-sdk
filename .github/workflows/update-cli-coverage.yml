@@ -136,7 +136,15 @@ jobs:
           gh repo clone kernel/cli /tmp/kernel-cli -- --depth=1
           cd /tmp/kernel-cli
           git switch -c "$UPDATE_BRANCH"
-          git fetch origin "refs/heads/${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}" || true
+          if git ls-remote --exit-code --heads origin "$UPDATE_BRANCH" >/dev/null; then
+            git fetch origin "refs/heads/${UPDATE_BRANCH}:refs/remotes/origin/${UPDATE_BRANCH}"
+          else
+            status=$?
+            if [ "$status" -ne 2 ]; then
+              exit "$status"
+            fi
+            echo "No existing $UPDATE_BRANCH branch found on origin"
+          fi
           echo "Created $UPDATE_BRANCH from kernel/cli main"
 
       - name: Compute SDK diff since CLI's current version
