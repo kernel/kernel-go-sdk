@@ -411,4 +411,4 @@ jobs:
           - Streaming methods may have different CLI implementations (e.g., follow flags)
           - Even if no coverage gaps are found, still create a PR for the SDK version bump
           - Ensure code compiles before pushing
-          " --model ${{ secrets.CURSOR_PREFERRED_MODEL }} --force --output-format=text
+          " --model ${{ vars.CURSOR_PREFERRED_MODEL }} --force --output-format=text
