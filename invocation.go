@@ -582,6 +582,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	// timeout) are silently dropped. Captures what was requested, not what the browser
 	// actually loaded.
 	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
 	// Active telemetry configuration for the session, if any.
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
@@ -619,6 +622,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
