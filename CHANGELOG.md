@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.63.0 (2026-06-05)
+
+Full Changelog: [v0.62.0...v0.63.0](https://github.com/kernel/kernel-go-sdk/compare/v0.62.0...v0.63.0)
+
+### Features
+
+* api: label proxy config oneOf options by type ([abbee19](https://github.com/kernel/kernel-go-sdk/commit/abbee1950d51eda4edfed2c0a13162d55881dcf6))
+* **api:** allow setting a custom name on a browser session at create time ([22794dc](https://github.com/kernel/kernel-go-sdk/commit/22794dc349e48a6e9552ad80489b268b9e8aeb02))
+* **api:** allow setting key-value tags on a browser session at create time ([12d335f](https://github.com/kernel/kernel-go-sdk/commit/12d335fb3e7079f614e7b8e9c174cf20f4579820))
+
+
+### Documentation
+
+* **api:** use neutral example for browser session name field ([2319e34](https://github.com/kernel/kernel-go-sdk/commit/2319e34f9b63ba11104b3ee7a4add0db9f7494ae))
+
 ## 0.62.0 (2026-06-04)
 
 Full Changelog: [v0.61.0...v0.62.0](https://github.com/kernel/kernel-go-sdk/compare/v0.61.0...v0.62.0)
