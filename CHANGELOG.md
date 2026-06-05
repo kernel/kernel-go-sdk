@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.64.0 (2026-06-05)
+
+Full Changelog: [v0.63.0...v0.64.0](https://github.com/kernel/kernel-go-sdk/compare/v0.63.0...v0.64.0)
+
+### Features
+
+* Telemetry: expose opt-in categories + full event taxonomy (public API) ([c965b72](https://github.com/kernel/kernel-go-sdk/commit/c965b72cfe8a381469c43ad1b3089442bbfbc8a3))
+
 ## 0.63.0 (2026-06-05)
 
 Full Changelog: [v0.62.0...v0.63.0](https://github.com/kernel/kernel-go-sdk/compare/v0.62.0...v0.63.0)
