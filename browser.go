@@ -745,14 +745,15 @@ func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
 // category settings, or all four categories are explicitly disabled, capture is
 // not started.
 type BrowserNewParamsTelemetry struct {
-	// Request shortcut for browser telemetry capture. True enables capture using VM
-	// defaults unless browser category settings are provided. False stops capture on
-	// update and starts no capture on create. enabled=false cannot be combined with
-	// browser category settings.
+	// Request shortcut for browser telemetry capture. True enables capture using the
+	// default category set unless browser category settings are provided. False stops
+	// capture on update and starts no capture on create. enabled=false cannot be
+	// combined with browser category settings.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
-	// Per-category enable/disable flags. If enabled is true and browser is omitted or
-	// empty, the VM default category set is used. Explicitly disabling all four
-	// categories stops capture on update and starts no capture on create.
+	// Per-category capture flags. Selection is opt-in: only the categories set to
+	// enabled=true are captured; anything omitted is off. If enabled is true and
+	// browser is omitted or empty, the default category set is used. A browser config
+	// that enables nothing stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
 	paramObj
 }
@@ -814,14 +815,15 @@ func (r *BrowserUpdateParams) UnmarshalJSON(data []byte) error {
 // category settings for per-category updates. Explicitly disabling all four
 // categories also stops capture.
 type BrowserUpdateParamsTelemetry struct {
-	// Request shortcut for browser telemetry capture. True enables capture using VM
-	// defaults unless browser category settings are provided. False stops capture on
-	// update and starts no capture on create. enabled=false cannot be combined with
-	// browser category settings.
+	// Request shortcut for browser telemetry capture. True enables capture using the
+	// default category set unless browser category settings are provided. False stops
+	// capture on update and starts no capture on create. enabled=false cannot be
+	// combined with browser category settings.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
-	// Per-category enable/disable flags. If enabled is true and browser is omitted or
-	// empty, the VM default category set is used. Explicitly disabling all four
-	// categories stops capture on update and starts no capture on create.
+	// Per-category capture flags. Selection is opt-in: only the categories set to
+	// enabled=true are captured; anything omitted is off. If enabled is true and
+	// browser is omitted or empty, the default category set is used. A browser config
+	// that enables nothing stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
 	paramObj
 }
