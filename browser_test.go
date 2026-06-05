@@ -50,6 +50,10 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		ProxyID:  kernel.String("proxy_id"),
 		StartURL: kernel.String("https://example.com"),
 		Stealth:  kernel.Bool(true),
+		Tags: kernel.Tags{
+			"team": "backend",
+			"env":  "staging",
+		},
 		Telemetry: kernel.BrowserNewParamsTelemetry{
 			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 				Console: kernel.BrowserTelemetryCategoryConfigParam{
@@ -191,6 +195,9 @@ func TestBrowserListWithOptionalParams(t *testing.T) {
 		Offset:         kernel.Int(0),
 		Query:          kernel.String("query"),
 		Status:         kernel.BrowserListParamsStatusActive,
+		Tags: map[string]string{
+			"foo": "string",
+		},
 	})
 	if err != nil {
 		var apierr *kernel.Error

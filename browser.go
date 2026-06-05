@@ -234,6 +234,8 @@ func (r *Profile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type Tags map[string]string
+
 type BrowserNewResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -279,6 +281,9 @@ type BrowserNewResponse struct {
 	// timeout) are silently dropped. Captures what was requested, not what the browser
 	// actually loaded.
 	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
 	// Active telemetry configuration for the session, if any.
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
@@ -316,6 +321,7 @@ type BrowserNewResponse struct {
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
@@ -375,6 +381,9 @@ type BrowserGetResponse struct {
 	// timeout) are silently dropped. Captures what was requested, not what the browser
 	// actually loaded.
 	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
 	// Active telemetry configuration for the session, if any.
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
@@ -412,6 +421,7 @@ type BrowserGetResponse struct {
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
@@ -471,6 +481,9 @@ type BrowserUpdateResponse struct {
 	// timeout) are silently dropped. Captures what was requested, not what the browser
 	// actually loaded.
 	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
 	// Active telemetry configuration for the session, if any.
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
@@ -508,6 +521,7 @@ type BrowserUpdateResponse struct {
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
@@ -567,6 +581,9 @@ type BrowserListResponse struct {
 	// timeout) are silently dropped. Captures what was requested, not what the browser
 	// actually loaded.
 	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
 	// Active telemetry configuration for the session, if any.
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
@@ -604,6 +621,7 @@ type BrowserListResponse struct {
 		Profile            respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
+		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
 		Viewport           respjson.Field
@@ -694,6 +712,9 @@ type BrowserNewParams struct {
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// Optional user-defined key-value tags for the browser session, used to find and
+	// group sessions later. Set at creation time only. Up to 50 pairs.
+	Tags Tags `json:"tags,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -846,6 +867,10 @@ type BrowserListParams struct {
 	//
 	// Any of "active", "deleted", "all".
 	Status BrowserListParamsStatus `query:"status,omitzero" json:"-"`
+	// Filter sessions by tag key-value pairs using deepObject style, e.g.
+	// ?tags[team]=backend&tags[env]=staging. Multiple pairs are ANDed: a session must
+	// match every supplied pair exactly.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }
 
