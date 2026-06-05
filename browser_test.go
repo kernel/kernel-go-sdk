@@ -56,7 +56,16 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		},
 		Telemetry: kernel.BrowserNewParamsTelemetry{
 			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+				Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Connection: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
 				Console: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Control: kernel.BrowserTelemetryCategoryConfigParam{
 					Enabled: kernel.Bool(true),
 				},
 				Interaction: kernel.BrowserTelemetryCategoryConfigParam{
@@ -66,6 +75,12 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 					Enabled: kernel.Bool(true),
 				},
 				Page: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				System: kernel.BrowserTelemetryCategoryConfigParam{
 					Enabled: kernel.Bool(true),
 				},
 			},
@@ -142,7 +157,16 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 			ProxyID: kernel.String("proxy_id"),
 			Telemetry: kernel.BrowserUpdateParamsTelemetry{
 				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Connection: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
 					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Control: kernel.BrowserTelemetryCategoryConfigParam{
 						Enabled: kernel.Bool(true),
 					},
 					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
@@ -152,6 +176,12 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 						Enabled: kernel.Bool(true),
 					},
 					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					System: kernel.BrowserTelemetryCategoryConfigParam{
 						Enabled: kernel.Bool(true),
 					},
 				},
