@@ -67,6 +67,62 @@ func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string
 	return ssestream.NewStream[BrowserTelemetryStreamResponse](ssestream.NewDecoder(raw), err)
 }
 
+// An agent-driven HTTP call handled by the in-VM API server.
+type BrowserAPICallEvent struct {
+	Category constant.Control `json:"category" default:"control"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                   `json:"ts" api:"required"`
+	Type constant.APICall        `json:"type" default:"api_call"`
+	Data BrowserAPICallEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserAPICallEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserAPICallEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserAPICallEventData struct {
+	// Wall-clock duration of the handler in milliseconds.
+	DurationMs float64 `json:"duration_ms" api:"required"`
+	// OpenAPI operationId of the matched route (e.g. processExec, takeScreenshot).
+	OperationID string `json:"operation_id" api:"required"`
+	// Per-request identifier from the in-VM API request middleware.
+	RequestID string `json:"request_id" api:"required"`
+	// HTTP response status code.
+	Status int64 `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DurationMs  respjson.Field
+		OperationID respjson.Field
+		RequestID   respjson.Field
+		Status      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserAPICallEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserAPICallEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // CDP Runtime.StackTrace representing the JavaScript call stack at the time of an
 // event. Fields use CDP naming conventions rather than snake_case to match the
 // Chrome DevTools Protocol wire format.
@@ -119,6 +175,171 @@ type BrowserCallStackCallFrame struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserCallStackCallFrame) RawJSON() string { return r.JSON.raw }
 func (r *BrowserCallStackCallFrame) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A captcha solve attempt reached a terminal outcome.
+type BrowserCaptchaSolveResultEvent struct {
+	Category constant.Captcha `json:"category" default:"captcha"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                              `json:"ts" api:"required"`
+	Type constant.CaptchaSolveResult        `json:"type" default:"captcha_solve_result"`
+	Data BrowserCaptchaSolveResultEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaSolveResultEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaSolveResultEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserCaptchaSolveResultEventData struct {
+	// Captcha vendor family. Provider-specific task names are normalized into this
+	// set; anything not covered is reported as other.
+	//
+	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
+	// "other".
+	CaptchaType string `json:"captcha_type" api:"required"`
+	// Wall-clock duration from solve start to terminal outcome.
+	DurationMs float64 `json:"duration_ms" api:"required"`
+	// Terminal outcome. success: solver returned a usable solution. failure: solver
+	// returned an error (see error_code). timeout: solver did not return within the
+	// caller's wait budget. abandoned: caller cancelled or the page navigated away
+	// mid-solve.
+	//
+	// Any of "success", "failure", "timeout", "abandoned".
+	Status string `json:"status" api:"required"`
+	// Solver-specific error code on failure (e.g. ERROR_CAPTCHA_UNSOLVABLE). Absent on
+	// success.
+	ErrorCode string `json:"error_code"`
+	// Solver-assigned identifier. Opaque, useful for support cross-references.
+	TaskID string `json:"task_id"`
+	// Host of the page where the captcha was solved.
+	WebsiteHost string `json:"website_host"`
+	// Path of the page where the captcha was solved. Query string excluded.
+	WebsitePath string `json:"website_path"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CaptchaType respjson.Field
+		DurationMs  respjson.Field
+		Status      respjson.Field
+		ErrorCode   respjson.Field
+		TaskID      respjson.Field
+		WebsiteHost respjson.Field
+		WebsitePath respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaSolveResultEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaSolveResultEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// An external client (e.g. customer SDK, Playwright, Puppeteer) connected to the
+// CDP WebSocket proxy on this VM.
+type BrowserCdpConnectEvent struct {
+	Category constant.Connection `json:"category" default:"connection"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64               `json:"ts" api:"required"`
+	Type constant.CdpConnect `json:"type" default:"cdp_connect"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCdpConnectEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCdpConnectEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// An external client disconnected from the CDP WebSocket proxy on this VM. Pair
+// with the immediately preceding cdp_connect on the same stream.
+type BrowserCdpDisconnectEvent struct {
+	Category constant.Connection `json:"category" default:"connection"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                         `json:"ts" api:"required"`
+	Type constant.CdpDisconnect        `json:"type" default:"cdp_disconnect"`
+	Data BrowserCdpDisconnectEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCdpDisconnectEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCdpDisconnectEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserCdpDisconnectEventData struct {
+	// Wall-clock duration of the connection in milliseconds.
+	DurationMs float64 `json:"duration_ms" api:"required"`
+	// Number of CDP messages relayed across the connection in either direction.
+	MessageCount int64 `json:"message_count" api:"required"`
+	// Why the connection ended. client_close: the client initiated the close.
+	// upstream_changed: Chromium restarted mid-session and the proxy tore down so the
+	// client could reconnect against the new upstream. upstream_error: upstream dial
+	// or message pump errored. context_cancelled: the request context was cancelled
+	// (typically server shutdown).
+	//
+	// Any of "client_close", "upstream_changed", "upstream_error",
+	// "context_cancelled".
+	Reason string `json:"reason" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DurationMs   respjson.Field
+		MessageCount respjson.Field
+		Reason       respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCdpDisconnectEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCdpDisconnectEventData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -561,11 +782,111 @@ func (r *BrowserInteractionScrollSettledEventData) UnmarshalJSON(data []byte) er
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A live view client connected to the headful browser's WebRTC server. Headful
+// only; not emitted for headless images.
+type BrowserLiveViewConnectEvent struct {
+	Category constant.Connection `json:"category" default:"connection"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                           `json:"ts" api:"required"`
+	Type constant.LiveViewConnect        `json:"type" default:"live_view_connect"`
+	Data BrowserLiveViewConnectEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserLiveViewConnectEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserLiveViewConnectEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserLiveViewConnectEventData struct {
+	// Live view session identifier. Stable across reconnects, so a transient network
+	// blip can emit two events with the same session_id.
+	SessionID string `json:"session_id" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		SessionID   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserLiveViewConnectEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserLiveViewConnectEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A live view client disconnected from the headful browser's WebRTC server. Pair
+// with live_view_connect by session_id.
+type BrowserLiveViewDisconnectEvent struct {
+	Category constant.Connection `json:"category" default:"connection"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                              `json:"ts" api:"required"`
+	Type constant.LiveViewDisconnect        `json:"type" default:"live_view_disconnect"`
+	Data BrowserLiveViewDisconnectEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserLiveViewDisconnectEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserLiveViewDisconnectEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserLiveViewDisconnectEventData struct {
+	// Wall-clock duration of the connection in milliseconds.
+	DurationMs float64 `json:"duration_ms" api:"required"`
+	// Live view session identifier; matches the corresponding live_view_connect event.
+	SessionID string `json:"session_id" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DurationMs  respjson.Field
+		SessionID   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserLiveViewDisconnectEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserLiveViewDisconnectEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // The CDP connection to Chrome was lost. Telemetry events may be dropped until
 // monitor_reconnected arrives. Treat any in-progress computed state (network_idle,
 // page_layout_settled) as unreliable until then.
 type BrowserMonitorDisconnectedEvent struct {
-	Category constant.System `json:"category" default:"system"`
+	Category constant.Monitor `json:"category" default:"monitor"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -614,7 +935,7 @@ func (r *BrowserMonitorDisconnectedEventData) UnmarshalJSON(data []byte) error {
 
 // The CDP session could not be initialized.
 type BrowserMonitorInitFailedEvent struct {
-	Category constant.System `json:"category" default:"system"`
+	Category constant.Monitor `json:"category" default:"monitor"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -662,7 +983,7 @@ func (r *BrowserMonitorInitFailedEventData) UnmarshalJSON(data []byte) error {
 // The CDP connection to Chrome could not be re-established after exhausting all
 // reconnection attempts. No further telemetry events will arrive on this session.
 type BrowserMonitorReconnectFailedEvent struct {
-	Category constant.System `json:"category" default:"system"`
+	Category constant.Monitor `json:"category" default:"monitor"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -714,7 +1035,7 @@ func (r *BrowserMonitorReconnectFailedEventData) UnmarshalJSON(data []byte) erro
 // disconnection. Events emitted during the gap are lost. Computed state is reset,
 // so navigation and network tracking restart fresh from this point.
 type BrowserMonitorReconnectedEvent struct {
-	Category constant.System `json:"category" default:"system"`
+	Category constant.Monitor `json:"category" default:"monitor"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -761,7 +1082,7 @@ func (r *BrowserMonitorReconnectedEventData) UnmarshalJSON(data []byte) error {
 
 // A periodic screenshot of the browser viewport.
 type BrowserMonitorScreenshotEvent struct {
-	Category constant.System `json:"category" default:"system"`
+	Category constant.Screenshot `json:"category" default:"screenshot"`
 	// Provenance metadata identifying which producer emitted the event.
 	Source BrowserEventSource `json:"source" api:"required"`
 	// Event timestamp in Unix microseconds.
@@ -1563,26 +1884,220 @@ func (r *BrowserPageTabOpenedEventData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Per-category telemetry capture settings.
+// A managed service exited unexpectedly. Intentional stops do not produce this
+// event; only unexpected exits and terminal restart-give-up transitions do.
+type BrowserServiceCrashedEvent struct {
+	Category constant.System `json:"category" default:"system"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                          `json:"ts" api:"required"`
+	Type constant.ServiceCrashed        `json:"type" default:"service_crashed"`
+	Data BrowserServiceCrashedEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserServiceCrashedEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserServiceCrashedEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserServiceCrashedEventData struct {
+	// Lifecycle phase the crash occurred in. startup: the process died before reaching
+	// a healthy running state. running: a previously healthy process died
+	// unexpectedly. gave_up: the process manager exhausted its restart attempts and
+	// stopped trying.
+	//
+	// Any of "startup", "running", "gave_up".
+	Phase string `json:"phase" api:"required"`
+	// Program name of the crashed service (e.g. chromium, mutter, kernel-images-api).
+	ServiceName string `json:"service_name" api:"required"`
+	// PID of the crashed process. Absent when the process manager gave up after
+	// exhausting restart attempts.
+	Pid int64 `json:"pid"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Phase       respjson.Field
+		ServiceName respjson.Field
+		Pid         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserServiceCrashedEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserServiceCrashedEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The Linux kernel OOM-killer terminated a process inside the VM. Fires for any
+// process killed by the kernel due to memory exhaustion, including Chrome renderer
+// subprocesses that are not supervised.
+type BrowserSystemOomKillEvent struct {
+	Category constant.System `json:"category" default:"system"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                         `json:"ts" api:"required"`
+	Type constant.SystemOomKill        `json:"type" default:"system_oom_kill"`
+	Data BrowserSystemOomKillEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserSystemOomKillEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserSystemOomKillEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserSystemOomKillEventData struct {
+	// PID of the killed process.
+	Pid int64 `json:"pid" api:"required"`
+	// Comm of the killed process as reported by the kernel (max 15 chars, truncated by
+	// the kernel).
+	ProcessName string `json:"process_name" api:"required"`
+	// Resident set size of the killed process in KiB (sum of anon-rss, file-rss, and
+	// shmem-rss).
+	RssKB int64 `json:"rss_kb" api:"required"`
+	// Why the kernel decided to OOM-kill. none means global memory exhaustion; memcg
+	// means a cgroup memory limit was hit; cpuset / memory_policy are
+	// NUMA/policy-driven kills. Absent on kernels older than 5.0.
+	//
+	// Any of "none", "memcg", "cpuset", "memory_policy".
+	Constraint string `json:"constraint"`
+	// Free system memory in KiB at the time of the kill. Assumes a 4 KiB page size.
+	// Does not include reclaimable caches. Absent if the kernel did not emit a
+	// parseable Mem-Info section.
+	MemFreeKB int64 `json:"mem_free_kb"`
+	// Total system memory in KiB at the time of the kill. Assumes a 4 KiB page size.
+	// Absent if the kernel did not emit a parseable Mem-Info section.
+	MemTotalKB int64 `json:"mem_total_kb"`
+	// Top processes by resident-set-size at the moment of the kill, sorted descending.
+	// Empty if the kernel did not emit the Tasks state table. Capped at 5 entries.
+	TopTasks []BrowserSystemOomKillEventDataTopTask `json:"top_tasks"`
+	// PID of the triggering process. Absent if the kernel did not emit the standard
+	// header line.
+	TriggerPid int64 `json:"trigger_pid"`
+	// Comm of the process whose allocation request caused the kernel to invoke the
+	// OOM-killer. Often the same as process_name but can differ. Max 15 chars.
+	TriggerProcessName string `json:"trigger_process_name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Pid                respjson.Field
+		ProcessName        respjson.Field
+		RssKB              respjson.Field
+		Constraint         respjson.Field
+		MemFreeKB          respjson.Field
+		MemTotalKB         respjson.Field
+		TopTasks           respjson.Field
+		TriggerPid         respjson.Field
+		TriggerProcessName respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserSystemOomKillEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserSystemOomKillEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserSystemOomKillEventDataTopTask struct {
+	// Comm of the process (max 15 chars, truncated by the kernel).
+	Name string `json:"name" api:"required"`
+	// PID of the process.
+	Pid int64 `json:"pid" api:"required"`
+	// Resident set size in KiB at the moment of the kill.
+	RssKB int64 `json:"rss_kb" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Name        respjson.Field
+		Pid         respjson.Field
+		RssKB       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserSystemOomKillEventDataTopTask) RawJSON() string { return r.JSON.raw }
+func (r *BrowserSystemOomKillEventDataTopTask) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Per-category telemetry capture settings. Selection is opt-in: set a category to
+// enabled=true to capture it; anything omitted is off. The default set (used by
+// enabled=true with no per-category settings) is the lightweight operational
+// signals: control, connection, system, captcha. The CDP categories (console,
+// network, page, interaction) and screenshot are off by default and must be opted
+// into.
 type BrowserTelemetryCategoriesConfig struct {
-	// Console output (log, warn, error) and uncaught exceptions.
+	// Captcha solve attempt outcomes. On by default.
+	Captcha BrowserTelemetryCategoryConfig `json:"captcha"`
+	// Client attach/detach lifecycle for the CDP proxy and live view. On by default.
+	Connection BrowserTelemetryCategoryConfig `json:"connection"`
+	// Console output (log, warn, error) and uncaught exceptions. CDP category; off by
+	// default.
 	Console BrowserTelemetryCategoryConfig `json:"console"`
+	// Agent-driven actions against the browser, such as inbound calls to the in-VM
+	// API. On by default.
+	Control BrowserTelemetryCategoryConfig `json:"control"`
 	// User interaction events including clicks, keydowns, and scroll-settled events.
+	// CDP category; off by default.
 	Interaction BrowserTelemetryCategoryConfig `json:"interaction"`
 	// HTTP request and response metadata including URL, method, status code, and
 	// timing. Request post data is forwarded as-is from CDP. Text response bodies are
 	// truncated at 8 KB for structured types (JSON, XML, form data) and 4 KB for other
-	// text types. Binary responses (images, fonts, media) are excluded.
+	// text types. Binary responses (images, fonts, media) are excluded. CDP category;
+	// off by default.
 	Network BrowserTelemetryCategoryConfig `json:"network"`
 	// Page lifecycle events including navigation, DOMContentLoaded, load, layout
-	// shifts, and LCP.
+	// shifts, and LCP. CDP category; off by default.
 	Page BrowserTelemetryCategoryConfig `json:"page"`
+	// Periodic base64-encoded viewport screenshots. High volume; off by default and
+	// must be opted into.
+	Screenshot BrowserTelemetryCategoryConfig `json:"screenshot"`
+	// Browser VM health, such as out-of-memory kills and managed-service crashes. On
+	// by default.
+	System BrowserTelemetryCategoryConfig `json:"system"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Captcha     respjson.Field
+		Connection  respjson.Field
 		Console     respjson.Field
+		Control     respjson.Field
 		Interaction respjson.Field
 		Network     respjson.Field
 		Page        respjson.Field
+		Screenshot  respjson.Field
+		System      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1604,20 +2119,41 @@ func (r BrowserTelemetryCategoriesConfig) ToParam() BrowserTelemetryCategoriesCo
 	return param.Override[BrowserTelemetryCategoriesConfigParam](json.RawMessage(r.RawJSON()))
 }
 
-// Per-category telemetry capture settings.
+// Per-category telemetry capture settings. Selection is opt-in: set a category to
+// enabled=true to capture it; anything omitted is off. The default set (used by
+// enabled=true with no per-category settings) is the lightweight operational
+// signals: control, connection, system, captcha. The CDP categories (console,
+// network, page, interaction) and screenshot are off by default and must be opted
+// into.
 type BrowserTelemetryCategoriesConfigParam struct {
-	// Console output (log, warn, error) and uncaught exceptions.
+	// Captcha solve attempt outcomes. On by default.
+	Captcha BrowserTelemetryCategoryConfigParam `json:"captcha,omitzero"`
+	// Client attach/detach lifecycle for the CDP proxy and live view. On by default.
+	Connection BrowserTelemetryCategoryConfigParam `json:"connection,omitzero"`
+	// Console output (log, warn, error) and uncaught exceptions. CDP category; off by
+	// default.
 	Console BrowserTelemetryCategoryConfigParam `json:"console,omitzero"`
+	// Agent-driven actions against the browser, such as inbound calls to the in-VM
+	// API. On by default.
+	Control BrowserTelemetryCategoryConfigParam `json:"control,omitzero"`
 	// User interaction events including clicks, keydowns, and scroll-settled events.
+	// CDP category; off by default.
 	Interaction BrowserTelemetryCategoryConfigParam `json:"interaction,omitzero"`
 	// HTTP request and response metadata including URL, method, status code, and
 	// timing. Request post data is forwarded as-is from CDP. Text response bodies are
 	// truncated at 8 KB for structured types (JSON, XML, form data) and 4 KB for other
-	// text types. Binary responses (images, fonts, media) are excluded.
+	// text types. Binary responses (images, fonts, media) are excluded. CDP category;
+	// off by default.
 	Network BrowserTelemetryCategoryConfigParam `json:"network,omitzero"`
 	// Page lifecycle events including navigation, DOMContentLoaded, load, layout
-	// shifts, and LCP.
+	// shifts, and LCP. CDP category; off by default.
 	Page BrowserTelemetryCategoryConfigParam `json:"page,omitzero"`
+	// Periodic base64-encoded viewport screenshots. High volume; off by default and
+	// must be opted into.
+	Screenshot BrowserTelemetryCategoryConfigParam `json:"screenshot,omitzero"`
+	// Browser VM health, such as out-of-memory kills and managed-service crashes. On
+	// by default.
+	System BrowserTelemetryCategoryConfigParam `json:"system,omitzero"`
 	paramObj
 }
 
@@ -1631,7 +2167,8 @@ func (r *BrowserTelemetryCategoriesConfigParam) UnmarshalJSON(data []byte) error
 
 // Per-category telemetry configuration.
 type BrowserTelemetryCategoryConfig struct {
-	// Whether this category is captured. Defaults to true if omitted.
+	// Whether this category is captured. Selection is opt-in, so an omitted category
+	// is not captured.
 	Enabled bool `json:"enabled"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1659,7 +2196,8 @@ func (r BrowserTelemetryCategoryConfig) ToParam() BrowserTelemetryCategoryConfig
 
 // Per-category telemetry configuration.
 type BrowserTelemetryCategoryConfigParam struct {
-	// Whether this category is captured. Defaults to true if omitted.
+	// Whether this category is captured. Selection is opt-in, so an omitted category
+	// is not captured.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
@@ -1701,7 +2239,11 @@ func (r *BrowserTelemetryConfig) UnmarshalJSON(data []byte) error {
 // [BrowserInteractionClickEvent], [BrowserInteractionKeyEvent],
 // [BrowserInteractionScrollSettledEvent], [BrowserMonitorScreenshotEvent],
 // [BrowserMonitorDisconnectedEvent], [BrowserMonitorReconnectedEvent],
-// [BrowserMonitorReconnectFailedEvent], [BrowserMonitorInitFailedEvent].
+// [BrowserMonitorReconnectFailedEvent], [BrowserMonitorInitFailedEvent],
+// [BrowserAPICallEvent], [BrowserCdpConnectEvent], [BrowserCdpDisconnectEvent],
+// [BrowserLiveViewConnectEvent], [BrowserLiveViewDisconnectEvent],
+// [BrowserCaptchaSolveResultEvent], [BrowserSystemOomKillEvent],
+// [BrowserServiceCrashedEvent].
 //
 // Use the [BrowserTelemetryEventUnion.AsAny] method to switch on the variant.
 //
@@ -1717,7 +2259,9 @@ type BrowserTelemetryEventUnion struct {
 	// "page_lcp", "page_layout_settled", "page_navigation_settled",
 	// "interaction_click", "interaction_key", "interaction_scroll_settled",
 	// "monitor_screenshot", "monitor_disconnected", "monitor_reconnected",
-	// "monitor_reconnect_failed", "monitor_init_failed".
+	// "monitor_reconnect_failed", "monitor_init_failed", "api_call", "cdp_connect",
+	// "cdp_disconnect", "live_view_connect", "live_view_disconnect",
+	// "captcha_solve_result", "system_oom_kill", "service_crashed".
 	Type string `json:"type"`
 	// This field is a union of [BrowserConsoleLogEventData],
 	// [BrowserConsoleErrorEventData], [BrowserNetworkRequestEventData],
@@ -1729,7 +2273,10 @@ type BrowserTelemetryEventUnion struct {
 	// [BrowserInteractionKeyEventData], [BrowserInteractionScrollSettledEventData],
 	// [BrowserMonitorScreenshotEventData], [BrowserMonitorDisconnectedEventData],
 	// [BrowserMonitorReconnectedEventData], [BrowserMonitorReconnectFailedEventData],
-	// [BrowserMonitorInitFailedEventData]
+	// [BrowserMonitorInitFailedEventData], [BrowserAPICallEventData],
+	// [BrowserCdpDisconnectEventData], [BrowserLiveViewConnectEventData],
+	// [BrowserLiveViewDisconnectEventData], [BrowserCaptchaSolveResultEventData],
+	// [BrowserSystemOomKillEventData], [BrowserServiceCrashedEventData]
 	Data      BrowserTelemetryEventUnionData `json:"data"`
 	Truncated bool                           `json:"truncated"`
 	JSON      struct {
@@ -1772,6 +2319,14 @@ func (BrowserMonitorDisconnectedEvent) implBrowserTelemetryEventUnion()      {}
 func (BrowserMonitorReconnectedEvent) implBrowserTelemetryEventUnion()       {}
 func (BrowserMonitorReconnectFailedEvent) implBrowserTelemetryEventUnion()   {}
 func (BrowserMonitorInitFailedEvent) implBrowserTelemetryEventUnion()        {}
+func (BrowserAPICallEvent) implBrowserTelemetryEventUnion()                  {}
+func (BrowserCdpConnectEvent) implBrowserTelemetryEventUnion()               {}
+func (BrowserCdpDisconnectEvent) implBrowserTelemetryEventUnion()            {}
+func (BrowserLiveViewConnectEvent) implBrowserTelemetryEventUnion()          {}
+func (BrowserLiveViewDisconnectEvent) implBrowserTelemetryEventUnion()       {}
+func (BrowserCaptchaSolveResultEvent) implBrowserTelemetryEventUnion()       {}
+func (BrowserSystemOomKillEvent) implBrowserTelemetryEventUnion()            {}
+func (BrowserServiceCrashedEvent) implBrowserTelemetryEventUnion()           {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -1798,6 +2353,14 @@ func (BrowserMonitorInitFailedEvent) implBrowserTelemetryEventUnion()        {}
 //	case kernel.BrowserMonitorReconnectedEvent:
 //	case kernel.BrowserMonitorReconnectFailedEvent:
 //	case kernel.BrowserMonitorInitFailedEvent:
+//	case kernel.BrowserAPICallEvent:
+//	case kernel.BrowserCdpConnectEvent:
+//	case kernel.BrowserCdpDisconnectEvent:
+//	case kernel.BrowserLiveViewConnectEvent:
+//	case kernel.BrowserLiveViewDisconnectEvent:
+//	case kernel.BrowserCaptchaSolveResultEvent:
+//	case kernel.BrowserSystemOomKillEvent:
+//	case kernel.BrowserServiceCrashedEvent:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -1847,6 +2410,22 @@ func (u BrowserTelemetryEventUnion) AsAny() anyBrowserTelemetryEvent {
 		return u.AsMonitorReconnectFailed()
 	case "monitor_init_failed":
 		return u.AsMonitorInitFailed()
+	case "api_call":
+		return u.AsAPICall()
+	case "cdp_connect":
+		return u.AsCdpConnect()
+	case "cdp_disconnect":
+		return u.AsCdpDisconnect()
+	case "live_view_connect":
+		return u.AsLiveViewConnect()
+	case "live_view_disconnect":
+		return u.AsLiveViewDisconnect()
+	case "captcha_solve_result":
+		return u.AsCaptchaSolveResult()
+	case "system_oom_kill":
+		return u.AsSystemOomKill()
+	case "service_crashed":
+		return u.AsServiceCrashed()
 	}
 	return nil
 }
@@ -1961,6 +2540,46 @@ func (u BrowserTelemetryEventUnion) AsMonitorInitFailed() (v BrowserMonitorInitF
 	return
 }
 
+func (u BrowserTelemetryEventUnion) AsAPICall() (v BrowserAPICallEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsCdpConnect() (v BrowserCdpConnectEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsCdpDisconnect() (v BrowserCdpDisconnectEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsLiveViewConnect() (v BrowserLiveViewConnectEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsLiveViewDisconnect() (v BrowserLiveViewDisconnectEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsCaptchaSolveResult() (v BrowserCaptchaSolveResultEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsSystemOomKill() (v BrowserSystemOomKillEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsServiceCrashed() (v BrowserServiceCrashedEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u BrowserTelemetryEventUnion) RawJSON() string { return u.JSON.raw }
 
@@ -2019,8 +2638,8 @@ type BrowserTelemetryEventUnionData struct {
 	Body string `json:"body"`
 	// This field is from variant [BrowserNetworkResponseEventData].
 	MimeType string `json:"mime_type"`
-	// This field is from variant [BrowserNetworkResponseEventData].
-	Status int64 `json:"status"`
+	// This field is a union of [int64], [int64], [string]
+	Status BrowserTelemetryEventUnionDataStatus `json:"status"`
 	// This field is from variant [BrowserNetworkResponseEventData].
 	StatusText string `json:"status_text"`
 	// This field is from variant [BrowserNetworkLoadingFailedEventData].
@@ -2066,8 +2685,44 @@ type BrowserTelemetryEventUnionData struct {
 	// This field is from variant [BrowserMonitorReconnectedEventData].
 	ReconnectDurationMs int64 `json:"reconnect_duration_ms"`
 	// This field is from variant [BrowserMonitorInitFailedEventData].
-	Step string `json:"step"`
-	JSON struct {
+	Step       string  `json:"step"`
+	DurationMs float64 `json:"duration_ms"`
+	// This field is from variant [BrowserAPICallEventData].
+	OperationID string `json:"operation_id"`
+	// This field is from variant [BrowserCdpDisconnectEventData].
+	MessageCount int64 `json:"message_count"`
+	// This field is from variant [BrowserCaptchaSolveResultEventData].
+	CaptchaType string `json:"captcha_type"`
+	// This field is from variant [BrowserCaptchaSolveResultEventData].
+	ErrorCode string `json:"error_code"`
+	// This field is from variant [BrowserCaptchaSolveResultEventData].
+	TaskID string `json:"task_id"`
+	// This field is from variant [BrowserCaptchaSolveResultEventData].
+	WebsiteHost string `json:"website_host"`
+	// This field is from variant [BrowserCaptchaSolveResultEventData].
+	WebsitePath string `json:"website_path"`
+	Pid         int64  `json:"pid"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	ProcessName string `json:"process_name"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	RssKB int64 `json:"rss_kb"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	Constraint string `json:"constraint"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	MemFreeKB int64 `json:"mem_free_kb"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	MemTotalKB int64 `json:"mem_total_kb"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	TopTasks []BrowserSystemOomKillEventDataTopTask `json:"top_tasks"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	TriggerPid int64 `json:"trigger_pid"`
+	// This field is from variant [BrowserSystemOomKillEventData].
+	TriggerProcessName string `json:"trigger_process_name"`
+	// This field is from variant [BrowserServiceCrashedEventData].
+	Phase string `json:"phase"`
+	// This field is from variant [BrowserServiceCrashedEventData].
+	ServiceName string `json:"service_name"`
+	JSON        struct {
 		FrameID             respjson.Field
 		LoaderID            respjson.Field
 		NavSeq              respjson.Field
@@ -2120,6 +2775,25 @@ type BrowserTelemetryEventUnionData struct {
 		Reason              respjson.Field
 		ReconnectDurationMs respjson.Field
 		Step                respjson.Field
+		DurationMs          respjson.Field
+		OperationID         respjson.Field
+		MessageCount        respjson.Field
+		CaptchaType         respjson.Field
+		ErrorCode           respjson.Field
+		TaskID              respjson.Field
+		WebsiteHost         respjson.Field
+		WebsitePath         respjson.Field
+		Pid                 respjson.Field
+		ProcessName         respjson.Field
+		RssKB               respjson.Field
+		Constraint          respjson.Field
+		MemFreeKB           respjson.Field
+		MemTotalKB          respjson.Field
+		TopTasks            respjson.Field
+		TriggerPid          respjson.Field
+		TriggerProcessName  respjson.Field
+		Phase               respjson.Field
+		ServiceName         respjson.Field
 		raw                 string
 	} `json:"-"`
 }
@@ -2128,15 +2802,43 @@ func (r *BrowserTelemetryEventUnionData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// BrowserTelemetryEventUnionDataStatus is an implicit subunion of
+// [BrowserTelemetryEventUnion]. BrowserTelemetryEventUnionDataStatus provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [BrowserTelemetryEventUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfInt OfBrowserCaptchaSolveResultEventDataStatus]
+type BrowserTelemetryEventUnionDataStatus struct {
+	// This field will be present if the value is a [int64] instead of an object.
+	OfInt int64 `json:",inline"`
+	// This field will be present if the value is a [string] instead of an object.
+	OfBrowserCaptchaSolveResultEventDataStatus string `json:",inline"`
+	JSON                                       struct {
+		OfInt                                      respjson.Field
+		OfBrowserCaptchaSolveResultEventDataStatus respjson.Field
+		raw                                        string
+	} `json:"-"`
+}
+
+func (r *BrowserTelemetryEventUnionDataStatus) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Envelope wrapping a browser telemetry event with its monotonic sequence number.
 // Each SSE data: frame carries one envelope as JSON. The seq value is also emitted
 // as the SSE id: field so clients can pass it as Last-Event-ID on reconnect.
 type BrowserTelemetryStreamResponse struct {
 	// Union type representing any browser telemetry event. Discriminated on `type`.
-	// Events with a `monitor_` prefix (monitor_screenshot, monitor_disconnected,
-	// monitor_reconnected, monitor_reconnect_failed, monitor_init_failed) are always
-	// emitted regardless of the category configuration in BrowserTelemetryConfig. All
-	// other event types are controlled by the per-category enable/disable flags.
+	// Each event's `category` determines when it is captured. The CDP collector-health
+	// events (monitor_disconnected, monitor_reconnected, monitor_reconnect_failed,
+	// monitor_init_failed) use the `monitor` category, which is not user-configurable:
+	// it flows automatically whenever any CDP category (console, network, page,
+	// interaction) is captured, and is silent otherwise. monitor_screenshot uses the
+	// opt-in `screenshot` category. All other event types are controlled by their
+	// per-category enable/disable flags.
 	Event BrowserTelemetryEventUnion `json:"event" api:"required"`
 	// Process-monotonic sequence number assigned by the browser VM. Pass as
 	// Last-Event-ID on reconnect to resume without gaps. Gaps in received seq values
