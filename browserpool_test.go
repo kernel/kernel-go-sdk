@@ -215,6 +215,11 @@ func TestBrowserPoolAcquireWithOptionalParams(t *testing.T) {
 		"id_or_name",
 		kernel.BrowserPoolAcquireParams{
 			AcquireTimeoutSeconds: kernel.Int(0),
+			Name:                  kernel.String("checkout-flow-1"),
+			Tags: kernel.Tags{
+				"team": "backend",
+				"env":  "staging",
+			},
 		},
 	)
 	if err != nil {
