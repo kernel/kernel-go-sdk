@@ -76,25 +76,25 @@ func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ..
 }
 
 // Get information about a browser session.
-func (r *BrowserService) Get(ctx context.Context, id string, query BrowserGetParams, opts ...option.RequestOption) (res *BrowserGetResponse, err error) {
+func (r *BrowserService) Get(ctx context.Context, idOrName string, query BrowserGetParams, opts ...option.RequestOption) (res *BrowserGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s", id)
+	path := fmt.Sprintf("browsers/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
 // Update a browser session.
-func (r *BrowserService) Update(ctx context.Context, id string, body BrowserUpdateParams, opts ...option.RequestOption) (res *BrowserUpdateResponse, err error) {
+func (r *BrowserService) Update(ctx context.Context, idOrName string, body BrowserUpdateParams, opts ...option.RequestOption) (res *BrowserUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s", id)
+	path := fmt.Sprintf("browsers/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
@@ -138,15 +138,15 @@ func (r *BrowserService) Curl(ctx context.Context, id string, body BrowserCurlPa
 	return res, err
 }
 
-// Delete a browser session by ID
-func (r *BrowserService) DeleteByID(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+// Delete a browser session by ID or name
+func (r *BrowserService) DeleteByID(ctx context.Context, idOrName string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s", id)
+	path := fmt.Sprintf("browsers/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
 }
