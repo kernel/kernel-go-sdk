@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.65.0 (2026-06-08)
+
+Full Changelog: [v0.64.0...v0.65.0](https://github.com/kernel/kernel-go-sdk/compare/v0.64.0...v0.65.0)
+
+### Features
+
+* **api:** allow setting a name and tags on a pool-acquired browser session ([ef64773](https://github.com/kernel/kernel-go-sdk/commit/ef647732782e8bc382a06d02377f46edd8ebc2b2))
+* **api:** support id-or-name lookup on browser session get/patch/delete ([193727b](https://github.com/kernel/kernel-go-sdk/commit/193727b6134db7c2f97d5170ef06c2b0692b45c8))
+
 ## 0.64.0 (2026-06-05)
 
 Full Changelog: [v0.63.0...v0.64.0](https://github.com/kernel/kernel-go-sdk/compare/v0.63.0...v0.64.0)
