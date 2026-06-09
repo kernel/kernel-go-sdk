@@ -400,6 +400,23 @@ Methods:
 - <code title="get /org/projects/{id}/limits">client.Projects.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="patch /org/projects/{id}/limits">client.Projects.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimitUpdateParams">ProjectLimitUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProjectLimits">ProjectLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# Organization
+
+## Limits
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#UpdateOrgLimitsRequestParam">UpdateOrgLimitsRequestParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgLimits">OrgLimits</a>
+
+Methods:
+
+- <code title="get /org/limits">client.Organization.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationLimitService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgLimits">OrgLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /org/limits">client.Organization.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationLimitService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationLimitUpdateParams">OrganizationLimitUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgLimits">OrgLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # APIKeys
 
 Response Types:
