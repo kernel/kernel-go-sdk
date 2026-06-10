@@ -676,8 +676,8 @@ type BrowserNewParams struct {
 	// view.
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
 	// Optional human-readable name for the browser session, used to find it later in
-	// the dashboard. Must be unique among active sessions within the project. Set at
-	// creation time only.
+	// the dashboard. Must be unique among active sessions within the project. Can be
+	// changed later via PATCH /browsers/{id_or_name}.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Optional proxy to associate to the browser session. Must reference a proxy
 	// belonging to the caller's org.
@@ -713,7 +713,8 @@ type BrowserNewParams struct {
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Optional user-defined key-value tags for the browser session, used to find and
-	// group sessions later. Set at creation time only. Up to 50 pairs.
+	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
+	// to 50 pairs.
 	Tags Tags `json:"tags,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -781,6 +782,10 @@ func (r BrowserGetParams) URLQuery() (v url.Values, err error) {
 }
 
 type BrowserUpdateParams struct {
+	// Human-readable name for the browser session. Omit to leave unchanged, set to an
+	// empty string to clear the name. When set, must be unique among active sessions
+	// within the project.
+	Name param.Opt[string] `json:"name,omitzero"`
 	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
 	// proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
@@ -796,6 +801,10 @@ type BrowserUpdateParams struct {
 	// Profile to load into the browser session. Only allowed if the session does not
 	// already have a profile loaded.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// User-defined key-value tags for the browser session. Omit to leave unchanged.
+	// Provide a map to replace the entire tag set (full replace, not a merge). Set to
+	// an empty object ({}) to clear all tags. Up to 50 pairs.
+	Tags Tags `json:"tags,omitzero"`
 	// Viewport configuration to apply to the browser session.
 	Viewport BrowserUpdateParamsViewport `json:"viewport,omitzero"`
 	paramObj
