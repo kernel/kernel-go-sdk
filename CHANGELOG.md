@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.66.0 (2026-06-10)
+
+Full Changelog: [v0.65.0...v0.66.0](https://github.com/kernel/kernel-go-sdk/compare/v0.65.0...v0.66.0)
+
+### Features
+
+* Add org-level default per-project concurrency cap ([da8ea41](https://github.com/kernel/kernel-go-sdk/commit/da8ea416e8e2d00f38c7a811cbdd515053b37f89))
+* Support updating browser session name and tags via PATCH ([f530bfb](https://github.com/kernel/kernel-go-sdk/commit/f530bfb8b6822f3774eee1fb7bbe81fc4ce9fa41))
+
 ## 0.65.0 (2026-06-08)
 
 Full Changelog: [v0.64.0...v0.65.0](https://github.com/kernel/kernel-go-sdk/compare/v0.64.0...v0.65.0)
