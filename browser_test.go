@@ -149,12 +149,17 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserUpdateParams{
 			DisableDefaultProxy: kernel.Bool(true),
+			Name:                kernel.String("checkout-flow-1"),
 			Profile: shared.BrowserProfileParam{
 				ID:          kernel.String("id"),
 				Name:        kernel.String("name"),
 				SaveChanges: kernel.Bool(true),
 			},
 			ProxyID: kernel.String("proxy_id"),
+			Tags: kernel.Tags{
+				"team": "backend",
+				"env":  "staging",
+			},
 			Telemetry: kernel.BrowserUpdateParamsTelemetry{
 				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
