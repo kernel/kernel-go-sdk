@@ -679,8 +679,8 @@ type BrowserNewParams struct {
 	// the dashboard. Must be unique among active sessions within the project. Can be
 	// changed later via PATCH /browsers/{id_or_name}.
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Optional proxy to associate to the browser session. Must reference a proxy
-	// belonging to the caller's org.
+	// Optional proxy to associate to the browser session. Must reference a proxy in
+	// the same project as the browser session.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// Optional URL to open when the browser session is created. Navigation is
 	// best-effort, so navigation failures do not prevent the session from being
