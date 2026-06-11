@@ -280,3 +280,11 @@ func WithAPIKey(value string) RequestOption {
 		return r.Apply(WithHeader("authorization", fmt.Sprintf("Bearer %s", r.APIKey)))
 	})
 }
+
+// WithProjectID returns a RequestOption that sets the client setting "project_id".
+func WithProjectID(value string) RequestOption {
+	return requestconfig.RequestOptionFunc(func(r *requestconfig.RequestConfig) error {
+		r.ProjectID = value
+		return r.Apply(WithHeader("X-Kernel-Project-Id", value))
+	})
+}
