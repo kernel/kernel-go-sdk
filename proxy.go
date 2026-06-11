@@ -42,7 +42,7 @@ func NewProxyService(opts ...option.RequestOption) (r ProxyService) {
 	return
 }
 
-// Create a new proxy configuration for the caller's organization.
+// Create a new proxy configuration in the resolved project.
 func (r *ProxyService) New(ctx context.Context, body ProxyNewParams, opts ...option.RequestOption) (res *ProxyNewResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "proxies"
@@ -50,7 +50,7 @@ func (r *ProxyService) New(ctx context.Context, body ProxyNewParams, opts ...opt
 	return res, err
 }
 
-// Retrieve a proxy belonging to the caller's organization by ID.
+// Retrieve a proxy in the resolved project by ID.
 func (r *ProxyService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ProxyGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -62,7 +62,7 @@ func (r *ProxyService) Get(ctx context.Context, id string, opts ...option.Reques
 	return res, err
 }
 
-// List proxies owned by the caller's organization.
+// List proxies in the resolved project.
 func (r *ProxyService) List(ctx context.Context, query ProxyListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[ProxyListResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -80,7 +80,7 @@ func (r *ProxyService) List(ctx context.Context, query ProxyListParams, opts ...
 	return res, nil
 }
 
-// List proxies owned by the caller's organization.
+// List proxies in the resolved project.
 func (r *ProxyService) ListAutoPaging(ctx context.Context, query ProxyListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[ProxyListResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }

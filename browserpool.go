@@ -74,7 +74,7 @@ func (r *BrowserPoolService) Update(ctx context.Context, idOrName string, body B
 	return res, err
 }
 
-// List browser pools owned by the caller's organization.
+// List browser pools in the resolved project.
 func (r *BrowserPoolService) List(ctx context.Context, query BrowserPoolListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserPool], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -92,7 +92,7 @@ func (r *BrowserPoolService) List(ctx context.Context, query BrowserPoolListPara
 	return res, nil
 }
 
-// List browser pools owned by the caller's organization.
+// List browser pools in the resolved project.
 func (r *BrowserPoolService) ListAutoPaging(ctx context.Context, query BrowserPoolListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserPool] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
@@ -211,8 +211,8 @@ type BrowserPoolBrowserPoolConfig struct {
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfile `json:"profile"`
-	// Optional proxy to associate to the browser session. Must reference a proxy
-	// belonging to the caller's org.
+	// Optional proxy to associate to the browser session. Must reference a proxy in
+	// the same project as the browser session.
 	ProxyID string `json:"proxy_id"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
@@ -379,8 +379,8 @@ type BrowserPoolNewParams struct {
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Optional proxy to associate to the browser session. Must reference a proxy
-	// belonging to the caller's org.
+	// Optional proxy to associate to the browser session. Must reference a proxy in
+	// the same project as the browser session.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
@@ -442,8 +442,8 @@ type BrowserPoolUpdateParams struct {
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Optional proxy to associate to the browser session. Must reference a proxy
-	// belonging to the caller's org.
+	// Optional proxy to associate to the browser session. Must reference a proxy in
+	// the same project as the browser session.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// Number of browsers to maintain in the pool. The maximum size is determined by
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
