@@ -51,14 +51,14 @@ func (r *APIKeyService) New(ctx context.Context, body APIKeyNewParams, opts ...o
 
 // Retrieve an API key by ID for the authenticated organization. API keys are
 // masked.
-func (r *APIKeyService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *APIKey, err error) {
+func (r *APIKeyService) Get(ctx context.Context, id string, query APIKeyGetParams, opts ...option.RequestOption) (res *APIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
 	path := fmt.Sprintf("org/api_keys/%s", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
@@ -116,6 +116,9 @@ type APIKey struct {
 	// When the API key was created
 	CreatedAt time.Time       `json:"created_at" api:"required" format:"date-time"`
 	CreatedBy APIKeyCreatedBy `json:"created_by" api:"required"`
+	// When the API key was deleted (soft-deleted). Null for keys that have not been
+	// deleted.
+	DeletedAt time.Time `json:"deleted_at" api:"required" format:"date-time"`
 	// When the API key expires
 	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
 	// Masked version of the API key
@@ -127,16 +130,24 @@ type APIKey struct {
 	// Project name for project-scoped API keys. Null means the key is org-wide or the
 	// project name is unavailable.
 	ProjectName string `json:"project_name" api:"required"`
+	// Derived lifecycle status of the API key. `active` means usable. `expired` means
+	// past its expires_at. `deleted` means it was deleted (soft-deleted) and can no
+	// longer authenticate. Deleted takes precedence over expired.
+	//
+	// Any of "active", "expired", "deleted".
+	Status APIKeyStatus `json:"status" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		CreatedBy   respjson.Field
+		DeletedAt   respjson.Field
 		ExpiresAt   respjson.Field
 		MaskedKey   respjson.Field
 		Name        respjson.Field
 		ProjectID   respjson.Field
 		ProjectName respjson.Field
+		Status      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -170,6 +181,17 @@ func (r APIKeyCreatedBy) RawJSON() string { return r.JSON.raw }
 func (r *APIKeyCreatedBy) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Derived lifecycle status of the API key. `active` means usable. `expired` means
+// past its expires_at. `deleted` means it was deleted (soft-deleted) and can no
+// longer authenticate. Deleted takes precedence over expired.
+type APIKeyStatus string
+
+const (
+	APIKeyStatusActive  APIKeyStatus = "active"
+	APIKeyStatusExpired APIKeyStatus = "expired"
+	APIKeyStatusDeleted APIKeyStatus = "deleted"
+)
 
 // API key returned immediately after creation. Includes the plaintext key once.
 type CreatedAPIKey struct {
@@ -208,6 +230,21 @@ func (r *APIKeyNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type APIKeyGetParams struct {
+	// When true, return the API key even if it has been deleted (soft-deleted), for
+	// audit purposes. Defaults to false, which returns 404 for a deleted key.
+	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [APIKeyGetParams]'s query parameters as `url.Values`.
+func (r APIKeyGetParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
 type APIKeyUpdateParams struct {
 	// New API key name
 	Name string `json:"name" api:"required"`
@@ -223,6 +260,9 @@ func (r *APIKeyUpdateParams) UnmarshalJSON(data []byte) error {
 }
 
 type APIKeyListParams struct {
+	// When true, include deleted (soft-deleted) API keys in the results for audit
+	// purposes. Defaults to false, which returns only live keys.
+	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	// Maximum number of results to return
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip
