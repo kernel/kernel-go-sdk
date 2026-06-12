@@ -75,8 +75,7 @@ func (r *CredentialService) Update(ctx context.Context, idOrName string, body Cr
 	return res, err
 }
 
-// List credentials owned by the caller's organization. Credential values are not
-// returned.
+// List credentials in the resolved project. Credential values are not returned.
 func (r *CredentialService) List(ctx context.Context, query CredentialListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[Credential], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -94,8 +93,7 @@ func (r *CredentialService) List(ctx context.Context, query CredentialListParams
 	return res, nil
 }
 
-// List credentials owned by the caller's organization. Credential values are not
-// returned.
+// List credentials in the resolved project. Credential values are not returned.
 func (r *CredentialService) ListAutoPaging(ctx context.Context, query CredentialListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[Credential] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }

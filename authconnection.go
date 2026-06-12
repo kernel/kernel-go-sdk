@@ -735,8 +735,8 @@ type ManagedAuthCreateRequestParam struct {
 	// - { provider, path } for external provider item
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCreateRequestCredentialParam `json:"credential,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must belong to the
-	// caller's org.
+	// Proxy selection. Provide either id or name. The proxy must be in the same
+	// project as the resource referencing it.
 	Proxy ManagedAuthCreateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -774,8 +774,8 @@ func (r *ManagedAuthCreateRequestCredentialParam) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy selection. Provide either id or name. The proxy must belong to the
-// caller's org.
+// Proxy selection. Provide either id or name. The proxy must be in the same
+// project as the resource referencing it.
 type ManagedAuthCreateRequestProxyParam struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -823,8 +823,8 @@ type ManagedAuthUpdateRequestParam struct {
 	// - { provider, path } for external provider item
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthUpdateRequestCredentialParam `json:"credential,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must belong to the
-	// caller's org.
+	// Proxy selection. Provide either id or name. The proxy must be in the same
+	// project as the resource referencing it.
 	Proxy ManagedAuthUpdateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -862,8 +862,8 @@ func (r *ManagedAuthUpdateRequestCredentialParam) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy selection. Provide either id or name. The proxy must belong to the
-// caller's org.
+// Proxy selection. Provide either id or name. The proxy must be in the same
+// project as the resource referencing it.
 type ManagedAuthUpdateRequestProxyParam struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -1298,8 +1298,8 @@ type AuthConnectionLoginParams struct {
 	// Override the connection's default for recording this login's browser session.
 	// When omitted, the connection's record_session default is used.
 	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must belong to the
-	// caller's org.
+	// Proxy selection. Provide either id or name. The proxy must be in the same
+	// project as the resource referencing it.
 	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`
 	paramObj
 }
@@ -1312,8 +1312,8 @@ func (r *AuthConnectionLoginParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy selection. Provide either id or name. The proxy must belong to the
-// caller's org.
+// Proxy selection. Provide either id or name. The proxy must be in the same
+// project as the resource referencing it.
 type AuthConnectionLoginParamsProxy struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`

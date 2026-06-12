@@ -45,7 +45,7 @@ func NewExtensionService(opts ...option.RequestOption) (r ExtensionService) {
 	return
 }
 
-// List extensions owned by the caller's organization.
+// List extensions in the resolved project.
 func (r *ExtensionService) List(ctx context.Context, query ExtensionListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[ExtensionListResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -63,7 +63,7 @@ func (r *ExtensionService) List(ctx context.Context, query ExtensionListParams, 
 	return res, nil
 }
 
-// List extensions owned by the caller's organization.
+// List extensions in the resolved project.
 func (r *ExtensionService) ListAutoPaging(ctx context.Context, query ExtensionListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[ExtensionListResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }

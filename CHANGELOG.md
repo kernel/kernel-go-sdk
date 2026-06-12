@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.67.0 (2026-06-11)
+
+Full Changelog: [v0.66.0...v0.67.0](https://github.com/kernel/kernel-go-sdk/compare/v0.66.0...v0.67.0)
+
+### Features
+
+* Add project_id SDK client option mapped to X-Kernel-Project-Id ([fc37447](https://github.com/kernel/kernel-go-sdk/commit/fc37447ec9fc09e21c04d1ecee2009dc44010363))
+
+
+### Documentation
+
+* **api:** correct project-scoping descriptions in OpenAPI spec ([d10587c](https://github.com/kernel/kernel-go-sdk/commit/d10587c1131648662d969b25ed921264063e36a4))
+
 ## 0.66.0 (2026-06-10)
 
 Full Changelog: [v0.65.0...v0.66.0](https://github.com/kernel/kernel-go-sdk/compare/v0.65.0...v0.66.0)
