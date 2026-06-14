@@ -118,6 +118,7 @@ func TestAPIKeyListWithOptionalParams(t *testing.T) {
 		Query:          kernel.String("query"),
 		SortBy:         kernel.APIKeyListParamsSortByCreatedAt,
 		SortDirection:  kernel.APIKeyListParamsSortDirectionAsc,
+		Status:         kernel.APIKeyListParamsStatusActive,
 	})
 	if err != nil {
 		var apierr *kernel.Error
