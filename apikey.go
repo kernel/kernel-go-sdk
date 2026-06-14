@@ -144,12 +144,6 @@ type APIKey struct {
 	// Project name for project-scoped API keys. Null means the key is org-wide or the
 	// project name is unavailable.
 	ProjectName string `json:"project_name" api:"required"`
-	// Derived lifecycle status of the API key. `active` means usable. `expired` means
-	// past its expires_at. `deleted` means it was deleted (soft-deleted) and can no
-	// longer authenticate. Deleted takes precedence over expired.
-	//
-	// Any of "active", "expired", "deleted".
-	Status APIKeyStatus `json:"status" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -161,7 +155,6 @@ type APIKey struct {
 		Name        respjson.Field
 		ProjectID   respjson.Field
 		ProjectName respjson.Field
-		Status      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -195,17 +188,6 @@ func (r APIKeyCreatedBy) RawJSON() string { return r.JSON.raw }
 func (r *APIKeyCreatedBy) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
-
-// Derived lifecycle status of the API key. `active` means usable. `expired` means
-// past its expires_at. `deleted` means it was deleted (soft-deleted) and can no
-// longer authenticate. Deleted takes precedence over expired.
-type APIKeyStatus string
-
-const (
-	APIKeyStatusActive  APIKeyStatus = "active"
-	APIKeyStatusExpired APIKeyStatus = "expired"
-	APIKeyStatusDeleted APIKeyStatus = "deleted"
-)
 
 // API key returned immediately after creation. Includes the plaintext key once.
 type CreatedAPIKey struct {
@@ -274,8 +256,8 @@ func (r *APIKeyUpdateParams) UnmarshalJSON(data []byte) error {
 }
 
 type APIKeyListParams struct {
-	// When true, include deleted (soft-deleted) API keys in the results for audit
-	// purposes. Defaults to false, which returns only live keys.
+	// Deprecated: use status=all instead. When true, include deleted (soft-deleted)
+	// API keys in the results for audit purposes.
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	// Maximum number of results to return
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
@@ -292,6 +274,12 @@ type APIKeyListParams struct {
 	//
 	// Any of "asc", "desc".
 	SortDirection APIKeyListParamsSortDirection `query:"sort_direction,omitzero" json:"-"`
+	// Filter API keys by status. "active" returns keys that are not deleted (default;
+	// expired-but-not-deleted keys are still included), "deleted" returns only
+	// soft-deleted keys, "all" returns both.
+	//
+	// Any of "active", "deleted", "all".
+	Status APIKeyListParamsStatus `query:"status,omitzero" json:"-"`
 	paramObj
 }
 
@@ -318,6 +306,17 @@ type APIKeyListParamsSortDirection string
 const (
 	APIKeyListParamsSortDirectionAsc  APIKeyListParamsSortDirection = "asc"
 	APIKeyListParamsSortDirectionDesc APIKeyListParamsSortDirection = "desc"
+)
+
+// Filter API keys by status. "active" returns keys that are not deleted (default;
+// expired-but-not-deleted keys are still included), "deleted" returns only
+// soft-deleted keys, "all" returns both.
+type APIKeyListParamsStatus string
+
+const (
+	APIKeyListParamsStatusActive  APIKeyListParamsStatus = "active"
+	APIKeyListParamsStatusDeleted APIKeyListParamsStatus = "deleted"
+	APIKeyListParamsStatusAll     APIKeyListParamsStatus = "all"
 )
 
 type APIKeyRotateParams struct {
