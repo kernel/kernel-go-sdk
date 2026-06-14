@@ -110,6 +110,20 @@ func (r *APIKeyService) Delete(ctx context.Context, id string, opts ...option.Re
 	return err
 }
 
+// Rotate an API key. Issues a new key that copies the name and project of the
+// rotated key, and schedules the rotated key to expire after a grace period so
+// in-flight callers can swap over. The new plaintext key is returned once.
+func (r *APIKeyService) Rotate(ctx context.Context, id string, body APIKeyRotateParams, opts ...option.RequestOption) (res *CreatedAPIKey, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("org/api_keys/%s/rotate", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 type APIKey struct {
 	// Unique API key identifier
 	ID string `json:"id" api:"required"`
@@ -305,3 +319,21 @@ const (
 	APIKeyListParamsSortDirectionAsc  APIKeyListParamsSortDirection = "asc"
 	APIKeyListParamsSortDirectionDesc APIKeyListParamsSortDirection = "desc"
 )
+
+type APIKeyRotateParams struct {
+	// Lifetime in days for the new key, up to 3650. Omit to reuse the rotated key's
+	// original lifetime, or never-expires if it had none.
+	DaysToExpire param.Opt[int64] `json:"days_to_expire,omitzero"`
+	// Grace period in days before the rotated key expires. Use 0 to expire it
+	// immediately. Omit for the default grace period of 7 days.
+	ExpireInDays param.Opt[int64] `json:"expire_in_days,omitzero"`
+	paramObj
+}
+
+func (r APIKeyRotateParams) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyRotateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyRotateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
