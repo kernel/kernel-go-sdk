@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.68.0 (2026-06-15)
+
+Full Changelog: [v0.67.0...v0.68.0](https://github.com/kernel/kernel-go-sdk/compare/v0.67.0...v0.68.0)
+
+### Features
+
+* Add API key rotate endpoint ([04d4a12](https://github.com/kernel/kernel-go-sdk/commit/04d4a12f1f98a5745b7ca706a22cab71cb625866))
+* **api:** surface deleted/expired API keys for audit trail (KERNEL-1350) ([e7f9fd8](https://github.com/kernel/kernel-go-sdk/commit/e7f9fd8aa890b660d675b22ad48f869504817b2d))
+
+
+### Refactors
+
+* **api:** align API key audit surface with browser sibling (KERNEL-1350) ([9e23506](https://github.com/kernel/kernel-go-sdk/commit/9e2350674aafa75a45c4b843d8a43b31c4656bd6))
+
 ## 0.67.0 (2026-06-11)
 
 Full Changelog: [v0.66.0...v0.67.0](https://github.com/kernel/kernel-go-sdk/compare/v0.66.0...v0.67.0)
