@@ -115,6 +115,7 @@ func TestInvocationListWithOptionalParams(t *testing.T) {
 		DeploymentID: kernel.String("deployment_id"),
 		Limit:        kernel.Int(1),
 		Offset:       kernel.Int(0),
+		Query:        kernel.String("query"),
 		Since:        kernel.String("2025-06-20T12:00:00Z"),
 		Status:       kernel.InvocationListParamsStatusQueued,
 		Version:      kernel.String("version"),

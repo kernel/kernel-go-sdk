@@ -146,6 +146,7 @@ func TestAuthConnectionListWithOptionalParams(t *testing.T) {
 		Limit:       kernel.Int(100),
 		Offset:      kernel.Int(0),
 		ProfileName: kernel.String("profile_name"),
+		Query:       kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error

@@ -124,6 +124,7 @@ func TestCredentialListWithOptionalParams(t *testing.T) {
 		Domain: kernel.String("domain"),
 		Limit:  kernel.Int(100),
 		Offset: kernel.Int(0),
+		Query:  kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error

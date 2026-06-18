@@ -1282,6 +1282,8 @@ type AuthConnectionListParams struct {
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Filter by profile name
 	ProfileName param.Opt[string] `query:"profile_name,omitzero" json:"-"`
+	// Search auth connections by ID, domain, or profile name.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
 

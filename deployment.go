@@ -580,6 +580,8 @@ type DeploymentListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of deployments to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search deployments by ID or app name.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
 
