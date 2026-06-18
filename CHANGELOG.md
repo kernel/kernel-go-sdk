@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.69.0 (2026-06-18)
+
+Full Changelog: [v0.68.0...v0.69.0](https://github.com/kernel/kernel-go-sdk/compare/v0.68.0...v0.69.0)
+
+### Features
+
+* Add free-text search to remaining paginated list endpoints ([3d07531](https://github.com/kernel/kernel-go-sdk/commit/3d0753183c1bfc0f251273cc0a34116e4642f848))
+
 ## 0.68.0 (2026-06-15)
 
 Full Changelog: [v0.67.0...v0.68.0](https://github.com/kernel/kernel-go-sdk/compare/v0.67.0...v0.68.0)
