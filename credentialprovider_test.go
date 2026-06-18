@@ -117,6 +117,7 @@ func TestCredentialProviderListWithOptionalParams(t *testing.T) {
 	_, err := client.CredentialProviders.List(context.TODO(), kernel.CredentialProviderListParams{
 		Limit:  kernel.Int(1),
 		Offset: kernel.Int(0),
+		Query:  kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error
