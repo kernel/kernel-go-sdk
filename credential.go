@@ -280,6 +280,8 @@ type CredentialListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search credentials by name, domain, or ID.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
 

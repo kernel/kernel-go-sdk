@@ -180,6 +180,8 @@ type ExtensionListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of extensions to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search extensions by name or ID.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
 

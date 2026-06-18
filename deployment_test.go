@@ -99,6 +99,7 @@ func TestDeploymentListWithOptionalParams(t *testing.T) {
 		AppVersion: kernel.String("app_version"),
 		Limit:      kernel.Int(1),
 		Offset:     kernel.Int(0),
+		Query:      kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error
