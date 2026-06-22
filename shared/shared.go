@@ -168,12 +168,12 @@ func (r *BrowserProfileParam) UnmarshalJSON(data []byte) error {
 // based on the resolution (higher resolutions use lower refresh rates to keep
 // bandwidth reasonable).
 type BrowserViewport struct {
-	// Browser window height in pixels.
+	// Browser window height in pixels. Any positive integer is accepted.
 	Height int64 `json:"height" api:"required"`
-	// Browser window width in pixels.
+	// Browser window width in pixels. Any positive integer is accepted.
 	Width int64 `json:"width" api:"required"`
-	// Display refresh rate in Hz. If omitted, automatically determined from width and
-	// height.
+	// Display refresh rate in Hz. Any positive integer is accepted; if omitted,
+	// automatically determined from width and height.
 	RefreshRate int64 `json:"refresh_rate"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -215,12 +215,12 @@ func (r BrowserViewport) ToParam() BrowserViewportParam {
 //
 // The properties Height, Width are required.
 type BrowserViewportParam struct {
-	// Browser window height in pixels.
+	// Browser window height in pixels. Any positive integer is accepted.
 	Height int64 `json:"height" api:"required"`
-	// Browser window width in pixels.
+	// Browser window width in pixels. Any positive integer is accepted.
 	Width int64 `json:"width" api:"required"`
-	// Display refresh rate in Hz. If omitted, automatically determined from width and
-	// height.
+	// Display refresh rate in Hz. Any positive integer is accepted; if omitted,
+	// automatically determined from width and height.
 	RefreshRate param.Opt[int64] `json:"refresh_rate,omitzero"`
 	paramObj
 }
