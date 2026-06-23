@@ -104,6 +104,19 @@ func (r *ExtensionService) DownloadFromChromeStore(ctx context.Context, query Ex
 	return res, err
 }
 
+// Get an extension's metadata (name, size, timestamps) by ID or name, without
+// downloading the archive.
+func (r *ExtensionService) Get(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *ExtensionGetResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("extensions/%s/metadata", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Upload a zip file containing an unpacked browser extension. Optionally provide a
 // unique name for later reference.
 func (r *ExtensionService) Upload(ctx context.Context, body ExtensionUploadParams, opts ...option.RequestOption) (res *ExtensionUploadResponse, err error) {
@@ -141,6 +154,37 @@ type ExtensionListResponse struct {
 // Returns the unmodified JSON received from the API
 func (r ExtensionListResponse) RawJSON() string { return r.JSON.raw }
 func (r *ExtensionListResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A browser extension uploaded to Kernel.
+type ExtensionGetResponse struct {
+	// Unique identifier for the extension
+	ID string `json:"id" api:"required"`
+	// Timestamp when the extension was created
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Size of the extension archive in bytes
+	SizeBytes int64 `json:"size_bytes" api:"required"`
+	// Timestamp when the extension was last used
+	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
+	// Optional, easier-to-reference name for the extension. Must be unique within the
+	// project.
+	Name string `json:"name" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		CreatedAt   respjson.Field
+		SizeBytes   respjson.Field
+		LastUsedAt  respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ExtensionGetResponse) RawJSON() string { return r.JSON.raw }
+func (r *ExtensionGetResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
