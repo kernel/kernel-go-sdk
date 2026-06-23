@@ -545,6 +545,10 @@ type BrowserPoolAcquireParams struct {
 	// project. Applies to this lease only and is cleared when the browser is released
 	// back to the pool.
 	Name param.Opt[string] `json:"name,omitzero"`
+	// Optional URL to navigate the acquired browser to. Overrides the pool's start_url
+	// for this acquire only. Best-effort: failures to navigate do not fail the
+	// acquire.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// Optional user-defined key-value tags for the acquired browser session, used to
 	// find and group sessions later. Applies to this lease only and are cleared when
 	// the browser is released back to the pool. Up to 50 pairs.
