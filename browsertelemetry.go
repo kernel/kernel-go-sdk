@@ -15,6 +15,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
 	"github.com/kernel/kernel-go-sdk/packages/param"
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 	"github.com/kernel/kernel-go-sdk/packages/ssestream"
@@ -40,6 +41,39 @@ func NewBrowserTelemetryService(opts ...option.RequestOption) (r BrowserTelemetr
 	r = BrowserTelemetryService{}
 	r.Options = opts
 	return
+}
+
+// Reads a page of telemetry events for the browser session in ascending sequence
+// order. To page through results, pass the X-Next-Offset value from the previous
+// response as offset and repeat while X-Has-More is true. Returns an empty list
+// when telemetry data is unavailable.
+func (r *BrowserTelemetryService) Events(ctx context.Context, id string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserTelemetryEventsResponse], err error) {
+	var raw *http.Response
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s/telemetry/events", id)
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// Reads a page of telemetry events for the browser session in ascending sequence
+// order. To page through results, pass the X-Next-Offset value from the previous
+// response as offset and repeat while X-Has-More is true. Returns an empty list
+// when telemetry data is unavailable.
+func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, id string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserTelemetryEventsResponse] {
+	return pagination.NewOffsetPaginationAutoPager(r.Events(ctx, id, query, opts...))
 }
 
 // Streams browser telemetry events as a server-sent events (SSE) stream. The
@@ -2833,6 +2867,38 @@ func (r *BrowserTelemetryEventUnionDataStatus) UnmarshalJSON(data []byte) error 
 // Envelope wrapping a browser telemetry event with its monotonic sequence number.
 // Each SSE data: frame carries one envelope as JSON. The seq value is also emitted
 // as the SSE id: field so clients can pass it as Last-Event-ID on reconnect.
+type BrowserTelemetryEventsResponse struct {
+	// Union type representing any browser telemetry event. Discriminated on `type`.
+	// Each event's `category` determines when it is captured. The CDP collector-health
+	// events (monitor_disconnected, monitor_reconnected, monitor_reconnect_failed,
+	// monitor_init_failed) use the `monitor` category, which is not user-configurable:
+	// it flows automatically whenever any CDP category (console, network, page,
+	// interaction) is captured, and is silent otherwise. monitor_screenshot uses the
+	// opt-in `screenshot` category. All other event types are controlled by their
+	// per-category enable/disable flags.
+	Event BrowserTelemetryEventUnion `json:"event" api:"required"`
+	// Process-monotonic sequence number assigned by the browser VM. Pass as
+	// Last-Event-ID on reconnect to resume without gaps. Gaps in received seq values
+	// indicate dropped events.
+	Seq int64 `json:"seq" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Event       respjson.Field
+		Seq         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserTelemetryEventsResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserTelemetryEventsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Envelope wrapping a browser telemetry event with its monotonic sequence number.
+// Each SSE data: frame carries one envelope as JSON. The seq value is also emitted
+// as the SSE id: field so clients can pass it as Last-Event-ID on reconnect.
 type BrowserTelemetryStreamResponse struct {
 	// Union type representing any browser telemetry event. Discriminated on `type`.
 	// Each event's `category` determines when it is captured. The CDP collector-health
@@ -2860,6 +2926,38 @@ type BrowserTelemetryStreamResponse struct {
 func (r BrowserTelemetryStreamResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserTelemetryStreamResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserTelemetryEventsParams struct {
+	// Maximum number of events per page. Defaults to 20.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Opaque pagination cursor: pass the X-Next-Offset value from the previous
+	// response to fetch the next page. When set, paging continues from this cursor and
+	// since is ignored, while until still bounds the page. It is not an event's seq
+	// field, so do not derive it from the response body.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Start of the window: an RFC-3339 timestamp, or a duration like 5m meaning that
+	// long ago. Defaults to 5m. Ignored when offset is set.
+	Since param.Opt[string] `query:"since,omitzero" json:"-"`
+	// End of the window (exclusive): an RFC-3339 timestamp, or a duration like 5m
+	// meaning that long ago.
+	Until param.Opt[string] `query:"until,omitzero" json:"-"`
+	// Restrict results to these event categories. Repeat the parameter for multiple
+	// values.
+	//
+	// Any of "console", "network", "page", "interaction", "control", "connection",
+	// "system", "screenshot", "captcha", "monitor".
+	Category []string `query:"category,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BrowserTelemetryEventsParams]'s query parameters as
+// `url.Values`.
+func (r BrowserTelemetryEventsParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type BrowserTelemetryStreamParams struct {
