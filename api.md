@@ -145,7 +145,7 @@ Response Types:
 
 Methods:
 
-- <code title="get /browsers/{id}/telemetry/stream">client.Browsers.Telemetry.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryService.Stream">Stream</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryStreamParams">BrowserTelemetryStreamParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryStreamResponse">BrowserTelemetryStreamResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /browsers/{id}/telemetry/stream">client.Browsers.Telemetry.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryService.Stream">Stream</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, params <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryStreamParams">BrowserTelemetryStreamParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryStreamResponse">BrowserTelemetryStreamResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 ## Replays
 

@@ -8,9 +8,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
 	"github.com/kernel/kernel-go-sdk/packages/param"
@@ -47,14 +49,15 @@ func NewBrowserTelemetryService(opts ...option.RequestOption) (r BrowserTelemetr
 // set; all frames carry JSON in the data: field. A keepalive comment frame is sent
 // every 15 seconds when no events arrive. Returns 404 if the browser session does
 // not exist. If telemetry was not enabled on the session, the stream opens but no
-// events are delivered.
-func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string, query BrowserTelemetryStreamParams, opts ...option.RequestOption) (stream *ssestream.Stream[BrowserTelemetryStreamResponse]) {
+// events are delivered. Fresh connections only see new events; pass replay=all to
+// start from the oldest retained event instead.
+func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string, params BrowserTelemetryStreamParams, opts ...option.RequestOption) (stream *ssestream.Stream[BrowserTelemetryStreamResponse]) {
 	var (
 		raw *http.Response
 		err error
 	)
-	if !param.IsOmitted(query.LastEventID) {
-		opts = append(opts, option.WithHeader("Last-Event-ID", fmt.Sprintf("%v", query.LastEventID.Value)))
+	if !param.IsOmitted(params.LastEventID) {
+		opts = append(opts, option.WithHeader("Last-Event-ID", fmt.Sprintf("%v", params.LastEventID.Value)))
 	}
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
@@ -63,7 +66,7 @@ func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string
 		return ssestream.NewStream[BrowserTelemetryStreamResponse](nil, err)
 	}
 	path := fmt.Sprintf("browsers/%s/telemetry/stream", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, params, &raw, opts...)
 	return ssestream.NewStream[BrowserTelemetryStreamResponse](ssestream.NewDecoder(raw), err)
 }
 
@@ -2860,6 +2863,19 @@ func (r *BrowserTelemetryStreamResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserTelemetryStreamParams struct {
+	// Pass `all` to start from the oldest retained event instead of only new events;
+	// any other value is treated as from-now. The buffer is bounded, so the first
+	// event id may be greater than 1 if older events were evicted.
+	Replay      param.Opt[string] `query:"replay,omitzero" json:"-"`
 	LastEventID param.Opt[string] `header:"Last-Event-ID,omitzero" json:"-"`
 	paramObj
+}
+
+// URLQuery serializes [BrowserTelemetryStreamParams]'s query parameters as
+// `url.Values`.
+func (r BrowserTelemetryStreamParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
