@@ -83,7 +83,10 @@ func browserRouteFromRef(ref browserrouting.Ref) (browserrouting.Route, bool) {
 func browserRoutingSubresourcesFromEnv() []string {
 	raw, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
 	if !ok {
-		return []string{"curl", "telemetry"}
+		// Path prefixes eligible for direct-to-VM routing. "telemetry/stream" is
+		// the live SSE endpoint (served by the VM); "telemetry/events" is a
+		// historical read served by the control plane (S2) and must NOT be here.
+		return []string{"curl", "telemetry/stream"}
 	}
 	if strings.TrimSpace(raw) == "" {
 		return []string{}
