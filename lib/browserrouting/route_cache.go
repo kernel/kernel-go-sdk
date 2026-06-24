@@ -74,10 +74,15 @@ func (c *RouteCache) Delete(sessionID string) {
 // DirectVMRoutingMiddleware rewrites allowlisted browser subresource requests to
 // the browser VM using cached base_url and jwt data.
 func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.Middleware {
-	allowed := map[string]struct{}{}
-	for _, subresource := range subresources {
-		if trimmed := strings.TrimSpace(subresource); trimmed != "" {
-			allowed[trimmed] = struct{}{}
+	// allowPrefixes are path prefixes (relative to browsers/{id}/) eligible for
+	// direct-to-VM routing, e.g. "curl" or "telemetry/stream". Matching is
+	// segment-boundary aware (see matchesDirectVMPrefix), so "telemetry/stream"
+	// covers "telemetry/stream[/...]" but NOT "telemetry/events" (a control-plane
+	// historical read served from S2) or "telemetry/streamfoo".
+	allowPrefixes := make([]string, 0, len(subresources))
+	for _, s := range subresources {
+		if trimmed := strings.Trim(strings.TrimSpace(s), "/"); trimmed != "" {
+			allowPrefixes = append(allowPrefixes, trimmed)
 		}
 	}
 
@@ -88,7 +93,7 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		}
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
 		if ok {
-			if _, ok := allowed[subresource]; ok {
+			if matchesDirectVMPrefix(subresource+suffix, allowPrefixes) {
 				route, ok := cache.Load(sessionID)
 				if ok {
 					base, err := url.Parse(route.BaseURL)
@@ -311,6 +316,21 @@ func parseDirectVMPath(path string) (sessionID, subresource, suffix string, ok b
 		return sessionID, subresource, suffix, true
 	}
 	return "", "", "", false
+}
+
+// matchesDirectVMPrefix reports whether tail (the request path after
+// browsers/{id}/) is covered by an allow prefix, matching on segment boundaries:
+// "telemetry/stream" matches "telemetry/stream" and "telemetry/stream/...", but
+// not "telemetry/events" or "telemetry/streamfoo". This keeps historical
+// control-plane reads (e.g. telemetry/events, served from S2) off the VM.
+func matchesDirectVMPrefix(tail string, prefixes []string) bool {
+	tail = strings.Trim(tail, "/")
+	for _, p := range prefixes {
+		if tail == p || strings.HasPrefix(tail, p+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 func joinURLPath(basePath, subresource, suffix string) string {

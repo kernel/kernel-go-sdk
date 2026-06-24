@@ -53,6 +53,57 @@ func TestDirectVMRoutingMiddlewareClearsStaleRawPath(t *testing.T) {
 	}
 }
 
+func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
+	// Pins the segment-boundary allowlist: telemetry/stream (live SSE) routes to
+	// the VM, telemetry/events (historical, served by the control plane from S2)
+	// does NOT, and a stream-prefixed-but-different path is not matched.
+	cases := []struct {
+		name       string
+		path       string
+		routedToVM bool
+	}{
+		{"telemetry stream -> VM", "/browsers/sess-1/telemetry/stream", true},
+		{"telemetry events -> control plane", "/browsers/sess-1/telemetry/events", false},
+		{"telemetry streaming-config not a stream prefix", "/browsers/sess-1/telemetry/streaming-config", false},
+		{"bare telemetry -> control plane", "/browsers/sess-1/telemetry", false},
+		{"curl proxy -> VM", "/browsers/sess-1/curl/raw", true},
+		{"non-allowlisted subresource -> control plane", "/browsers/sess-1/fs/read", false},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cache := NewRouteCache()
+			cache.Store(Route{
+				SessionID: "sess-1",
+				BaseURL:   "https://browser.example/browser/kernel",
+				JWT:       "jwt-123",
+			})
+			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream"})
+
+			reqURL, err := url.Parse("https://api.example" + tc.path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			req := &http.Request{URL: reqURL, Header: http.Header{}}
+
+			var got *http.Request
+			if _, err := middleware(req, func(next *http.Request) (*http.Response, error) {
+				got = next
+				return nil, nil
+			}); err != nil {
+				t.Fatal(err)
+			}
+			if got == nil {
+				t.Fatal("expected middleware to invoke next handler")
+			}
+			routedToVM := got.URL.Host == "browser.example"
+			if routedToVM != tc.routedToVM {
+				t.Fatalf("path %q routedToVM=%v, want %v (host=%q path=%q)", tc.path, routedToVM, tc.routedToVM, got.URL.Host, got.URL.Path)
+			}
+		})
+	}
+}
+
 func TestParseCacheLifecycleRejectsBrowserSubresourcePaths(t *testing.T) {
 	cases := []string{
 		"/browsers/sess-1/process/exec",

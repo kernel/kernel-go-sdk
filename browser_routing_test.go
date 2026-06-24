@@ -72,7 +72,7 @@ func TestBrowserRoutingWarmsCacheAndRoutesAllowlistedSubresources(t *testing.T) 
 }
 
 func TestBrowserRoutingRewritesTelemetryStreamToVM(t *testing.T) {
-	t.Setenv(browserRoutingSubresourcesEnv, "telemetry")
+	t.Setenv(browserRoutingSubresourcesEnv, "telemetry/stream")
 
 	var calls []struct {
 		Path string
@@ -189,8 +189,8 @@ func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurl(t *testing.T) {
 		}
 		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
 	})
-	if got := browserRoutingSubresourcesFromEnv(); len(got) != 2 || got[0] != "curl" || got[1] != "telemetry" {
-		t.Fatalf("expected default subresources [curl telemetry], got %#v", got)
+	if got := browserRoutingSubresourcesFromEnv(); len(got) != 2 || got[0] != "curl" || got[1] != "telemetry/stream" {
+		t.Fatalf("expected default subresources [curl telemetry/stream], got %#v", got)
 	}
 
 	t.Setenv(browserRoutingSubresourcesEnv, "")
