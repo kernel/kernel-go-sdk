@@ -40,6 +40,8 @@ type Client struct {
 	// Create and manage projects for resource isolation within an organization.
 	Projects     ProjectService
 	Organization OrganizationService
+	// Read audit log records for the authenticated organization.
+	AuditLogs AuditLogService
 	// Create and manage API keys for organization and project-scoped access.
 	APIKeys APIKeyService
 	// Configure external credential providers like 1Password.
@@ -88,6 +90,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Credentials = NewCredentialService(opts...)
 	r.Projects = NewProjectService(opts...)
 	r.Organization = NewOrganizationService(opts...)
+	r.AuditLogs = NewAuditLogService(opts...)
 	r.APIKeys = NewAPIKeyService(opts...)
 	r.CredentialProviders = NewCredentialProviderService(opts...)
 

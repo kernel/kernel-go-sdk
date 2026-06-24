@@ -421,6 +421,16 @@ Methods:
 - <code title="get /org/limits">client.Organization.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationLimitService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgLimits">OrgLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="patch /org/limits">client.Organization.Limits.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationLimitService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationLimitUpdateParams">OrganizationLimitUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgLimits">OrgLimits</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# AuditLogs
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogEntry">AuditLogEntry</a>
+
+Methods:
+
+- <code title="get /audit-logs">client.AuditLogs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogListParams">AuditLogListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#PageTokenPagination">PageTokenPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogEntry">AuditLogEntry</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # APIKeys
 
 Response Types:

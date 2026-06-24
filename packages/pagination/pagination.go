@@ -19,6 +19,104 @@ type paramUnion = param.APIUnion
 // aliased to make [param.APIObject] private when embedding
 type paramObj = param.APIObject
 
+type PageTokenPagination[T any] struct {
+	Items []T `json:",inline"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Items       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+	cfg *requestconfig.RequestConfig
+	res *http.Response
+}
+
+// Returns the unmodified JSON received from the API
+func (r PageTokenPagination[T]) RawJSON() string { return r.JSON.raw }
+func (r *PageTokenPagination[T]) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// GetNextPage returns the next page as defined by this pagination style. When
+// there is no next page, this function will return a 'nil' for the page value, but
+// will not return an error
+func (r *PageTokenPagination[T]) GetNextPage() (res *PageTokenPagination[T], err error) {
+	if len(r.Items) == 0 {
+		return nil, nil
+	}
+	next := r.res.Header.Get("X-Next-Page-Token")
+	if len(next) == 0 {
+		return nil, nil
+	}
+	cfg := r.cfg.Clone(r.cfg.Context)
+	err = cfg.Apply(option.WithQuery("page_token", next))
+	if err != nil {
+		return nil, err
+	}
+	var raw *http.Response
+	cfg.ResponseInto = &raw
+	cfg.ResponseBodyInto = &res
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+func (r *PageTokenPagination[T]) SetPageConfig(cfg *requestconfig.RequestConfig, res *http.Response) {
+	if r == nil {
+		r = &PageTokenPagination[T]{}
+	}
+	r.cfg = cfg
+	r.res = res
+}
+
+type PageTokenPaginationAutoPager[T any] struct {
+	page *PageTokenPagination[T]
+	cur  T
+	idx  int
+	run  int
+	err  error
+	paramObj
+}
+
+func NewPageTokenPaginationAutoPager[T any](page *PageTokenPagination[T], err error) *PageTokenPaginationAutoPager[T] {
+	return &PageTokenPaginationAutoPager[T]{
+		page: page,
+		err:  err,
+	}
+}
+
+func (r *PageTokenPaginationAutoPager[T]) Next() bool {
+	if r.page == nil || len(r.page.Items) == 0 {
+		return false
+	}
+	if r.idx >= len(r.page.Items) {
+		r.idx = 0
+		r.page, r.err = r.page.GetNextPage()
+		if r.err != nil || r.page == nil || len(r.page.Items) == 0 {
+			return false
+		}
+	}
+	r.cur = r.page.Items[r.idx]
+	r.run += 1
+	r.idx += 1
+	return true
+}
+
+func (r *PageTokenPaginationAutoPager[T]) Current() T {
+	return r.cur
+}
+
+func (r *PageTokenPaginationAutoPager[T]) Err() error {
+	return r.err
+}
+
+func (r *PageTokenPaginationAutoPager[T]) Index() int {
+	return r.run
+}
+
 type OffsetPagination[T any] struct {
 	Items []T `json:",inline"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
