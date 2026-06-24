@@ -198,7 +198,9 @@ type BrowserPoolBrowserPoolConfig struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtension `json:"extensions"`
-	// Percentage of the pool to fill per minute. Defaults to 10%.
+	// Percentage of the pool to fill per minute. Defaults to 10. The cap is 25 for
+	// most organizations but can be raised per-organization, so only the lower bound
+	// is enforced here.
 	FillRatePerMinute int64 `json:"fill_rate_per_minute"`
 	// If true, launches the browser using a headless image. Defaults to false.
 	Headless bool `json:"headless"`
@@ -224,7 +226,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	// mechanisms.
 	Stealth bool `json:"stealth"`
 	// Default idle timeout in seconds for browsers acquired from this pool before they
-	// are destroyed. Defaults to 600 seconds if not specified
+	// are destroyed. Defaults to 600 seconds. Minimum 10, maximum 259200 (72 hours).
 	TimeoutSeconds int64 `json:"timeout_seconds"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -370,7 +372,9 @@ type BrowserPoolNewParams struct {
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
 	Size int64 `json:"size" api:"required"`
-	// Percentage of the pool to fill per minute. Defaults to 10%.
+	// Percentage of the pool to fill per minute. Defaults to 10. The cap is 25 for
+	// most organizations but can be raised per-organization, so only the lower bound
+	// is enforced here.
 	FillRatePerMinute param.Opt[int64] `json:"fill_rate_per_minute,omitzero"`
 	// If true, launches the browser using a headless image. Defaults to false.
 	Headless param.Opt[bool] `json:"headless,omitzero"`
@@ -392,7 +396,7 @@ type BrowserPoolNewParams struct {
 	// mechanisms.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// Default idle timeout in seconds for browsers acquired from this pool before they
-	// are destroyed. Defaults to 600 seconds if not specified
+	// are destroyed. Defaults to 600 seconds. Minimum 10, maximum 259200 (72 hours).
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
 	// Keys are Chrome enterprise policy names; values must match their expected types.
@@ -433,7 +437,9 @@ type BrowserPoolUpdateParams struct {
 	// Whether to discard all idle browsers and rebuild the pool immediately. Defaults
 	// to false.
 	DiscardAllIdle param.Opt[bool] `json:"discard_all_idle,omitzero"`
-	// Percentage of the pool to fill per minute. Defaults to 10%.
+	// Percentage of the pool to fill per minute. Defaults to 10. The cap is 25 for
+	// most organizations but can be raised per-organization, so only the lower bound
+	// is enforced here.
 	FillRatePerMinute param.Opt[int64] `json:"fill_rate_per_minute,omitzero"`
 	// If true, launches the browser using a headless image. Defaults to false.
 	Headless param.Opt[bool] `json:"headless,omitzero"`
@@ -459,7 +465,7 @@ type BrowserPoolUpdateParams struct {
 	// mechanisms.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// Default idle timeout in seconds for browsers acquired from this pool before they
-	// are destroyed. Defaults to 600 seconds if not specified
+	// are destroyed. Defaults to 600 seconds. Minimum 10, maximum 259200 (72 hours).
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
 	// Keys are Chrome enterprise policy names; values must match their expected types.
@@ -539,6 +545,10 @@ type BrowserPoolAcquireParams struct {
 	// project. Applies to this lease only and is cleared when the browser is released
 	// back to the pool.
 	Name param.Opt[string] `json:"name,omitzero"`
+	// Optional URL to navigate the acquired browser to. Overrides the pool's start_url
+	// for this acquire only. Best-effort: failures to navigate do not fail the
+	// acquire.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// Optional user-defined key-value tags for the acquired browser session, used to
 	// find and group sessions later. Applies to this lease only and are cleared when
 	// the browser is released back to the pool. Up to 50 pairs.

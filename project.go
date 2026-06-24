@@ -53,7 +53,7 @@ func (r *ProjectService) New(ctx context.Context, body ProjectNewParams, opts ..
 	return res, err
 }
 
-// Get a project by ID.
+// Get a project by its ID or by its name. Names are unique within an organization.
 func (r *ProjectService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *Project, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {

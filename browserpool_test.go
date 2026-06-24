@@ -48,7 +48,7 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		ProxyID:        kernel.String("proxy_id"),
 		StartURL:       kernel.String("https://example.com"),
 		Stealth:        kernel.Bool(true),
-		TimeoutSeconds: kernel.Int(60),
+		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
 			Height:      800,
 			Width:       1280,
@@ -125,7 +125,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Size:           kernel.Int(10),
 			StartURL:       kernel.String("https://example.com"),
 			Stealth:        kernel.Bool(true),
-			TimeoutSeconds: kernel.Int(60),
+			TimeoutSeconds: kernel.Int(10),
 			Viewport: shared.BrowserViewportParam{
 				Height:      800,
 				Width:       1280,
@@ -217,6 +217,7 @@ func TestBrowserPoolAcquireWithOptionalParams(t *testing.T) {
 		kernel.BrowserPoolAcquireParams{
 			AcquireTimeoutSeconds: kernel.Int(0),
 			Name:                  kernel.String("checkout-flow-1"),
+			StartURL:              kernel.String("https://example.com"),
 			Tags: kernel.Tags{
 				"team": "backend",
 				"env":  "staging",

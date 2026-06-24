@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.70.0 (2026-06-24)
+
+Full Changelog: [v0.69.0...v0.70.0](https://github.com/kernel/kernel-go-sdk/compare/v0.69.0...v0.70.0)
+
+### Features
+
+* Add GET /browsers/{id}/telemetry/events (read from S2) ([2c3e61e](https://github.com/kernel/kernel-go-sdk/commit/2c3e61ed66a4b8810a0ef33a8abb09555c030a8d))
+* Align browser-pool timeout/viewport/fill-rate contract with implementation; reject save_changes on update ([a986c45](https://github.com/kernel/kernel-go-sdk/commit/a986c453ecee67ebf6b5cf39ecb8e9accbd2c1dc))
+* api: support per-acquire start_url override on browser pool acquire ([1c675a3](https://github.com/kernel/kernel-go-sdk/commit/1c675a387cb712036cea70ac75dac2026276704b))
+* **api:** add GET /extensions/{id_or_name}/metadata ([373f33b](https://github.com/kernel/kernel-go-sdk/commit/373f33b293159fad981ff78770762e07ac80b5ca))
+* **api:** resolve GET /org/projects/{id} by ID or name ([395e0a7](https://github.com/kernel/kernel-go-sdk/commit/395e0a7d43e289a1b4dc187ed2af5a347f0dfc2b))
+* Forward replay param through telemetry stream passthrough ([ae02eeb](https://github.com/kernel/kernel-go-sdk/commit/ae02eeb4d15611a0221ed06a2600f55460e78184))
+
+
+### Bug Fixes
+
+* don't misroute telemetry/events to the browser VM ([95487e0](https://github.com/kernel/kernel-go-sdk/commit/95487e0182fb969bbaa4d44425a688084020d943))
+
 ## 0.69.0 (2026-06-18)
 
 Full Changelog: [v0.68.0...v0.69.0](https://github.com/kernel/kernel-go-sdk/compare/v0.68.0...v0.69.0)
