@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.71.0 (2026-06-26)
+
+Full Changelog: [v0.70.0...v0.71.0](https://github.com/kernel/kernel-go-sdk/compare/v0.70.0...v0.71.0)
+
+### Features
+
+* Add auth connection event timeline endpoint ([d14cbe4](https://github.com/kernel/kernel-go-sdk/commit/d14cbe46c35e9c5e58398551bb6a903f0bcb02ff))
+* Expose audit logs in public SDK ([8c92e59](https://github.com/kernel/kernel-go-sdk/commit/8c92e59f00802a0fe4393ba7bdea1070554ab8b9))
+
 ## 0.70.0 (2026-06-24)
 
 Full Changelog: [v0.69.0...v0.70.0](https://github.com/kernel/kernel-go-sdk/compare/v0.69.0...v0.70.0)
