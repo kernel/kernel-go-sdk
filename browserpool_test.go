@@ -40,10 +40,9 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		Headless:          kernel.Bool(false),
 		KioskMode:         kernel.Bool(true),
 		Name:              kernel.String("my-pool"),
-		Profile: shared.BrowserProfileParam{
-			ID:          kernel.String("id"),
-			Name:        kernel.String("name"),
-			SaveChanges: kernel.Bool(true),
+		Profile: kernel.BrowserPoolNewParamsProfile{
+			ID:   kernel.String("id"),
+			Name: kernel.String("name"),
 		},
 		ProxyID:        kernel.String("proxy_id"),
 		StartURL:       kernel.String("https://example.com"),
@@ -116,10 +115,9 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Headless:          kernel.Bool(false),
 			KioskMode:         kernel.Bool(true),
 			Name:              kernel.String("my-pool"),
-			Profile: shared.BrowserProfileParam{
-				ID:          kernel.String("id"),
-				Name:        kernel.String("name"),
-				SaveChanges: kernel.Bool(true),
+			Profile: kernel.BrowserPoolUpdateParamsProfile{
+				ID:   kernel.String("id"),
+				Name: kernel.String("name"),
 			},
 			ProxyID:        kernel.String("proxy_id"),
 			Size:           kernel.Int(10),

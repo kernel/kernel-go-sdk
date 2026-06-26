@@ -38,13 +38,6 @@ type BrowserExtensionParam = shared.BrowserExtensionParam
 // Profiles must be created beforehand.
 //
 // This is an alias to an internal type.
-type BrowserProfile = shared.BrowserProfile
-
-// Profile selection for the browser session. Provide either id or name. If
-// specified, the matching profile will be loaded into the browser session.
-// Profiles must be created beforehand.
-//
-// This is an alias to an internal type.
 type BrowserProfileParam = shared.BrowserProfileParam
 
 // Initial browser window size in pixels with optional refresh rate. If omitted,
