@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.72.0 (2026-06-26)
+
+Full Changelog: [v0.71.0...v0.72.0](https://github.com/kernel/kernel-go-sdk/compare/v0.71.0...v0.72.0)
+
+### Bug Fixes
+
+* **api:** browser pool profile omits save_changes (BrowserPoolProfile) ([5e31861](https://github.com/kernel/kernel-go-sdk/commit/5e31861edf251908db94a60e32f5f15507a6f272))
+
 ## 0.71.0 (2026-06-26)
 
 Full Changelog: [v0.70.0...v0.71.0](https://github.com/kernel/kernel-go-sdk/compare/v0.70.0...v0.71.0)
