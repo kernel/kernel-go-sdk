@@ -98,43 +98,6 @@ func (r *BrowserExtensionParam) UnmarshalJSON(data []byte) error {
 // Profile selection for the browser session. Provide either id or name. If
 // specified, the matching profile will be loaded into the browser session.
 // Profiles must be created beforehand.
-type BrowserProfile struct {
-	// Profile ID to load for this browser session
-	ID string `json:"id"`
-	// Profile name to load for this browser session (instead of id). Must be 1-255
-	// characters, using letters, numbers, dots, underscores, or hyphens.
-	Name string `json:"name"`
-	// If true, save changes made during the session back to the profile when the
-	// session ends.
-	SaveChanges bool `json:"save_changes"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID          respjson.Field
-		Name        respjson.Field
-		SaveChanges respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r BrowserProfile) RawJSON() string { return r.JSON.raw }
-func (r *BrowserProfile) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ToParam converts this BrowserProfile to a BrowserProfileParam.
-//
-// Warning: the fields of the param type will not be present. ToParam should only
-// be used at the last possible moment before sending a request. Test for this with
-// BrowserProfileParam.Overrides()
-func (r BrowserProfile) ToParam() BrowserProfileParam {
-	return param.Override[BrowserProfileParam](json.RawMessage(r.RawJSON()))
-}
-
-// Profile selection for the browser session. Provide either id or name. If
-// specified, the matching profile will be loaded into the browser session.
-// Profiles must be created beforehand.
 type BrowserProfileParam struct {
 	// Profile ID to load for this browser session
 	ID param.Opt[string] `json:"id,omitzero"`
