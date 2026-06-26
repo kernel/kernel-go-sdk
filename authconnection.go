@@ -168,6 +168,37 @@ func (r *AuthConnectionService) Submit(ctx context.Context, id string, body Auth
 	return res, err
 }
 
+// Returns a chronological timeline of events for an auth connection — login
+// attempts, automatic re-auth attempts, and health checks. Events are returned
+// newest-first.
+func (r *AuthConnectionService) Timeline(ctx context.Context, id string, query AuthConnectionTimelineParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[ManagedAuthTimelineEvent], err error) {
+	var raw *http.Response
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("auth/connections/%s/timeline", id)
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// Returns a chronological timeline of events for an auth connection — login
+// attempts, automatic re-auth attempts, and health checks. Events are returned
+// newest-first.
+func (r *AuthConnectionService) TimelineAutoPaging(ctx context.Context, id string, query AuthConnectionTimelineParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[ManagedAuthTimelineEvent] {
+	return pagination.NewOffsetPaginationAutoPager(r.Timeline(ctx, id, query, opts...))
+}
+
 // Response from starting a login flow
 type LoginResponse struct {
 	// Auth connection ID
@@ -792,6 +823,120 @@ func (r *ManagedAuthCreateRequestProxyParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A single event in an auth connection's history — a login attempt, an automatic
+// re-auth attempt, or a health check.
+type ManagedAuthTimelineEvent struct {
+	// Identifier of the underlying login/reauth session or health check.
+	ID string `json:"id" api:"required"`
+	// Outcome of the event. For login/reauth events this is the flow status
+	// (IN_PROGRESS, SUCCESS, EXPIRED, CANCELED, FAILED). For health_check events it is
+	// the observed session state (AUTHENTICATED, NEEDS_AUTH).
+	//
+	// Any of "IN_PROGRESS", "SUCCESS", "EXPIRED", "CANCELED", "FAILED",
+	// "AUTHENTICATED", "NEEDS_AUTH".
+	Status ManagedAuthTimelineEventStatus `json:"status" api:"required"`
+	// When the event occurred.
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
+	// The kind of event. "login" and "reauth" are authentication attempts;
+	// "health_check" is a periodic session-validity check.
+	//
+	// Any of "login", "reauth", "health_check".
+	Type ManagedAuthTimelineEventType `json:"type" api:"required"`
+	// Machine-readable error code. Present when a login/reauth event failed.
+	ErrorCode string `json:"error_code"`
+	// Human-readable error message. Present when a login/reauth event failed.
+	ErrorMessage string `json:"error_message"`
+	// The session state observed before this event. Present for health_check events
+	// that recorded a prior state.
+	//
+	// Any of "AUTHENTICATED", "NEEDS_AUTH".
+	PreviousStatus ManagedAuthTimelineEventPreviousStatus `json:"previous_status"`
+	// Replay recording ID for the event's browser session, if session recording was
+	// enabled.
+	ReplayID string `json:"replay_id"`
+	// The step the flow reached. Present for login/reauth events.
+	//
+	// Any of "INITIALIZED", "DISCOVERING", "AWAITING_INPUT",
+	// "AWAITING_EXTERNAL_ACTION", "AWAITING_HUMAN_INTERVENTION", "SUBMITTING",
+	// "COMPLETED", "EXPIRED".
+	Step ManagedAuthTimelineEventStep `json:"step"`
+	// When the event was last updated. Present for login/reauth events.
+	UpdatedAt time.Time `json:"updated_at" format:"date-time"`
+	// Visible error message from the website (e.g., 'Incorrect password'). Present
+	// when the website displayed an error during the attempt.
+	WebsiteError string `json:"website_error"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID             respjson.Field
+		Status         respjson.Field
+		Timestamp      respjson.Field
+		Type           respjson.Field
+		ErrorCode      respjson.Field
+		ErrorMessage   respjson.Field
+		PreviousStatus respjson.Field
+		ReplayID       respjson.Field
+		Step           respjson.Field
+		UpdatedAt      respjson.Field
+		WebsiteError   respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthTimelineEvent) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthTimelineEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Outcome of the event. For login/reauth events this is the flow status
+// (IN_PROGRESS, SUCCESS, EXPIRED, CANCELED, FAILED). For health_check events it is
+// the observed session state (AUTHENTICATED, NEEDS_AUTH).
+type ManagedAuthTimelineEventStatus string
+
+const (
+	ManagedAuthTimelineEventStatusInProgress    ManagedAuthTimelineEventStatus = "IN_PROGRESS"
+	ManagedAuthTimelineEventStatusSuccess       ManagedAuthTimelineEventStatus = "SUCCESS"
+	ManagedAuthTimelineEventStatusExpired       ManagedAuthTimelineEventStatus = "EXPIRED"
+	ManagedAuthTimelineEventStatusCanceled      ManagedAuthTimelineEventStatus = "CANCELED"
+	ManagedAuthTimelineEventStatusFailed        ManagedAuthTimelineEventStatus = "FAILED"
+	ManagedAuthTimelineEventStatusAuthenticated ManagedAuthTimelineEventStatus = "AUTHENTICATED"
+	ManagedAuthTimelineEventStatusNeedsAuth     ManagedAuthTimelineEventStatus = "NEEDS_AUTH"
+)
+
+// The kind of event. "login" and "reauth" are authentication attempts;
+// "health_check" is a periodic session-validity check.
+type ManagedAuthTimelineEventType string
+
+const (
+	ManagedAuthTimelineEventTypeLogin       ManagedAuthTimelineEventType = "login"
+	ManagedAuthTimelineEventTypeReauth      ManagedAuthTimelineEventType = "reauth"
+	ManagedAuthTimelineEventTypeHealthCheck ManagedAuthTimelineEventType = "health_check"
+)
+
+// The session state observed before this event. Present for health_check events
+// that recorded a prior state.
+type ManagedAuthTimelineEventPreviousStatus string
+
+const (
+	ManagedAuthTimelineEventPreviousStatusAuthenticated ManagedAuthTimelineEventPreviousStatus = "AUTHENTICATED"
+	ManagedAuthTimelineEventPreviousStatusNeedsAuth     ManagedAuthTimelineEventPreviousStatus = "NEEDS_AUTH"
+)
+
+// The step the flow reached. Present for login/reauth events.
+type ManagedAuthTimelineEventStep string
+
+const (
+	ManagedAuthTimelineEventStepInitialized               ManagedAuthTimelineEventStep = "INITIALIZED"
+	ManagedAuthTimelineEventStepDiscovering               ManagedAuthTimelineEventStep = "DISCOVERING"
+	ManagedAuthTimelineEventStepAwaitingInput             ManagedAuthTimelineEventStep = "AWAITING_INPUT"
+	ManagedAuthTimelineEventStepAwaitingExternalAction    ManagedAuthTimelineEventStep = "AWAITING_EXTERNAL_ACTION"
+	ManagedAuthTimelineEventStepAwaitingHumanIntervention ManagedAuthTimelineEventStep = "AWAITING_HUMAN_INTERVENTION"
+	ManagedAuthTimelineEventStepSubmitting                ManagedAuthTimelineEventStep = "SUBMITTING"
+	ManagedAuthTimelineEventStepCompleted                 ManagedAuthTimelineEventStep = "COMPLETED"
+	ManagedAuthTimelineEventStepExpired                   ManagedAuthTimelineEventStep = "EXPIRED"
+)
+
 // Request to update an auth connection's configuration
 type ManagedAuthUpdateRequestParam struct {
 	// Whether automatic re-authentication is permitted for this connection. This is an
@@ -1346,3 +1491,33 @@ func (r AuthConnectionSubmitParams) MarshalJSON() (data []byte, err error) {
 func (r *AuthConnectionSubmitParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type AuthConnectionTimelineParams struct {
+	// Maximum number of events to return
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Number of events to skip
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Filter the timeline to a single event type.
+	//
+	// Any of "login", "reauth", "health_check".
+	Type AuthConnectionTimelineParamsType `query:"type,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [AuthConnectionTimelineParams]'s query parameters as
+// `url.Values`.
+func (r AuthConnectionTimelineParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+// Filter the timeline to a single event type.
+type AuthConnectionTimelineParamsType string
+
+const (
+	AuthConnectionTimelineParamsTypeLogin       AuthConnectionTimelineParamsType = "login"
+	AuthConnectionTimelineParamsTypeReauth      AuthConnectionTimelineParamsType = "reauth"
+	AuthConnectionTimelineParamsTypeHealthCheck AuthConnectionTimelineParamsType = "health_check"
+)
