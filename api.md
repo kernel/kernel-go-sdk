@@ -8,7 +8,6 @@
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared#AppAction">AppAction</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared#BrowserExtension">BrowserExtension</a>
-- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared#BrowserProfile">BrowserProfile</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared#BrowserViewport">BrowserViewport</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared#ErrorDetail">ErrorDetail</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared">shared</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/shared#ErrorEvent">ErrorEvent</a>
