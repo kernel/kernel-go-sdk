@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.73.0 (2026-07-01)
+
+Full Changelog: [v0.72.0...v0.73.0](https://github.com/kernel/kernel-go-sdk/compare/v0.72.0...v0.73.0)
+
+### Features
+
+* Add hidden audit-logs export endpoint ([2afb724](https://github.com/kernel/kernel-go-sdk/commit/2afb72456a09c06411d78a2fd53a27ac8f1ebdc5))
+
 ## 0.72.0 (2026-06-26)
 
 Full Changelog: [v0.71.0...v0.72.0](https://github.com/kernel/kernel-go-sdk/compare/v0.71.0...v0.72.0)
