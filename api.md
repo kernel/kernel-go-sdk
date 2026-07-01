@@ -431,6 +431,7 @@ Response Types:
 Methods:
 
 - <code title="get /audit-logs">client.AuditLogs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogListParams">AuditLogListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#PageTokenPagination">PageTokenPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogEntry">AuditLogEntry</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /audit-logs/export/chunk">client.AuditLogs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogService.ExportChunk">ExportChunk</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuditLogExportChunkParams">AuditLogExportChunkParams</a>) (\*http.Response, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 # APIKeys
 
