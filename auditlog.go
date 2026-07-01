@@ -64,6 +64,17 @@ func (r *AuditLogService) ListAutoPaging(ctx context.Context, query AuditLogList
 	return pagination.NewPageTokenPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
+// Download an organization's audit log records for a time range as a file, for
+// archival, compliance, or offline analysis. For interactive browsing, use GET
+// /audit-logs.
+func (r *AuditLogService) ExportChunk(ctx context.Context, query AuditLogExportChunkParams, opts ...option.RequestOption) (res *http.Response, err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
+	path := "audit-logs/export/chunk"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
 type AuditLogEntry struct {
 	// Authentication strategy used for the request.
 	AuthStrategy string `json:"auth_strategy" api:"required"`
@@ -145,3 +156,48 @@ func (r AuditLogListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+type AuditLogExportChunkParams struct {
+	// Upper bound (exclusive) for the audit record timestamp.
+	End time.Time `query:"end" api:"required" format:"date-time" json:"-"`
+	// Lower bound (inclusive) for the audit record timestamp.
+	Start time.Time `query:"start" api:"required" format:"date-time" json:"-"`
+	// Filter by authentication strategy.
+	AuthStrategy param.Opt[string] `query:"auth_strategy,omitzero" json:"-"`
+	// Opaque cursor from X-Next-Cursor for the next chunk of older records.
+	Cursor param.Opt[string] `query:"cursor,omitzero" json:"-"`
+	// Filter out results by HTTP method.
+	ExcludeMethod param.Opt[string] `query:"exclude_method,omitzero" json:"-"`
+	// Maximum number of records to return in this chunk.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Filter by HTTP method.
+	Method param.Opt[string] `query:"method,omitzero" json:"-"`
+	// Free-text search over path, user ID, email, client IP, and status.
+	Search param.Opt[string] `query:"search,omitzero" json:"-"`
+	// Filter by service name.
+	Service param.Opt[string] `query:"service,omitzero" json:"-"`
+	// Encoding for the returned chunk.
+	//
+	// Any of "jsonl", "jsonl.gz".
+	Format AuditLogExportChunkParamsFormat `query:"format,omitzero" json:"-"`
+	// Additional user IDs to OR into free-text search.
+	SearchUserID []string `query:"search_user_id,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [AuditLogExportChunkParams]'s query parameters as
+// `url.Values`.
+func (r AuditLogExportChunkParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+// Encoding for the returned chunk.
+type AuditLogExportChunkParamsFormat string
+
+const (
+	AuditLogExportChunkParamsFormatJSONL   AuditLogExportChunkParamsFormat = "jsonl"
+	AuditLogExportChunkParamsFormatJSONLGz AuditLogExportChunkParamsFormat = "jsonl.gz"
+)
