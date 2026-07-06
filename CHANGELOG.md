@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.74.0 (2026-07-06)
+
+Full Changelog: [v0.73.0...v0.74.0](https://github.com/kernel/kernel-go-sdk/compare/v0.73.0...v0.74.0)
+
+### Features
+
+* Add order=desc pagination to telemetry event reads ([f86b440](https://github.com/kernel/kernel-go-sdk/commit/f86b44009ac649334fe1b6c85b0a2c54326e4650))
+* Add tablet and mobile viewport presets to pool dashboard ([eec3e1e](https://github.com/kernel/kernel-go-sdk/commit/eec3e1ee4b4a4386d25c260840d279d3afcd9895))
+
 ## 0.73.0 (2026-07-01)
 
 Full Changelog: [v0.72.0...v0.73.0](https://github.com/kernel/kernel-go-sdk/compare/v0.72.0...v0.73.0)
