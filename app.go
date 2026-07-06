@@ -73,7 +73,9 @@ type AppListResponse struct {
 	AppName string `json:"app_name" api:"required"`
 	// Deployment ID
 	Deployment string `json:"deployment" api:"required"`
-	// Environment variables configured for this app version
+	// Environment variables configured for this app version. Values are redacted for
+	// API key, OAuth, and managed-auth callers, which receive every key with an empty
+	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars" api:"required"`
 	// Deployment region code
 	Region constant.AwsUsEast1a `json:"region" default:"aws.us-east-1a"`
