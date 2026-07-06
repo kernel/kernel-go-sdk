@@ -495,8 +495,12 @@ func (r *BrowserPoolNewParamsProfile) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserPoolUpdateParams struct {
-	// Whether to discard all idle browsers and rebuild the pool immediately. Defaults
-	// to false.
+	// Whether to discard all idle browsers and rebuild them immediately with the new
+	// configuration. Defaults to false. Only browsers that are idle when the update
+	// runs are rebuilt. A browser that is in use during the update keeps its original
+	// configuration, and if it is later released with `reuse: true` it returns to the
+	// pool with that stale configuration until it is discarded (by this flag on a
+	// later update, or by flushing the pool).
 	DiscardAllIdle param.Opt[bool] `json:"discard_all_idle,omitzero"`
 	// Percentage of the pool to fill per minute. Defaults to 10. The cap is 25 for
 	// most organizations but can be raised per-organization, so only the lower bound
@@ -655,7 +659,10 @@ type BrowserPoolReleaseParams struct {
 	// Browser session ID to release back to the pool
 	SessionID string `json:"session_id" api:"required"`
 	// Whether to reuse the browser instance or destroy it and create a new one.
-	// Defaults to true.
+	// Defaults to true. A reused browser keeps the configuration it was created with,
+	// so it does not pick up pool configuration changes made while it was in use.
+	// Release with `reuse: false`, or flush the pool afterward, to rebuild it with the
+	// current configuration.
 	Reuse param.Opt[bool] `json:"reuse,omitzero"`
 	paramObj
 }
