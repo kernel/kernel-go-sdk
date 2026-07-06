@@ -163,7 +163,9 @@ type DeploymentStateEventDeployment struct {
 	Status string `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
-	// Environment variables configured for this deployment
+	// Environment variables configured for this deployment. Values are redacted for
+	// API key, OAuth, and managed-auth callers, which receive every key with an empty
+	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
@@ -204,7 +206,9 @@ type DeploymentNewResponse struct {
 	Status DeploymentNewResponseStatus `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
-	// Environment variables configured for this deployment
+	// Environment variables configured for this deployment. Values are redacted for
+	// API key, OAuth, and managed-auth callers, which receive every key with an empty
+	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
@@ -256,7 +260,9 @@ type DeploymentGetResponse struct {
 	Status DeploymentGetResponseStatus `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
-	// Environment variables configured for this deployment
+	// Environment variables configured for this deployment. Values are redacted for
+	// API key, OAuth, and managed-auth callers, which receive every key with an empty
+	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
@@ -308,7 +314,9 @@ type DeploymentListResponse struct {
 	Status DeploymentListResponseStatus `json:"status" api:"required"`
 	// Relative path to the application entrypoint
 	EntrypointRelPath string `json:"entrypoint_rel_path"`
-	// Environment variables configured for this deployment
+	// Environment variables configured for this deployment. Values are redacted for
+	// API key, OAuth, and managed-auth callers, which receive every key with an empty
+	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
@@ -440,7 +448,8 @@ type DeploymentFollowResponseAppVersionSummaryEvent struct {
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
 	// Version label for the application
 	Version string `json:"version" api:"required"`
-	// Environment variables configured for this app version
+	// Environment variables configured for this app version. Not currently populated
+	// on streamed app_version_summary events.
 	EnvVars map[string]string `json:"env_vars"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
