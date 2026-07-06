@@ -33,6 +33,7 @@ func TestBrowserTelemetryEventsWithOptionalParams(t *testing.T) {
 			Category: []string{"console"},
 			Limit:    kernel.Int(1),
 			Offset:   kernel.Int(0),
+			Order:    kernel.String("order"),
 			Since:    kernel.String("since"),
 			Until:    kernel.String("until"),
 		},

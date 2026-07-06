@@ -43,10 +43,10 @@ func NewBrowserTelemetryService(opts ...option.RequestOption) (r BrowserTelemetr
 	return
 }
 
-// Reads a page of telemetry events for the browser session in ascending sequence
-// order. To page through results, pass the X-Next-Offset value from the previous
-// response as offset and repeat while X-Has-More is true. Returns an empty list
-// when telemetry data is unavailable.
+// Reads a page of telemetry events for the browser session. To page through
+// results, pass the X-Next-Offset value from the previous response as offset and
+// repeat while X-Has-More is true. Returns an empty list when telemetry data is
+// unavailable.
 func (r *BrowserTelemetryService) Events(ctx context.Context, id string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserTelemetryEventsResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -68,10 +68,10 @@ func (r *BrowserTelemetryService) Events(ctx context.Context, id string, query B
 	return res, nil
 }
 
-// Reads a page of telemetry events for the browser session in ascending sequence
-// order. To page through results, pass the X-Next-Offset value from the previous
-// response as offset and repeat while X-Has-More is true. Returns an empty list
-// when telemetry data is unavailable.
+// Reads a page of telemetry events for the browser session. To page through
+// results, pass the X-Next-Offset value from the previous response as offset and
+// repeat while X-Has-More is true. Returns an empty list when telemetry data is
+// unavailable.
 func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, id string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserTelemetryEventsResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.Events(ctx, id, query, opts...))
 }
@@ -2936,6 +2936,13 @@ type BrowserTelemetryEventsParams struct {
 	// since is ignored, while until still bounds the page. It is not an event's seq
 	// field, so do not derive it from the response body.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Read direction. asc (default) reads oldest first, starting from since or the
+	// offset cursor. desc reads newest first: each request returns one page of up to
+	// limit records ending at the offset cursor (or until, or the newest archived
+	// event); combining desc with since is rejected with a 400. In either direction
+	// the category filter applies within the page, so a filtered page may be empty
+	// while X-Has-More is true.
+	Order param.Opt[string] `query:"order,omitzero" json:"-"`
 	// Start of the window: an RFC-3339 timestamp, or a duration like 5m meaning that
 	// long ago. Defaults to 5m. Ignored when offset is set.
 	Since param.Opt[string] `query:"since,omitzero" json:"-"`
