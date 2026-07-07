@@ -134,12 +134,6 @@ type ExtensionListResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Size of the extension archive in bytes
 	SizeBytes int64 `json:"size_bytes" api:"required"`
-	// SHA-256 checksum, encoded as lowercase hexadecimal, of the exact uploaded
-	// extension archive bytes. This is not a normalized checksum of the extension
-	// contents; archive metadata, file ordering, and compression can change the
-	// checksum for otherwise identical contents. Omitted for legacy rows and
-	// server-repackaged Chrome Web Store extensions.
-	Checksum string `json:"checksum" api:"nullable"`
 	// Timestamp when the extension was last used
 	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
@@ -150,7 +144,6 @@ type ExtensionListResponse struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		SizeBytes   respjson.Field
-		Checksum    respjson.Field
 		LastUsedAt  respjson.Field
 		Name        respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -172,12 +165,6 @@ type ExtensionGetResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Size of the extension archive in bytes
 	SizeBytes int64 `json:"size_bytes" api:"required"`
-	// SHA-256 checksum, encoded as lowercase hexadecimal, of the exact uploaded
-	// extension archive bytes. This is not a normalized checksum of the extension
-	// contents; archive metadata, file ordering, and compression can change the
-	// checksum for otherwise identical contents. Omitted for legacy rows and
-	// server-repackaged Chrome Web Store extensions.
-	Checksum string `json:"checksum" api:"nullable"`
 	// Timestamp when the extension was last used
 	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
@@ -188,7 +175,6 @@ type ExtensionGetResponse struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		SizeBytes   respjson.Field
-		Checksum    respjson.Field
 		LastUsedAt  respjson.Field
 		Name        respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -210,12 +196,6 @@ type ExtensionUploadResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Size of the extension archive in bytes
 	SizeBytes int64 `json:"size_bytes" api:"required"`
-	// SHA-256 checksum, encoded as lowercase hexadecimal, of the exact uploaded
-	// extension archive bytes. This is not a normalized checksum of the extension
-	// contents; archive metadata, file ordering, and compression can change the
-	// checksum for otherwise identical contents. Omitted for legacy rows and
-	// server-repackaged Chrome Web Store extensions.
-	Checksum string `json:"checksum" api:"nullable"`
 	// Timestamp when the extension was last used
 	LastUsedAt time.Time `json:"last_used_at" api:"nullable" format:"date-time"`
 	// Optional, easier-to-reference name for the extension. Must be unique within the
@@ -226,7 +206,6 @@ type ExtensionUploadResponse struct {
 		ID          respjson.Field
 		CreatedAt   respjson.Field
 		SizeBytes   respjson.Field
-		Checksum    respjson.Field
 		LastUsedAt  respjson.Field
 		Name        respjson.Field
 		ExtraFields map[string]respjson.Field
