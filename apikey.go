@@ -97,7 +97,8 @@ func (r *APIKeyService) ListAutoPaging(ctx context.Context, query APIKeyListPara
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Delete an API key.
+// Delete an API key. A key cannot delete itself; use a different key to delete
+// this one.
 func (r *APIKeyService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
