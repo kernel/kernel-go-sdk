@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.75.0 (2026-07-08)
+
+Full Changelog: [v0.74.0...v0.75.0](https://github.com/kernel/kernel-go-sdk/compare/v0.74.0...v0.75.0)
+
+### Features
+
+* Auto-flush pools when a managed auth profile re-authenticates ([9b65633](https://github.com/kernel/kernel-go-sdk/commit/9b656333bbab210f4deaf9e8247b2540571693ca))
+* Document env var redaction on deployment and app reads ([1a17cf5](https://github.com/kernel/kernel-go-sdk/commit/1a17cf51617d671b676ec713409a05ee002b086b))
+* Expose resolved profile_id and extension_ids on browser pool reads ([3931759](https://github.com/kernel/kernel-go-sdk/commit/393175979cfbd763a610d7d87601a8386feba2ad))
+* Reject API key self-deletion ([0fe2a82](https://github.com/kernel/kernel-go-sdk/commit/0fe2a8206644361bcdb439f0903b8658a85c5691))
+* Revert "Store and return a sha256 checksum for uploaded extensions (#… ([763d2cd](https://github.com/kernel/kernel-go-sdk/commit/763d2cd76858214f0f4e34cabc2c744a0d44a983))
+* Store and return a sha256 checksum for uploaded extensions ([92806ce](https://github.com/kernel/kernel-go-sdk/commit/92806ce19504a6c6bbb8a4301bb2a667843a3b24))
+* Store and return a sha256 checksum for uploaded extensions (reland) ([24fea5b](https://github.com/kernel/kernel-go-sdk/commit/24fea5b4a661c7970f7f773261a2d7834042c942))
+
+
+### Documentation
+
+* **api:** clarify reuse/discard_all_idle pool config staleness ([c2a231d](https://github.com/kernel/kernel-go-sdk/commit/c2a231d2184874248ce5554c61505376e644d6d0))
+
 ## 0.74.0 (2026-07-06)
 
 Full Changelog: [v0.73.0...v0.74.0](https://github.com/kernel/kernel-go-sdk/compare/v0.73.0...v0.74.0)
