@@ -67,7 +67,9 @@ func (r *BrowserPoolService) Get(ctx context.Context, idOrName string, opts ...o
 
 // Updates the configuration used to create browsers in the pool. As with creation,
 // save_changes on the pool profile is ignored (not rejected); pooled browsers
-// never persist changes back to the profile.
+// never persist changes back to the profile. To clear the profile reference, send
+// `profile: { "id": "" }`. Clearing the profile also disables
+// `refresh_on_profile_update`.
 func (r *BrowserPoolService) Update(ctx context.Context, idOrName string, body BrowserPoolUpdateParams, opts ...option.RequestOption) (res *BrowserPool, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
@@ -214,16 +216,19 @@ type BrowserPoolBrowserPoolConfig struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name string `json:"name"`
-	// Profile selection for browsers in a pool. Provide either id or name. The
-	// matching profile is loaded into every browser in the pool. Profiles must be
-	// created beforehand. Unlike single browser sessions, pools load the profile
-	// read-only and never persist changes back to it, so save_changes is omitted here.
-	// Any save_changes value sent on a pool profile is silently ignored rather than
-	// rejected, so callers reusing a single-session profile object will not error.
+	// Profile configuration for browsers in a pool. Provide either id or name.
+	// Profiles must be created beforehand. Unlike single browser sessions, pools load
+	// the profile read-only and never persist changes back to it, so save_changes is
+	// omitted here. Any save_changes value sent on a pool profile is silently ignored
+	// rather than rejected.
 	Profile BrowserPoolBrowserPoolConfigProfile `json:"profile"`
 	// Optional proxy to associate to the browser session. Must reference a proxy in
 	// the same project as the browser session.
 	ProxyID string `json:"proxy_id"`
+	// When true, flush idle browsers when the profile the pool uses is updated, so
+	// pool browsers pick up the latest profile data. Requires a profile to be set on
+	// the pool.
+	RefreshOnProfileUpdate bool `json:"refresh_on_profile_update"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
 	// newly-warmed browsers; browsers reused via release/acquire keep whatever URL the
@@ -251,21 +256,22 @@ type BrowserPoolBrowserPoolConfig struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Size              respjson.Field
-		ChromePolicy      respjson.Field
-		Extensions        respjson.Field
-		FillRatePerMinute respjson.Field
-		Headless          respjson.Field
-		KioskMode         respjson.Field
-		Name              respjson.Field
-		Profile           respjson.Field
-		ProxyID           respjson.Field
-		StartURL          respjson.Field
-		Stealth           respjson.Field
-		TimeoutSeconds    respjson.Field
-		Viewport          respjson.Field
-		ExtraFields       map[string]respjson.Field
-		raw               string
+		Size                   respjson.Field
+		ChromePolicy           respjson.Field
+		Extensions             respjson.Field
+		FillRatePerMinute      respjson.Field
+		Headless               respjson.Field
+		KioskMode              respjson.Field
+		Name                   respjson.Field
+		Profile                respjson.Field
+		ProxyID                respjson.Field
+		RefreshOnProfileUpdate respjson.Field
+		StartURL               respjson.Field
+		Stealth                respjson.Field
+		TimeoutSeconds         respjson.Field
+		Viewport               respjson.Field
+		ExtraFields            map[string]respjson.Field
+		raw                    string
 	} `json:"-"`
 }
 
@@ -275,12 +281,11 @@ func (r *BrowserPoolBrowserPoolConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Profile selection for browsers in a pool. Provide either id or name. The
-// matching profile is loaded into every browser in the pool. Profiles must be
-// created beforehand. Unlike single browser sessions, pools load the profile
-// read-only and never persist changes back to it, so save_changes is omitted here.
-// Any save_changes value sent on a pool profile is silently ignored rather than
-// rejected, so callers reusing a single-session profile object will not error.
+// Profile configuration for browsers in a pool. Provide either id or name.
+// Profiles must be created beforehand. Unlike single browser sessions, pools load
+// the profile read-only and never persist changes back to it, so save_changes is
+// omitted here. Any save_changes value sent on a pool profile is silently ignored
+// rather than rejected.
 type BrowserPoolBrowserPoolConfigProfile struct {
 	// Profile ID to load for browsers in this pool
 	ID string `json:"id"`
@@ -421,6 +426,10 @@ type BrowserPoolNewParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy in
 	// the same project as the browser session.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// When true, flush idle browsers when the profile the pool uses is updated, so
+	// pool browsers pick up the latest profile data. Requires a profile to be set on
+	// the pool.
+	RefreshOnProfileUpdate param.Opt[bool] `json:"refresh_on_profile_update,omitzero"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
 	// newly-warmed browsers; browsers reused via release/acquire keep whatever URL the
@@ -440,12 +449,11 @@ type BrowserPoolNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
-	// Profile selection for browsers in a pool. Provide either id or name. The
-	// matching profile is loaded into every browser in the pool. Profiles must be
-	// created beforehand. Unlike single browser sessions, pools load the profile
-	// read-only and never persist changes back to it, so save_changes is omitted here.
-	// Any save_changes value sent on a pool profile is silently ignored rather than
-	// rejected, so callers reusing a single-session profile object will not error.
+	// Profile configuration for browsers in a pool. Provide either id or name.
+	// Profiles must be created beforehand. Unlike single browser sessions, pools load
+	// the profile read-only and never persist changes back to it, so save_changes is
+	// omitted here. Any save_changes value sent on a pool profile is silently ignored
+	// rather than rejected.
 	Profile BrowserPoolNewParamsProfile `json:"profile,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -471,12 +479,11 @@ func (r *BrowserPoolNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Profile selection for browsers in a pool. Provide either id or name. The
-// matching profile is loaded into every browser in the pool. Profiles must be
-// created beforehand. Unlike single browser sessions, pools load the profile
-// read-only and never persist changes back to it, so save_changes is omitted here.
-// Any save_changes value sent on a pool profile is silently ignored rather than
-// rejected, so callers reusing a single-session profile object will not error.
+// Profile configuration for browsers in a pool. Provide either id or name.
+// Profiles must be created beforehand. Unlike single browser sessions, pools load
+// the profile read-only and never persist changes back to it, so save_changes is
+// omitted here. Any save_changes value sent on a pool profile is silently ignored
+// rather than rejected.
 type BrowserPoolNewParamsProfile struct {
 	// Profile ID to load for browsers in this pool
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -516,6 +523,10 @@ type BrowserPoolUpdateParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy in
 	// the same project as the browser session.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// When true, flush idle browsers when the profile the pool uses is updated, so
+	// pool browsers pick up the latest profile data. Requires a profile to be set on
+	// the pool.
+	RefreshOnProfileUpdate param.Opt[bool] `json:"refresh_on_profile_update,omitzero"`
 	// Number of browsers to maintain in the pool. The maximum size is determined by
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
@@ -539,12 +550,11 @@ type BrowserPoolUpdateParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
-	// Profile selection for browsers in a pool. Provide either id or name. The
-	// matching profile is loaded into every browser in the pool. Profiles must be
-	// created beforehand. Unlike single browser sessions, pools load the profile
-	// read-only and never persist changes back to it, so save_changes is omitted here.
-	// Any save_changes value sent on a pool profile is silently ignored rather than
-	// rejected, so callers reusing a single-session profile object will not error.
+	// Profile configuration for browsers in a pool. Provide either id or name.
+	// Profiles must be created beforehand. Unlike single browser sessions, pools load
+	// the profile read-only and never persist changes back to it, so save_changes is
+	// omitted here. Any save_changes value sent on a pool profile is silently ignored
+	// rather than rejected.
 	Profile BrowserPoolUpdateParamsProfile `json:"profile,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -570,12 +580,11 @@ func (r *BrowserPoolUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Profile selection for browsers in a pool. Provide either id or name. The
-// matching profile is loaded into every browser in the pool. Profiles must be
-// created beforehand. Unlike single browser sessions, pools load the profile
-// read-only and never persist changes back to it, so save_changes is omitted here.
-// Any save_changes value sent on a pool profile is silently ignored rather than
-// rejected, so callers reusing a single-session profile object will not error.
+// Profile configuration for browsers in a pool. Provide either id or name.
+// Profiles must be created beforehand. Unlike single browser sessions, pools load
+// the profile read-only and never persist changes back to it, so save_changes is
+// omitted here. Any save_changes value sent on a pool profile is silently ignored
+// rather than rejected.
 type BrowserPoolUpdateParamsProfile struct {
 	// Profile ID to load for browsers in this pool
 	ID param.Opt[string] `json:"id,omitzero"`
