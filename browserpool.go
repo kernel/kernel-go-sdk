@@ -171,8 +171,18 @@ type BrowserPool struct {
 	BrowserPoolConfig BrowserPoolBrowserPoolConfig `json:"browser_pool_config" api:"required"`
 	// Timestamp when the browser pool was created
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Resolved extension IDs attached to the pool, in configured load order. Empty
+	// when no extensions are attached. Authoritative for programmatic consumers; the
+	// extensions inside `browser_pool_config` reflect the configured selector (echoed
+	// as sent on create).
+	ExtensionIDs []string `json:"extension_ids" api:"required"`
 	// Browser pool name, if set
 	Name string `json:"name"`
+	// Resolved profile ID the pool is attached to. Omitted when no profile is
+	// attached. Authoritative for programmatic consumers; the profile inside
+	// `browser_pool_config` reflects the configured selector (echoed as sent on
+	// create).
+	ProfileID string `json:"profile_id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -180,7 +190,9 @@ type BrowserPool struct {
 		AvailableCount    respjson.Field
 		BrowserPoolConfig respjson.Field
 		CreatedAt         respjson.Field
+		ExtensionIDs      respjson.Field
 		Name              respjson.Field
+		ProfileID         respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
