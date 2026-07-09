@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.76.0 (2026-07-09)
+
+Full Changelog: [v0.75.0...v0.76.0](https://github.com/kernel/kernel-go-sdk/compare/v0.75.0...v0.76.0)
+
+### Features
+
+* Layer telemetry request config onto the default set ([7ff6801](https://github.com/kernel/kernel-go-sdk/commit/7ff68018d09d2b63d649f373ccc262e8e1e6f4b7))
+* Return credential value keys and support removing values on update ([750c15f](https://github.com/kernel/kernel-go-sdk/commit/750c15f460a90377acba471935e5f310c8c70a10))
+
 ## 0.75.0 (2026-07-08)
 
 Full Changelog: [v0.74.0...v0.75.0](https://github.com/kernel/kernel-go-sdk/compare/v0.74.0...v0.75.0)
