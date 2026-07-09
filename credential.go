@@ -180,6 +180,10 @@ type Credential struct {
 	TotpCode string `json:"totp_code"`
 	// When the totp_code expires. Only included when totp_code is present.
 	TotpCodeExpiresAt time.Time `json:"totp_code_expires_at" format:"date-time"`
+	// The field names stored in this credential's values (e.g., username, password).
+	// Values themselves are never returned. Included on single-credential responses
+	// (create, get by id or name, update); omitted from list responses.
+	ValueKeys []string `json:"value_keys"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -192,6 +196,7 @@ type Credential struct {
 		SSOProvider       respjson.Field
 		TotpCode          respjson.Field
 		TotpCodeExpiresAt respjson.Field
+		ValueKeys         respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -213,6 +218,9 @@ type UpdateCredentialRequestParam struct {
 	// Base32-encoded TOTP secret for generating one-time passwords. Spaces and
 	// formatting are automatically normalized. Set to empty string to remove.
 	TotpSecret param.Opt[string] `json:"totp_secret,omitzero"`
+	// Field names to remove from the credential's stored values. Removals are applied
+	// before `values` are merged, so a key present in both is kept with its new value.
+	RemoveValueKeys []string `json:"remove_value_keys,omitzero"`
 	// Field name to value mapping. Values are merged with existing values (new keys
 	// added, existing keys overwritten).
 	Values map[string]string `json:"values,omitzero"`
