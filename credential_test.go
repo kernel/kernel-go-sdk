@@ -88,9 +88,10 @@ func TestCredentialUpdateWithOptionalParams(t *testing.T) {
 		"id_or_name",
 		kernel.CredentialUpdateParams{
 			UpdateCredentialRequest: kernel.UpdateCredentialRequestParam{
-				Name:        kernel.String("my-updated-login"),
-				SSOProvider: kernel.String("google"),
-				TotpSecret:  kernel.String("JBSWY3DPEHPK3PXP"),
+				Name:            kernel.String("my-updated-login"),
+				RemoveValueKeys: []string{"old_field"},
+				SSOProvider:     kernel.String("google"),
+				TotpSecret:      kernel.String("JBSWY3DPEHPK3PXP"),
 				Values: map[string]string{
 					"username": "user@example.com",
 					"password": "newpassword",
