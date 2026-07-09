@@ -2089,12 +2089,11 @@ func (r *BrowserSystemOomKillEventDataTopTask) UnmarshalJSON(data []byte) error 
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Per-category telemetry capture settings. Selection is opt-in: set a category to
-// enabled=true to capture it; anything omitted is off. The default set (used by
-// enabled=true with no per-category settings) is the lightweight operational
-// signals: control, connection, system, captcha. The CDP categories (console,
-// network, page, interaction) and screenshot are off by default and must be opted
-// into.
+// Per-category telemetry capture settings layered onto the default set. The
+// operational signals (control, connection, system, captcha) are on by default and
+// are opt-out: set one to enabled=false to stop capturing it. The CDP categories
+// (console, network, page, interaction) and screenshot are off by default and are
+// opt-in: set enabled=true to capture them.
 type BrowserTelemetryCategoriesConfig struct {
 	// Captcha solve attempt outcomes. On by default.
 	Captcha BrowserTelemetryCategoryConfig `json:"captcha"`
@@ -2156,12 +2155,11 @@ func (r BrowserTelemetryCategoriesConfig) ToParam() BrowserTelemetryCategoriesCo
 	return param.Override[BrowserTelemetryCategoriesConfigParam](json.RawMessage(r.RawJSON()))
 }
 
-// Per-category telemetry capture settings. Selection is opt-in: set a category to
-// enabled=true to capture it; anything omitted is off. The default set (used by
-// enabled=true with no per-category settings) is the lightweight operational
-// signals: control, connection, system, captcha. The CDP categories (console,
-// network, page, interaction) and screenshot are off by default and must be opted
-// into.
+// Per-category telemetry capture settings layered onto the default set. The
+// operational signals (control, connection, system, captcha) are on by default and
+// are opt-out: set one to enabled=false to stop capturing it. The CDP categories
+// (console, network, page, interaction) and screenshot are off by default and are
+// opt-in: set enabled=true to capture them.
 type BrowserTelemetryCategoriesConfigParam struct {
 	// Captcha solve attempt outcomes. On by default.
 	Captcha BrowserTelemetryCategoryConfigParam `json:"captcha,omitzero"`
@@ -2204,8 +2202,9 @@ func (r *BrowserTelemetryCategoriesConfigParam) UnmarshalJSON(data []byte) error
 
 // Per-category telemetry configuration.
 type BrowserTelemetryCategoryConfig struct {
-	// Whether this category is captured. Selection is opt-in, so an omitted category
-	// is not captured.
+	// Whether this category is captured. Operational categories (control, connection,
+	// system, captcha) default to true; set false to opt out. CDP categories (console,
+	// network, page, interaction) and screenshot default to false; set true to opt in.
 	Enabled bool `json:"enabled"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2233,8 +2232,9 @@ func (r BrowserTelemetryCategoryConfig) ToParam() BrowserTelemetryCategoryConfig
 
 // Per-category telemetry configuration.
 type BrowserTelemetryCategoryConfigParam struct {
-	// Whether this category is captured. Selection is opt-in, so an omitted category
-	// is not captured.
+	// Whether this category is captured. Operational categories (control, connection,
+	// system, captcha) default to true; set false to opt out. CDP categories (console,
+	// network, page, interaction) and screenshot default to false; set true to opt in.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
