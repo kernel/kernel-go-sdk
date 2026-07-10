@@ -62,6 +62,21 @@ func (r *ProxyService) Get(ctx context.Context, id string, opts ...option.Reques
 	return res, err
 }
 
+// Update a proxy's name. Proxy names are not unique and are not ID-or-name
+// addressable on this endpoint; duplicate names are allowed. Name-based
+// session-create lookups can remain ambiguous until callers resolve proxies by ID
+// or the API adds a stronger uniqueness contract.
+func (r *ProxyService) Update(ctx context.Context, id string, body ProxyUpdateParams, opts ...option.RequestOption) (res *ProxyUpdateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("proxies/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return res, err
+}
+
 // List proxies in the resolved project.
 func (r *ProxyService) List(ctx context.Context, query ProxyListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[ProxyListResponse], err error) {
 	var raw *http.Response
@@ -657,6 +672,278 @@ type ProxyGetResponseStatus string
 const (
 	ProxyGetResponseStatusAvailable   ProxyGetResponseStatus = "available"
 	ProxyGetResponseStatusUnavailable ProxyGetResponseStatus = "unavailable"
+)
+
+// Configuration for routing traffic through a proxy.
+type ProxyUpdateResponse struct {
+	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
+	// worst: `mobile` > `residential` > `isp` > `datacenter`.
+	//
+	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	Type ProxyUpdateResponseType `json:"type" api:"required"`
+	ID   string                  `json:"id"`
+	// Hostnames that should bypass the parent proxy and connect directly.
+	BypassHosts []string `json:"bypass_hosts"`
+	// Configuration specific to the selected proxy `type`.
+	Config ProxyUpdateResponseConfigUnion `json:"config"`
+	// IP address that the proxy uses when making requests.
+	IPAddress string `json:"ip_address"`
+	// Timestamp of the last health check performed on this proxy.
+	LastChecked time.Time `json:"last_checked" format:"date-time"`
+	// Readable name of the proxy.
+	Name string `json:"name"`
+	// Protocol to use for the proxy connection.
+	//
+	// Any of "http", "https".
+	Protocol ProxyUpdateResponseProtocol `json:"protocol"`
+	// Current health status of the proxy.
+	//
+	// Any of "available", "unavailable".
+	Status ProxyUpdateResponseStatus `json:"status"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Type        respjson.Field
+		ID          respjson.Field
+		BypassHosts respjson.Field
+		Config      respjson.Field
+		IPAddress   respjson.Field
+		LastChecked respjson.Field
+		Name        respjson.Field
+		Protocol    respjson.Field
+		Status      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ProxyUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *ProxyUpdateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
+// worst: `mobile` > `residential` > `isp` > `datacenter`.
+type ProxyUpdateResponseType string
+
+const (
+	ProxyUpdateResponseTypeDatacenter  ProxyUpdateResponseType = "datacenter"
+	ProxyUpdateResponseTypeIsp         ProxyUpdateResponseType = "isp"
+	ProxyUpdateResponseTypeResidential ProxyUpdateResponseType = "residential"
+	ProxyUpdateResponseTypeMobile      ProxyUpdateResponseType = "mobile"
+	ProxyUpdateResponseTypeCustom      ProxyUpdateResponseType = "custom"
+)
+
+// ProxyUpdateResponseConfigUnion contains all possible properties and values from
+// [ProxyUpdateResponseConfigDatacenter], [ProxyUpdateResponseConfigIsp],
+// [ProxyUpdateResponseConfigResidential], [ProxyUpdateResponseConfigMobile],
+// [ProxyUpdateResponseConfigCustom].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type ProxyUpdateResponseConfigUnion struct {
+	Country string `json:"country"`
+	// This field is from variant [ProxyUpdateResponseConfigResidential].
+	Asn  string `json:"asn"`
+	City string `json:"city"`
+	// This field is from variant [ProxyUpdateResponseConfigResidential].
+	Os    string `json:"os"`
+	State string `json:"state"`
+	// This field is from variant [ProxyUpdateResponseConfigResidential].
+	Zip string `json:"zip"`
+	// This field is from variant [ProxyUpdateResponseConfigCustom].
+	Host string `json:"host"`
+	// This field is from variant [ProxyUpdateResponseConfigCustom].
+	Port int64 `json:"port"`
+	// This field is from variant [ProxyUpdateResponseConfigCustom].
+	HasPassword bool `json:"has_password"`
+	// This field is from variant [ProxyUpdateResponseConfigCustom].
+	Username string `json:"username"`
+	JSON     struct {
+		Country     respjson.Field
+		Asn         respjson.Field
+		City        respjson.Field
+		Os          respjson.Field
+		State       respjson.Field
+		Zip         respjson.Field
+		Host        respjson.Field
+		Port        respjson.Field
+		HasPassword respjson.Field
+		Username    respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+func (u ProxyUpdateResponseConfigUnion) AsDatacenter() (v ProxyUpdateResponseConfigDatacenter) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ProxyUpdateResponseConfigUnion) AsIsp() (v ProxyUpdateResponseConfigIsp) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ProxyUpdateResponseConfigUnion) AsResidential() (v ProxyUpdateResponseConfigResidential) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ProxyUpdateResponseConfigUnion) AsMobile() (v ProxyUpdateResponseConfigMobile) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ProxyUpdateResponseConfigUnion) AsCustom() (v ProxyUpdateResponseConfigCustom) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u ProxyUpdateResponseConfigUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *ProxyUpdateResponseConfigUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Configuration for a datacenter proxy.
+type ProxyUpdateResponseConfigDatacenter struct {
+	// ISO 3166 country code. Defaults to US if not provided.
+	Country string `json:"country"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Country     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ProxyUpdateResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
+func (r *ProxyUpdateResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Configuration for an ISP proxy.
+type ProxyUpdateResponseConfigIsp struct {
+	// ISO 3166 country code. Defaults to US if not provided.
+	Country string `json:"country"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Country     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ProxyUpdateResponseConfigIsp) RawJSON() string { return r.JSON.raw }
+func (r *ProxyUpdateResponseConfigIsp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Configuration for residential proxies.
+type ProxyUpdateResponseConfigResidential struct {
+	// Autonomous system number. See https://bgp.potaroo.net/cidr/autnums.html
+	Asn string `json:"asn"`
+	// City name (no spaces, e.g. `sanfrancisco`). If provided, `country` must also be
+	// provided.
+	City string `json:"city"`
+	// ISO 3166 country code.
+	Country string `json:"country"`
+	// Operating system of the residential device.
+	//
+	// Any of "windows", "macos", "android".
+	//
+	// Deprecated: deprecated
+	Os string `json:"os"`
+	// Two-letter state code.
+	State string `json:"state"`
+	// US ZIP code.
+	Zip string `json:"zip"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Asn         respjson.Field
+		City        respjson.Field
+		Country     respjson.Field
+		Os          respjson.Field
+		State       respjson.Field
+		Zip         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ProxyUpdateResponseConfigResidential) RawJSON() string { return r.JSON.raw }
+func (r *ProxyUpdateResponseConfigResidential) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Configuration for mobile proxies.
+type ProxyUpdateResponseConfigMobile struct {
+	// Provider city alias. Mobile carrier routing can make observed geo vary.
+	City string `json:"city"`
+	// ISO 3166 country code
+	Country string `json:"country"`
+	// US-only state code. Mobile carrier routing can make observed geo vary.
+	State string `json:"state"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		State       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ProxyUpdateResponseConfigMobile) RawJSON() string { return r.JSON.raw }
+func (r *ProxyUpdateResponseConfigMobile) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Configuration for a custom proxy (e.g., private proxy server).
+type ProxyUpdateResponseConfigCustom struct {
+	// Proxy host address or IP.
+	Host string `json:"host" api:"required"`
+	// Proxy port.
+	Port int64 `json:"port" api:"required"`
+	// Whether the proxy has a password.
+	HasPassword bool `json:"has_password"`
+	// Username for proxy authentication.
+	Username string `json:"username"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Host        respjson.Field
+		Port        respjson.Field
+		HasPassword respjson.Field
+		Username    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ProxyUpdateResponseConfigCustom) RawJSON() string { return r.JSON.raw }
+func (r *ProxyUpdateResponseConfigCustom) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Protocol to use for the proxy connection.
+type ProxyUpdateResponseProtocol string
+
+const (
+	ProxyUpdateResponseProtocolHTTP  ProxyUpdateResponseProtocol = "http"
+	ProxyUpdateResponseProtocolHTTPS ProxyUpdateResponseProtocol = "https"
+)
+
+// Current health status of the proxy.
+type ProxyUpdateResponseStatus string
+
+const (
+	ProxyUpdateResponseStatusAvailable   ProxyUpdateResponseStatus = "available"
+	ProxyUpdateResponseStatusUnavailable ProxyUpdateResponseStatus = "unavailable"
 )
 
 // Configuration for routing traffic through a proxy.
@@ -1485,6 +1772,21 @@ const (
 	ProxyNewParamsProtocolHTTP  ProxyNewParamsProtocol = "http"
 	ProxyNewParamsProtocolHTTPS ProxyNewParamsProtocol = "https"
 )
+
+type ProxyUpdateParams struct {
+	// New proxy name. Proxy names are trimmed and length-checked only; duplicates are
+	// allowed because proxies are updated by ID, not by name.
+	Name string `json:"name" api:"required"`
+	paramObj
+}
+
+func (r ProxyUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow ProxyUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ProxyUpdateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type ProxyListParams struct {
 	// Limit the number of proxies to return.

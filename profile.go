@@ -60,6 +60,24 @@ func (r *ProfileService) Get(ctx context.Context, idOrName string, opts ...optio
 	return res, err
 }
 
+// Update a profile's name. Names must be unique within the logical project; during
+// the default-project migration, unscoped profiles and profiles in the org default
+// project are treated as the same project. Duplicate-name conflicts are checked
+// before update but are best-effort because there is no backing unique index.
+// Renaming a profile while a browser session references it by name may prevent
+// that session's changes from saving; prefer renaming when the profile is not in
+// use.
+func (r *ProfileService) Update(ctx context.Context, idOrName string, body ProfileUpdateParams, opts ...option.RequestOption) (res *Profile, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("profiles/%s", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return res, err
+}
+
 // List profiles with optional filtering and pagination.
 func (r *ProfileService) List(ctx context.Context, query ProfileListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[Profile], err error) {
 	var raw *http.Response
@@ -110,7 +128,9 @@ func (r *ProfileService) Download(ctx context.Context, idOrName string, opts ...
 }
 
 type ProfileNewParams struct {
-	// Optional name of the profile. Must be unique within the project.
+	// Optional name of the profile. Must be unique within the logical project; during
+	// the default-project migration, unscoped profiles and profiles in the org default
+	// project are treated as the same project.
 	Name param.Opt[string] `json:"name,omitzero"`
 	paramObj
 }
@@ -120,6 +140,22 @@ func (r ProfileNewParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ProfileNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ProfileUpdateParams struct {
+	// New profile name. Must be unique within the logical project; during the
+	// default-project migration, unscoped profiles and profiles in the org default
+	// project are treated as the same project.
+	Name string `json:"name" api:"required"`
+	paramObj
+}
+
+func (r ProfileUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow ProfileUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ProfileUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
