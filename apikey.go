@@ -138,7 +138,8 @@ type APIKey struct {
 	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
 	// Masked version of the API key
 	MaskedKey string `json:"masked_key" api:"required"`
-	// API key name
+	// Label for the API key. API keys are not addressable by name; use the ID or key
+	// identifier for stable references.
 	Name string `json:"name" api:"required"`
 	// Project identifier for project-scoped API keys. Null means org-wide.
 	ProjectID string `json:"project_id" api:"required"`
@@ -210,7 +211,7 @@ func (r *CreatedAPIKey) UnmarshalJSON(data []byte) error {
 }
 
 type APIKeyNewParams struct {
-	// API key name (1-255 characters)
+	// Label for the API key (1-255 characters). API keys are not addressable by name.
 	Name string `json:"name" api:"required"`
 	// Number of days until expiry, up to 3650. Use null for never.
 	DaysToExpire param.Opt[int64] `json:"days_to_expire,omitzero"`
