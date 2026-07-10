@@ -238,8 +238,8 @@ type BrowserPoolBrowserPoolConfig struct {
 	// project as the browser session.
 	ProxyID string `json:"proxy_id"`
 	// When true, flush idle browsers when the profile the pool uses is updated, so
-	// pool browsers pick up the latest profile data. Requires a profile to be set on
-	// the pool.
+	// pool browsers pick up the latest profile data. When a profile is provided during
+	// creation, this defaults to true. Requires a profile to be set on the pool.
 	RefreshOnProfileUpdate bool `json:"refresh_on_profile_update"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
@@ -439,8 +439,8 @@ type BrowserPoolNewParams struct {
 	// the same project as the browser session.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// When true, flush idle browsers when the profile the pool uses is updated, so
-	// pool browsers pick up the latest profile data. Requires a profile to be set on
-	// the pool.
+	// pool browsers pick up the latest profile data. When a profile is provided during
+	// creation, this defaults to true. Requires a profile to be set on the pool.
 	RefreshOnProfileUpdate param.Opt[bool] `json:"refresh_on_profile_update,omitzero"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
@@ -537,7 +537,10 @@ type BrowserPoolUpdateParams struct {
 	// proxy unchanged.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// If provided, replaces whether idle browsers are flushed when the profile the
-	// pool uses is updated. Requires a profile to be set on the pool.
+	// pool uses is updated. When the pool's profile reference is changed (including
+	// newly attached) and this field is omitted, it defaults to true. Re-sending the
+	// same profile reference leaves this setting unchanged. Clearing the profile also
+	// disables this setting. Requires a profile to be set on the pool.
 	RefreshOnProfileUpdate param.Opt[bool] `json:"refresh_on_profile_update,omitzero"`
 	// If provided, replaces the number of browsers to maintain in the pool. The
 	// maximum size is determined by your organization's pooled sessions limit (the sum
