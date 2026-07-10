@@ -767,7 +767,9 @@ type ManagedAuthCreateRequestParam struct {
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCreateRequestCredentialParam `json:"credential,omitzero"`
 	// Proxy selection. Provide either id or name. The proxy must be in the same
-	// project as the resource referencing it.
+	// project as the resource referencing it. When selecting by name, the name must
+	// match exactly one active proxy in the project. Ambiguous names return a 400; use
+	// id for stable references.
 	Proxy ManagedAuthCreateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -806,7 +808,9 @@ func (r *ManagedAuthCreateRequestCredentialParam) UnmarshalJSON(data []byte) err
 }
 
 // Proxy selection. Provide either id or name. The proxy must be in the same
-// project as the resource referencing it.
+// project as the resource referencing it. When selecting by name, the name must
+// match exactly one active proxy in the project. Ambiguous names return a 400; use
+// id for stable references.
 type ManagedAuthCreateRequestProxyParam struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -969,7 +973,9 @@ type ManagedAuthUpdateRequestParam struct {
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthUpdateRequestCredentialParam `json:"credential,omitzero"`
 	// Proxy selection. Provide either id or name. The proxy must be in the same
-	// project as the resource referencing it.
+	// project as the resource referencing it. When selecting by name, the name must
+	// match exactly one active proxy in the project. Ambiguous names return a 400; use
+	// id for stable references.
 	Proxy ManagedAuthUpdateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -1008,7 +1014,9 @@ func (r *ManagedAuthUpdateRequestCredentialParam) UnmarshalJSON(data []byte) err
 }
 
 // Proxy selection. Provide either id or name. The proxy must be in the same
-// project as the resource referencing it.
+// project as the resource referencing it. When selecting by name, the name must
+// match exactly one active proxy in the project. Ambiguous names return a 400; use
+// id for stable references.
 type ManagedAuthUpdateRequestProxyParam struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -1446,7 +1454,9 @@ type AuthConnectionLoginParams struct {
 	// When omitted, the connection's record_session default is used.
 	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
 	// Proxy selection. Provide either id or name. The proxy must be in the same
-	// project as the resource referencing it.
+	// project as the resource referencing it. When selecting by name, the name must
+	// match exactly one active proxy in the project. Ambiguous names return a 400; use
+	// id for stable references.
 	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`
 	paramObj
 }
@@ -1460,7 +1470,9 @@ func (r *AuthConnectionLoginParams) UnmarshalJSON(data []byte) error {
 }
 
 // Proxy selection. Provide either id or name. The proxy must be in the same
-// project as the resource referencing it.
+// project as the resource referencing it. When selecting by name, the name must
+// match exactly one active proxy in the project. Ambiguous names return a 400; use
+// id for stable references.
 type AuthConnectionLoginParamsProxy struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`

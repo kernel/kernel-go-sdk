@@ -164,7 +164,7 @@ type ProfileListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of profiles to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
-	// Search profiles by name or ID.
+	// Case-insensitive substring match against profile name or ID.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }

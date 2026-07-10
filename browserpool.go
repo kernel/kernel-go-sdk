@@ -619,7 +619,8 @@ type BrowserPoolListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of browser pools to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
-	// Search browser pools by name or ID.
+	// Case-insensitive substring match against browser pool name. IDs match by exact
+	// value.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
