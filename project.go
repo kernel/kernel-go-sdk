@@ -220,6 +220,9 @@ func (r *ProjectUpdateParams) UnmarshalJSON(data []byte) error {
 type ProjectListParams struct {
 	// Maximum number of results to return
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Exact-match filter on project name using the database collation. In production,
+	// matching is case- and accent-insensitive.
+	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Case-insensitive substring match against project name

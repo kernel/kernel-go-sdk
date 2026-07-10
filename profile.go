@@ -162,6 +162,11 @@ func (r *ProfileUpdateParams) UnmarshalJSON(data []byte) error {
 type ProfileListParams struct {
 	// Limit the number of profiles to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Exact-match filter on profile name using the database collation. In production,
+	// matching is case- and accent-insensitive. During the default-project migration,
+	// unscoped requests prefer a concrete default-project profile over a legacy
+	// unscoped profile with the same name.
+	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Offset the number of profiles to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Case-insensitive substring match against profile name or ID.

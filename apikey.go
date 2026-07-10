@@ -263,6 +263,11 @@ type APIKeyListParams struct {
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	// Maximum number of results to return
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Exact-match filter on API key name using the database collation. In production,
+	// matching is case- and accent-insensitive. Names are not required to be unique,
+	// so multiple keys may match. When status=all or include_deleted=true is set,
+	// soft-deleted keys with the same name may also match.
+	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Case-insensitive substring match against API key name, creator, and project. API

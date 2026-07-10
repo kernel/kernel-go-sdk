@@ -157,6 +157,7 @@ func TestBrowserPoolListWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.BrowserPools.List(context.TODO(), kernel.BrowserPoolListParams{
 		Limit:  kernel.Int(1),
+		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
 	})

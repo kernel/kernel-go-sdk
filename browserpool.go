@@ -617,6 +617,11 @@ func (r *BrowserPoolUpdateParamsProfile) UnmarshalJSON(data []byte) error {
 type BrowserPoolListParams struct {
 	// Limit the number of browser pools to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Exact-match filter on browser pool name using the database collation. In
+	// production, matching is case- and accent-insensitive. During the default-project
+	// migration, unscoped requests prefer a concrete default-project browser pool over
+	// a legacy unscoped browser pool with the same name.
+	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Offset the number of browser pools to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Case-insensitive substring match against browser pool name. IDs match by exact

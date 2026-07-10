@@ -113,6 +113,7 @@ func TestProxyListWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Proxies.List(context.TODO(), kernel.ProxyListParams{
 		Limit:  kernel.Int(1),
+		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
 	})
