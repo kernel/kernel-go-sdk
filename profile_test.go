@@ -109,6 +109,7 @@ func TestProfileListWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Profiles.List(context.TODO(), kernel.ProfileListParams{
 		Limit:  kernel.Int(1),
+		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
 	})

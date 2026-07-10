@@ -1791,6 +1791,10 @@ func (r *ProxyUpdateParams) UnmarshalJSON(data []byte) error {
 type ProxyListParams struct {
 	// Limit the number of proxies to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Exact-match filter on proxy name using the database collation. In production,
+	// matching is case- and accent-insensitive. Names are not required to be unique,
+	// so multiple proxies may match.
+	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Offset the number of proxies to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Case-insensitive substring match against proxy name, host, or IP address. IDs

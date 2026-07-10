@@ -110,6 +110,7 @@ func TestProjectListWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Projects.List(context.TODO(), kernel.ProjectListParams{
 		Limit:  kernel.Int(100),
+		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
 	})
