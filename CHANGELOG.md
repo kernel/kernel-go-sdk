@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.78.0 (2026-07-13)
+
+Full Changelog: [v0.77.0...v0.78.0](https://github.com/kernel/kernel-go-sdk/compare/v0.77.0...v0.78.0)
+
+### Features
+
+* Expose telemetry exception message in API/SDK ([7426310](https://github.com/kernel/kernel-go-sdk/commit/74263107550f6d13d74a06f0df0c8d603920d62f))
+
 ## 0.77.0 (2026-07-13)
 
 Full Changelog: [v0.76.0...v0.77.0](https://github.com/kernel/kernel-go-sdk/compare/v0.76.0...v0.77.0)
