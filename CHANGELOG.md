@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.77.0 (2026-07-13)
+
+Full Changelog: [v0.76.0...v0.77.0](https://github.com/kernel/kernel-go-sdk/compare/v0.76.0...v0.77.0)
+
+### Features
+
+* Add exact-match name filter to list endpoints ([6ffae2f](https://github.com/kernel/kernel-go-sdk/commit/6ffae2ffa5a381af12ff4776ac3d590ed1a724ef))
+* Add name-only rename for profiles and proxies ([c2b2b5e](https://github.com/kernel/kernel-go-sdk/commit/c2b2b5e5cf318b2d6c9e964b65274f8de4a57a35))
+* Auto-default refresh_on_profile_update when browser pool profile changes ([b74cae1](https://github.com/kernel/kernel-go-sdk/commit/b74cae1d226293704baefb943c213c77b83b409b))
+* Document name uniqueness and query match semantics ([fd4fcff](https://github.com/kernel/kernel-go-sdk/commit/fd4fcffa2ad8d35878a189a1a66e9e8aac2df872))
+* Make the browser pool OpenAPI contract truthful ([b1baff2](https://github.com/kernel/kernel-go-sdk/commit/b1baff2db6ad583e8998e4ef6d3d711c73817492))
+* Persist and echo deployment source identity ([a09849a](https://github.com/kernel/kernel-go-sdk/commit/a09849ac32a842675babeefdf32d136e18a9d812))
+* Support multiple audit log method exclusions ([de83d75](https://github.com/kernel/kernel-go-sdk/commit/de83d75e14f7f819f6c6982a7c9833d7a3f45721))
+
+
+### Documentation
+
+* **openapi:** describe unified concurrency limit, deprecate max_pooled_sessions (CUS-275) ([edcc0e5](https://github.com/kernel/kernel-go-sdk/commit/edcc0e5e25cbce705d36a316b146a6eda30dc4fb))
+
 ## 0.76.0 (2026-07-09)
 
 Full Changelog: [v0.75.0...v0.76.0](https://github.com/kernel/kernel-go-sdk/compare/v0.75.0...v0.76.0)
