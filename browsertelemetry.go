@@ -421,7 +421,10 @@ func (r *BrowserConsoleErrorEvent) UnmarshalJSON(data []byte) error {
 // events. Identifies the target, frame, and navigation epoch in which the event
 // occurred.
 type BrowserConsoleErrorEventData struct {
-	// Error message text. Present in both source paths.
+	// Human-readable error text, as the browser console would display it. For
+	// console.error() calls, the first argument coerced to a string. For uncaught
+	// exceptions, the prefix and error message, e.g. "Uncaught Error: boom" or
+	// "Uncaught (in promise) TypeError: x is not a function".
 	Text string `json:"text" api:"required"`
 	// All console arguments coerced to strings. Present only when sourced from
 	// Runtime.consoleAPICalled.
