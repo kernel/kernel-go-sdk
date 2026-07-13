@@ -167,6 +167,26 @@ type DeploymentStateEventDeployment struct {
 	// API key, OAuth, and managed-auth callers, which receive every key with an empty
 	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
+	// Hex-encoded SHA-256 checksum of the source archive. For file uploads, this
+	// hashes the uploaded archive; for GitHub-sourced deployments, this hashes the
+	// GitHub archive downloaded by the API. Omitted for deployments created before
+	// this field was recorded.
+	SourceChecksum string `json:"source_checksum"`
+	// For GitHub-sourced deployments, the subpath within the repository that was used
+	// as the deploy root. Omitted when the repo root was used or for file uploads.
+	SourcePath string `json:"source_path"`
+	// For GitHub-sourced deployments, the git ref as requested at deploy time (branch,
+	// tag, or commit SHA — not resolved to a commit). Omitted for file uploads.
+	SourceRef string `json:"source_ref"`
+	// Origin of the deployed source code. This is read-only response provenance;
+	// `file` indicates an uploaded archive and `github` indicates a repository fetched
+	// by the API.
+	//
+	// Any of "file", "github".
+	SourceType string `json:"source_type"`
+	// For GitHub-sourced deployments, the repository URL that was fetched. Omitted for
+	// file uploads.
+	SourceURL string `json:"source_url"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
@@ -179,6 +199,11 @@ type DeploymentStateEventDeployment struct {
 		Status            respjson.Field
 		EntrypointRelPath respjson.Field
 		EnvVars           respjson.Field
+		SourceChecksum    respjson.Field
+		SourcePath        respjson.Field
+		SourceRef         respjson.Field
+		SourceType        respjson.Field
+		SourceURL         respjson.Field
 		StatusReason      respjson.Field
 		UpdatedAt         respjson.Field
 		ExtraFields       map[string]respjson.Field
@@ -210,6 +235,26 @@ type DeploymentNewResponse struct {
 	// API key, OAuth, and managed-auth callers, which receive every key with an empty
 	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
+	// Hex-encoded SHA-256 checksum of the source archive. For file uploads, this
+	// hashes the uploaded archive; for GitHub-sourced deployments, this hashes the
+	// GitHub archive downloaded by the API. Omitted for deployments created before
+	// this field was recorded.
+	SourceChecksum string `json:"source_checksum"`
+	// For GitHub-sourced deployments, the subpath within the repository that was used
+	// as the deploy root. Omitted when the repo root was used or for file uploads.
+	SourcePath string `json:"source_path"`
+	// For GitHub-sourced deployments, the git ref as requested at deploy time (branch,
+	// tag, or commit SHA — not resolved to a commit). Omitted for file uploads.
+	SourceRef string `json:"source_ref"`
+	// Origin of the deployed source code. This is read-only response provenance;
+	// `file` indicates an uploaded archive and `github` indicates a repository fetched
+	// by the API.
+	//
+	// Any of "file", "github".
+	SourceType DeploymentNewResponseSourceType `json:"source_type"`
+	// For GitHub-sourced deployments, the repository URL that was fetched. Omitted for
+	// file uploads.
+	SourceURL string `json:"source_url"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
@@ -222,6 +267,11 @@ type DeploymentNewResponse struct {
 		Status            respjson.Field
 		EntrypointRelPath respjson.Field
 		EnvVars           respjson.Field
+		SourceChecksum    respjson.Field
+		SourcePath        respjson.Field
+		SourceRef         respjson.Field
+		SourceType        respjson.Field
+		SourceURL         respjson.Field
 		StatusReason      respjson.Field
 		UpdatedAt         respjson.Field
 		ExtraFields       map[string]respjson.Field
@@ -246,6 +296,16 @@ const (
 	DeploymentNewResponseStatusStopped    DeploymentNewResponseStatus = "stopped"
 )
 
+// Origin of the deployed source code. This is read-only response provenance;
+// `file` indicates an uploaded archive and `github` indicates a repository fetched
+// by the API.
+type DeploymentNewResponseSourceType string
+
+const (
+	DeploymentNewResponseSourceTypeFile   DeploymentNewResponseSourceType = "file"
+	DeploymentNewResponseSourceTypeGitHub DeploymentNewResponseSourceType = "github"
+)
+
 // Deployment record information.
 type DeploymentGetResponse struct {
 	// Unique identifier for the deployment
@@ -264,6 +324,26 @@ type DeploymentGetResponse struct {
 	// API key, OAuth, and managed-auth callers, which receive every key with an empty
 	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
+	// Hex-encoded SHA-256 checksum of the source archive. For file uploads, this
+	// hashes the uploaded archive; for GitHub-sourced deployments, this hashes the
+	// GitHub archive downloaded by the API. Omitted for deployments created before
+	// this field was recorded.
+	SourceChecksum string `json:"source_checksum"`
+	// For GitHub-sourced deployments, the subpath within the repository that was used
+	// as the deploy root. Omitted when the repo root was used or for file uploads.
+	SourcePath string `json:"source_path"`
+	// For GitHub-sourced deployments, the git ref as requested at deploy time (branch,
+	// tag, or commit SHA — not resolved to a commit). Omitted for file uploads.
+	SourceRef string `json:"source_ref"`
+	// Origin of the deployed source code. This is read-only response provenance;
+	// `file` indicates an uploaded archive and `github` indicates a repository fetched
+	// by the API.
+	//
+	// Any of "file", "github".
+	SourceType DeploymentGetResponseSourceType `json:"source_type"`
+	// For GitHub-sourced deployments, the repository URL that was fetched. Omitted for
+	// file uploads.
+	SourceURL string `json:"source_url"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
@@ -276,6 +356,11 @@ type DeploymentGetResponse struct {
 		Status            respjson.Field
 		EntrypointRelPath respjson.Field
 		EnvVars           respjson.Field
+		SourceChecksum    respjson.Field
+		SourcePath        respjson.Field
+		SourceRef         respjson.Field
+		SourceType        respjson.Field
+		SourceURL         respjson.Field
 		StatusReason      respjson.Field
 		UpdatedAt         respjson.Field
 		ExtraFields       map[string]respjson.Field
@@ -300,6 +385,16 @@ const (
 	DeploymentGetResponseStatusStopped    DeploymentGetResponseStatus = "stopped"
 )
 
+// Origin of the deployed source code. This is read-only response provenance;
+// `file` indicates an uploaded archive and `github` indicates a repository fetched
+// by the API.
+type DeploymentGetResponseSourceType string
+
+const (
+	DeploymentGetResponseSourceTypeFile   DeploymentGetResponseSourceType = "file"
+	DeploymentGetResponseSourceTypeGitHub DeploymentGetResponseSourceType = "github"
+)
+
 // Deployment record information.
 type DeploymentListResponse struct {
 	// Unique identifier for the deployment
@@ -318,6 +413,26 @@ type DeploymentListResponse struct {
 	// API key, OAuth, and managed-auth callers, which receive every key with an empty
 	// string value. Only dashboard sessions receive the actual values.
 	EnvVars map[string]string `json:"env_vars"`
+	// Hex-encoded SHA-256 checksum of the source archive. For file uploads, this
+	// hashes the uploaded archive; for GitHub-sourced deployments, this hashes the
+	// GitHub archive downloaded by the API. Omitted for deployments created before
+	// this field was recorded.
+	SourceChecksum string `json:"source_checksum"`
+	// For GitHub-sourced deployments, the subpath within the repository that was used
+	// as the deploy root. Omitted when the repo root was used or for file uploads.
+	SourcePath string `json:"source_path"`
+	// For GitHub-sourced deployments, the git ref as requested at deploy time (branch,
+	// tag, or commit SHA — not resolved to a commit). Omitted for file uploads.
+	SourceRef string `json:"source_ref"`
+	// Origin of the deployed source code. This is read-only response provenance;
+	// `file` indicates an uploaded archive and `github` indicates a repository fetched
+	// by the API.
+	//
+	// Any of "file", "github".
+	SourceType DeploymentListResponseSourceType `json:"source_type"`
+	// For GitHub-sourced deployments, the repository URL that was fetched. Omitted for
+	// file uploads.
+	SourceURL string `json:"source_url"`
 	// Status reason
 	StatusReason string `json:"status_reason"`
 	// Timestamp when the deployment was last updated
@@ -330,6 +445,11 @@ type DeploymentListResponse struct {
 		Status            respjson.Field
 		EntrypointRelPath respjson.Field
 		EnvVars           respjson.Field
+		SourceChecksum    respjson.Field
+		SourcePath        respjson.Field
+		SourceRef         respjson.Field
+		SourceType        respjson.Field
+		SourceURL         respjson.Field
 		StatusReason      respjson.Field
 		UpdatedAt         respjson.Field
 		ExtraFields       map[string]respjson.Field
@@ -352,6 +472,16 @@ const (
 	DeploymentListResponseStatusRunning    DeploymentListResponseStatus = "running"
 	DeploymentListResponseStatusFailed     DeploymentListResponseStatus = "failed"
 	DeploymentListResponseStatusStopped    DeploymentListResponseStatus = "stopped"
+)
+
+// Origin of the deployed source code. This is read-only response provenance;
+// `file` indicates an uploaded archive and `github` indicates a repository fetched
+// by the API.
+type DeploymentListResponseSourceType string
+
+const (
+	DeploymentListResponseSourceTypeFile   DeploymentListResponseSourceType = "file"
+	DeploymentListResponseSourceTypeGitHub DeploymentListResponseSourceType = "github"
 )
 
 // DeploymentFollowResponseUnion contains all possible properties and values from

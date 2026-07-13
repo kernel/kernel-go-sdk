@@ -65,6 +65,35 @@ func TestProfileGet(t *testing.T) {
 	}
 }
 
+func TestProfileUpdate(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := kernel.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Profiles.Update(
+		context.TODO(),
+		"id_or_name",
+		kernel.ProfileUpdateParams{
+			Name: "my-renamed-profile",
+		},
+	)
+	if err != nil {
+		var apierr *kernel.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestProfileListWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -80,6 +109,7 @@ func TestProfileListWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Profiles.List(context.TODO(), kernel.ProfileListParams{
 		Limit:  kernel.Int(1),
+		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
 	})

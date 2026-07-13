@@ -69,11 +69,14 @@ type ProjectLimits struct {
 	// Maximum concurrent app invocations for this project. Null means no project-level
 	// cap.
 	MaxConcurrentInvocations int64 `json:"max_concurrent_invocations" api:"nullable"`
-	// Maximum concurrent browser sessions for this project. Null means no
-	// project-level cap.
-	MaxConcurrentSessions int64 `json:"max_concurrent_sessions" api:"nullable"`
-	// Maximum pooled sessions capacity for this project. Null means no project-level
+	// Maximum concurrent browsers for this project, covering both on-demand sessions
+	// (`browsers.create()`) and browser pool reservations. Null means no project-level
 	// cap.
+	MaxConcurrentSessions int64 `json:"max_concurrent_sessions" api:"nullable"`
+	// Deprecated: pooled browsers now count toward `max_concurrent_sessions`. Always
+	// null once the unified concurrency limit is enabled for your organization.
+	//
+	// Deprecated: deprecated
 	MaxPooledSessions int64 `json:"max_pooled_sessions" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -95,11 +98,15 @@ type UpdateProjectLimitsRequestParam struct {
 	// Maximum concurrent app invocations for this project. Set to 0 to remove the cap;
 	// omit to leave unchanged.
 	MaxConcurrentInvocations param.Opt[int64] `json:"max_concurrent_invocations,omitzero"`
-	// Maximum concurrent browser sessions for this project. Set to 0 to remove the
-	// cap; omit to leave unchanged.
+	// Maximum concurrent browsers for this project, covering both on-demand sessions
+	// and browser pool reservations. Set to 0 to remove the cap; omit to leave
+	// unchanged.
 	MaxConcurrentSessions param.Opt[int64] `json:"max_concurrent_sessions,omitzero"`
-	// Maximum pooled sessions capacity for this project. Set to 0 to remove the cap;
-	// omit to leave unchanged.
+	// Deprecated: pooled browsers now count toward `max_concurrent_sessions`. Requests
+	// that set this field are rejected with a 400 once the unified concurrency limit
+	// is enabled for your organization.
+	//
+	// Deprecated: deprecated
 	MaxPooledSessions param.Opt[int64] `json:"max_pooled_sessions,omitzero"`
 	paramObj
 }

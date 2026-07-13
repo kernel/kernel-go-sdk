@@ -138,7 +138,8 @@ type APIKey struct {
 	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
 	// Masked version of the API key
 	MaskedKey string `json:"masked_key" api:"required"`
-	// API key name
+	// Label for the API key. API keys are not addressable by name; use the ID or key
+	// identifier for stable references.
 	Name string `json:"name" api:"required"`
 	// Project identifier for project-scoped API keys. Null means org-wide.
 	ProjectID string `json:"project_id" api:"required"`
@@ -210,7 +211,7 @@ func (r *CreatedAPIKey) UnmarshalJSON(data []byte) error {
 }
 
 type APIKeyNewParams struct {
-	// API key name (1-255 characters)
+	// Label for the API key (1-255 characters). API keys are not addressable by name.
 	Name string `json:"name" api:"required"`
 	// Number of days until expiry, up to 3650. Use null for never.
 	DaysToExpire param.Opt[int64] `json:"days_to_expire,omitzero"`
@@ -262,6 +263,11 @@ type APIKeyListParams struct {
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	// Maximum number of results to return
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Exact-match filter on API key name using the database collation. In production,
+	// matching is case- and accent-insensitive. Names are not required to be unique,
+	// so multiple keys may match. When status=all or include_deleted=true is set,
+	// soft-deleted keys with the same name may also match.
+	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Case-insensitive substring match against API key name, creator, and project. API

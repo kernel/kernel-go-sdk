@@ -114,6 +114,7 @@ func TestAPIKeyListWithOptionalParams(t *testing.T) {
 	_, err := client.APIKeys.List(context.TODO(), kernel.APIKeyListParams{
 		IncludeDeleted: kernel.Bool(true),
 		Limit:          kernel.Int(100),
+		Name:           kernel.String("name"),
 		Offset:         kernel.Int(0),
 		Query:          kernel.String("query"),
 		SortBy:         kernel.APIKeyListParamsSortByCreatedAt,
