@@ -132,8 +132,6 @@ type AuditLogListParams struct {
 	Start time.Time `query:"start" api:"required" format:"date-time" json:"-"`
 	// Filter by authentication strategy.
 	AuthStrategy param.Opt[string] `query:"auth_strategy,omitzero" json:"-"`
-	// Filter out results by HTTP method.
-	ExcludeMethod param.Opt[string] `query:"exclude_method,omitzero" json:"-"`
 	// Maximum number of results to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Filter by HTTP method.
@@ -144,6 +142,8 @@ type AuditLogListParams struct {
 	Search param.Opt[string] `query:"search,omitzero" json:"-"`
 	// Filter by service name.
 	Service param.Opt[string] `query:"service,omitzero" json:"-"`
+	// Filter out results by HTTP method.
+	ExcludeMethod []string `query:"exclude_method,omitzero" json:"-"`
 	// Additional user IDs to OR into free-text search.
 	SearchUserID []string `query:"search_user_id,omitzero" json:"-"`
 	paramObj
@@ -166,8 +166,6 @@ type AuditLogExportChunkParams struct {
 	AuthStrategy param.Opt[string] `query:"auth_strategy,omitzero" json:"-"`
 	// Opaque cursor from X-Next-Cursor for the next chunk of older records.
 	Cursor param.Opt[string] `query:"cursor,omitzero" json:"-"`
-	// Filter out results by HTTP method.
-	ExcludeMethod param.Opt[string] `query:"exclude_method,omitzero" json:"-"`
 	// Maximum number of records to return in this chunk.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Filter by HTTP method.
@@ -176,6 +174,8 @@ type AuditLogExportChunkParams struct {
 	Search param.Opt[string] `query:"search,omitzero" json:"-"`
 	// Filter by service name.
 	Service param.Opt[string] `query:"service,omitzero" json:"-"`
+	// Filter out results by HTTP method.
+	ExcludeMethod []string `query:"exclude_method,omitzero" json:"-"`
 	// Encoding for the returned chunk.
 	//
 	// Any of "jsonl", "jsonl.gz".
