@@ -250,6 +250,9 @@ type BrowserPoolBrowserPoolConfig struct {
 	// If true, launches the browser in stealth mode to reduce detection by anti-bot
 	// mechanisms.
 	Stealth bool `json:"stealth"`
+	// Active telemetry configuration applied to browsers warmed into this pool, if
+	// any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Default idle timeout in seconds for browsers acquired from this pool before they
 	// are destroyed. Minimum 10, maximum 259200 (72 hours).
 	TimeoutSeconds int64 `json:"timeout_seconds"`
@@ -280,6 +283,7 @@ type BrowserPoolBrowserPoolConfig struct {
 		RefreshOnProfileUpdate respjson.Field
 		StartURL               respjson.Field
 		Stealth                respjson.Field
+		Telemetry              respjson.Field
 		TimeoutSeconds         respjson.Field
 		Viewport               respjson.Field
 		ExtraFields            map[string]respjson.Field
@@ -454,6 +458,13 @@ type BrowserPoolNewParams struct {
 	// Default idle timeout in seconds for browsers acquired from this pool before they
 	// are destroyed. Defaults to 600 seconds. Minimum 10, maximum 259200 (72 hours).
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// Telemetry configuration applied to browsers warmed into this pool. Set enabled
+	// to true to start capture using the default set, or provide browser category
+	// settings. If omitted, null, set to an empty object ({}), set to enabled: false
+	// without browser category settings, or all four CDP categories are explicitly
+	// disabled, no telemetry is configured on the pool. Only applied to newly-warmed
+	// browsers.
+	Telemetry BrowserPoolNewParamsTelemetry `json:"telemetry,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
 	// Keys are Chrome enterprise policy names; values must match their expected types.
 	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
@@ -514,6 +525,43 @@ func (r *BrowserPoolNewParamsProfile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Telemetry configuration applied to browsers warmed into this pool. Set enabled
+// to true to start capture using the default set, or provide browser category
+// settings. If omitted, null, set to an empty object ({}), set to enabled: false
+// without browser category settings, or all four CDP categories are explicitly
+// disabled, no telemetry is configured on the pool. Only applied to newly-warmed
+// browsers.
+type BrowserPoolNewParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r BrowserPoolNewParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPoolNewParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPoolNewParamsTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserPoolUpdateParams struct {
 	// Whether to discard all idle browsers and rebuild them immediately with the new
 	// configuration. Defaults to false. Only browsers that are idle when the update
@@ -555,6 +603,14 @@ type BrowserPoolUpdateParams struct {
 	// If provided, replaces the default idle timeout in seconds for browsers acquired
 	// from this pool before they are destroyed. Minimum 10, maximum 259200 (72 hours).
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// If provided, updates the pool's telemetry configuration. Omit, set to null, or
+	// set to an empty object ({}) to leave the existing configuration unchanged. Set
+	// enabled to true to enable capture using the default set. Set enabled to false to
+	// clear the pool's telemetry. Provide browser category settings for per-category
+	// updates, merged onto the pool's current configuration. Only applied to browsers
+	// warmed after the update; browsers already in the pool keep their configuration
+	// until discarded.
+	Telemetry BrowserPoolUpdateParamsTelemetry `json:"telemetry,omitzero"`
 	// If provided, replaces the custom Chrome enterprise policy overrides applied to
 	// all browsers in this pool. Empty object clears any previously-set policy. Keys
 	// are Chrome enterprise policy names; values must match their expected types.
@@ -617,6 +673,44 @@ func (r *BrowserPoolUpdateParamsProfile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// If provided, updates the pool's telemetry configuration. Omit, set to null, or
+// set to an empty object ({}) to leave the existing configuration unchanged. Set
+// enabled to true to enable capture using the default set. Set enabled to false to
+// clear the pool's telemetry. Provide browser category settings for per-category
+// updates, merged onto the pool's current configuration. Only applied to browsers
+// warmed after the update; browsers already in the pool keep their configuration
+// until discarded.
+type BrowserPoolUpdateParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r BrowserPoolUpdateParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPoolUpdateParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPoolUpdateParamsTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserPoolListParams struct {
 	// Limit the number of browser pools to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
@@ -670,6 +764,15 @@ type BrowserPoolAcquireParams struct {
 	// for this acquire only. Best-effort: failures to navigate do not fail the
 	// acquire.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
+	// Telemetry override for the acquired browser, applied to this lease only. Merges
+	// onto the browser's current (pool-inherited) telemetry using the same
+	// per-category semantics as PATCH /browsers: provided categories override the
+	// current configuration, omitted categories are inherited. Set enabled to true to
+	// resolve the config fresh from the default set, or enabled to false to stop
+	// capture. When the browser is released back to the pool with reuse, its telemetry
+	// is reset to the pool's baseline, so the override does not carry over to the next
+	// lease.
+	Telemetry BrowserPoolAcquireParamsTelemetry `json:"telemetry,omitzero"`
 	// Optional user-defined key-value tags for the acquired browser session, used to
 	// find and group sessions later. Applies to this lease only and are cleared when
 	// the browser is released back to the pool. Up to 50 pairs.
@@ -682,6 +785,45 @@ func (r BrowserPoolAcquireParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserPoolAcquireParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Telemetry override for the acquired browser, applied to this lease only. Merges
+// onto the browser's current (pool-inherited) telemetry using the same
+// per-category semantics as PATCH /browsers: provided categories override the
+// current configuration, omitted categories are inherited. Set enabled to true to
+// resolve the config fresh from the default set, or enabled to false to stop
+// capture. When the browser is released back to the pool with reuse, its telemetry
+// is reset to the pool's baseline, so the override does not carry over to the next
+// lease.
+type BrowserPoolAcquireParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r BrowserPoolAcquireParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPoolAcquireParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPoolAcquireParamsTelemetry) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

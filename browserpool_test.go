@@ -48,7 +48,39 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		RefreshOnProfileUpdate: kernel.Bool(true),
 		StartURL:               kernel.String("https://example.com"),
 		Stealth:                kernel.Bool(true),
-		TimeoutSeconds:         kernel.Int(10),
+		Telemetry: kernel.BrowserPoolNewParamsTelemetry{
+			Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+				Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Connection: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Console: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Control: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Network: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Page: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				System: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+			},
+			Enabled: kernel.Bool(true),
+		},
+		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
 			Height:      800,
 			Width:       1280,
@@ -125,7 +157,39 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Size:                   kernel.Int(10),
 			StartURL:               kernel.String("https://example.com"),
 			Stealth:                kernel.Bool(true),
-			TimeoutSeconds:         kernel.Int(10),
+			Telemetry: kernel.BrowserPoolUpdateParamsTelemetry{
+				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Connection: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Control: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Network: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					System: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+				},
+				Enabled: kernel.Bool(true),
+			},
+			TimeoutSeconds: kernel.Int(10),
 			Viewport: shared.BrowserViewportParam{
 				Height:      800,
 				Width:       1280,
@@ -222,6 +286,38 @@ func TestBrowserPoolAcquireWithOptionalParams(t *testing.T) {
 			Tags: kernel.Tags{
 				"team": "backend",
 				"env":  "staging",
+			},
+			Telemetry: kernel.BrowserPoolAcquireParamsTelemetry{
+				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Connection: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Control: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Network: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					System: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+				},
+				Enabled: kernel.Bool(true),
 			},
 		},
 	)
