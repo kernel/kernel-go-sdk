@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.78.1 (2026-07-15)
+
+Full Changelog: [v0.78.0...v0.78.1](https://github.com/kernel/kernel-go-sdk/compare/v0.78.0...v0.78.1)
+
+### Features
+
+* Default dashboard browser pools to 25% fill rate ([d00ac8a](https://github.com/kernel/kernel-go-sdk/commit/d00ac8a78bec4aa2c271ab5917ac065e6db7cbc5))
+
 ## 0.78.0 (2026-07-13)
 
 Full Changelog: [v0.77.0...v0.78.0](https://github.com/kernel/kernel-go-sdk/compare/v0.77.0...v0.78.0)
