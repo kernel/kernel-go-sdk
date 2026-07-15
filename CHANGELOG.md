@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.79.0 (2026-07-15)
+
+Full Changelog: [v0.78.1...v0.79.0](https://github.com/kernel/kernel-go-sdk/compare/v0.78.1...v0.79.0)
+
+### Features
+
+* Add telemetry support for browser pools with BAA enforcement ([042f389](https://github.com/kernel/kernel-go-sdk/commit/042f3899a86034a68bdb3493f91cde4f254c75fc))
+
 ## 0.78.1 (2026-07-15)
 
 Full Changelog: [v0.78.0...v0.78.1](https://github.com/kernel/kernel-go-sdk/compare/v0.78.0...v0.78.1)
