@@ -424,7 +424,7 @@ type BrowserPoolNewParams struct {
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
 	Size int64 `json:"size" api:"required"`
-	// Percentage of the pool to fill per minute. Defaults to 10. The cap is 25 for
+	// Percentage of the pool to fill per minute. Defaults to 25. The cap is 25 for
 	// most organizations but can be raised per-organization, so only the lower bound
 	// is enforced here.
 	FillRatePerMinute param.Opt[int64] `json:"fill_rate_per_minute,omitzero"`
