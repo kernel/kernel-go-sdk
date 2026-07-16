@@ -166,7 +166,7 @@ func TestProxyCheckWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.ProxyCheckParams{
-			URL: kernel.String("url"),
+			URL: kernel.String("https://example.com"),
 		},
 	)
 	if err != nil {
