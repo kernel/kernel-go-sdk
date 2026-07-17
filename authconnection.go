@@ -333,6 +333,9 @@ type ManagedAuth struct {
 	// "viable_plans_require_external_action", "requires_external_action",
 	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code".
 	CanReauthReason ManagedAuthCanReauthReason `json:"can_reauth_reason"`
+	// Canonical choices awaiting selection. Prefer this over pending_sso_buttons,
+	// mfa_options, and sign_in_options when present.
+	Choices []ManagedAuthChoice `json:"choices" api:"nullable"`
 	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
@@ -349,6 +352,9 @@ type ManagedAuth struct {
 	// Instructions for external action (present when
 	// flow_step=awaiting_external_action)
 	ExternalActionMessage string `json:"external_action_message" api:"nullable"`
+	// Canonical fields awaiting input. Prefer this over discovered_fields when
+	// present.
+	Fields []ManagedAuthField `json:"fields" api:"nullable"`
 	// When the current flow expires (null when no flow in progress). A flow past this
 	// timestamp is no longer valid and its `flow_status` will be `EXPIRED`. Clients
 	// may start a new login to supersede a stale `IN_PROGRESS` flow past this
@@ -429,11 +435,13 @@ type ManagedAuth struct {
 		BrowserSessionID      respjson.Field
 		CanReauth             respjson.Field
 		CanReauthReason       respjson.Field
+		Choices               respjson.Field
 		Credential            respjson.Field
 		DiscoveredFields      respjson.Field
 		ErrorCode             respjson.Field
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
+		Fields                respjson.Field
 		FlowExpiresAt         respjson.Field
 		FlowStatus            respjson.Field
 		FlowStep              respjson.Field
@@ -519,6 +527,39 @@ const (
 	ManagedAuthCanReauthReasonRequiresEmailCode                ManagedAuthCanReauthReason = "requires_email_code"
 )
 
+// Canonical auth-flow choice awaiting user selection.
+type ManagedAuthChoice struct {
+	// Stable choice identifier for canonical submit.
+	ID string `json:"id" api:"required"`
+	// Human-readable choice label.
+	Label string `json:"label" api:"required"`
+	// Choice type.
+	//
+	// Any of "mfa_method", "sso_provider", "sign_in_method", "auth_method",
+	// "identifier_method", "account", "other".
+	Type string `json:"type" api:"required"`
+	// Additional context for the choice.
+	Description string `json:"description" api:"nullable"`
+	// Selector for the visible choice, when available.
+	ObservedSelector string `json:"observed_selector" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Label            respjson.Field
+		Type             respjson.Field
+		Description      respjson.Field
+		ObservedSelector respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthChoice) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthChoice) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Reference to credentials for the auth connection. Use one of:
 //
 // - { name } for Kernel credentials
@@ -592,6 +633,41 @@ type ManagedAuthDiscoveredField struct {
 // Returns the unmodified JSON received from the API
 func (r ManagedAuthDiscoveredField) RawJSON() string { return r.JSON.raw }
 func (r *ManagedAuthDiscoveredField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Canonical field awaiting user input.
+type ManagedAuthField struct {
+	// Stable field identifier for canonical submit.
+	ID string `json:"id" api:"required"`
+	// Credential reference name to store the submitted value under.
+	Ref string `json:"ref" api:"required"`
+	// Managed-auth field type.
+	//
+	// Any of "identifier", "password", "code", "totp_code", "totp_secret", "text".
+	Type string `json:"type" api:"required"`
+	// Human-readable label shown to the user.
+	Label string `json:"label"`
+	// Selector for the visible field, when available.
+	ObservedSelector string `json:"observed_selector" api:"nullable"`
+	// Whether this field is required.
+	Required bool `json:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Ref              respjson.Field
+		Type             respjson.Field
+		Label            respjson.Field
+		ObservedSelector respjson.Field
+		Required         respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthField) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1034,11 +1110,15 @@ func (r *ManagedAuthUpdateRequestProxyParam) UnmarshalJSON(data []byte) error {
 }
 
 // Request to submit field values, click an SSO button, select an MFA method, or
-// select a sign-in option. Provide exactly one of fields, sso_button_selector,
-// sso_provider, mfa_option_id, or sign_in_option_id.
+// select a sign-in option. Prefer canonical selected_choice_id/field_values when
+// the API returns fields/choices; legacy
+// fields/sso_button_selector/sso_provider/mfa_option_id/sign_in_option_id remain
+// supported during deprecation.
 type SubmitFieldsRequestParam struct {
 	// The MFA method type to select (when mfa_options were returned)
 	MfaOptionID param.Opt[string] `json:"mfa_option_id,omitzero"`
+	// Canonical choice ID selected by the user.
+	SelectedChoiceID param.Opt[string] `json:"selected_choice_id,omitzero"`
 	// The sign-in option ID to select (when sign_in_options were returned)
 	SignInOptionID param.Opt[string] `json:"sign_in_option_id,omitzero"`
 	// XPath selector for the SSO button to click (ODA). Use sso_provider instead for
@@ -1047,6 +1127,8 @@ type SubmitFieldsRequestParam struct {
 	// SSO provider to click, matching the provider field from pending_sso_buttons
 	// (e.g., "google", "github"). Cannot be used with sso_button_selector.
 	SSOProvider param.Opt[string] `json:"sso_provider,omitzero"`
+	// Canonical map of field ID to submitted value.
+	FieldValues map[string]string `json:"field_values,omitzero"`
 	// Map of field name to value
 	Fields map[string]string `json:"fields,omitzero"`
 	paramObj
@@ -1095,6 +1177,8 @@ type AuthConnectionFollowResponseUnion struct {
 	FlowStep  string    `json:"flow_step"`
 	Timestamp time.Time `json:"timestamp"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
+	Choices []AuthConnectionFollowResponseManagedAuthStateChoice `json:"choices"`
+	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	ErrorCode string `json:"error_code"`
@@ -1102,6 +1186,8 @@ type AuthConnectionFollowResponseUnion struct {
 	ErrorMessage string `json:"error_message"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	ExternalActionMessage string `json:"external_action_message"`
+	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
+	Fields []AuthConnectionFollowResponseManagedAuthStateField `json:"fields"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	FlowType string `json:"flow_type"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
@@ -1125,10 +1211,12 @@ type AuthConnectionFollowResponseUnion struct {
 		FlowStatus            respjson.Field
 		FlowStep              respjson.Field
 		Timestamp             respjson.Field
+		Choices               respjson.Field
 		DiscoveredFields      respjson.Field
 		ErrorCode             respjson.Field
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
+		Fields                respjson.Field
 		FlowType              respjson.Field
 		HostedURL             respjson.Field
 		LiveViewURL           respjson.Field
@@ -1209,6 +1297,9 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	FlowStep string `json:"flow_step" api:"required"`
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
+	// Canonical choices awaiting selection. Prefer this over pending_sso_buttons,
+	// mfa_options, and sign_in_options when present.
+	Choices []AuthConnectionFollowResponseManagedAuthStateChoice `json:"choices"`
 	// Fields awaiting input (present when flow_step=AWAITING_INPUT; may also be
 	// present with AWAITING_EXTERNAL_ACTION as fallback actions).
 	DiscoveredFields []AuthConnectionFollowResponseManagedAuthStateDiscoveredField `json:"discovered_fields"`
@@ -1219,6 +1310,9 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	// Instructions for external action (present when
 	// flow_step=AWAITING_EXTERNAL_ACTION).
 	ExternalActionMessage string `json:"external_action_message"`
+	// Canonical fields awaiting input. Prefer this over discovered_fields when
+	// present.
+	Fields []AuthConnectionFollowResponseManagedAuthStateField `json:"fields"`
 	// Type of the current flow.
 	//
 	// Any of "LOGIN", "REAUTH".
@@ -1248,10 +1342,12 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 		FlowStatus            respjson.Field
 		FlowStep              respjson.Field
 		Timestamp             respjson.Field
+		Choices               respjson.Field
 		DiscoveredFields      respjson.Field
 		ErrorCode             respjson.Field
 		ErrorMessage          respjson.Field
 		ExternalActionMessage respjson.Field
+		Fields                respjson.Field
 		FlowType              respjson.Field
 		HostedURL             respjson.Field
 		LiveViewURL           respjson.Field
@@ -1268,6 +1364,39 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 // Returns the unmodified JSON received from the API
 func (r AuthConnectionFollowResponseManagedAuthState) RawJSON() string { return r.JSON.raw }
 func (r *AuthConnectionFollowResponseManagedAuthState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Canonical auth-flow choice awaiting user selection.
+type AuthConnectionFollowResponseManagedAuthStateChoice struct {
+	// Stable choice identifier for canonical submit.
+	ID string `json:"id" api:"required"`
+	// Human-readable choice label.
+	Label string `json:"label" api:"required"`
+	// Choice type.
+	//
+	// Any of "mfa_method", "sso_provider", "sign_in_method", "auth_method",
+	// "identifier_method", "account", "other".
+	Type string `json:"type" api:"required"`
+	// Additional context for the choice.
+	Description string `json:"description" api:"nullable"`
+	// Selector for the visible choice, when available.
+	ObservedSelector string `json:"observed_selector" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Label            respjson.Field
+		Type             respjson.Field
+		Description      respjson.Field
+		ObservedSelector respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthConnectionFollowResponseManagedAuthStateChoice) RawJSON() string { return r.JSON.raw }
+func (r *AuthConnectionFollowResponseManagedAuthStateChoice) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1315,6 +1444,41 @@ func (r AuthConnectionFollowResponseManagedAuthStateDiscoveredField) RawJSON() s
 	return r.JSON.raw
 }
 func (r *AuthConnectionFollowResponseManagedAuthStateDiscoveredField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Canonical field awaiting user input.
+type AuthConnectionFollowResponseManagedAuthStateField struct {
+	// Stable field identifier for canonical submit.
+	ID string `json:"id" api:"required"`
+	// Credential reference name to store the submitted value under.
+	Ref string `json:"ref" api:"required"`
+	// Managed-auth field type.
+	//
+	// Any of "identifier", "password", "code", "totp_code", "totp_secret", "text".
+	Type string `json:"type" api:"required"`
+	// Human-readable label shown to the user.
+	Label string `json:"label"`
+	// Selector for the visible field, when available.
+	ObservedSelector string `json:"observed_selector" api:"nullable"`
+	// Whether this field is required.
+	Required bool `json:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Ref              respjson.Field
+		Type             respjson.Field
+		Label            respjson.Field
+		ObservedSelector respjson.Field
+		Required         respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthConnectionFollowResponseManagedAuthStateField) RawJSON() string { return r.JSON.raw }
+func (r *AuthConnectionFollowResponseManagedAuthStateField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1491,8 +1655,10 @@ func (r *AuthConnectionLoginParamsProxy) UnmarshalJSON(data []byte) error {
 
 type AuthConnectionSubmitParams struct {
 	// Request to submit field values, click an SSO button, select an MFA method, or
-	// select a sign-in option. Provide exactly one of fields, sso_button_selector,
-	// sso_provider, mfa_option_id, or sign_in_option_id.
+	// select a sign-in option. Prefer canonical selected_choice_id/field_values when
+	// the API returns fields/choices; legacy
+	// fields/sso_button_selector/sso_provider/mfa_option_id/sign_in_option_id remain
+	// supported during deprecation.
 	SubmitFieldsRequest SubmitFieldsRequestParam
 	paramObj
 }

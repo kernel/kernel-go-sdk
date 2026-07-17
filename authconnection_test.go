@@ -231,11 +231,16 @@ func TestAuthConnectionSubmitWithOptionalParams(t *testing.T) {
 		"id",
 		kernel.AuthConnectionSubmitParams{
 			SubmitFieldsRequest: kernel.SubmitFieldsRequestParam{
+				FieldValues: map[string]string{
+					"field_email":    "user@example.com",
+					"field_password": "secret",
+				},
 				Fields: map[string]string{
 					"email":    "user@example.com",
 					"password": "secret",
 				},
 				MfaOptionID:       kernel.String("sms"),
+				SelectedChoiceID:  kernel.String("google"),
 				SignInOptionID:    kernel.String("work-account"),
 				SSOButtonSelector: kernel.String("xpath=//button[contains(text(), 'Continue with Google')]"),
 				SSOProvider:       kernel.String("google"),
