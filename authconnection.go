@@ -922,6 +922,8 @@ type ManagedAuthTimelineEvent struct {
 	//
 	// Any of "login", "reauth", "health_check".
 	Type ManagedAuthTimelineEventType `json:"type" api:"required"`
+	// Browser session that produced the event, if one was created.
+	BrowserSessionID string `json:"browser_session_id"`
 	// Machine-readable error code. Present when a login/reauth event failed.
 	ErrorCode string `json:"error_code"`
 	// Human-readable error message. Present when a login/reauth event failed.
@@ -947,19 +949,20 @@ type ManagedAuthTimelineEvent struct {
 	WebsiteError string `json:"website_error"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID             respjson.Field
-		Status         respjson.Field
-		Timestamp      respjson.Field
-		Type           respjson.Field
-		ErrorCode      respjson.Field
-		ErrorMessage   respjson.Field
-		PreviousStatus respjson.Field
-		ReplayID       respjson.Field
-		Step           respjson.Field
-		UpdatedAt      respjson.Field
-		WebsiteError   respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		ID               respjson.Field
+		Status           respjson.Field
+		Timestamp        respjson.Field
+		Type             respjson.Field
+		BrowserSessionID respjson.Field
+		ErrorCode        respjson.Field
+		ErrorMessage     respjson.Field
+		PreviousStatus   respjson.Field
+		ReplayID         respjson.Field
+		Step             respjson.Field
+		UpdatedAt        respjson.Field
+		WebsiteError     respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
 	} `json:"-"`
 }
 
