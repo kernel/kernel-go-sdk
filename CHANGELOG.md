@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.80.0 (2026-07-19)
+
+Full Changelog: [v0.79.0...v0.80.0](https://github.com/kernel/kernel-go-sdk/compare/v0.79.0...v0.80.0)
+
+### Features
+
+* Add example to ProxyCheckRequest.url so API reference sample shows it ([b32ed11](https://github.com/kernel/kernel-go-sdk/commit/b32ed11503054394e20e6d0b81302a4e1e1ded08))
+* Expose browser sessions on auth timeline events ([00728f0](https://github.com/kernel/kernel-go-sdk/commit/00728f053c7a478222312c4baf73c39c82fc0156))
+* **managed-auth:** add TS CUA worker contract (KERNEL-1456) ([5951dfa](https://github.com/kernel/kernel-go-sdk/commit/5951dfae60dce7e60c420c758b5217fe2f96bc6a))
+* **stlc:** configurable CI runner and private-production-repo support in workflow templates ([77f3c17](https://github.com/kernel/kernel-go-sdk/commit/77f3c174783e6c4e8dc227d30c0505aee46f4cfd))
+
 ## 0.79.0 (2026-07-15)
 
 Full Changelog: [v0.78.1...v0.79.0](https://github.com/kernel/kernel-go-sdk/compare/v0.78.1...v0.79.0)
