@@ -30,16 +30,17 @@ func auditLogDownloadResponse(w http.ResponseWriter, body, nextCursor string, ro
 
 func auditLogDownloadParams() AuditLogDownloadParams {
 	return AuditLogDownloadParams{
-		Start:  time.Date(2026, time.June, 1, 0, 0, 0, 0, time.UTC),
-		End:    time.Date(2026, time.June, 2, 0, 0, 0, 0, time.UTC),
-		Format: AuditLogExportChunkParamsFormatJSONLGz,
+		Start: time.Date(2026, time.June, 1, 0, 0, 0, 0, time.UTC),
+		End:   time.Date(2026, time.June, 2, 0, 0, 0, 0, time.UTC),
 	}
 }
 
 func TestAuditLogDownloadWritesVerifiedChunks(t *testing.T) {
 	var cursors []string
+	var formatProvided []bool
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cursors = append(cursors, r.URL.Query().Get("cursor"))
+		formatProvided = append(formatProvided, r.URL.Query().Has("format"))
 		if len(cursors) == 1 {
 			auditLogDownloadResponse(w, "first", "next", 2, true)
 			return
@@ -67,6 +68,9 @@ func TestAuditLogDownloadWritesVerifiedChunks(t *testing.T) {
 	}
 	if len(cursors) != 2 || cursors[0] != "" || cursors[1] != "next" {
 		t.Fatalf("cursors = %#v, want [\"\" \"next\"]", cursors)
+	}
+	if len(formatProvided) != 2 || formatProvided[0] || formatProvided[1] {
+		t.Fatalf("format provided = %#v, want omitted", formatProvided)
 	}
 	if result != (AuditLogDownloadResult{BytesWritten: 11, Chunks: 2, Rows: 3}) {
 		t.Fatalf("result = %#v", result)

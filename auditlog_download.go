@@ -32,7 +32,6 @@ type AuditLogDownloadParams struct {
 	Search        param.Opt[string]
 	Service       param.Opt[string]
 	ExcludeMethod []string
-	Format        AuditLogExportChunkParamsFormat
 	SearchUserID  []string
 }
 
@@ -85,11 +84,12 @@ func WithAuditLogDownloadMaxTransferRetries(retries int) AuditLogDownloadOption 
 	}
 }
 
-// Download writes a complete audit log export to dst. It requests chunks until
-// the export is complete, verifies every chunk checksum, and retries transient
-// transfer failures. Download does not close dst. If Download returns an error,
-// dst may contain a partial export; use a temporary file and atomic rename when
-// the completed export must be published atomically.
+// Download writes a complete gzip-compressed JSON Lines audit log export to
+// dst. It requests chunks until the export is complete, verifies every chunk
+// checksum, and retries transient transfer failures. Download does not close
+// dst. If Download returns an error, dst may contain a partial export; use a
+// temporary file and atomic rename when the completed export must be published
+// atomically.
 func (r *AuditLogService) Download(ctx context.Context, params AuditLogDownloadParams, dst io.Writer, opts ...AuditLogDownloadOption) (AuditLogDownloadResult, error) {
 	if dst == nil {
 		return AuditLogDownloadResult{}, fmt.Errorf("audit log download destination is nil")
@@ -109,7 +109,6 @@ func (r *AuditLogService) Download(ctx context.Context, params AuditLogDownloadP
 		Search:        params.Search,
 		Service:       params.Service,
 		ExcludeMethod: params.ExcludeMethod,
-		Format:        params.Format,
 		SearchUserID:  params.SearchUserID,
 	}
 	cursor := ""
