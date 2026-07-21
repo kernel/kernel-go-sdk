@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.81.0 (2026-07-21)
+
+Full Changelog: [v0.80.0...v0.81.0](https://github.com/kernel/kernel-go-sdk/compare/v0.80.0...v0.81.0)
+
+### Features
+
+* add complete audit log downloads ([2f992e4](https://github.com/kernel/kernel-go-sdk/commit/2f992e48aac664dcce5c7ce22d2879cd0c7dea2e))
+
 ## 0.80.0 (2026-07-19)
 
 Full Changelog: [v0.79.0...v0.80.0](https://github.com/kernel/kernel-go-sdk/compare/v0.79.0...v0.80.0)
