@@ -16,11 +16,10 @@ import (
 )
 
 const (
-	auditLogDownloadAttempts      = 7
-	auditLogDownloadMaxRetryDelay = 8 * time.Second
+	auditLogDownloadMaxTransferRetries = 6
+	auditLogDownloadMaxRetryDelay      = 8 * time.Second
+	auditLogDownloadRetryBaseDelay     = time.Second
 )
-
-var auditLogDownloadRetryBaseDelay = time.Second
 
 // AuditLogDownloadParams configures a complete audit log export.
 type AuditLogDownloadParams struct {
@@ -53,8 +52,9 @@ type AuditLogDownloadProgress struct {
 type AuditLogDownloadOption func(*auditLogDownloadConfig)
 
 type auditLogDownloadConfig struct {
-	onProgress     func(AuditLogDownloadProgress)
-	requestOptions []option.RequestOption
+	onProgress         func(AuditLogDownloadProgress)
+	requestOptions     []option.RequestOption
+	maxTransferRetries int
 }
 
 // WithAuditLogDownloadProgress registers a callback that runs after each chunk
@@ -65,24 +65,36 @@ func WithAuditLogDownloadProgress(fn func(AuditLogDownloadProgress)) AuditLogDow
 	}
 }
 
-// WithAuditLogDownloadRequestOptions applies request options to every chunk
-// request. Download controls retries itself so it can also retry truncated or
-// corrupt response bodies.
+// WithAuditLogDownloadRequestOptions applies request options, including the
+// standard HTTP retry policy, to every chunk request.
 func WithAuditLogDownloadRequestOptions(opts ...option.RequestOption) AuditLogDownloadOption {
 	return func(config *auditLogDownloadConfig) {
 		config.requestOptions = append(config.requestOptions, opts...)
 	}
 }
 
+// WithAuditLogDownloadMaxTransferRetries sets the number of retries for body
+// read and checksum failures. HTTP retries remain controlled by request options.
+func WithAuditLogDownloadMaxTransferRetries(retries int) AuditLogDownloadOption {
+	if retries < 0 {
+		panic("kernel: audit log download cannot have fewer than 0 transfer retries")
+	}
+	return func(config *auditLogDownloadConfig) {
+		config.maxTransferRetries = retries
+	}
+}
+
 // Download writes a complete audit log export to dst. It requests chunks until
 // the export is complete, verifies every chunk checksum, and retries transient
-// transfer failures. Download does not close dst.
+// transfer failures. Download does not close dst. If Download returns an error,
+// dst may contain a partial export; use a temporary file and atomic rename when
+// the completed export must be published atomically.
 func (r *AuditLogService) Download(ctx context.Context, params AuditLogDownloadParams, dst io.Writer, opts ...AuditLogDownloadOption) (AuditLogDownloadResult, error) {
 	if dst == nil {
 		return AuditLogDownloadResult{}, fmt.Errorf("audit log download destination is nil")
 	}
 
-	config := auditLogDownloadConfig{}
+	config := auditLogDownloadConfig{maxTransferRetries: auditLogDownloadMaxTransferRetries}
 	for _, opt := range opts {
 		opt(&config)
 	}
@@ -101,17 +113,24 @@ func (r *AuditLogService) Download(ctx context.Context, params AuditLogDownloadP
 	}
 	cursor := ""
 	result := AuditLogDownloadResult{}
+	seenCursors := make(map[string]struct{})
 	for {
 		if cursor != "" {
 			query.Cursor = String(cursor)
 		}
-		body, header, err := r.downloadAuditLogChunk(ctx, query, config.requestOptions)
+		body, header, err := r.downloadAuditLogChunk(ctx, query, config.requestOptions, config.maxTransferRetries)
 		if err != nil {
 			return result, err
 		}
 		chunkRows, nextCursor, hasMore, err := parseAuditLogDownloadHeaders(header, cursor)
 		if err != nil {
 			return result, err
+		}
+		if hasMore {
+			if _, ok := seenCursors[nextCursor]; ok {
+				return result, fmt.Errorf("response repeated X-Next-Cursor header")
+			}
+			seenCursors[nextCursor] = struct{}{}
 		}
 		if err := writeAuditLogChunk(dst, body); err != nil {
 			return result, fmt.Errorf("write audit log download: %w", err)
@@ -133,10 +152,11 @@ func (r *AuditLogService) Download(ctx context.Context, params AuditLogDownloadP
 	}
 }
 
-func (r *AuditLogService) downloadAuditLogChunk(ctx context.Context, query AuditLogExportChunkParams, opts []option.RequestOption) ([]byte, http.Header, error) {
+func (r *AuditLogService) downloadAuditLogChunk(ctx context.Context, query AuditLogExportChunkParams, opts []option.RequestOption, maxTransferRetries int) ([]byte, http.Header, error) {
 	for attempt := 1; ; attempt++ {
 		body, header, err := r.downloadAuditLogChunkOnce(ctx, query, opts)
-		if err == nil || attempt == auditLogDownloadAttempts || !retryableAuditLogDownloadError(err) {
+		var transferErr *auditLogTransferError
+		if err == nil || attempt > maxTransferRetries || !errors.As(err, &transferErr) {
 			return body, header, err
 		}
 		delay := min(auditLogDownloadRetryBaseDelay<<(attempt-1), auditLogDownloadMaxRetryDelay)
@@ -149,10 +169,7 @@ func (r *AuditLogService) downloadAuditLogChunk(ctx context.Context, query Audit
 }
 
 func (r *AuditLogService) downloadAuditLogChunkOnce(ctx context.Context, query AuditLogExportChunkParams, opts []option.RequestOption) ([]byte, http.Header, error) {
-	requestOpts := make([]option.RequestOption, 0, len(opts)+1)
-	requestOpts = append(requestOpts, opts...)
-	requestOpts = append(requestOpts, option.WithMaxRetries(0))
-	res, err := r.ExportChunk(ctx, query, requestOpts...)
+	res, err := r.ExportChunk(ctx, query, opts...)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -160,25 +177,29 @@ func (r *AuditLogService) downloadAuditLogChunkOnce(ctx context.Context, query A
 
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, nil, fmt.Errorf("read audit log chunk: %w", err)
+		return nil, nil, &auditLogTransferError{err: fmt.Errorf("read audit log chunk: %w", err)}
 	}
 	want := res.Header.Get("X-Content-Sha256")
 	if want == "" {
-		return nil, nil, fmt.Errorf("response missing X-Content-Sha256 header")
+		return nil, nil, &auditLogTransferError{err: fmt.Errorf("response missing X-Content-Sha256 header")}
 	}
 	sum := sha256.Sum256(body)
 	if got := hex.EncodeToString(sum[:]); got != want {
-		return nil, nil, fmt.Errorf("audit log chunk checksum mismatch (got %s, want %s)", got, want)
+		return nil, nil, &auditLogTransferError{err: fmt.Errorf("audit log chunk checksum mismatch (got %s, want %s)", got, want)}
 	}
 	return body, res.Header, nil
 }
 
-func retryableAuditLogDownloadError(err error) bool {
-	var apiErr *Error
-	if errors.As(err, &apiErr) {
-		return apiErr.StatusCode == http.StatusTooManyRequests || apiErr.StatusCode >= 500
-	}
-	return !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded)
+type auditLogTransferError struct {
+	err error
+}
+
+func (e *auditLogTransferError) Error() string {
+	return e.err.Error()
+}
+
+func (e *auditLogTransferError) Unwrap() error {
+	return e.err
 }
 
 func parseAuditLogDownloadHeaders(header http.Header, currentCursor string) (int64, string, bool, error) {

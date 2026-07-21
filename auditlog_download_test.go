@@ -77,10 +77,6 @@ func TestAuditLogDownloadWritesVerifiedChunks(t *testing.T) {
 }
 
 func TestAuditLogDownloadRetriesChecksumMismatch(t *testing.T) {
-	oldDelay := auditLogDownloadRetryBaseDelay
-	auditLogDownloadRetryBaseDelay = 0
-	t.Cleanup(func() { auditLogDownloadRetryBaseDelay = oldDelay })
-
 	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempts++
@@ -126,15 +122,12 @@ func TestAuditLogDownloadRejectsInvalidCursorBeforeWriting(t *testing.T) {
 	}
 }
 
-func TestAuditLogDownloadOwnsHTTPRetries(t *testing.T) {
-	oldDelay := auditLogDownloadRetryBaseDelay
-	auditLogDownloadRetryBaseDelay = 0
-	t.Cleanup(func() { auditLogDownloadRetryBaseDelay = oldDelay })
-
+func TestAuditLogDownloadRespectsHTTPRetryOptions(t *testing.T) {
 	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempts++
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Should-Retry", "false")
 		w.WriteHeader(http.StatusInternalServerError)
 		_, _ = w.Write([]byte(`{"message":"temporary failure"}`))
 	}))
@@ -150,16 +143,65 @@ func TestAuditLogDownloadOwnsHTTPRetries(t *testing.T) {
 	if err == nil {
 		t.Fatal("Download() error = nil")
 	}
-	if attempts != auditLogDownloadAttempts {
-		t.Fatalf("attempts = %d, want %d", attempts, auditLogDownloadAttempts)
+	if attempts != 1 {
+		t.Fatalf("attempts = %d, want 1", attempts)
+	}
+}
+
+func TestAuditLogDownloadRespectsTransferRetryOption(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		w.Header().Set("X-Content-Sha256", "bad")
+		w.Header().Set("X-Has-More", "false")
+		w.Header().Set("X-Row-Count", "1")
+		_, _ = w.Write([]byte("chunk"))
+	}))
+	defer server.Close()
+
+	client := NewClient(option.WithBaseURL(server.URL), option.WithAPIKey("test"))
+	_, err := client.AuditLogs.Download(
+		context.Background(),
+		auditLogDownloadParams(),
+		&bytes.Buffer{},
+		WithAuditLogDownloadMaxTransferRetries(0),
+	)
+	if err == nil {
+		t.Fatal("Download() error = nil")
+	}
+	if attempts != 1 {
+		t.Fatalf("attempts = %d, want 1", attempts)
+	}
+}
+
+func TestAuditLogDownloadRejectsCursorCycle(t *testing.T) {
+	attempts := 0
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts++
+		if attempts == 1 {
+			auditLogDownloadResponse(w, "first", "a", 1, true)
+			return
+		}
+		if attempts == 2 {
+			auditLogDownloadResponse(w, "second", "b", 1, true)
+			return
+		}
+		auditLogDownloadResponse(w, "duplicate", "a", 1, true)
+	}))
+	defer server.Close()
+
+	client := NewClient(option.WithBaseURL(server.URL), option.WithAPIKey("test"))
+	var dst bytes.Buffer
+	_, err := client.AuditLogs.Download(context.Background(), auditLogDownloadParams(), &dst)
+	if err == nil || err.Error() != "response repeated X-Next-Cursor header" {
+		t.Fatalf("Download() error = %v", err)
+	}
+	if got, want := dst.String(), "firstsecond"; got != want {
+		t.Fatalf("download body = %q, want %q", got, want)
 	}
 }
 
 func TestAuditLogDownloadDoesNotRetryClientErrors(t *testing.T) {
-	oldDelay := auditLogDownloadRetryBaseDelay
-	auditLogDownloadRetryBaseDelay = 0
-	t.Cleanup(func() { auditLogDownloadRetryBaseDelay = oldDelay })
-
 	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		attempts++
