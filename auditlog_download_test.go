@@ -174,6 +174,59 @@ func TestAuditLogDownloadRespectsTransferRetryOption(t *testing.T) {
 	}
 }
 
+func TestAuditLogDownloadRetryDelayCapsBeforeOverflow(t *testing.T) {
+	for _, attempt := range []int{4, 35, 100} {
+		if got := auditLogDownloadRetryDelay(attempt); got != auditLogDownloadMaxRetryDelay {
+			t.Fatalf("auditLogDownloadRetryDelay(%d) = %s, want %s", attempt, got, auditLogDownloadMaxRetryDelay)
+		}
+	}
+}
+
+func TestParseAuditLogDownloadHeadersRejectsMalformedValues(t *testing.T) {
+	tests := []struct {
+		name   string
+		header http.Header
+	}{
+		{
+			name: "non-canonical has more",
+			header: http.Header{
+				"X-Has-More":  []string{"TRUE"},
+				"X-Row-Count": []string{"1"},
+			},
+		},
+		{
+			name: "empty row count",
+			header: http.Header{
+				"X-Has-More":  []string{"false"},
+				"X-Row-Count": []string{""},
+			},
+		},
+		{
+			name: "non-decimal row count",
+			header: http.Header{
+				"X-Has-More":  []string{"false"},
+				"X-Row-Count": []string{"1.0"},
+			},
+		},
+		{
+			name: "row count above chunk limit",
+			header: http.Header{
+				"X-Has-More":  []string{"false"},
+				"X-Row-Count": []string{"50001"},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			_, _, _, err := parseAuditLogDownloadHeaders(test.header, "")
+			if err == nil {
+				t.Fatal("parseAuditLogDownloadHeaders() error = nil")
+			}
+		})
+	}
+}
+
 func TestAuditLogDownloadRejectsCursorCycle(t *testing.T) {
 	attempts := 0
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

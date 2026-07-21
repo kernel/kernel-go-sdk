@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	auditLogDownloadMaxChunkRows       = 50_000
 	auditLogDownloadMaxTransferRetries = 6
 	auditLogDownloadMaxRetryDelay      = 8 * time.Second
 	auditLogDownloadRetryBaseDelay     = time.Second
@@ -159,7 +160,7 @@ func (r *AuditLogService) downloadAuditLogChunk(ctx context.Context, query Audit
 		if err == nil || attempt > maxTransferRetries || !errors.As(err, &transferErr) {
 			return body, header, err
 		}
-		delay := min(auditLogDownloadRetryBaseDelay<<(attempt-1), auditLogDownloadMaxRetryDelay)
+		delay := auditLogDownloadRetryDelay(attempt)
 		select {
 		case <-ctx.Done():
 			return nil, nil, ctx.Err()
@@ -202,13 +203,31 @@ func (e *auditLogTransferError) Unwrap() error {
 	return e.err
 }
 
+func auditLogDownloadRetryDelay(attempt int) time.Duration {
+	delay := auditLogDownloadRetryBaseDelay
+	for retry := 1; retry < attempt && delay < auditLogDownloadMaxRetryDelay; retry++ {
+		delay *= 2
+	}
+	return min(delay, auditLogDownloadMaxRetryDelay)
+}
+
 func parseAuditLogDownloadHeaders(header http.Header, currentCursor string) (int64, string, bool, error) {
-	hasMore, err := strconv.ParseBool(header.Get("X-Has-More"))
-	if err != nil {
+	var hasMore bool
+	switch header.Get("X-Has-More") {
+	case "true":
+		hasMore = true
+	case "false":
+		hasMore = false
+	default:
 		return 0, "", false, fmt.Errorf("response missing or invalid X-Has-More header")
 	}
-	rows, err := strconv.ParseInt(header.Get("X-Row-Count"), 10, 64)
-	if err != nil || rows < 0 {
+
+	rowCount := header.Get("X-Row-Count")
+	if !isAuditLogDownloadDecimal(rowCount) {
+		return 0, "", false, fmt.Errorf("response missing or invalid X-Row-Count header")
+	}
+	rows, err := strconv.ParseInt(rowCount, 10, 64)
+	if err != nil || rows > auditLogDownloadMaxChunkRows {
 		return 0, "", false, fmt.Errorf("response missing or invalid X-Row-Count header")
 	}
 	nextCursor := header.Get("X-Next-Cursor")
@@ -219,6 +238,18 @@ func parseAuditLogDownloadHeaders(header http.Header, currentCursor string) (int
 		return 0, "", false, fmt.Errorf("response returned a cursor after the final chunk")
 	}
 	return rows, nextCursor, hasMore, nil
+}
+
+func isAuditLogDownloadDecimal(value string) bool {
+	if value == "" {
+		return false
+	}
+	for _, char := range value {
+		if char < '0' || char > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 func writeAuditLogChunk(dst io.Writer, body []byte) error {
