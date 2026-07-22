@@ -115,7 +115,7 @@ func (r *ProjectService) Delete(ctx context.Context, id string, opts ...option.R
 
 // The property Name is required.
 type CreateProjectRequestParam struct {
-	// Project name (1-255 characters)
+	// Project name (1-255 Unicode code points)
 	Name string `json:"name" api:"required"`
 	paramObj
 }
@@ -168,7 +168,7 @@ const (
 )
 
 type UpdateProjectRequestParam struct {
-	// New project name
+	// New project name (1-255 Unicode code points)
 	Name param.Opt[string] `json:"name,omitzero"`
 	// New project status
 	//
