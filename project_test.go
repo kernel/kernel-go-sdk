@@ -81,7 +81,7 @@ func TestProjectUpdateWithOptionalParams(t *testing.T) {
 		"id",
 		kernel.ProjectUpdateParams{
 			UpdateProjectRequest: kernel.UpdateProjectRequestParam{
-				Name:   kernel.String("name"),
+				Name:   kernel.String("x"),
 				Status: kernel.UpdateProjectRequestStatusActive,
 			},
 		},
