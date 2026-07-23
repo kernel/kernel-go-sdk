@@ -114,16 +114,19 @@ func (r *ProfileService) Delete(ctx context.Context, idOrName string, opts ...op
 	return err
 }
 
-// Returns a zstd-compressed tar file of the full user-data directory.
-func (r *ProfileService) Download(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *http.Response, err error) {
+// Downloads the profile in its stored format by default. Current profiles are
+// returned as zstd-compressed tar archives, while legacy profiles remain JSON. Set
+// `format=tar` to decompress current profiles during download; legacy profiles
+// remain JSON.
+func (r *ProfileService) Download(ctx context.Context, idOrName string, query ProfileDownloadParams, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
-	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/zstd")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
 	path := fmt.Sprintf("profiles/%s/download", idOrName)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
@@ -181,3 +184,29 @@ func (r ProfileListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+type ProfileDownloadParams struct {
+	// Response format for current profile archives. Legacy profiles are always
+	// returned as JSON.
+	//
+	// Any of "tar.zst", "tar".
+	Format ProfileDownloadParamsFormat `query:"format,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [ProfileDownloadParams]'s query parameters as `url.Values`.
+func (r ProfileDownloadParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+// Response format for current profile archives. Legacy profiles are always
+// returned as JSON.
+type ProfileDownloadParamsFormat string
+
+const (
+	ProfileDownloadParamsFormatTarZst ProfileDownloadParamsFormat = "tar.zst"
+	ProfileDownloadParamsFormatTar    ProfileDownloadParamsFormat = "tar"
+)
