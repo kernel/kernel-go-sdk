@@ -120,7 +120,7 @@ func (r *ProfileService) Delete(ctx context.Context, idOrName string, opts ...op
 // remain JSON.
 func (r *ProfileService) Download(ctx context.Context, idOrName string, query ProfileDownloadParams, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
-	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/zstd")}, opts...)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
 		return nil, err
