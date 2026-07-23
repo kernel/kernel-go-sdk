@@ -145,7 +145,7 @@ func TestProfileDelete(t *testing.T) {
 	}
 }
 
-func TestProfileDownload(t *testing.T) {
+func TestProfileDownloadWithOptionalParams(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(200)
 		w.Write([]byte("abc"))
@@ -156,7 +156,13 @@ func TestProfileDownload(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	resp, err := client.Profiles.Download(context.TODO(), "id_or_name")
+	resp, err := client.Profiles.Download(
+		context.TODO(),
+		"id_or_name",
+		kernel.ProfileDownloadParams{
+			Format: kernel.ProfileDownloadParamsFormatTarZst,
+		},
+	)
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
