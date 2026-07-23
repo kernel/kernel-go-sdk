@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.82.0 (2026-07-23)
+
+Full Changelog: [v0.81.0...v0.82.0](https://github.com/kernel/kernel-go-sdk/compare/v0.81.0...v0.82.0)
+
+### Features
+
+* Count project names by Unicode code point ([fa9dcd4](https://github.com/kernel/kernel-go-sdk/commit/fa9dcd430baef098caec1057a767ed718af907eb))
+* Stream profile downloads as tar archives ([2a2ffe3](https://github.com/kernel/kernel-go-sdk/commit/2a2ffe3a6547e97a39e4b7a677a1f92c492455b9))
+* Use format-neutral profile download Accept header ([d6464d5](https://github.com/kernel/kernel-go-sdk/commit/d6464d5539667645bf79f5e10389b04c7a073db2))
+
 ## 0.81.0 (2026-07-21)
 
 Full Changelog: [v0.80.0...v0.81.0](https://github.com/kernel/kernel-go-sdk/compare/v0.80.0...v0.81.0)
