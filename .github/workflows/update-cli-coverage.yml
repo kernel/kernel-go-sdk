@@ -99,13 +99,40 @@ jobs:
         run: |
           gh repo clone kernel/cli /tmp/kernel-cli
           cd /tmp/kernel-cli
+          HAS_COVERAGE_BRANCH=false
           
           if git fetch origin cli-coverage-update 2>/dev/null; then
+            HAS_COVERAGE_BRANCH=true
             echo "Branch cli-coverage-update exists, checking it out..."
             git checkout cli-coverage-update
-            git merge -X theirs origin/main -m "Merge main into cli-coverage-update" --no-edit || true
           else
             echo "Branch cli-coverage-update does not exist, will create from main"
+          fi
+
+          # Capture the SDK baseline before any merge so diffing compares from
+          # the branch's current version.
+          BASELINE_SDK_VERSION=$(go list -m github.com/kernel/kernel-go-sdk 2>/dev/null | awk '{print $2}')
+          if [ -z "$BASELINE_SDK_VERSION" ]; then
+            BASELINE_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' go.mod | head -1 | awk '{print $2}')
+          fi
+          echo "$BASELINE_SDK_VERSION" > /tmp/kernel-cli-old-sdk-version.txt
+          echo "CLI baseline SDK version before merge: $BASELINE_SDK_VERSION"
+
+          if [ "$HAS_COVERAGE_BRANCH" = true ]; then
+            if ! git merge origin/main -m "Merge main into cli-coverage-update" --no-edit; then
+              CONFLICT_FILES=$(git diff --name-only --diff-filter=U)
+              NON_GO_CONFLICT_FILES=$(echo "$CONFLICT_FILES" | grep -Ev '^(go\.mod|go\.sum)$' || true)
+
+              if [ -n "$NON_GO_CONFLICT_FILES" ]; then
+                echo "Merge conflicts outside go.mod/go.sum; aborting merge to preserve branch work"
+                git merge --abort
+              else
+                echo "Resolving go.mod/go.sum conflicts using origin/main"
+                git checkout --theirs go.mod go.sum 2>/dev/null || true
+                git add go.mod go.sum
+                git commit --no-edit
+              fi
+            fi
           fi
 
       - name: Get SDK version info
@@ -137,11 +164,19 @@ jobs:
       - name: Compute SDK diff since CLI's current version
         id: sdk-diff
         run: |
-          # Extract the SDK version currently used by the CLI
+          # Use the SDK version captured before merging main into the branch.
+          OLD_SDK_VERSION=""
+          if [ -f /tmp/kernel-cli-old-sdk-version.txt ]; then
+            OLD_SDK_VERSION=$(tr -d '\n' < /tmp/kernel-cli-old-sdk-version.txt)
+          fi
+
+          # Fall back to the current tree if no baseline was captured.
           # Prefer go list (parses go.mod properly); fall back to grep, taking the
           # first non-conflict-marker match so a merge conflict can't yield a
           # multi-line value that breaks $GITHUB_OUTPUT.
-          OLD_SDK_VERSION=$(cd /tmp/kernel-cli && go list -m github.com/kernel/kernel-go-sdk 2>/dev/null | awk '{print $2}')
+          if [ -z "$OLD_SDK_VERSION" ]; then
+            OLD_SDK_VERSION=$(cd /tmp/kernel-cli && go list -m github.com/kernel/kernel-go-sdk 2>/dev/null | awk '{print $2}')
+          fi
           if [ -z "$OLD_SDK_VERSION" ]; then
             OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | grep -v '^[<>=]' | head -1 | awk '{print $2}')
           fi
