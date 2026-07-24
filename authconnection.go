@@ -292,6 +292,10 @@ type ManagedAuth struct {
 	// in progress). Use this to inspect or terminate the browser session via the
 	// `/browsers` API.
 	BrowserSessionID string `json:"browser_session_id" api:"nullable"`
+	// Browser telemetry configuration used by this connection's browser sessions by
+	// default. The exact create-browser configuration is preserved and can be
+	// overridden per-login.
+	BrowserTelemetry ManagedAuthBrowserTelemetry `json:"browser_telemetry" api:"nullable"`
 	// Whether Kernel can automatically re-authenticate this connection when the
 	// session expires. Requires a prior successful login plus either a Kernel
 	// credential or an external credential reference. See `can_reauth_reason` for the
@@ -433,6 +437,7 @@ type ManagedAuth struct {
 		AllowedDomains        respjson.Field
 		AutoReauth            respjson.Field
 		BrowserSessionID      respjson.Field
+		BrowserTelemetry      respjson.Field
 		CanReauth             respjson.Field
 		CanReauthReason       respjson.Field
 		Choices               respjson.Field
@@ -478,6 +483,44 @@ const (
 	ManagedAuthStatusAuthenticated ManagedAuthStatus = "AUTHENTICATED"
 	ManagedAuthStatusNeedsAuth     ManagedAuthStatus = "NEEDS_AUTH"
 )
+
+// Browser telemetry configuration used by this connection's browser sessions by
+// default. The exact create-browser configuration is preserved and can be
+// overridden per-login.
+type ManagedAuthBrowserTelemetry struct {
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfig `json:"browser"`
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Browser     respjson.Field
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserTelemetry) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 // Machine-readable reason for the current value of `can_reauth`. Affirmative
 // values (re-auth is possible):
@@ -818,6 +861,10 @@ type ManagedAuthCreateRequestParam struct {
 	// Whether to save credentials after every successful login. Defaults to true.
 	// One-time codes (TOTP, SMS, etc.) are not saved.
 	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
+	// Browser telemetry configuration used by this connection's browser sessions by
+	// default. Uses the exact create-browser configuration. Can be overridden
+	// per-login.
+	BrowserTelemetry ManagedAuthCreateRequestBrowserTelemetryParam `json:"browser_telemetry,omitzero"`
 	// Additional domains valid for this auth flow (besides the primary domain). Useful
 	// when login pages redirect to different domains.
 	//
@@ -855,6 +902,40 @@ func (r ManagedAuthCreateRequestParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthCreateRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser telemetry configuration used by this connection's browser sessions by
+// default. Uses the exact create-browser configuration. Can be overridden
+// per-login.
+type ManagedAuthCreateRequestBrowserTelemetryParam struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthCreateRequestBrowserTelemetryParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthCreateRequestBrowserTelemetryParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthCreateRequestBrowserTelemetryParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1043,6 +1124,10 @@ type ManagedAuthUpdateRequestParam struct {
 	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
 	// Whether to save credentials after every successful login
 	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
+	// Browser telemetry configuration used by future browser sessions for this
+	// connection. Uses the exact create-browser configuration. Set enabled to false to
+	// disable telemetry.
+	BrowserTelemetry ManagedAuthUpdateRequestBrowserTelemetryParam `json:"browser_telemetry,omitzero"`
 	// Additional domains valid for this auth flow (replaces existing list)
 	AllowedDomains []string `json:"allowed_domains,omitzero"`
 	// Reference to credentials for the auth connection. Use one of:
@@ -1064,6 +1149,40 @@ func (r ManagedAuthUpdateRequestParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthUpdateRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser telemetry configuration used by future browser sessions for this
+// connection. Uses the exact create-browser configuration. Set enabled to false to
+// disable telemetry.
+type ManagedAuthUpdateRequestBrowserTelemetryParam struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestBrowserTelemetryParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestBrowserTelemetryParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestBrowserTelemetryParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1620,6 +1739,10 @@ type AuthConnectionLoginParams struct {
 	// Override the connection's default for recording this login's browser session.
 	// When omitted, the connection's record_session default is used.
 	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
+	// Override the connection's default browser telemetry configuration for this
+	// login. When omitted, the connection's browser_telemetry default is used. Uses
+	// the exact create-browser configuration.
+	BrowserTelemetry AuthConnectionLoginParamsBrowserTelemetry `json:"browser_telemetry,omitzero"`
 	// Proxy selection. Provide either id or name. The proxy must be in the same
 	// project as the resource referencing it. When selecting by name, the name must
 	// match exactly one active proxy in the project. Ambiguous names return a 400; use
@@ -1633,6 +1756,40 @@ func (r AuthConnectionLoginParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *AuthConnectionLoginParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Override the connection's default browser telemetry configuration for this
+// login. When omitted, the connection's browser_telemetry default is used. Uses
+// the exact create-browser configuration.
+type AuthConnectionLoginParamsBrowserTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	paramObj
+}
+
+func (r AuthConnectionLoginParamsBrowserTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow AuthConnectionLoginParamsBrowserTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AuthConnectionLoginParamsBrowserTelemetry) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

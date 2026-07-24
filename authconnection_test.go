@@ -32,6 +32,38 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 			ProfileName:    "user-123",
 			AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 			AutoReauth:     kernel.Bool(true),
+			BrowserTelemetry: kernel.ManagedAuthCreateRequestBrowserTelemetryParam{
+				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Connection: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Control: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Network: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					System: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+				},
+				Enabled: kernel.Bool(true),
+			},
 			Credential: kernel.ManagedAuthCreateRequestCredentialParam{
 				Auto:     kernel.Bool(true),
 				Name:     kernel.String("my-netflix-creds"),
@@ -101,6 +133,38 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 			ManagedAuthUpdateRequest: kernel.ManagedAuthUpdateRequestParam{
 				AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 				AutoReauth:     kernel.Bool(true),
+				BrowserTelemetry: kernel.ManagedAuthUpdateRequestBrowserTelemetryParam{
+					Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+						Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Connection: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Console: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Control: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Network: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Page: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						System: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+					},
+					Enabled: kernel.Bool(true),
+				},
 				Credential: kernel.ManagedAuthUpdateRequestCredentialParam{
 					Auto:     kernel.Bool(true),
 					Name:     kernel.String("my-netflix-creds"),
@@ -197,6 +261,38 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.AuthConnectionLoginParams{
+			BrowserTelemetry: kernel.AuthConnectionLoginParamsBrowserTelemetry{
+				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Connection: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Console: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Control: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Network: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					System: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+				},
+				Enabled: kernel.Bool(true),
+			},
 			Proxy: kernel.AuthConnectionLoginParamsProxy{
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
