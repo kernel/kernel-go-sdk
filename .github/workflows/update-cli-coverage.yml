@@ -72,17 +72,10 @@ jobs:
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
-      - name: Install Cursor CLI
+      - name: Install Claude Code CLI
         run: |
-          curl https://cursor.com/install -fsS | bash
-          echo "$HOME/.cursor/bin" >> $GITHUB_PATH
-
-      - name: Enable Cursor Max Mode
-        run: |
-          CFG_DIR="$HOME/.cursor"
-          mkdir -p "$CFG_DIR"
-          echo '{"maxMode": true}' > "$CFG_DIR/cli-config.json"
-          echo "CURSOR_CONFIG_DIR=$CFG_DIR" >> "$GITHUB_ENV"
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Configure git identity
         run: |
@@ -110,7 +103,7 @@ jobs:
           if git fetch origin cli-coverage-update 2>/dev/null; then
             echo "Branch cli-coverage-update exists, checking it out..."
             git checkout cli-coverage-update
-            git merge origin/main -m "Merge main into cli-coverage-update" --no-edit || true
+            git merge -X theirs origin/main -m "Merge main into cli-coverage-update" --no-edit || true
           else
             echo "Branch cli-coverage-update does not exist, will create from main"
           fi
@@ -145,7 +138,13 @@ jobs:
         id: sdk-diff
         run: |
           # Extract the SDK version currently used by the CLI
-          OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | awk '{print $2}')
+          # Prefer go list (parses go.mod properly); fall back to grep, taking the
+          # first non-conflict-marker match so a merge conflict can't yield a
+          # multi-line value that breaks $GITHUB_OUTPUT.
+          OLD_SDK_VERSION=$(cd /tmp/kernel-cli && go list -m github.com/kernel/kernel-go-sdk 2>/dev/null | awk '{print $2}')
+          if [ -z "$OLD_SDK_VERSION" ]; then
+            OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | grep -v '^[<>=]' | head -1 | awk '{print $2}')
+          fi
           echo "CLI currently uses SDK version: $OLD_SDK_VERSION"
           echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
 
@@ -167,12 +166,12 @@ jobs:
 
       - name: Update CLI coverage
         env:
-          CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
           BRANCH_PREFIX: cli-coverage-update
         run: |
-          cursor-agent -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
+          claude -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
 
           The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/cli).
 
@@ -418,4 +417,4 @@ jobs:
           - Streaming methods may have different CLI implementations (e.g., follow flags)
           - Even if no coverage gaps are found, still create a PR for the SDK version bump
           - Ensure code compiles before pushing
-          " --model ${{ vars.CURSOR_PREFERRED_MODEL }} --force --output-format=text
+          " --model ${{ vars.CLAUDE_CODE_PREFERRED_MODEL }} --dangerously-skip-permissions --output-format text --verbose
