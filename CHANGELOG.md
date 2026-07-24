@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.83.0 (2026-07-24)
+
+Full Changelog: [v0.82.0...v0.83.0](https://github.com/kernel/kernel-go-sdk/compare/v0.82.0...v0.83.0)
+
+### Features
+
+* Add browser telemetry to managed auth connections ([fa63a73](https://github.com/kernel/kernel-go-sdk/commit/fa63a7377dc2c5b78886e54e465a2387c7abbf70))
+
 ## 0.82.0 (2026-07-23)
 
 Full Changelog: [v0.81.0...v0.82.0](https://github.com/kernel/kernel-go-sdk/compare/v0.81.0...v0.82.0)
