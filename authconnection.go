@@ -1023,6 +1023,8 @@ type ManagedAuthTimelineEvent struct {
 	// "AWAITING_EXTERNAL_ACTION", "AWAITING_HUMAN_INTERVENTION", "SUBMITTING",
 	// "COMPLETED", "EXPIRED".
 	Step ManagedAuthTimelineEventStep `json:"step"`
+	// Whether browser telemetry capture started for this event's browser session.
+	TelemetryCaptured bool `json:"telemetry_captured"`
 	// When the event was last updated. Present for login/reauth events.
 	UpdatedAt time.Time `json:"updated_at" format:"date-time"`
 	// Visible error message from the website (e.g., 'Incorrect password'). Present
@@ -1030,20 +1032,21 @@ type ManagedAuthTimelineEvent struct {
 	WebsiteError string `json:"website_error"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID               respjson.Field
-		Status           respjson.Field
-		Timestamp        respjson.Field
-		Type             respjson.Field
-		BrowserSessionID respjson.Field
-		ErrorCode        respjson.Field
-		ErrorMessage     respjson.Field
-		PreviousStatus   respjson.Field
-		ReplayID         respjson.Field
-		Step             respjson.Field
-		UpdatedAt        respjson.Field
-		WebsiteError     respjson.Field
-		ExtraFields      map[string]respjson.Field
-		raw              string
+		ID                respjson.Field
+		Status            respjson.Field
+		Timestamp         respjson.Field
+		Type              respjson.Field
+		BrowserSessionID  respjson.Field
+		ErrorCode         respjson.Field
+		ErrorMessage      respjson.Field
+		PreviousStatus    respjson.Field
+		ReplayID          respjson.Field
+		Step              respjson.Field
+		TelemetryCaptured respjson.Field
+		UpdatedAt         respjson.Field
+		WebsiteError      respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
