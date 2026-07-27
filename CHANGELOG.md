@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.84.0 (2026-07-27)
+
+Full Changelog: [v0.83.0...v0.84.0](https://github.com/kernel/kernel-go-sdk/compare/v0.83.0...v0.84.0)
+
+### Features
+
+* Expose telemetry state on managed auth timeline events ([9e6eace](https://github.com/kernel/kernel-go-sdk/commit/9e6eace40c6f3da89e0f446e5ed6de93323ebea5))
+
+
+### Bug Fixes
+
+* **ci:** unbreak update-cli-coverage workflow and switch to Claude Code ([#142](https://github.com/kernel/kernel-go-sdk/issues/142)) ([12b3ec6](https://github.com/kernel/kernel-go-sdk/commit/12b3ec62f63ee66d3cd8d83d9c2b9584696dd15f))
+
 ## 0.83.0 (2026-07-24)
 
 Full Changelog: [v0.82.0...v0.83.0](https://github.com/kernel/kernel-go-sdk/compare/v0.82.0...v0.83.0)
