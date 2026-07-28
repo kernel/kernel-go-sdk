@@ -211,6 +211,8 @@ type ProxyNewResponseConfigUnion struct {
 	// This field is from variant [ProxyNewResponseConfigCustom].
 	Port int64 `json:"port"`
 	// This field is from variant [ProxyNewResponseConfigCustom].
+	HasCaBundle bool `json:"has_ca_bundle"`
+	// This field is from variant [ProxyNewResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
 	// This field is from variant [ProxyNewResponseConfigCustom].
 	Username string `json:"username"`
@@ -223,6 +225,7 @@ type ProxyNewResponseConfigUnion struct {
 		Zip         respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		raw         string
@@ -365,6 +368,8 @@ type ProxyNewResponseConfigCustom struct {
 	Host string `json:"host" api:"required"`
 	// Proxy port.
 	Port int64 `json:"port" api:"required"`
+	// Whether the proxy has a custom CA bundle configured.
+	HasCaBundle bool `json:"has_ca_bundle"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -373,6 +378,7 @@ type ProxyNewResponseConfigCustom struct {
 	JSON struct {
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -483,6 +489,8 @@ type ProxyGetResponseConfigUnion struct {
 	// This field is from variant [ProxyGetResponseConfigCustom].
 	Port int64 `json:"port"`
 	// This field is from variant [ProxyGetResponseConfigCustom].
+	HasCaBundle bool `json:"has_ca_bundle"`
+	// This field is from variant [ProxyGetResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
 	// This field is from variant [ProxyGetResponseConfigCustom].
 	Username string `json:"username"`
@@ -495,6 +503,7 @@ type ProxyGetResponseConfigUnion struct {
 		Zip         respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		raw         string
@@ -637,6 +646,8 @@ type ProxyGetResponseConfigCustom struct {
 	Host string `json:"host" api:"required"`
 	// Proxy port.
 	Port int64 `json:"port" api:"required"`
+	// Whether the proxy has a custom CA bundle configured.
+	HasCaBundle bool `json:"has_ca_bundle"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -645,6 +656,7 @@ type ProxyGetResponseConfigCustom struct {
 	JSON struct {
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -755,6 +767,8 @@ type ProxyUpdateResponseConfigUnion struct {
 	// This field is from variant [ProxyUpdateResponseConfigCustom].
 	Port int64 `json:"port"`
 	// This field is from variant [ProxyUpdateResponseConfigCustom].
+	HasCaBundle bool `json:"has_ca_bundle"`
+	// This field is from variant [ProxyUpdateResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
 	// This field is from variant [ProxyUpdateResponseConfigCustom].
 	Username string `json:"username"`
@@ -767,6 +781,7 @@ type ProxyUpdateResponseConfigUnion struct {
 		Zip         respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		raw         string
@@ -909,6 +924,8 @@ type ProxyUpdateResponseConfigCustom struct {
 	Host string `json:"host" api:"required"`
 	// Proxy port.
 	Port int64 `json:"port" api:"required"`
+	// Whether the proxy has a custom CA bundle configured.
+	HasCaBundle bool `json:"has_ca_bundle"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -917,6 +934,7 @@ type ProxyUpdateResponseConfigCustom struct {
 	JSON struct {
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -1027,6 +1045,8 @@ type ProxyListResponseConfigUnion struct {
 	// This field is from variant [ProxyListResponseConfigCustom].
 	Port int64 `json:"port"`
 	// This field is from variant [ProxyListResponseConfigCustom].
+	HasCaBundle bool `json:"has_ca_bundle"`
+	// This field is from variant [ProxyListResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
 	// This field is from variant [ProxyListResponseConfigCustom].
 	Username string `json:"username"`
@@ -1039,6 +1059,7 @@ type ProxyListResponseConfigUnion struct {
 		Zip         respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		raw         string
@@ -1181,6 +1202,8 @@ type ProxyListResponseConfigCustom struct {
 	Host string `json:"host" api:"required"`
 	// Proxy port.
 	Port int64 `json:"port" api:"required"`
+	// Whether the proxy has a custom CA bundle configured.
+	HasCaBundle bool `json:"has_ca_bundle"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -1189,6 +1212,7 @@ type ProxyListResponseConfigCustom struct {
 	JSON struct {
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -1299,6 +1323,8 @@ type ProxyCheckResponseConfigUnion struct {
 	// This field is from variant [ProxyCheckResponseConfigCustom].
 	Port int64 `json:"port"`
 	// This field is from variant [ProxyCheckResponseConfigCustom].
+	HasCaBundle bool `json:"has_ca_bundle"`
+	// This field is from variant [ProxyCheckResponseConfigCustom].
 	HasPassword bool `json:"has_password"`
 	// This field is from variant [ProxyCheckResponseConfigCustom].
 	Username string `json:"username"`
@@ -1311,6 +1337,7 @@ type ProxyCheckResponseConfigUnion struct {
 		Zip         respjson.Field
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		raw         string
@@ -1453,6 +1480,8 @@ type ProxyCheckResponseConfigCustom struct {
 	Host string `json:"host" api:"required"`
 	// Proxy port.
 	Port int64 `json:"port" api:"required"`
+	// Whether the proxy has a custom CA bundle configured.
+	HasCaBundle bool `json:"has_ca_bundle"`
 	// Whether the proxy has a password.
 	HasPassword bool `json:"has_password"`
 	// Username for proxy authentication.
@@ -1461,6 +1490,7 @@ type ProxyCheckResponseConfigCustom struct {
 	JSON struct {
 		Host        respjson.Field
 		Port        respjson.Field
+		HasCaBundle respjson.Field
 		HasPassword respjson.Field
 		Username    respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -1608,6 +1638,14 @@ func (u ProxyNewParamsConfigUnion) GetPort() *int64 {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u ProxyNewParamsConfigUnion) GetCaBundle() *string {
+	if vt := u.OfCustom; vt != nil && vt.CaBundle.Valid() {
+		return &vt.CaBundle.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetPassword() *string {
 	if vt := u.OfCustom; vt != nil && vt.Password.Valid() {
 		return &vt.Password.Value
@@ -1750,6 +1788,10 @@ type ProxyNewParamsConfigCustom struct {
 	Host string `json:"host" api:"required"`
 	// Proxy port.
 	Port int64 `json:"port" api:"required"`
+	// PEM-encoded CA certificate bundle the proxy re-signs upstream TLS with. Provide
+	// when the proxy terminates TLS (MITM) so the browser trusts its certificates. May
+	// contain multiple concatenated certificates.
+	CaBundle param.Opt[string] `json:"ca_bundle,omitzero"`
 	// Password for proxy authentication.
 	Password param.Opt[string] `json:"password,omitzero"`
 	// Username for proxy authentication.
