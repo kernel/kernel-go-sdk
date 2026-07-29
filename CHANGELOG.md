@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.85.0 (2026-07-29)
+
+Full Changelog: [v0.84.0...v0.85.0](https://github.com/kernel/kernel-go-sdk/compare/v0.84.0...v0.85.0)
+
+### Features
+
+* Add encrypted per-proxy CA bundle for BYO MITM proxies ([b0a77ec](https://github.com/kernel/kernel-go-sdk/commit/b0a77ecf220c82d05b3e1a31d7dc7cba5a01e21f))
+* Stabilize project lifecycle error codes ([778c389](https://github.com/kernel/kernel-go-sdk/commit/778c3890f53b2e1e5b8d31cc31a367fbc387ff49))
+
 ## 0.84.0 (2026-07-27)
 
 Full Changelog: [v0.83.0...v0.84.0](https://github.com/kernel/kernel-go-sdk/compare/v0.83.0...v0.84.0)
