@@ -40,7 +40,9 @@ type Client struct {
 	BrowserPools BrowserPoolService
 	// Create and manage credentials for authentication.
 	Credentials CredentialService
-	// Create and manage projects for resource isolation within an organization.
+	// Create and manage projects for resource isolation within an organization. When
+	// projects are disabled for the organization, project operations return `404` with
+	// code `projects_disabled`.
 	Projects     ProjectService
 	Organization OrganizationService
 	// Read audit log records for the authenticated organization.
