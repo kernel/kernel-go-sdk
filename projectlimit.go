@@ -76,7 +76,7 @@ type ProjectLimits struct {
 	// cap.
 	MaxConcurrentSessions int64 `json:"max_concurrent_sessions" api:"nullable"`
 	// Deprecated: pooled browsers now count toward `max_concurrent_sessions`. Always
-	// null once the unified concurrency limit is enabled for your organization.
+	// null.
 	//
 	// Deprecated: deprecated
 	MaxPooledSessions int64 `json:"max_pooled_sessions" api:"nullable"`
@@ -105,8 +105,7 @@ type UpdateProjectLimitsRequestParam struct {
 	// unchanged.
 	MaxConcurrentSessions param.Opt[int64] `json:"max_concurrent_sessions,omitzero"`
 	// Deprecated: pooled browsers now count toward `max_concurrent_sessions`. Requests
-	// that set this field are rejected with a 400 once the unified concurrency limit
-	// is enabled for your organization.
+	// that set this field are rejected with a 400.
 	//
 	// Deprecated: deprecated
 	MaxPooledSessions param.Opt[int64] `json:"max_pooled_sessions,omitzero"`
