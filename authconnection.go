@@ -693,6 +693,9 @@ type ManagedAuthField struct {
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
+	// Whether the submitted value must replace an existing credential after explicit
+	// rejection.
+	ReplaceExisting bool `json:"replace_existing"`
 	// Whether this field is required.
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -702,6 +705,7 @@ type ManagedAuthField struct {
 		Type             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
+		ReplaceExisting  respjson.Field
 		Required         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -1586,6 +1590,9 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
+	// Whether the submitted value must replace an existing credential after explicit
+	// rejection.
+	ReplaceExisting bool `json:"replace_existing"`
 	// Whether this field is required.
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1595,6 +1602,7 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 		Type             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
+		ReplaceExisting  respjson.Field
 		Required         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
