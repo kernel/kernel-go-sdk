@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.86.0 (2026-08-03)
+
+Full Changelog: [v0.85.0...v0.86.0](https://github.com/kernel/kernel-go-sdk/compare/v0.85.0...v0.86.0)
+
+### Features
+
+* Harden managed auth verification and login recovery ([00515a8](https://github.com/kernel/kernel-go-sdk/commit/00515a84e5554056c2bdf91ac83582289b9f21b8))
+* Report the unified concurrency ceiling from the org limits endpoint ([f41ed59](https://github.com/kernel/kernel-go-sdk/commit/f41ed59da57f03f17dc5e5f8ad8bf0e778041f90))
+
 ## 0.85.0 (2026-07-29)
 
 Full Changelog: [v0.84.0...v0.85.0](https://github.com/kernel/kernel-go-sdk/compare/v0.84.0...v0.85.0)
