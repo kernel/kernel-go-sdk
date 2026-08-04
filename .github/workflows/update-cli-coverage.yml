@@ -1,0 +1,420 @@
+name: Update CLI Coverage
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to use for context (leave empty to use most recent merged PR)'
+        required: false
+        type: string
+  # Or trigger on releases:
+  # release:
+  #   types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  update-cli-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.ADMIN_APP_ID }}
+          private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
+          owner: kernel
+
+      - name: Get PR info for manual dispatch
+        id: pr-info
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          if [ -n "${{ inputs.pr_number }}" ]; then
+            # Use provided PR number
+            PR_NUMBER="${{ inputs.pr_number }}"
+            echo "Using provided PR number: $PR_NUMBER"
+          else
+            # Get most recent merged PR
+            PR_NUMBER=$(gh pr list --repo ${{ github.repository }} --state merged --limit 1 --json number --jq '.[0].number')
+            echo "Using most recent merged PR: $PR_NUMBER"
+          fi
+          
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR found, will use HEAD commit"
+            echo "has_pr=false" >> $GITHUB_OUTPUT
+          else
+            # Get PR details
+            PR_DATA=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json mergeCommit,author,title)
+            MERGE_SHA=$(echo "$PR_DATA" | jq -r '.mergeCommit.oid // empty')
+            PR_AUTHOR=$(echo "$PR_DATA" | jq -r '.author.login // empty')
+            PR_TITLE=$(echo "$PR_DATA" | jq -r '.title // empty')
+            
+            echo "PR #$PR_NUMBER: $PR_TITLE"
+            echo "Merge commit: $MERGE_SHA"
+            echo "Author: $PR_AUTHOR"
+            
+            echo "has_pr=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "merge_sha=$MERGE_SHA" >> $GITHUB_OUTPUT
+            echo "pr_author=$PR_AUTHOR" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout SDK repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          fetch-tags: true
+          # For manual dispatch with a specific PR, checkout the merge commit
+          ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
+
+      - name: Install Claude Code CLI
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure git identity
+        run: |
+          git config --global user.name "kernel-internal[bot]"
+          git config --global user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
+
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: 'stable'
+
+      - name: Clone API repo
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
+
+      - name: Clone CLI repo
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          gh repo clone kernel/cli /tmp/kernel-cli
+          cd /tmp/kernel-cli
+          
+          if git fetch origin cli-coverage-update 2>/dev/null; then
+            echo "Branch cli-coverage-update exists, checking it out..."
+            git checkout cli-coverage-update
+            git merge -X theirs origin/main -m "Merge main into cli-coverage-update" --no-edit || true
+          else
+            echo "Branch cli-coverage-update does not exist, will create from main"
+          fi
+
+      - name: Get SDK version info
+        id: sdk-version
+        run: |
+          # Get the latest tag if available, otherwise use commit SHA
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LATEST_TAG" ]; then
+            echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+            echo "SDK version: $LATEST_TAG"
+          else
+            CURRENT_SHA="${{ steps.pr-info.outputs.merge_sha || github.sha }}"
+            echo "version=$CURRENT_SHA" >> $GITHUB_OUTPUT
+            echo "SDK version: $CURRENT_SHA (no tag)"
+          fi
+          
+          # Get the module path from go.mod
+          MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
+          echo "module=$MODULE_PATH" >> $GITHUB_OUTPUT
+          echo "SDK module: $MODULE_PATH"
+          
+          # Determine the commit author (from PR info for manual dispatch, or from push event)
+          if [ -n "${{ steps.pr-info.outputs.pr_author }}" ]; then
+            echo "author=${{ steps.pr-info.outputs.pr_author }}" >> $GITHUB_OUTPUT
+          else
+            echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute SDK diff since CLI's current version
+        id: sdk-diff
+        run: |
+          # Extract the SDK version currently used by the CLI
+          # Prefer go list (parses go.mod properly); fall back to grep, taking the
+          # first non-conflict-marker match so a merge conflict can't yield a
+          # multi-line value that breaks $GITHUB_OUTPUT.
+          OLD_SDK_VERSION=$(cd /tmp/kernel-cli && go list -m github.com/kernel/kernel-go-sdk 2>/dev/null | awk '{print $2}')
+          if [ -z "$OLD_SDK_VERSION" ]; then
+            OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | grep -v '^[<>=]' | head -1 | awk '{print $2}')
+          fi
+          echo "CLI currently uses SDK version: $OLD_SDK_VERSION"
+          echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
+
+          NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
+          echo "New SDK version: $NEW_SDK_VERSION"
+
+          # Compute the diff between old and new SDK versions
+          # This gives the agent a focused view of what changed
+          if git diff "$OLD_SDK_VERSION".."$NEW_SDK_VERSION" -- api.md '*.go' ':!*_test.go' ':!internal/*' > /tmp/sdk-diff.patch 2>/dev/null; then
+            DIFF_LINES=$(wc -l < /tmp/sdk-diff.patch)
+            echo "SDK diff: $DIFF_LINES lines"
+            if [ "$DIFF_LINES" -eq 0 ]; then
+              echo "No SDK changes between versions (diff is empty)"
+            fi
+          else
+            echo "Could not compute SDK diff (old version tag may not exist), creating empty diff"
+            echo "" > /tmp/sdk-diff.patch
+          fi
+
+      - name: Update CLI coverage
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
+          BRANCH_PREFIX: cli-coverage-update
+        run: |
+          claude -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
+
+          The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/cli).
+
+          # Context
+          - SDK Repo: ${{ github.repository }} (current directory)
+          - SDK Module: ${{ steps.sdk-version.outputs.module }}
+          - SDK Version: ${{ steps.sdk-version.outputs.version }}
+          - Commit SHA: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
+          - Commit Author: ${{ steps.sdk-version.outputs.author }}
+          - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
+          - API Repo Location: /tmp/kernel-api
+          - CLI Repo Location: /tmp/kernel-cli
+          - Update Branch Prefix: cli-coverage-update
+
+          # Background
+          The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
+          The CLI was previously on SDK version ${{ steps.sdk-diff.outputs.old_version }}, and we are updating it to ${{ steps.sdk-version.outputs.version }}.
+
+          # Source Files
+          - SDK api.md: Current directory - READ THIS FILE FIRST. This is the authoritative list of all SDK methods and their signatures.
+          - SDK *.go files: Current directory - Contains param structs (e.g., BrowserNewParams, DeploymentListParams) with all available options/fields.
+          - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the CLI's current SDK version (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
+          - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
+          - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
+          - CLI: /tmp/kernel-cli - Existing CLI commands
+
+          # Task
+
+          ## Step 1: Update SDK Version (ALWAYS DO THIS FIRST)
+          - Go to /tmp/kernel-cli
+          - Update go.mod to require the latest SDK: ${{ steps.sdk-version.outputs.module }}@${{ steps.sdk-version.outputs.version }}
+          - Run: go get ${{ steps.sdk-version.outputs.module }}@${{ steps.sdk-version.outputs.version }}
+          - Run: go mod tidy
+          - This ensures the CLI always uses the latest SDK, even if no new commands are added
+
+          ## Step 2: Review SDK Diff (CRITICAL - DO THIS BEFORE THE FULL ENUMERATION)
+          Read /tmp/sdk-diff.patch to see exactly what changed in the SDK between the CLI's current version and the new version.
+          This diff shows new methods, new param fields, and changed signatures — these are the changes most likely to need CLI coverage.
+          Treat every addition in this diff as a checklist item: each new method needs a CLI command, each new param field needs a CLI flag.
+          After verifying these are covered, proceed to the full enumeration below to catch anything else.
+
+          ## Step 3: Full SDK Method Enumeration (CRITICAL - DO NOT SKIP)
+          You MUST perform a complete enumeration of ALL SDK methods and their parameters. Do NOT rely only on the diff from Step 2.
+
+          3a. Read the api.md file in the SDK repo root. This file lists EVERY SDK method in the format:
+              - \`client.Resource.Method(ctx, params)\` with links to param types
+              Extract a complete list of all methods.
+
+          3b. For EACH SDK method, read the corresponding param type from the Go source files.
+              For example:
+              - BrowserNewParams in browser.go -> lists all fields like \`Proxy\`, \`Profile\`, \`Viewport\`, etc.
+              - DeploymentNewParams in deployment.go -> lists all fields like \`AppName\`, \`Region\`, \`EnvVars\`, etc.
+              Each field in a Params struct represents an option that could be a CLI flag.
+
+          3c. Build a complete SDK coverage matrix:
+              | SDK Method | SDK Param Type | SDK Param Fields |
+              |------------|----------------|------------------|
+              | client.Browsers.New | BrowserNewParams | Proxy, Profile, Viewport, Extensions, ... |
+              | client.Browsers.List | BrowserListParams | Page, PerPage, IncludeDeleted, ... |
+              | client.Deployments.New | DeploymentNewParams | AppName, Region, EnvVars, ... |
+              | ... | ... | ... |
+
+          ## Step 4: Full CLI Command Enumeration (CRITICAL - DO NOT SKIP)
+          Enumerate ALL existing CLI commands and their flags.
+
+          4a. Look at cmd/ directory structure for existing commands
+          4b. For each command file, extract:
+              - The command name/path (e.g., \`kernel browser create\`)
+              - All flags defined for that command
+          4c. Build a CLI coverage matrix:
+              | CLI Command | CLI Flags |
+              |-------------|-----------|
+              | kernel browser create | --proxy, --profile, --viewport, ... |
+              | kernel browser list | --page, --per-page, ... |
+              | ... | ... |
+
+          ## Step 5: Gap Analysis (CRITICAL - DO NOT SKIP)
+          Compare the SDK matrix (Step 3) with the CLI matrix (Step 4) to identify:
+
+          5a. Missing commands: SDK methods with NO corresponding CLI command
+          5b. Missing flags: SDK param fields with NO corresponding CLI flag
+          5c. Cross-check against the SDK diff from Step 2: every addition in /tmp/sdk-diff.patch MUST appear as a gap to address (new method = missing command, new param field = missing flag) unless it already exists in the CLI.
+          5d. Create a gap report:
+              ## Missing Commands
+              - client.Browsers.LoadExtensions -> needs \`kernel browser load-extensions\`
+              - client.Proxies.Check -> needs \`kernel proxy check\`
+
+              ## Missing Flags
+              - BrowserNewParams.SomeNewField -> \`kernel browser create\` needs --some-new-field
+              - DeploymentListParams.Status -> \`kernel deployment list\` needs --status
+
+          ## Step 6: Implement Missing Coverage
+          For each gap identified in Step 5:
+          - Implement missing commands following existing patterns
+          - Add missing flags to existing commands
+          - Run \`go build ./...\` to verify the code compiles
+
+          ## Step 7: Test Your Changes (ALWAYS DO THIS)
+          After implementing, build the CLI and smoke test the new commands/flags you just added against the real API.
+          The KERNEL_API_KEY environment variable is available for authentication.
+
+          7a. Build the CLI:
+              cd /tmp/kernel-cli && go build -o /tmp/kernel-cli/bin/kernel ./cmd/kernel
+
+          7b. For each new command or flag you added:
+              - Run the command against the real API and verify it succeeds
+              - For create/write commands: create a resource, verify it works, then clean up (delete it)
+              - For read commands: call them and verify the output format is correct
+              - For flag additions: create a resource with the new flag and verify it shows up in the get output
+              Example test flow for a new browser flag:
+                /tmp/kernel-cli/bin/kernel browsers create --new-flag value -t 30
+                /tmp/kernel-cli/bin/kernel browsers get <id>  # verify new-flag appears
+                /tmp/kernel-cli/bin/kernel browsers delete <id>  # clean up
+
+          7c. If any command fails or produces unexpected output, fix the implementation and re-test before proceeding.
+
+          7d. If you added no new commands or flags (SDK version bump only), skip this step.
+
+          ## Step 8: Commit and Push
+          - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
+          - If you're on main, create/switch to the cli-coverage-update branch
+          - Commit with message describing SDK version bump and any new commands/flags
+          - Include test results in the commit message (e.g., 'Tested: browsers create --gpu, browsers computer get-mouse-position')
+          - IMPORTANT: Do NOT force push! Use regular \`git push origin cli-coverage-update\` to preserve existing work on the branch
+          - If push fails due to divergence, pull and rebase first: \`git pull --rebase origin cli-coverage-update\`
+          - Create or update the PR in kernel/cli
+
+          # SDK Method -> CLI Command Mapping Guide
+          - client.Resource.New() -> kernel resource create
+          - client.Resource.List() -> kernel resource list
+          - client.Resource.Get() -> kernel resource get
+          - client.Resource.Delete() -> kernel resource delete
+          - client.Resource.Update() -> kernel resource update
+          - client.Resource.Sub.Action() -> kernel resource sub action
+          - client.Resource.CustomAction() -> kernel resource custom-action
+
+          # SDK Param Field -> CLI Flag Mapping Guide
+          - CamelCaseField -> --camel-case-field
+          - TimeoutSeconds -> --timeout-seconds
+          - IncludeDeleted -> --include-deleted
+          - Nested structs: Viewport.Width -> --viewport-width or separate flags
+
+          # Implementation Guidelines
+          - Follow the existing CLI code patterns in /tmp/kernel-cli
+          - Use cobra for command definitions
+          - Use the Kernel Go SDK (this repo) for API calls
+          - Include proper flag definitions with descriptions matching SDK field comments
+          - Add help text for commands matching SDK method comments
+          - Handle errors appropriately
+          - Match the style of existing commands
+
+          # CLI Pagination UX for Paginated List Endpoints
+          When an SDK update introduces pagination on a list endpoint (e.g., the return type
+          changes to \`*pagination.OffsetPagination[T]\` and the params gain \`Limit\`/\`Offset\`
+          fields), do NOT naively expose \`--limit\` and \`--offset\` flags. Instead, follow the
+          page-based UX pattern used by \`kernel app list\` (see cmd/app.go):
+
+          ## Flags
+          - Add \`--page\` (int, default 1): 1-based page number.
+          - Add \`--per-page\` (int, default 20): items per page.
+          - Do NOT add \`--limit\` or \`--offset\` flags. These are implementation details the
+            user should not need to think about.
+          - Keep any filter flags the endpoint supports (e.g., \`--query\`, \`--name\`, \`--status\`).
+
+          ## Pagination Logic (the \"+1 trick\")
+          The SDK's \`OffsetPagination\` struct stores response headers (\`X-Has-More\`,
+          \`X-Next-Offset\`) in private fields that the CLI cannot access. To detect whether
+          more pages exist without an extra API call, request one extra item:
+          1. Set \`params.Limit = perPage + 1\`
+          2. Set \`params.Offset = (page - 1) * perPage\`
+          3. If the API returns more than \`perPage\` items, \`hasMore = true\`; truncate to
+             \`perPage\` items for display.
+          4. Otherwise \`hasMore = false\`.
+
+          ## Pagination Footer
+          After rendering the table, always print a pagination footer (using \`pterm.Printf\`
+          so test output capture works):
+            Page: 1 Per-page: 20 Items this page: 20 Has more: yes
+            Next: kernel <resource> list --page 2 --per-page 20
+          - The footer line is always printed (even when \`hasMore\` is false).
+          - The \"Next:\" line is only printed when \`hasMore\` is true.
+          - Preserve all filter flags in the \"Next:\" hint. Always quote string values
+            (e.g., \`--query \"value\"\`) to handle multi-word values safely.
+          - Use \`lo.Ternary(hasMore, \"yes\", \"no\")\` for the Has more value
+            (import \`github.com/samber/lo\`, already a dependency).
+          - Do NOT print the footer when \`--output json\` is used.
+
+          ## Input Struct
+          Use \`Page int\` and \`PerPage int\` in the list input struct, not \`Limit\`/\`Offset\`.
+          Default both defensively in the List method body (\`page <= 0\` -> 1, \`perPage <= 0\` -> 20).
+
+          ## Example Reference
+          See \`cmd/profiles.go\` ProfilesCmd.List and \`cmd/app.go\` runAppList for working
+          implementations of this pattern.
+
+          # Output Format
+          After pushing changes, create or update an evergreen PR using gh:
+
+          1. Check if an open PR already exists for the cli-coverage-update branch:
+             gh pr list --repo kernel/cli --head cli-coverage-update --state open --json number
+
+          2. If an open PR exists, update it. If not, create a new one.
+
+          If new commands or flags were added:
+            Title: 'CLI: Update SDK to <version> and add new commands/flags'
+            Body:
+            'This PR updates the Go SDK to ${{ steps.sdk-version.outputs.version }} and adds CLI commands/flags for new SDK methods.
+
+            ## SDK Update
+            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
+
+            ## Coverage Analysis
+            This PR was generated by performing a full enumeration of SDK methods and CLI commands.
+
+            ## New Commands
+            - \`kernel <resource> <action>\` for \`client.Resource.Action()\`
+
+            ## New Flags
+            - \`--flag-name\` for \`ResourceParams.FieldName\`
+
+            Triggered by: kernel/kernel-go-sdk@${{ steps.pr-info.outputs.merge_sha || github.sha }}
+            Reviewer: @<commit_author>'
+
+          If only SDK version update (no coverage gaps found):
+            Title: 'CLI: Update Go SDK to ${{ steps.sdk-version.outputs.version }}'
+            Body:
+            'This PR updates the Go SDK dependency to the latest version.
+
+            ## SDK Update
+            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
+
+            ## Coverage Analysis
+            A full enumeration of SDK methods and CLI commands was performed. No coverage gaps were found.
+
+            Triggered by: kernel/kernel-go-sdk@${{ steps.pr-info.outputs.merge_sha || github.sha }}
+            Reviewer: @<commit_author>'
+
+          # Constraints
+          - ALWAYS update the SDK version in go.mod - this is the primary purpose
+          - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
+          - ALL SDK methods in api.md MUST have corresponding CLI commands, EXCEPT those marked with x-cli-skip in openapi.yaml
+          - SKIP endpoints marked with x-cli-skip: true in openapi.yaml - these are internal endpoints (e.g., hosted UI auth flows) not suitable for CLI
+          - Streaming methods may have different CLI implementations (e.g., follow flags)
+          - Even if no coverage gaps are found, still create a PR for the SDK version bump
+          - Ensure code compiles before pushing
+          " --model ${{ vars.CLAUDE_CODE_PREFERRED_MODEL }} --dangerously-skip-permissions --output-format text --verbose
