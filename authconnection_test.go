@@ -63,6 +63,15 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 					},
 				},
 				Enabled: kernel.Bool(true),
+				Export: kernel.ManagedAuthCreateRequestBrowserTelemetryExportParam{
+					Otlp: kernel.ManagedAuthCreateRequestBrowserTelemetryExportOtlpParam{
+						Destination: kernel.ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam{
+							ID:   kernel.String("id"),
+							Name: kernel.String("name"),
+						},
+						Enabled: kernel.Bool(true),
+					},
+				},
 			},
 			Credential: kernel.ManagedAuthCreateRequestCredentialParam{
 				Auto:     kernel.Bool(true),
@@ -164,6 +173,15 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 						},
 					},
 					Enabled: kernel.Bool(true),
+					Export: kernel.ManagedAuthUpdateRequestBrowserTelemetryExportParam{
+						Otlp: kernel.ManagedAuthUpdateRequestBrowserTelemetryExportOtlpParam{
+							Destination: kernel.ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam{
+								ID:   kernel.String("id"),
+								Name: kernel.String("name"),
+							},
+							Enabled: kernel.Bool(true),
+						},
+					},
 				},
 				Credential: kernel.ManagedAuthUpdateRequestCredentialParam{
 					Auto:     kernel.Bool(true),
@@ -292,6 +310,15 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 					},
 				},
 				Enabled: kernel.Bool(true),
+				Export: kernel.AuthConnectionLoginParamsBrowserTelemetryExport{
+					Otlp: kernel.AuthConnectionLoginParamsBrowserTelemetryExportOtlp{
+						Destination: kernel.AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination{
+							ID:   kernel.String("id"),
+							Name: kernel.String("name"),
+						},
+						Enabled: kernel.Bool(true),
+					},
+				},
 			},
 			Proxy: kernel.AuthConnectionLoginParamsProxy{
 				ID:   kernel.String("id"),

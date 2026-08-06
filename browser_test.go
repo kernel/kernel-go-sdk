@@ -85,6 +85,15 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 				},
 			},
 			Enabled: kernel.Bool(true),
+			Export: kernel.BrowserNewParamsTelemetryExport{
+				Otlp: kernel.BrowserNewParamsTelemetryExportOtlp{
+					Destination: kernel.BrowserNewParamsTelemetryExportOtlpDestination{
+						ID:   kernel.String("id"),
+						Name: kernel.String("name"),
+					},
+					Enabled: kernel.Bool(true),
+				},
+			},
 		},
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
@@ -191,6 +200,15 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 					},
 				},
 				Enabled: kernel.Bool(true),
+				Export: kernel.BrowserUpdateParamsTelemetryExport{
+					Otlp: kernel.BrowserUpdateParamsTelemetryExportOtlp{
+						Destination: kernel.BrowserUpdateParamsTelemetryExportOtlpDestination{
+							ID:   kernel.String("id"),
+							Name: kernel.String("name"),
+						},
+						Enabled: kernel.Bool(true),
+					},
+				},
 			},
 			Viewport: kernel.BrowserUpdateParamsViewport{
 				BrowserViewportParam: shared.BrowserViewportParam{

@@ -2254,9 +2254,13 @@ func (r *BrowserTelemetryCategoryConfigParam) UnmarshalJSON(data []byte) error {
 type BrowserTelemetryConfig struct {
 	// Per-category enable/disable flags.
 	Browser BrowserTelemetryCategoriesConfig `json:"browser"`
+	// Where the session's captured telemetry is being exported. Omitted when the
+	// export state is unknown.
+	Export BrowserTelemetryExportConfig `json:"export"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browser     respjson.Field
+		Export      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -2864,6 +2868,46 @@ type BrowserTelemetryEventUnionDataStatus struct {
 }
 
 func (r *BrowserTelemetryEventUnionDataStatus) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Active export state for a session's captured telemetry, by protocol.
+type BrowserTelemetryExportConfig struct {
+	// Active OTLP export state.
+	Otlp BrowserTelemetryOtlpExportConfig `json:"otlp"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Otlp        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserTelemetryExportConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserTelemetryExportConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Active OTLP export state for a browser session.
+type BrowserTelemetryOtlpExportConfig struct {
+	// ID of the OTLP destination the session is bound to. Omitted when the session is
+	// not exporting.
+	Destination string `json:"destination"`
+	// Whether the session is exporting captured telemetry over OTLP.
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Destination respjson.Field
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserTelemetryOtlpExportConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserTelemetryOtlpExportConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

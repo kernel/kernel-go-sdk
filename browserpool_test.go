@@ -79,6 +79,15 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 				},
 			},
 			Enabled: kernel.Bool(true),
+			Export: kernel.BrowserPoolNewParamsTelemetryExport{
+				Otlp: kernel.BrowserPoolNewParamsTelemetryExportOtlp{
+					Destination: kernel.BrowserPoolNewParamsTelemetryExportOtlpDestination{
+						ID:   kernel.String("id"),
+						Name: kernel.String("name"),
+					},
+					Enabled: kernel.Bool(true),
+				},
+			},
 		},
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
@@ -188,6 +197,15 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 					},
 				},
 				Enabled: kernel.Bool(true),
+				Export: kernel.BrowserPoolUpdateParamsTelemetryExport{
+					Otlp: kernel.BrowserPoolUpdateParamsTelemetryExportOtlp{
+						Destination: kernel.BrowserPoolUpdateParamsTelemetryExportOtlpDestination{
+							ID:   kernel.String("id"),
+							Name: kernel.String("name"),
+						},
+						Enabled: kernel.Bool(true),
+					},
+				},
 			},
 			TimeoutSeconds: kernel.Int(10),
 			Viewport: shared.BrowserViewportParam{
@@ -318,6 +336,15 @@ func TestBrowserPoolAcquireWithOptionalParams(t *testing.T) {
 					},
 				},
 				Enabled: kernel.Bool(true),
+				Export: kernel.BrowserPoolAcquireParamsTelemetryExport{
+					Otlp: kernel.BrowserPoolAcquireParamsTelemetryExportOtlp{
+						Destination: kernel.BrowserPoolAcquireParamsTelemetryExportOtlpDestination{
+							ID:   kernel.String("id"),
+							Name: kernel.String("name"),
+						},
+						Enabled: kernel.Bool(true),
+					},
+				},
 			},
 		},
 	)
