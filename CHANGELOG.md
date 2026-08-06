@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.86.1](https://github.com/kernel/kernel-go-sdk/compare/v0.86.0...v0.86.1) (2026-08-06)
+
+
+### Bug Fixes
+
+* restore Stainless artifact download slug ([10e6488](https://github.com/kernel/kernel-go-sdk/commit/10e64888bbba7139d815dde7eec7cfa895093aa1))
+
 ## 0.86.0 (2026-08-03)
 
 Full Changelog: [v0.85.0...v0.86.0](https://github.com/kernel/kernel-go-sdk/compare/v0.85.0...v0.86.0)
