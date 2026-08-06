@@ -507,10 +507,14 @@ type ManagedAuthBrowserTelemetry struct {
 	// selection instead. False stops capture on update and starts no capture on
 	// create. enabled=false cannot be combined with browser category settings.
 	Enabled bool `json:"enabled"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export ManagedAuthBrowserTelemetryExport `json:"export"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browser     respjson.Field
 		Enabled     respjson.Field
+		Export      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -519,6 +523,71 @@ type ManagedAuthBrowserTelemetry struct {
 // Returns the unmodified JSON received from the API
 func (r ManagedAuthBrowserTelemetry) RawJSON() string { return r.JSON.raw }
 func (r *ManagedAuthBrowserTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type ManagedAuthBrowserTelemetryExport struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp ManagedAuthBrowserTelemetryExportOtlp `json:"otlp"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Otlp        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserTelemetryExport) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserTelemetryExport) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type ManagedAuthBrowserTelemetryExportOtlp struct {
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination ManagedAuthBrowserTelemetryExportOtlpDestination `json:"destination"`
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Destination respjson.Field
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserTelemetryExportOtlp) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserTelemetryExportOtlp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type ManagedAuthBrowserTelemetryExportOtlpDestination struct {
+	// OTLP destination ID
+	ID string `json:"id"`
+	// OTLP destination name
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserTelemetryExportOtlpDestination) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -932,6 +1001,9 @@ type ManagedAuthCreateRequestBrowserTelemetryParam struct {
 	// empty, the default set is used. A browser config that disables every category
 	// stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export ManagedAuthCreateRequestBrowserTelemetryExportParam `json:"export,omitzero"`
 	paramObj
 }
 
@@ -940,6 +1012,60 @@ func (r ManagedAuthCreateRequestBrowserTelemetryParam) MarshalJSON() (data []byt
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthCreateRequestBrowserTelemetryParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type ManagedAuthCreateRequestBrowserTelemetryExportParam struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp ManagedAuthCreateRequestBrowserTelemetryExportOtlpParam `json:"otlp,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthCreateRequestBrowserTelemetryExportParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthCreateRequestBrowserTelemetryExportParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthCreateRequestBrowserTelemetryExportParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type ManagedAuthCreateRequestBrowserTelemetryExportOtlpParam struct {
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam `json:"destination,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthCreateRequestBrowserTelemetryExportOtlpParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthCreateRequestBrowserTelemetryExportOtlpParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthCreateRequestBrowserTelemetryExportOtlpParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam struct {
+	// OTLP destination ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// OTLP destination name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1182,6 +1308,9 @@ type ManagedAuthUpdateRequestBrowserTelemetryParam struct {
 	// empty, the default set is used. A browser config that disables every category
 	// stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export ManagedAuthUpdateRequestBrowserTelemetryExportParam `json:"export,omitzero"`
 	paramObj
 }
 
@@ -1190,6 +1319,60 @@ func (r ManagedAuthUpdateRequestBrowserTelemetryParam) MarshalJSON() (data []byt
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthUpdateRequestBrowserTelemetryParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type ManagedAuthUpdateRequestBrowserTelemetryExportParam struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp ManagedAuthUpdateRequestBrowserTelemetryExportOtlpParam `json:"otlp,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestBrowserTelemetryExportParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestBrowserTelemetryExportParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestBrowserTelemetryExportParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type ManagedAuthUpdateRequestBrowserTelemetryExportOtlpParam struct {
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam `json:"destination,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestBrowserTelemetryExportOtlpParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestBrowserTelemetryExportOtlpParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestBrowserTelemetryExportOtlpParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam struct {
+	// OTLP destination ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// OTLP destination name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1793,6 +1976,9 @@ type AuthConnectionLoginParamsBrowserTelemetry struct {
 	// empty, the default set is used. A browser config that disables every category
 	// stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export AuthConnectionLoginParamsBrowserTelemetryExport `json:"export,omitzero"`
 	paramObj
 }
 
@@ -1801,6 +1987,60 @@ func (r AuthConnectionLoginParamsBrowserTelemetry) MarshalJSON() (data []byte, e
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *AuthConnectionLoginParamsBrowserTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type AuthConnectionLoginParamsBrowserTelemetryExport struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp AuthConnectionLoginParamsBrowserTelemetryExportOtlp `json:"otlp,omitzero"`
+	paramObj
+}
+
+func (r AuthConnectionLoginParamsBrowserTelemetryExport) MarshalJSON() (data []byte, err error) {
+	type shadow AuthConnectionLoginParamsBrowserTelemetryExport
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AuthConnectionLoginParamsBrowserTelemetryExport) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type AuthConnectionLoginParamsBrowserTelemetryExportOtlp struct {
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination `json:"destination,omitzero"`
+	paramObj
+}
+
+func (r AuthConnectionLoginParamsBrowserTelemetryExportOtlp) MarshalJSON() (data []byte, err error) {
+	type shadow AuthConnectionLoginParamsBrowserTelemetryExportOtlp
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AuthConnectionLoginParamsBrowserTelemetryExportOtlp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination struct {
+	// OTLP destination ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// OTLP destination name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination) MarshalJSON() (data []byte, err error) {
+	type shadow AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
