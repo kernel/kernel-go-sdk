@@ -273,6 +273,16 @@ Methods:
 
 # Auth
 
+## Context
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthContext">AuthContext</a>
+
+Methods:
+
+- <code title="get /auth/context">client.Auth.Context.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthContextService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthContext">AuthContext</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 ## Connections
 
 Params Types:
