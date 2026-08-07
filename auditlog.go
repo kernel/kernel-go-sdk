@@ -28,6 +28,8 @@ import (
 // the [NewAuditLogService] method instead.
 type AuditLogService struct {
 	Options []option.RequestOption
+	// Read audit log records for the authenticated organization.
+	ExportDestinations AuditLogExportDestinationService
 }
 
 // NewAuditLogService generates a new service that applies the given options to
@@ -36,6 +38,7 @@ type AuditLogService struct {
 func NewAuditLogService(opts ...option.RequestOption) (r AuditLogService) {
 	r = AuditLogService{}
 	r.Options = opts
+	r.ExportDestinations = NewAuditLogExportDestinationService(opts...)
 	return
 }
 
