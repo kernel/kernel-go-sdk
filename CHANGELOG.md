@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.87.0](https://github.com/kernel/kernel-go-sdk/compare/v0.86.1...v0.87.0) (2026-08-08)
+
+
+### Features
+
+* Add audit logs plan paywall to the dashboard ([6d7dc2e](https://github.com/kernel/kernel-go-sdk/commit/6d7dc2e70cfe4e1671e8eb2a7a0491984e09b0e4))
+* Expose authenticated request context ([d44daa9](https://github.com/kernel/kernel-go-sdk/commit/d44daa947c65f1c5df1b68103e088bacb99fc455))
+* Expose profile save behavior in browser responses ([b6de398](https://github.com/kernel/kernel-go-sdk/commit/b6de398f2ddc7a0620381ffa3c04a4d6d03f208f))
+
 ## [0.86.1](https://github.com/kernel/kernel-go-sdk/compare/v0.86.0...v0.86.1) (2026-08-06)
 
 
