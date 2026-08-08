@@ -32,6 +32,55 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 			ProfileName:    "user-123",
 			AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 			AutoReauth:     kernel.Bool(true),
+			Browser: kernel.ManagedAuthBrowserConfigParam{
+				Proxy: kernel.BrowserProxyConfigParam{
+					ID:   kernel.String("x"),
+					Mode: kernel.BrowserProxyModeDirect,
+					Name: kernel.String("x"),
+				},
+				Stealth: kernel.Bool(false),
+				Telemetry: kernel.ManagedAuthBrowserConfigTelemetryParam{
+					Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+						Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Connection: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Console: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Control: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Network: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Page: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						System: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+					},
+					Enabled: kernel.Bool(true),
+					Export: kernel.ManagedAuthBrowserConfigTelemetryExportParam{
+						Otlp: kernel.ManagedAuthBrowserConfigTelemetryExportOtlpParam{
+							Destination: kernel.ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam{
+								ID:   kernel.String("id"),
+								Name: kernel.String("name"),
+							},
+							Enabled: kernel.Bool(true),
+						},
+					},
+				},
+			},
 			BrowserTelemetry: kernel.ManagedAuthCreateRequestBrowserTelemetryParam{
 				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 					Captcha: kernel.BrowserTelemetryCategoryConfigParam{
@@ -142,6 +191,55 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 			ManagedAuthUpdateRequest: kernel.ManagedAuthUpdateRequestParam{
 				AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 				AutoReauth:     kernel.Bool(true),
+				Browser: kernel.ManagedAuthBrowserConfigParam{
+					Proxy: kernel.BrowserProxyConfigParam{
+						ID:   kernel.String("x"),
+						Mode: kernel.BrowserProxyModeDirect,
+						Name: kernel.String("x"),
+					},
+					Stealth: kernel.Bool(false),
+					Telemetry: kernel.ManagedAuthBrowserConfigTelemetryParam{
+						Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+							Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Connection: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Console: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Control: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Network: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Page: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+							System: kernel.BrowserTelemetryCategoryConfigParam{
+								Enabled: kernel.Bool(true),
+							},
+						},
+						Enabled: kernel.Bool(true),
+						Export: kernel.ManagedAuthBrowserConfigTelemetryExportParam{
+							Otlp: kernel.ManagedAuthBrowserConfigTelemetryExportOtlpParam{
+								Destination: kernel.ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam{
+									ID:   kernel.String("id"),
+									Name: kernel.String("name"),
+								},
+								Enabled: kernel.Bool(true),
+							},
+						},
+					},
+				},
 				BrowserTelemetry: kernel.ManagedAuthUpdateRequestBrowserTelemetryParam{
 					Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 						Captcha: kernel.BrowserTelemetryCategoryConfigParam{
@@ -279,6 +377,55 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.AuthConnectionLoginParams{
+			Browser: kernel.ManagedAuthBrowserConfigParam{
+				Proxy: kernel.BrowserProxyConfigParam{
+					ID:   kernel.String("x"),
+					Mode: kernel.BrowserProxyModeDirect,
+					Name: kernel.String("x"),
+				},
+				Stealth: kernel.Bool(false),
+				Telemetry: kernel.ManagedAuthBrowserConfigTelemetryParam{
+					Browser: kernel.BrowserTelemetryCategoriesConfigParam{
+						Captcha: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Connection: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Console: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Control: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Interaction: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Network: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Page: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+						System: kernel.BrowserTelemetryCategoryConfigParam{
+							Enabled: kernel.Bool(true),
+						},
+					},
+					Enabled: kernel.Bool(true),
+					Export: kernel.ManagedAuthBrowserConfigTelemetryExportParam{
+						Otlp: kernel.ManagedAuthBrowserConfigTelemetryExportOtlpParam{
+							Destination: kernel.ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam{
+								ID:   kernel.String("id"),
+								Name: kernel.String("name"),
+							},
+							Enabled: kernel.Bool(true),
+						},
+					},
+				},
+			},
 			BrowserTelemetry: kernel.AuthConnectionLoginParamsBrowserTelemetry{
 				Browser: kernel.BrowserTelemetryCategoriesConfigParam{
 					Captcha: kernel.BrowserTelemetryCategoryConfigParam{

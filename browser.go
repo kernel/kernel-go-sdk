@@ -5,6 +5,7 @@ package kernel
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -186,6 +187,131 @@ func (r *BrowserPoolRef) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Resolved proxy configuration for a browser session. Selected proxies are
+// returned by stable ID.
+type BrowserProxy struct {
+	// Selected proxy ID.
+	ID string `json:"id"`
+	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+	// the browser's stealth-derived default: Kernel's default stealth proxy when
+	// stealth=true, or direct egress when stealth=false. default is primarily useful
+	// on browser update to restore the browser default after selected-proxy egress.
+	//
+	// Any of "direct", "default".
+	Mode BrowserProxyMode `json:"mode"`
+	// Selected proxy name.
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Mode        respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProxy) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProxy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser proxy configuration. Provide exactly one of mode, id, or name; an empty
+// object is invalid. Set mode to direct for no proxy regardless of stealth. Set
+// mode to default to use the browser's stealth-derived default: Kernel's default
+// stealth proxy when stealth=true, or direct egress when stealth=false. Select id
+// or name to use that proxy regardless of stealth. The selected proxy must be in
+// the same project as the browser. Names must match exactly one active proxy; use
+// id for stable references. Proxy configuration changes only egress and does not
+// change stealth or CAPTCHA solver behavior. A stealth browser using mode=direct
+// still runs in stealth mode with the CAPTCHA solver enabled. When proxy is
+// omitted on browser creation, stealth browsers use Kernel's default stealth proxy
+// and non-stealth browsers use direct egress. When omitted on update, the current
+// configuration is unchanged.
+type BrowserProxyConfig struct {
+	// Proxy ID.
+	ID string `json:"id"`
+	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+	// the browser's stealth-derived default: Kernel's default stealth proxy when
+	// stealth=true, or direct egress when stealth=false. default is primarily useful
+	// on browser update to restore the browser default after selected-proxy egress.
+	//
+	// Any of "direct", "default".
+	Mode BrowserProxyMode `json:"mode"`
+	// Proxy name. Must match exactly one active proxy in the project.
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Mode        respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProxyConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProxyConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserProxyConfig to a BrowserProxyConfigParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserProxyConfigParam.Overrides()
+func (r BrowserProxyConfig) ToParam() BrowserProxyConfigParam {
+	return param.Override[BrowserProxyConfigParam](json.RawMessage(r.RawJSON()))
+}
+
+// Browser proxy configuration. Provide exactly one of mode, id, or name; an empty
+// object is invalid. Set mode to direct for no proxy regardless of stealth. Set
+// mode to default to use the browser's stealth-derived default: Kernel's default
+// stealth proxy when stealth=true, or direct egress when stealth=false. Select id
+// or name to use that proxy regardless of stealth. The selected proxy must be in
+// the same project as the browser. Names must match exactly one active proxy; use
+// id for stable references. Proxy configuration changes only egress and does not
+// change stealth or CAPTCHA solver behavior. A stealth browser using mode=direct
+// still runs in stealth mode with the CAPTCHA solver enabled. When proxy is
+// omitted on browser creation, stealth browsers use Kernel's default stealth proxy
+// and non-stealth browsers use direct egress. When omitted on update, the current
+// configuration is unchanged.
+type BrowserProxyConfigParam struct {
+	// Proxy ID.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Proxy name. Must match exactly one active proxy in the project.
+	Name param.Opt[string] `json:"name,omitzero"`
+	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+	// the browser's stealth-derived default: Kernel's default stealth proxy when
+	// stealth=true, or direct egress when stealth=false. default is primarily useful
+	// on browser update to restore the browser default after selected-proxy egress.
+	//
+	// Any of "direct", "default".
+	Mode BrowserProxyMode `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r BrowserProxyConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserProxyConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserProxyConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+// the browser's stealth-derived default: Kernel's default stealth proxy when
+// stealth=true, or direct egress when stealth=false. default is primarily useful
+// on browser update to restore the browser default after selected-proxy egress.
+type BrowserProxyMode string
+
+const (
+	BrowserProxyModeDirect  BrowserProxyMode = "direct"
+	BrowserProxyModeDefault BrowserProxyMode = "default"
+)
+
 // Session usage metrics.
 type BrowserUsage struct {
 	// Time in milliseconds the session was actively running.
@@ -276,7 +402,12 @@ type BrowserNewResponse struct {
 	// Whether changes made during this browser session are saved back to its profile
 	// when the session ends. Omitted when no profile is attached.
 	ProfileSaveChanges bool `json:"profile_save_changes"`
-	// ID of the proxy associated with this browser session, if any.
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// URL the session was asked to navigate to on creation, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
@@ -323,6 +454,7 @@ type BrowserNewResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field
@@ -380,7 +512,12 @@ type BrowserGetResponse struct {
 	// Whether changes made during this browser session are saved back to its profile
 	// when the session ends. Omitted when no profile is attached.
 	ProfileSaveChanges bool `json:"profile_save_changes"`
-	// ID of the proxy associated with this browser session, if any.
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// URL the session was asked to navigate to on creation, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
@@ -427,6 +564,7 @@ type BrowserGetResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field
@@ -484,7 +622,12 @@ type BrowserUpdateResponse struct {
 	// Whether changes made during this browser session are saved back to its profile
 	// when the session ends. Omitted when no profile is attached.
 	ProfileSaveChanges bool `json:"profile_save_changes"`
-	// ID of the proxy associated with this browser session, if any.
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// URL the session was asked to navigate to on creation, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
@@ -531,6 +674,7 @@ type BrowserUpdateResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field
@@ -588,7 +732,12 @@ type BrowserListResponse struct {
 	// Whether changes made during this browser session are saved back to its profile
 	// when the session ends. Omitted when no profile is attached.
 	ProfileSaveChanges bool `json:"profile_save_changes"`
-	// ID of the proxy associated with this browser session, if any.
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// URL the session was asked to navigate to on creation, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
@@ -635,6 +784,7 @@ type BrowserListResponse struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field
@@ -696,14 +846,17 @@ type BrowserNewParams struct {
 	// changed later via PATCH /browsers/{id_or_name}.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Optional proxy to associate to the browser session. Must reference a proxy in
-	// the same project as the browser session.
+	// the same project as the browser session. Deprecated in favor of proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// Optional URL to open when the browser session is created. Navigation is
 	// best-effort, so navigation failures do not prevent the session from being
 	// created.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
-	// If true, launches the browser in stealth mode to reduce detection by anti-bot
-	// mechanisms.
+	// If true, launches the browser in stealth mode and enables the CAPTCHA solver.
+	// Defaults to false. When proxy is omitted, stealth browsers use Kernel's default
+	// stealth proxy and non-stealth browsers use direct egress. An explicit proxy
+	// configuration changes only egress; it does not enable or disable stealth or the
+	// CAPTCHA solver.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	// Activity includes CDP connections and live view connections. Defaults to 60
@@ -728,6 +881,14 @@ type BrowserNewParams struct {
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// Proxy configuration for the browser session. Cannot be combined with proxy_id.
+	// Omit to use the browser default: stealth browsers use Kernel's default stealth
+	// proxy, while non-stealth browsers use direct egress. Set mode to direct to force
+	// direct egress regardless of stealth. Set mode to default to explicitly use the
+	// browser default: Kernel's default stealth proxy when stealth=true, or direct
+	// egress when stealth=false. Select id or name to use that proxy regardless of
+	// stealth. Proxy selection does not change stealth or CAPTCHA solver behavior.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
 	// Optional user-defined key-value tags for the browser session, used to find and
 	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
 	// to 50 pairs.
@@ -869,10 +1030,10 @@ type BrowserUpdateParams struct {
 	// within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
-	// proxy.
+	// proxy. Deprecated in favor of proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// If true, stealth browsers connect directly instead of using the default stealth
-	// proxy.
+	// proxy. Deprecated in favor of proxy.mode.
 	DisableDefaultProxy param.Opt[bool] `json:"disable_default_proxy,omitzero"`
 	// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
 	// leave the existing configuration unchanged. Set enabled to true to enable
@@ -883,6 +1044,13 @@ type BrowserUpdateParams struct {
 	// Profile to load into the browser session. Only allowed if the session does not
 	// already have a profile loaded.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// Proxy configuration to apply. Omit to leave the current configuration unchanged.
+	// Cannot be combined with proxy_id or disable_default_proxy. Set mode to direct to
+	// switch to direct egress regardless of stealth. Set mode to default to restore
+	// the browser default after using a selected proxy: Kernel's default stealth proxy
+	// for a stealth browser, or direct egress for a non-stealth browser. Updating
+	// proxy does not change stealth or CAPTCHA solver behavior.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
 	// User-defined key-value tags for the browser session. Omit to leave unchanged.
 	// Provide a map to replace the entire tag set (full replace, not a merge). Set to
 	// an empty object ({}) to clear all tags. Up to 50 pairs.
