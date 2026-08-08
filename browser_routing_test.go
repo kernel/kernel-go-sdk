@@ -3,10 +3,12 @@ package kernel
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/kernel/kernel-go-sdk/option"
 )
@@ -130,6 +132,71 @@ func TestBrowserRoutingRewritesTelemetryStreamToVM(t *testing.T) {
 	}
 	if calls[1].Auth != "" {
 		t.Fatalf("expected authorization header removed, got %q", calls[1].Auth)
+	}
+}
+
+func TestBrowserRoutingTelemetryStreamPreservesContextCancellation(t *testing.T) {
+	t.Setenv(browserRoutingSubresourcesEnv, "telemetry/stream")
+
+	requestCanceled := make(chan struct{})
+	streamPath := make(chan string, 1)
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/browsers" {
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"session_id": "sess-1",
+				"base_url":   srv.URL + "/browser/kernel",
+				"cdp_ws_url": "wss://browser-session.test/browser/cdp?jwt=token-abc",
+			})
+			return
+		}
+
+		streamPath <- r.URL.RequestURI()
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		w.(http.Flusher).Flush()
+		<-r.Context().Done()
+		close(requestCanceled)
+	}))
+	defer srv.Close()
+
+	client := NewClient(
+		option.WithBaseURL(srv.URL),
+		option.WithAPIKey("sk_test"),
+		option.WithHTTPClient(srv.Client()),
+	)
+	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	stream := client.Browsers.Telemetry.StreamStreaming(ctx, "sess-1", BrowserTelemetryStreamParams{})
+	if got := <-streamPath; got != "/browser/kernel/telemetry/stream?jwt=token-abc" {
+		t.Fatalf("expected direct VM telemetry path, got %q", got)
+	}
+	next := make(chan bool, 1)
+	go func() {
+		next <- stream.Next()
+	}()
+
+	cancel()
+	select {
+	case got := <-next:
+		if got {
+			t.Fatal("expected canceled stream to stop")
+		}
+		if !errors.Is(stream.Err(), context.Canceled) {
+			t.Fatalf("expected context cancellation, got %v", stream.Err())
+		}
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for canceled stream to stop")
+	}
+
+	select {
+	case <-requestCanceled:
+	case <-time.After(time.Second):
+		t.Fatal("timed out waiting for direct VM request cancellation")
 	}
 }
 
