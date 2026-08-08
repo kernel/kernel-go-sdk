@@ -14,6 +14,8 @@ import (
 // the [NewAuthService] method instead.
 type AuthService struct {
 	Options []option.RequestOption
+	// Inspect the identity and authorization context for the current request.
+	Context AuthContextService
 	// Create and manage auth connections for automated credential capture and login.
 	Connections AuthConnectionService
 }
@@ -24,6 +26,7 @@ type AuthService struct {
 func NewAuthService(opts ...option.RequestOption) (r AuthService) {
 	r = AuthService{}
 	r.Options = opts
+	r.Context = NewAuthContextService(opts...)
 	r.Connections = NewAuthConnectionService(opts...)
 	return
 }

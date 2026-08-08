@@ -574,6 +574,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
 	Profile Profile `json:"profile"`
+	// Whether changes made during this browser session are saved back to its profile
+	// when the session ends. Omitted when no profile is attached.
+	ProfileSaveChanges bool `json:"profile_save_changes"`
 	// ID of the proxy associated with this browser session, if any.
 	ProxyID string `json:"proxy_id"`
 	// URL the session was asked to navigate to on creation, if any. Recorded for
@@ -620,6 +623,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Name               respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
+		ProfileSaveChanges respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field
