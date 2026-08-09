@@ -334,12 +334,15 @@ type ManagedAuth struct {
 	//     automatically
 	//   - `requires_email_code` — flow needs an email code that cannot be received
 	//     automatically
+	//   - `requires_customer_input` — flow needs another field or choice that is
+	//     unavailable during unattended re-authentication
 	//
 	// Any of "external_credential", "cua_has_credential", "has_credential",
 	// "viable_plans_found", "no_requirements_recorded", "requirements_satisfiable",
 	// "no_prior_successful_login", "no_credential", "no_viable_plans",
 	// "viable_plans_require_external_action", "requires_external_action",
-	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code".
+	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code",
+	// "requires_customer_input".
 	CanReauthReason ManagedAuthCanReauthReason `json:"can_reauth_reason"`
 	// Canonical choices awaiting selection. Prefer this over pending_sso_buttons,
 	// mfa_options, and sign_in_options when present.
@@ -629,6 +632,8 @@ func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []
 //     automatically
 //   - `requires_email_code` — flow needs an email code that cannot be received
 //     automatically
+//   - `requires_customer_input` — flow needs another field or choice that is
+//     unavailable during unattended re-authentication
 type ManagedAuthCanReauthReason string
 
 const (
@@ -646,6 +651,7 @@ const (
 	ManagedAuthCanReauthReasonRequiresTotpWithoutSecret        ManagedAuthCanReauthReason = "requires_totp_without_secret"
 	ManagedAuthCanReauthReasonRequiresSMSCode                  ManagedAuthCanReauthReason = "requires_sms_code"
 	ManagedAuthCanReauthReasonRequiresEmailCode                ManagedAuthCanReauthReason = "requires_email_code"
+	ManagedAuthCanReauthReasonRequiresCustomerInput            ManagedAuthCanReauthReason = "requires_customer_input"
 )
 
 // Canonical auth-flow choice awaiting user selection.
