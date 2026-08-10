@@ -288,13 +288,17 @@ type ManagedAuth struct {
 	// when `health_checks` is false. When false, expired sessions detected by a health
 	// check are marked as `NEEDS_AUTH` instead of attempting re-auth.
 	AutoReauth bool `json:"auto_reauth"`
+	// Default browser configuration for login, reauthentication, and health-check
+	// sessions.
+	Browser ManagedAuthBrowserConfig `json:"browser"`
 	// ID of the underlying browser session driving the current flow (present when flow
 	// in progress). Use this to inspect or terminate the browser session via the
 	// `/browsers` API.
 	BrowserSessionID string `json:"browser_session_id" api:"nullable"`
-	// Browser telemetry configuration used by this connection's browser sessions by
-	// default. The exact create-browser configuration is preserved and can be
-	// overridden per-login.
+	// Deprecated. Use browser.telemetry. Retained during migration for existing
+	// clients.
+	//
+	// Deprecated: deprecated
 	BrowserTelemetry ManagedAuthBrowserTelemetry `json:"browser_telemetry" api:"nullable"`
 	// Whether Kernel can automatically re-authenticate this connection when the
 	// session expires. Requires a prior successful login plus either a Kernel
@@ -330,12 +334,15 @@ type ManagedAuth struct {
 	//     automatically
 	//   - `requires_email_code` — flow needs an email code that cannot be received
 	//     automatically
+	//   - `requires_customer_input` — flow needs another field or choice that is
+	//     unavailable during unattended re-authentication
 	//
 	// Any of "external_credential", "cua_has_credential", "has_credential",
 	// "viable_plans_found", "no_requirements_recorded", "requirements_satisfiable",
 	// "no_prior_successful_login", "no_credential", "no_viable_plans",
 	// "viable_plans_require_external_action", "requires_external_action",
-	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code".
+	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code",
+	// "requires_customer_input".
 	CanReauthReason ManagedAuthCanReauthReason `json:"can_reauth_reason"`
 	// Canonical choices awaiting selection. Prefer this over pending_sso_buttons,
 	// mfa_options, and sign_in_options when present.
@@ -379,9 +386,10 @@ type ManagedAuth struct {
 	FlowType ManagedAuthFlowType `json:"flow_type" api:"nullable"`
 	// Interval in seconds between automatic health checks. When set, the system
 	// periodically verifies the authentication status and triggers re-authentication
-	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour). The minimum
-	// depends on your plan: Enterprise: 300 (5 minutes), Startup: 1200 (20 minutes),
-	// Hobbyist: 3600 (1 hour).
+	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour) or your plan
+	// minimum, whichever is larger. The minimum depends on your plan: Enterprise: 300
+	// (5 minutes), Startup: 1200 (20 minutes), Hobbyist: 3600 (1 hour), Free: 21600 (6
+	// hours).
 	HealthCheckInterval int64 `json:"health_check_interval" api:"nullable"`
 	// Whether periodic health checks are enabled for this connection. When false, the
 	// system will not automatically verify authentication status, and `auto_reauth`
@@ -415,7 +423,10 @@ type ManagedAuth struct {
 	PendingSSOButtons []ManagedAuthPendingSSOButton `json:"pending_sso_buttons" api:"nullable"`
 	// URL where the browser landed after successful login
 	PostLoginURL string `json:"post_login_url" format:"uri"`
-	// ID of the proxy associated with this connection, if any.
+	// Deprecated. Read browser.proxy instead. Retained during migration for existing
+	// clients.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// Non-MFA choices presented during the auth flow, such as account selection or org
 	// pickers (present when flow_step=awaiting_input; may also be present with
@@ -436,6 +447,7 @@ type ManagedAuth struct {
 		Status                respjson.Field
 		AllowedDomains        respjson.Field
 		AutoReauth            respjson.Field
+		Browser               respjson.Field
 		BrowserSessionID      respjson.Field
 		BrowserTelemetry      respjson.Field
 		CanReauth             respjson.Field
@@ -484,9 +496,10 @@ const (
 	ManagedAuthStatusNeedsAuth     ManagedAuthStatus = "NEEDS_AUTH"
 )
 
-// Browser telemetry configuration used by this connection's browser sessions by
-// default. The exact create-browser configuration is preserved and can be
-// overridden per-login.
+// Deprecated. Use browser.telemetry. Retained during migration for existing
+// clients.
+//
+// Deprecated: deprecated
 type ManagedAuthBrowserTelemetry struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
@@ -620,6 +633,8 @@ func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []
 //     automatically
 //   - `requires_email_code` — flow needs an email code that cannot be received
 //     automatically
+//   - `requires_customer_input` — flow needs another field or choice that is
+//     unavailable during unattended re-authentication
 type ManagedAuthCanReauthReason string
 
 const (
@@ -637,6 +652,7 @@ const (
 	ManagedAuthCanReauthReasonRequiresTotpWithoutSecret        ManagedAuthCanReauthReason = "requires_totp_without_secret"
 	ManagedAuthCanReauthReasonRequiresSMSCode                  ManagedAuthCanReauthReason = "requires_sms_code"
 	ManagedAuthCanReauthReasonRequiresEmailCode                ManagedAuthCanReauthReason = "requires_email_code"
+	ManagedAuthCanReauthReasonRequiresCustomerInput            ManagedAuthCanReauthReason = "requires_customer_input"
 )
 
 // Canonical auth-flow choice awaiting user selection.
@@ -897,6 +913,263 @@ func (r *ManagedAuthSignInOption) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Browser configuration applied to browser sessions created for a managed auth
+// connection. Managed auth controls the profile, headless mode, timeout, start
+// URL, kiosk mode, and viewport.
+type ManagedAuthBrowserConfig struct {
+	// Proxy configuration for managed auth browser sessions. Omit on create to derive
+	// the default from stealth, or on update and login to preserve or inherit the
+	// connection default.
+	Proxy BrowserProxyConfig `json:"proxy"`
+	// Whether managed auth browser sessions use stealth mode. Defaults to true when
+	// omitted.
+	Stealth bool `json:"stealth"`
+	// Browser telemetry configuration using the same semantics as browser create.
+	Telemetry ManagedAuthBrowserConfigTelemetry `json:"telemetry" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Proxy       respjson.Field
+		Stealth     respjson.Field
+		Telemetry   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserConfig) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this ManagedAuthBrowserConfig to a
+// ManagedAuthBrowserConfigParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// ManagedAuthBrowserConfigParam.Overrides()
+func (r ManagedAuthBrowserConfig) ToParam() ManagedAuthBrowserConfigParam {
+	return param.Override[ManagedAuthBrowserConfigParam](json.RawMessage(r.RawJSON()))
+}
+
+// Browser telemetry configuration using the same semantics as browser create.
+type ManagedAuthBrowserConfigTelemetry struct {
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfig `json:"browser"`
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled bool `json:"enabled"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export ManagedAuthBrowserConfigTelemetryExport `json:"export"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Browser     respjson.Field
+		Enabled     respjson.Field
+		Export      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserConfigTelemetry) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserConfigTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type ManagedAuthBrowserConfigTelemetryExport struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp ManagedAuthBrowserConfigTelemetryExportOtlp `json:"otlp"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Otlp        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserConfigTelemetryExport) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserConfigTelemetryExport) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type ManagedAuthBrowserConfigTelemetryExportOtlp struct {
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination ManagedAuthBrowserConfigTelemetryExportOtlpDestination `json:"destination"`
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Destination respjson.Field
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserConfigTelemetryExportOtlp) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserConfigTelemetryExportOtlp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type ManagedAuthBrowserConfigTelemetryExportOtlpDestination struct {
+	// OTLP destination ID
+	ID string `json:"id"`
+	// OTLP destination name
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserConfigTelemetryExportOtlpDestination) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserConfigTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser configuration applied to browser sessions created for a managed auth
+// connection. Managed auth controls the profile, headless mode, timeout, start
+// URL, kiosk mode, and viewport.
+type ManagedAuthBrowserConfigParam struct {
+	// Whether managed auth browser sessions use stealth mode. Defaults to true when
+	// omitted.
+	Stealth param.Opt[bool] `json:"stealth,omitzero"`
+	// Browser telemetry configuration using the same semantics as browser create.
+	Telemetry ManagedAuthBrowserConfigTelemetryParam `json:"telemetry,omitzero"`
+	// Proxy configuration for managed auth browser sessions. Omit on create to derive
+	// the default from stealth, or on update and login to preserve or inherit the
+	// connection default.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser telemetry configuration using the same semantics as browser create.
+type ManagedAuthBrowserConfigTelemetryParam struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction) and screenshot are off by default; set enabled=true to opt in. On
+	// create, provided categories layer onto the default set. On update, provided
+	// categories merge onto the session's current config; when no telemetry is active
+	// this falls back to the default set (matching create). If browser is omitted or
+	// empty, the default set is used. A browser config that disables every category
+	// stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export ManagedAuthBrowserConfigTelemetryExportParam `json:"export,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserConfigTelemetryParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserConfigTelemetryParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserConfigTelemetryParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type ManagedAuthBrowserConfigTelemetryExportParam struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp ManagedAuthBrowserConfigTelemetryExportOtlpParam `json:"otlp,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserConfigTelemetryExportParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserConfigTelemetryExportParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserConfigTelemetryExportParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type ManagedAuthBrowserConfigTelemetryExportOtlpParam struct {
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam `json:"destination,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserConfigTelemetryExportOtlpParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserConfigTelemetryExportOtlpParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserConfigTelemetryExportOtlpParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam struct {
+	// OTLP destination ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// OTLP destination name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Request to create an auth connection for a profile and domain
 //
 // The properties Domain, ProfileName are required.
@@ -917,9 +1190,10 @@ type ManagedAuthCreateRequestParam struct {
 	AutoReauth param.Opt[bool] `json:"auto_reauth,omitzero"`
 	// Interval in seconds between automatic health checks. When set, the system
 	// periodically verifies the authentication status and triggers re-authentication
-	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour). The minimum
-	// depends on your plan: Enterprise: 300 (5 minutes), Startup: 1200 (20 minutes),
-	// Hobbyist: 3600 (1 hour).
+	// if needed. Maximum is 86400 (24 hours). Default is 3600 (1 hour) or your plan
+	// minimum, whichever is larger. The minimum depends on your plan: Enterprise: 300
+	// (5 minutes), Startup: 1200 (20 minutes), Hobbyist: 3600 (1 hour), Free: 21600 (6
+	// hours).
 	HealthCheckInterval param.Opt[int64] `json:"health_check_interval,omitzero"`
 	// Whether to enable periodic health checks. When false, the system will not
 	// automatically verify authentication status, and `auto_reauth` has no effect on
@@ -934,9 +1208,10 @@ type ManagedAuthCreateRequestParam struct {
 	// Whether to save credentials after every successful login. Defaults to true.
 	// One-time codes (TOTP, SMS, etc.) are not saved.
 	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
-	// Browser telemetry configuration used by this connection's browser sessions by
-	// default. Uses the exact create-browser configuration. Can be overridden
-	// per-login.
+	// Deprecated. Use browser.telemetry. Retained during migration for existing
+	// clients.
+	//
+	// Deprecated: deprecated
 	BrowserTelemetry ManagedAuthCreateRequestBrowserTelemetryParam `json:"browser_telemetry,omitzero"`
 	// Additional domains valid for this auth flow (besides the primary domain). Useful
 	// when login pages redirect to different domains.
@@ -956,16 +1231,18 @@ type ManagedAuthCreateRequestParam struct {
 	// - OneLogin: \*.onelogin.com
 	// - Ping Identity: _.pingone.com, _.pingidentity.com
 	AllowedDomains []string `json:"allowed_domains,omitzero"`
+	// Default browser configuration for login, reauthentication, and health-check
+	// sessions.
+	Browser ManagedAuthBrowserConfigParam `json:"browser,omitzero"`
 	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
 	// - { provider, path } for external provider item
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthCreateRequestCredentialParam `json:"credential,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must be in the same
-	// project as the resource referencing it. When selecting by name, the name must
-	// match exactly one active proxy in the project. Ambiguous names return a 400; use
-	// id for stable references.
+	// Deprecated. Use browser.proxy. Retained during migration for existing clients.
+	//
+	// Deprecated: deprecated
 	Proxy ManagedAuthCreateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -978,9 +1255,10 @@ func (r *ManagedAuthCreateRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Browser telemetry configuration used by this connection's browser sessions by
-// default. Uses the exact create-browser configuration. Can be overridden
-// per-login.
+// Deprecated. Use browser.telemetry. Retained during migration for existing
+// clients.
+//
+// Deprecated: deprecated
 type ManagedAuthCreateRequestBrowserTelemetryParam struct {
 	// Request shortcut for browser telemetry capture. True enables capture; with no
 	// browser category settings it captures the default set (control, connection,
@@ -1094,10 +1372,9 @@ func (r *ManagedAuthCreateRequestCredentialParam) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy selection. Provide either id or name. The proxy must be in the same
-// project as the resource referencing it. When selecting by name, the name must
-// match exactly one active proxy in the project. Ambiguous names return a 400; use
-// id for stable references.
+// Deprecated. Use browser.proxy. Retained during migration for existing clients.
+//
+// Deprecated: deprecated
 type ManagedAuthCreateRequestProxyParam struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -1257,22 +1534,25 @@ type ManagedAuthUpdateRequestParam struct {
 	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
 	// Whether to save credentials after every successful login
 	SaveCredentials param.Opt[bool] `json:"save_credentials,omitzero"`
-	// Browser telemetry configuration used by future browser sessions for this
-	// connection. Uses the exact create-browser configuration. Set enabled to false to
-	// disable telemetry.
+	// Deprecated. Use browser.telemetry. Retained during migration for existing
+	// clients.
+	//
+	// Deprecated: deprecated
 	BrowserTelemetry ManagedAuthUpdateRequestBrowserTelemetryParam `json:"browser_telemetry,omitzero"`
 	// Additional domains valid for this auth flow (replaces existing list)
 	AllowedDomains []string `json:"allowed_domains,omitzero"`
+	// Browser configuration updates for future login, reauthentication, and
+	// health-check sessions. Omitted properties remain unchanged.
+	Browser ManagedAuthBrowserConfigParam `json:"browser,omitzero"`
 	// Reference to credentials for the auth connection. Use one of:
 	//
 	// - { name } for Kernel credentials
 	// - { provider, path } for external provider item
 	// - { provider, auto: true } for external provider domain lookup
 	Credential ManagedAuthUpdateRequestCredentialParam `json:"credential,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must be in the same
-	// project as the resource referencing it. When selecting by name, the name must
-	// match exactly one active proxy in the project. Ambiguous names return a 400; use
-	// id for stable references.
+	// Deprecated. Use browser.proxy. Retained during migration for existing clients.
+	//
+	// Deprecated: deprecated
 	Proxy ManagedAuthUpdateRequestProxyParam `json:"proxy,omitzero"`
 	paramObj
 }
@@ -1285,9 +1565,10 @@ func (r *ManagedAuthUpdateRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Browser telemetry configuration used by future browser sessions for this
-// connection. Uses the exact create-browser configuration. Set enabled to false to
-// disable telemetry.
+// Deprecated. Use browser.telemetry. Retained during migration for existing
+// clients.
+//
+// Deprecated: deprecated
 type ManagedAuthUpdateRequestBrowserTelemetryParam struct {
 	// Request shortcut for browser telemetry capture. True enables capture; with no
 	// browser category settings it captures the default set (control, connection,
@@ -1401,10 +1682,9 @@ func (r *ManagedAuthUpdateRequestCredentialParam) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy selection. Provide either id or name. The proxy must be in the same
-// project as the resource referencing it. When selecting by name, the name must
-// match exactly one active proxy in the project. Ambiguous names return a 400; use
-// id for stable references.
+// Deprecated. Use browser.proxy. Retained during migration for existing clients.
+//
+// Deprecated: deprecated
 type ManagedAuthUpdateRequestProxyParam struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`
@@ -1933,14 +2213,13 @@ type AuthConnectionLoginParams struct {
 	// Override the connection's default for recording this login's browser session.
 	// When omitted, the connection's record_session default is used.
 	RecordSession param.Opt[bool] `json:"record_session,omitzero"`
-	// Override the connection's default browser telemetry configuration for this
-	// login. When omitted, the connection's browser_telemetry default is used. Uses
-	// the exact create-browser configuration.
+	// Deprecated. Use browser.telemetry. Retained during migration for existing
+	// clients.
 	BrowserTelemetry AuthConnectionLoginParamsBrowserTelemetry `json:"browser_telemetry,omitzero"`
-	// Proxy selection. Provide either id or name. The proxy must be in the same
-	// project as the resource referencing it. When selecting by name, the name must
-	// match exactly one active proxy in the project. Ambiguous names return a 400; use
-	// id for stable references.
+	// Browser configuration override for this login. Omitted properties inherit the
+	// connection defaults.
+	Browser ManagedAuthBrowserConfigParam `json:"browser,omitzero"`
+	// Deprecated. Use browser.proxy. Retained during migration for existing clients.
 	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`
 	paramObj
 }
@@ -1953,9 +2232,10 @@ func (r *AuthConnectionLoginParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Override the connection's default browser telemetry configuration for this
-// login. When omitted, the connection's browser_telemetry default is used. Uses
-// the exact create-browser configuration.
+// Deprecated. Use browser.telemetry. Retained during migration for existing
+// clients.
+//
+// Deprecated: deprecated
 type AuthConnectionLoginParamsBrowserTelemetry struct {
 	// Request shortcut for browser telemetry capture. True enables capture; with no
 	// browser category settings it captures the default set (control, connection,
@@ -2044,10 +2324,9 @@ func (r *AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination) Unmarsh
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy selection. Provide either id or name. The proxy must be in the same
-// project as the resource referencing it. When selecting by name, the name must
-// match exactly one active proxy in the project. Ambiguous names return a 400; use
-// id for stable references.
+// Deprecated. Use browser.proxy. Retained during migration for existing clients.
+//
+// Deprecated: deprecated
 type AuthConnectionLoginParamsProxy struct {
 	// Proxy ID
 	ID param.Opt[string] `json:"id,omitzero"`

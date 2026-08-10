@@ -577,7 +577,12 @@ type InvocationListBrowsersResponseBrowser struct {
 	// Whether changes made during this browser session are saved back to its profile
 	// when the session ends. Omitted when no profile is attached.
 	ProfileSaveChanges bool `json:"profile_save_changes"`
-	// ID of the proxy associated with this browser session, if any.
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// URL the session was asked to navigate to on creation, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
@@ -624,6 +629,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
 		ProxyID            respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field

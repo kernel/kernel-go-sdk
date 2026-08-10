@@ -47,6 +47,11 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			Name:        kernel.String("name"),
 			SaveChanges: kernel.Bool(true),
 		},
+		Proxy: kernel.BrowserProxyConfigParam{
+			ID:   kernel.String("x"),
+			Mode: kernel.BrowserProxyModeDirect,
+			Name: kernel.String("x"),
+		},
 		ProxyID:  kernel.String("proxy_id"),
 		StartURL: kernel.String("https://example.com"),
 		Stealth:  kernel.Bool(true),
@@ -163,6 +168,11 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				ID:          kernel.String("id"),
 				Name:        kernel.String("name"),
 				SaveChanges: kernel.Bool(true),
+			},
+			Proxy: kernel.BrowserProxyConfigParam{
+				ID:   kernel.String("x"),
+				Mode: kernel.BrowserProxyModeDirect,
+				Name: kernel.String("x"),
 			},
 			ProxyID: kernel.String("proxy_id"),
 			Tags: kernel.Tags{
