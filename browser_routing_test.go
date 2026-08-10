@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"sync"
 	"testing"
 	"time"
 
@@ -138,8 +139,11 @@ func TestBrowserRoutingRewritesTelemetryStreamToVM(t *testing.T) {
 func TestBrowserRoutingTelemetryStreamPreservesContextCancellation(t *testing.T) {
 	t.Setenv(browserRoutingSubresourcesEnv, "telemetry/stream")
 
+	handlerDone := make(chan struct{})
 	requestCanceled := make(chan struct{})
 	streamPath := make(chan string, 1)
+	var requestCanceledOnce sync.Once
+	var streamPathOnce sync.Once
 	var srv *httptest.Server
 	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/browsers" {
@@ -152,14 +156,20 @@ func TestBrowserRoutingTelemetryStreamPreservesContextCancellation(t *testing.T)
 			return
 		}
 
-		streamPath <- r.URL.RequestURI()
+		streamPathOnce.Do(func() { streamPath <- r.URL.RequestURI() })
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.WriteHeader(http.StatusOK)
 		w.(http.Flusher).Flush()
-		<-r.Context().Done()
-		close(requestCanceled)
+		select {
+		case <-r.Context().Done():
+			requestCanceledOnce.Do(func() { close(requestCanceled) })
+		case <-handlerDone:
+		}
 	}))
-	defer srv.Close()
+	t.Cleanup(func() {
+		close(handlerDone)
+		srv.Close()
+	})
 
 	client := NewClient(
 		option.WithBaseURL(srv.URL),
