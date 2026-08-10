@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.88.0](https://github.com/kernel/kernel-go-sdk/compare/v0.87.0...v0.88.0) (2026-08-10)
+
+
+### Features
+
+* Forward egress deploy owner attribution ([4e924df](https://github.com/kernel/kernel-go-sdk/commit/4e924dfdce39fb1110e8f935c2061c24da60cf6f))
+* Managed auth: free-plan connections (cap 3), credentials, 6h floor (packaging PR 5) ([5819723](https://github.com/kernel/kernel-go-sdk/commit/5819723ab49da6980dad983bd63ccc1565278e8c))
+* Persist CUA-TS reauth blockers before failure ([cd3e117](https://github.com/kernel/kernel-go-sdk/commit/cd3e117dbbb8518688e2547de93da8ccf6f67089))
+
+
+### Chores
+
+* reconcile stlc generation history ([ba7b0a0](https://github.com/kernel/kernel-go-sdk/commit/ba7b0a06334f8b67e683314cc5c8f2b7acff80e6))
+* reconcile stlc generation history ([12d68bd](https://github.com/kernel/kernel-go-sdk/commit/12d68bd6c5cc268914a6d49aa4953250310206b5))
+
 ## 0.87.0 (2026-08-08)
 
 Full Changelog: [v0.86.1...v0.87.0](https://github.com/kernel/kernel-go-sdk/compare/v0.86.1...v0.87.0)
