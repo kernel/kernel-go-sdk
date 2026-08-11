@@ -36,9 +36,7 @@ func NewOrganizationLimitService(opts ...option.RequestOption) (r OrganizationLi
 	return
 }
 
-// Get the organization's concurrency limit — the maximum browsers running at once
-// across on-demand sessions and browser pool reservations — and the default
-// per-project concurrency cap applied to projects without an explicit override.
+// Get the organization's effective limits and managed auth usage.
 func (r *OrganizationLimitService) Get(ctx context.Context, opts ...option.RequestOption) (res *OrgLimits, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "org/limits"
@@ -57,6 +55,17 @@ func (r *OrganizationLimitService) Update(ctx context.Context, body Organization
 }
 
 type OrgLimits struct {
+	// The organization's current non-deleted managed auth connections, counted
+	// org-wide across every project. Compare against max_auth_connections to show
+	// remaining capacity before a create is rejected with 403 insufficient_plan.
+	AuthConnectionsUsed int64 `json:"auth_connections_used" api:"required"`
+	// Maximum managed auth connections the organization's plan allows. Null means
+	// unlimited. Counted org-wide, so it cannot be multiplied across projects.
+	MaxAuthConnections int64 `json:"max_auth_connections" api:"required"`
+	// Smallest health_check_interval the organization's plan accepts on a managed auth
+	// connection. Requests below this are rejected with 400. Existing connections
+	// stored below the floor are grandfathered until edited.
+	MinHealthCheckIntervalSeconds int64 `json:"min_health_check_interval_seconds" api:"required"`
 	// Default maximum concurrent browsers applied to every project that has no
 	// explicit per-project override. Null means no org-level default, so such projects
 	// are uncapped (only the org-wide limit applies). Applies to existing and newly
@@ -69,6 +78,9 @@ type OrgLimits struct {
 	MaxConcurrentSessions int64 `json:"max_concurrent_sessions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		AuthConnectionsUsed                 respjson.Field
+		MaxAuthConnections                  respjson.Field
+		MinHealthCheckIntervalSeconds       respjson.Field
 		DefaultProjectMaxConcurrentSessions respjson.Field
 		MaxConcurrentSessions               respjson.Field
 		ExtraFields                         map[string]respjson.Field
