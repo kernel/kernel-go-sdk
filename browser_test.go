@@ -42,6 +42,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		InvocationID: kernel.String("rr33xuugxj9h0bkf1rdt2bet"),
 		KioskMode:    kernel.Bool(true),
 		Name:         kernel.String("checkout-flow-1"),
+		Network: kernel.BrowserNetworkConfigParam{
+			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+		},
 		Profile: shared.BrowserProfileParam{
 			ID:          kernel.String("id"),
 			Name:        kernel.String("name"),
@@ -53,6 +56,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			Name: kernel.String("x"),
 		},
 		ProxyID:  kernel.String("proxy_id"),
+		Region:   kernel.BrowserNewParamsRegionUsEast,
 		StartURL: kernel.String("https://example.com"),
 		Stealth:  kernel.Bool(true),
 		Tags: kernel.Tags{
@@ -257,6 +261,7 @@ func TestBrowserListWithOptionalParams(t *testing.T) {
 		Limit:          kernel.Int(1),
 		Offset:         kernel.Int(0),
 		Query:          kernel.String("query"),
+		Region:         kernel.BrowserListParamsRegionUsEast,
 		Status:         kernel.BrowserListParamsStatusActive,
 		Tags: map[string]string{
 			"foo": "string",

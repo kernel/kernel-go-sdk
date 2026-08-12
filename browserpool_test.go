@@ -40,12 +40,16 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		Headless:          kernel.Bool(false),
 		KioskMode:         kernel.Bool(true),
 		Name:              kernel.String("my-pool"),
+		Network: kernel.BrowserNetworkConfigParam{
+			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+		},
 		Profile: kernel.BrowserPoolNewParamsProfile{
 			ID:   kernel.String("id"),
 			Name: kernel.String("name"),
 		},
 		ProxyID:                kernel.String("proxy_id"),
 		RefreshOnProfileUpdate: kernel.Bool(true),
+		Region:                 kernel.BrowserPoolNewParamsRegionUsEast,
 		StartURL:               kernel.String("https://example.com"),
 		Stealth:                kernel.Bool(true),
 		Telemetry: kernel.BrowserPoolNewParamsTelemetry{
@@ -157,6 +161,9 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Headless:          kernel.Bool(false),
 			KioskMode:         kernel.Bool(true),
 			Name:              kernel.String("my-pool"),
+			Network: kernel.BrowserNetworkConfigParam{
+				PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+			},
 			Profile: kernel.BrowserPoolUpdateParamsProfile{
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
@@ -242,6 +249,7 @@ func TestBrowserPoolListWithOptionalParams(t *testing.T) {
 		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
+		Region: kernel.BrowserPoolListParamsRegionUsEast,
 	})
 	if err != nil {
 		var apierr *kernel.Error

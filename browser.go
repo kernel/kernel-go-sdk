@@ -166,6 +166,90 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body Bro
 	return err
 }
 
+// Network configuration for a browser session or browser pool.
+type BrowserNetworkConfig struct {
+	// Destinations the browser reaches directly through the session's own network
+	// instead of through Kernel-managed egress — for private hosts reachable over a
+	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
+	// private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12,
+	// 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An
+	// explicitly supplied list replaces those defaults with exactly the entries given,
+	// and an empty list ([]) disables them so all traffic uses Kernel-managed egress;
+	// omit private_hosts to keep the defaults. Entries are hostname patterns
+	// ("_.example.ts.net", "preview.internal") or IP/CIDR literals ("100.64.0.0/10",
+	// "10.1.30.63"). IP and CIDR entries only match URLs written with a literal IP
+	// address; they never match hostnames that resolve into the range, so private DNS
+	// names need a hostname entry even when they resolve inside the default ranges.
+	// CIDRs must be in canonical masked form (host bits zero), and only the private
+	// ranges listed above are accepted; public, loopback, link-local, and unspecified
+	// ranges are rejected. Exact IPv6 addresses must be bracketed ("[fd00::1]"); IPv6
+	// CIDR ranges are unbracketed ("fd00::/8"). Wildcards are limited to one leading
+	// "_." over a suffix with at least two labels that is not a public suffix (so
+	// "_.co.uk" or "_.ts.net" are rejected, while "\*.example.ts.net" is accepted).
+	// Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries
+	// are not resolved during validation, so callers must ensure they identify private
+	// destinations. Not related to a proxy's bypass_hosts, which selects between
+	// upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
+	PrivateHosts []string `json:"private_hosts"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		PrivateHosts respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserNetworkConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserNetworkConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserNetworkConfig to a BrowserNetworkConfigParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserNetworkConfigParam.Overrides()
+func (r BrowserNetworkConfig) ToParam() BrowserNetworkConfigParam {
+	return param.Override[BrowserNetworkConfigParam](json.RawMessage(r.RawJSON()))
+}
+
+// Network configuration for a browser session or browser pool.
+type BrowserNetworkConfigParam struct {
+	// Destinations the browser reaches directly through the session's own network
+	// instead of through Kernel-managed egress — for private hosts reachable over a
+	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
+	// private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12,
+	// 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An
+	// explicitly supplied list replaces those defaults with exactly the entries given,
+	// and an empty list ([]) disables them so all traffic uses Kernel-managed egress;
+	// omit private_hosts to keep the defaults. Entries are hostname patterns
+	// ("_.example.ts.net", "preview.internal") or IP/CIDR literals ("100.64.0.0/10",
+	// "10.1.30.63"). IP and CIDR entries only match URLs written with a literal IP
+	// address; they never match hostnames that resolve into the range, so private DNS
+	// names need a hostname entry even when they resolve inside the default ranges.
+	// CIDRs must be in canonical masked form (host bits zero), and only the private
+	// ranges listed above are accepted; public, loopback, link-local, and unspecified
+	// ranges are rejected. Exact IPv6 addresses must be bracketed ("[fd00::1]"); IPv6
+	// CIDR ranges are unbracketed ("fd00::/8"). Wildcards are limited to one leading
+	// "_." over a suffix with at least two labels that is not a public suffix (so
+	// "_.co.uk" or "_.ts.net" are rejected, while "\*.example.ts.net" is accepted).
+	// Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries
+	// are not resolved during validation, so callers must ensure they identify private
+	// destinations. Not related to a proxy's bypass_hosts, which selects between
+	// upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
+	PrivateHosts []string `json:"private_hosts,omitzero"`
+	paramObj
+}
+
+func (r BrowserNetworkConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNetworkConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNetworkConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Browser pool this session was acquired from, if any.
 type BrowserPoolRef struct {
 	// Browser pool ID
@@ -369,6 +453,10 @@ type BrowserNewResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserNewResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -395,6 +483,9 @@ type BrowserNewResponse struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -440,6 +531,7 @@ type BrowserNewResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -451,6 +543,7 @@ type BrowserNewResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -472,6 +565,14 @@ func (r *BrowserNewResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserNewResponseRegion string
+
+const (
+	BrowserNewResponseRegionUsEast BrowserNewResponseRegion = "us-east"
+	BrowserNewResponseRegionEuWest BrowserNewResponseRegion = "eu-west"
+)
+
 type BrowserGetResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -479,6 +580,10 @@ type BrowserGetResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserGetResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -505,6 +610,9 @@ type BrowserGetResponse struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -550,6 +658,7 @@ type BrowserGetResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -561,6 +670,7 @@ type BrowserGetResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -582,6 +692,14 @@ func (r *BrowserGetResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserGetResponseRegion string
+
+const (
+	BrowserGetResponseRegionUsEast BrowserGetResponseRegion = "us-east"
+	BrowserGetResponseRegionEuWest BrowserGetResponseRegion = "eu-west"
+)
+
 type BrowserUpdateResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -589,6 +707,10 @@ type BrowserUpdateResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserUpdateResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -615,6 +737,9 @@ type BrowserUpdateResponse struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -660,6 +785,7 @@ type BrowserUpdateResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -671,6 +797,7 @@ type BrowserUpdateResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -692,6 +819,14 @@ func (r *BrowserUpdateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserUpdateResponseRegion string
+
+const (
+	BrowserUpdateResponseRegionUsEast BrowserUpdateResponseRegion = "us-east"
+	BrowserUpdateResponseRegionEuWest BrowserUpdateResponseRegion = "eu-west"
+)
+
 type BrowserListResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -699,6 +834,10 @@ type BrowserListResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserListResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -725,6 +864,9 @@ type BrowserListResponse struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -770,6 +912,7 @@ type BrowserListResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -781,6 +924,7 @@ type BrowserListResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -801,6 +945,14 @@ func (r BrowserListResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserListResponseRegion string
+
+const (
+	BrowserListResponseRegionUsEast BrowserListResponseRegion = "us-east"
+	BrowserListResponseRegionEuWest BrowserListResponseRegion = "eu-west"
+)
 
 // Structured response from the browser curl request.
 type BrowserCurlResponse struct {
@@ -877,6 +1029,8 @@ type BrowserNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Network configuration for the browser session. Cannot be changed after creation.
+	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.
@@ -889,6 +1043,12 @@ type BrowserNewParams struct {
 	// egress when stealth=false. Select id or name to use that proxy regardless of
 	// stealth. Proxy selection does not change stealth or CAPTCHA solver behavior.
 	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
+	// Geographic region for the browser session. It is fixed once the session is
+	// created. Region selection requires a Start-Up or Enterprise plan, defaults to
+	// us-east when omitted on create.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserNewParamsRegion `json:"region,omitzero"`
 	// Optional user-defined key-value tags for the browser session, used to find and
 	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
 	// to 50 pairs.
@@ -916,6 +1076,16 @@ func (r BrowserNewParams) MarshalJSON() (data []byte, err error) {
 func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Geographic region for the browser session. It is fixed once the session is
+// created. Region selection requires a Start-Up or Enterprise plan, defaults to
+// us-east when omitted on create.
+type BrowserNewParamsRegion string
+
+const (
+	BrowserNewParamsRegionUsEast BrowserNewParamsRegion = "us-east"
+	BrowserNewParamsRegionEuWest BrowserNewParamsRegion = "eu-west"
+)
 
 // Telemetry configuration for the browser session. Set enabled to true to start
 // capture using VM defaults, or provide browser category settings. If omitted,
@@ -1189,6 +1359,10 @@ type BrowserListParams struct {
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Search browsers by name, session ID, profile name or ID, proxy ID, or pool name.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Filter sessions by geographic region. Omit to list sessions in all regions.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserListParamsRegion `query:"region,omitzero" json:"-"`
 	// Filter sessions by status. "active" returns only active sessions (default),
 	// "deleted" returns only soft-deleted sessions, "all" returns both.
 	//
@@ -1208,6 +1382,14 @@ func (r BrowserListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Filter sessions by geographic region. Omit to list sessions in all regions.
+type BrowserListParamsRegion string
+
+const (
+	BrowserListParamsRegionUsEast BrowserListParamsRegion = "us-east"
+	BrowserListParamsRegionEuWest BrowserListParamsRegion = "eu-west"
+)
 
 // Filter sessions by status. "active" returns only active sessions (default),
 // "deleted" returns only soft-deleted sessions, "all" returns both.

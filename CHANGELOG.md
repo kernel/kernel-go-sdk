@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.89.0](https://github.com/kernel/kernel-go-sdk/compare/v0.88.0...v0.89.0) (2026-08-12)
+
+
+### Features
+
+* Add region as a first-class API field with plan and flag gating ([fd01c36](https://github.com/kernel/kernel-go-sdk/commit/fd01c36a04c73192f29d4803e46bc2b6e004a9b9))
+* Add typed network config with private_hosts to browsers and pools ([9f0076b](https://github.com/kernel/kernel-go-sdk/commit/9f0076b20dc2f81709091497a89d587e996f75ee))
+* Expose plan-derived auth limits on GET /org/limits ([25ccf2e](https://github.com/kernel/kernel-go-sdk/commit/25ccf2ec8b8b38f63573f6d7817b725585aa0d3e))
+
 ## [0.88.0](https://github.com/kernel/kernel-go-sdk/compare/v0.87.0...v0.88.0) (2026-08-10)
 
 ### Features

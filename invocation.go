@@ -544,6 +544,10 @@ type InvocationListBrowsersResponseBrowser struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region string `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -570,6 +574,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -615,6 +622,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -626,6 +634,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
