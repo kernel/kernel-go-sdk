@@ -220,6 +220,7 @@ type RequestConfig struct {
 	Middlewares    []middleware
 	APIKey         string
 	ProjectID      string
+	Project        string
 	// If ResponseBodyInto not nil, then we will attempt to deserialize into
 	// ResponseBodyInto. If Destination is a []byte, then it will return the body as
 	// is.
@@ -595,6 +596,7 @@ func (cfg *RequestConfig) Clone(ctx context.Context) *RequestConfig {
 		Middlewares:    cfg.Middlewares,
 		APIKey:         cfg.APIKey,
 		ProjectID:      cfg.ProjectID,
+		Project:        cfg.Project,
 	}
 
 	return new

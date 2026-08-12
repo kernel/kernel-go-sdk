@@ -288,3 +288,11 @@ func WithProjectID(value string) RequestOption {
 		return r.Apply(WithHeader("X-Kernel-Project-Id", value))
 	})
 }
+
+// WithProject returns a RequestOption that sets the client setting "project".
+func WithProject(value string) RequestOption {
+	return requestconfig.RequestOptionFunc(func(r *requestconfig.RequestConfig) error {
+		r.Project = value
+		return r.Apply(WithHeader("X-Kernel-Project", value))
+	})
+}
