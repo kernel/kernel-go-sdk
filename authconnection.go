@@ -666,19 +666,35 @@ type ManagedAuthChoice struct {
 	// Any of "mfa_method", "sso_provider", "sign_in_method", "auth_method",
 	// "identifier_method", "account", "other".
 	Type string `json:"type" api:"required"`
+	// Context captured for a choice.
+	Context string `json:"context" api:"nullable"`
 	// Additional context for the choice.
 	Description string `json:"description" api:"nullable"`
+	// Display text captured for a choice.
+	DisplayText string `json:"display_text" api:"nullable"`
+	// Masked phone number or email address shown for an MFA choice.
+	MaskedDestination string `json:"masked_destination" api:"nullable"`
+	// Semantic MFA method. Choice id remains the stable identity of the exact option
+	// selected.
+	//
+	// Any of "sms", "call", "email", "totp", "push", "password", "passkey", "switch",
+	// "other".
+	MfaType string `json:"mfa_type" api:"nullable"`
 	// Selector for the visible choice, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID               respjson.Field
-		Label            respjson.Field
-		Type             respjson.Field
-		Description      respjson.Field
-		ObservedSelector respjson.Field
-		ExtraFields      map[string]respjson.Field
-		raw              string
+		ID                respjson.Field
+		Label             respjson.Field
+		Type              respjson.Field
+		Context           respjson.Field
+		Description       respjson.Field
+		DisplayText       respjson.Field
+		MaskedDestination respjson.Field
+		MfaType           respjson.Field
+		ObservedSelector  respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
@@ -774,6 +790,8 @@ type ManagedAuthField struct {
 	//
 	// Any of "identifier", "password", "code", "totp_code", "totp_secret", "text".
 	Type string `json:"type" api:"required"`
+	// Context shown near the field, including a masked code destination.
+	Hint string `json:"hint"`
 	// Human-readable label shown to the user.
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
@@ -788,6 +806,7 @@ type ManagedAuthField struct {
 		ID               respjson.Field
 		Ref              respjson.Field
 		Type             respjson.Field
+		Hint             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
 		ReplaceExisting  respjson.Field
@@ -1970,19 +1989,35 @@ type AuthConnectionFollowResponseManagedAuthStateChoice struct {
 	// Any of "mfa_method", "sso_provider", "sign_in_method", "auth_method",
 	// "identifier_method", "account", "other".
 	Type string `json:"type" api:"required"`
+	// Context captured for a choice.
+	Context string `json:"context" api:"nullable"`
 	// Additional context for the choice.
 	Description string `json:"description" api:"nullable"`
+	// Display text captured for a choice.
+	DisplayText string `json:"display_text" api:"nullable"`
+	// Masked phone number or email address shown for an MFA choice.
+	MaskedDestination string `json:"masked_destination" api:"nullable"`
+	// Semantic MFA method. Choice id remains the stable identity of the exact option
+	// selected.
+	//
+	// Any of "sms", "call", "email", "totp", "push", "password", "passkey", "switch",
+	// "other".
+	MfaType string `json:"mfa_type" api:"nullable"`
 	// Selector for the visible choice, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID               respjson.Field
-		Label            respjson.Field
-		Type             respjson.Field
-		Description      respjson.Field
-		ObservedSelector respjson.Field
-		ExtraFields      map[string]respjson.Field
-		raw              string
+		ID                respjson.Field
+		Label             respjson.Field
+		Type              respjson.Field
+		Context           respjson.Field
+		Description       respjson.Field
+		DisplayText       respjson.Field
+		MaskedDestination respjson.Field
+		MfaType           respjson.Field
+		ObservedSelector  respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
@@ -2049,6 +2084,8 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 	//
 	// Any of "identifier", "password", "code", "totp_code", "totp_secret", "text".
 	Type string `json:"type" api:"required"`
+	// Context shown near the field, including a masked code destination.
+	Hint string `json:"hint"`
 	// Human-readable label shown to the user.
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
@@ -2063,6 +2100,7 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 		ID               respjson.Field
 		Ref              respjson.Field
 		Type             respjson.Field
+		Hint             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
 		ReplaceExisting  respjson.Field
