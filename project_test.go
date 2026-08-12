@@ -53,7 +53,7 @@ func TestProjectGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Projects.Get(context.TODO(), "id")
+	_, err := client.Projects.Get(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -78,7 +78,7 @@ func TestProjectUpdateWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Projects.Update(
 		context.TODO(),
-		"id",
+		"id_or_name",
 		kernel.ProjectUpdateParams{
 			UpdateProjectRequest: kernel.UpdateProjectRequestParam{
 				Name:   kernel.String("x"),
@@ -136,7 +136,7 @@ func TestProjectDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Projects.Delete(context.TODO(), "id")
+	err := client.Projects.Delete(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
