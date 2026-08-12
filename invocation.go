@@ -574,6 +574,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -631,6 +634,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field

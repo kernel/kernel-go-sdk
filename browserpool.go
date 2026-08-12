@@ -233,6 +233,9 @@ type BrowserPoolBrowserPoolConfig struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name string `json:"name"`
+	// Network configuration applied to browsers in this pool, if any. Omitted when the
+	// pool has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Profile configuration for browsers in a pool. Provide either id or name.
 	// Profiles must be created beforehand. Unlike single browser sessions, pools load
 	// the profile read-only and never persist changes back to it, so save_changes is
@@ -283,6 +286,7 @@ type BrowserPoolBrowserPoolConfig struct {
 		Headless               respjson.Field
 		KioskMode              respjson.Field
 		Name                   respjson.Field
+		Network                respjson.Field
 		Profile                respjson.Field
 		ProxyID                respjson.Field
 		RefreshOnProfileUpdate respjson.Field
@@ -373,6 +377,9 @@ type BrowserPoolAcquireResponse struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -430,6 +437,7 @@ type BrowserPoolAcquireResponse struct {
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		Name               respjson.Field
+		Network            respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -509,6 +517,8 @@ type BrowserPoolNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Network configuration applied to browsers in this pool.
+	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile configuration for browsers in a pool. Provide either id or name.
 	// Profiles must be created beforehand. Unlike single browser sessions, pools load
 	// the profile read-only and never persist changes back to it, so save_changes is
@@ -730,6 +740,12 @@ type BrowserPoolUpdateParams struct {
 	// If provided, replaces the extension list. Empty array clears all
 	// previously-selected extensions. Omit this field to leave extensions unchanged.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// If provided, replaces the pool's network configuration. Omit to leave the
+	// existing configuration unchanged; an empty object ({}) removes it, while
+	// network: {private_hosts: []} sets an explicit empty list. Only applied to
+	// browsers created in the pool after the update; browsers already in the pool keep
+	// their configuration until discarded (see discard_all_idle).
+	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile configuration for browsers in a pool. Provide either id or name.
 	// Profiles must be created beforehand. Unlike single browser sessions, pools load
 	// the profile read-only and never persist changes back to it, so save_changes is

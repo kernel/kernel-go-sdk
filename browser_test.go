@@ -42,6 +42,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		InvocationID: kernel.String("rr33xuugxj9h0bkf1rdt2bet"),
 		KioskMode:    kernel.Bool(true),
 		Name:         kernel.String("checkout-flow-1"),
+		Network: kernel.BrowserNetworkConfigParam{
+			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+		},
 		Profile: shared.BrowserProfileParam{
 			ID:          kernel.String("id"),
 			Name:        kernel.String("name"),

@@ -40,6 +40,9 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		Headless:          kernel.Bool(false),
 		KioskMode:         kernel.Bool(true),
 		Name:              kernel.String("my-pool"),
+		Network: kernel.BrowserNetworkConfigParam{
+			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+		},
 		Profile: kernel.BrowserPoolNewParamsProfile{
 			ID:   kernel.String("id"),
 			Name: kernel.String("name"),
@@ -158,6 +161,9 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Headless:          kernel.Bool(false),
 			KioskMode:         kernel.Bool(true),
 			Name:              kernel.String("my-pool"),
+			Network: kernel.BrowserNetworkConfigParam{
+				PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+			},
 			Profile: kernel.BrowserPoolUpdateParamsProfile{
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
