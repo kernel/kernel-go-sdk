@@ -53,6 +53,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			Name: kernel.String("x"),
 		},
 		ProxyID:  kernel.String("proxy_id"),
+		Region:   kernel.BrowserNewParamsRegionUsEast,
 		StartURL: kernel.String("https://example.com"),
 		Stealth:  kernel.Bool(true),
 		Tags: kernel.Tags{
@@ -257,6 +258,7 @@ func TestBrowserListWithOptionalParams(t *testing.T) {
 		Limit:          kernel.Int(1),
 		Offset:         kernel.Int(0),
 		Query:          kernel.String("query"),
+		Region:         kernel.BrowserListParamsRegionUsEast,
 		Status:         kernel.BrowserListParamsStatusActive,
 		Tags: map[string]string{
 			"foo": "string",

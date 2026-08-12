@@ -544,6 +544,10 @@ type InvocationListBrowsersResponseBrowser struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region string `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -615,6 +619,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field

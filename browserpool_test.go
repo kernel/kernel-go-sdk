@@ -46,6 +46,7 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		},
 		ProxyID:                kernel.String("proxy_id"),
 		RefreshOnProfileUpdate: kernel.Bool(true),
+		Region:                 kernel.BrowserPoolNewParamsRegionUsEast,
 		StartURL:               kernel.String("https://example.com"),
 		Stealth:                kernel.Bool(true),
 		Telemetry: kernel.BrowserPoolNewParamsTelemetry{
@@ -242,6 +243,7 @@ func TestBrowserPoolListWithOptionalParams(t *testing.T) {
 		Name:   kernel.String("name"),
 		Offset: kernel.Int(0),
 		Query:  kernel.String("query"),
+		Region: kernel.BrowserPoolListParamsRegionUsEast,
 	})
 	if err != nil {
 		var apierr *kernel.Error

@@ -176,6 +176,10 @@ type BrowserPool struct {
 	// extensions inside `browser_pool_config` reflect the configured selector (echoed
 	// as sent on create).
 	ExtensionIDs []string `json:"extension_ids" api:"required"`
+	// Geographic region of the browser pool. Fixed once the pool is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserPoolRegion `json:"region" api:"required"`
 	// Browser pool name, if set
 	Name string `json:"name"`
 	// Resolved profile ID the pool is attached to. Omitted when no profile is
@@ -191,6 +195,7 @@ type BrowserPool struct {
 		BrowserPoolConfig respjson.Field
 		CreatedAt         respjson.Field
 		ExtensionIDs      respjson.Field
+		Region            respjson.Field
 		Name              respjson.Field
 		ProfileID         respjson.Field
 		ExtraFields       map[string]respjson.Field
@@ -323,6 +328,14 @@ func (r *BrowserPoolBrowserPoolConfigProfile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser pool. Fixed once the pool is created.
+type BrowserPoolRegion string
+
+const (
+	BrowserPoolRegionUsEast BrowserPoolRegion = "us-east"
+	BrowserPoolRegionEuWest BrowserPoolRegion = "eu-west"
+)
+
 type BrowserPoolAcquireResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -330,6 +343,10 @@ type BrowserPoolAcquireResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserPoolAcquireResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -401,6 +418,7 @@ type BrowserPoolAcquireResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -432,6 +450,14 @@ func (r BrowserPoolAcquireResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserPoolAcquireResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserPoolAcquireResponseRegion string
+
+const (
+	BrowserPoolAcquireResponseRegionUsEast BrowserPoolAcquireResponseRegion = "us-east"
+	BrowserPoolAcquireResponseRegionEuWest BrowserPoolAcquireResponseRegion = "eu-west"
+)
 
 type BrowserPoolNewParams struct {
 	// Number of browsers to maintain in the pool. The maximum size is determined by
@@ -489,6 +515,12 @@ type BrowserPoolNewParams struct {
 	// omitted here. Any save_changes value sent on a pool profile is silently ignored
 	// rather than rejected.
 	Profile BrowserPoolNewParamsProfile `json:"profile,omitzero"`
+	// Geographic region for the browser pool. It is fixed once the pool is created.
+	// Region selection requires a Start-Up or Enterprise plan, defaults to us-east
+	// when omitted on create.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserPoolNewParamsRegion `json:"region,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -534,6 +566,16 @@ func (r BrowserPoolNewParamsProfile) MarshalJSON() (data []byte, err error) {
 func (r *BrowserPoolNewParamsProfile) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Geographic region for the browser pool. It is fixed once the pool is created.
+// Region selection requires a Start-Up or Enterprise plan, defaults to us-east
+// when omitted on create.
+type BrowserPoolNewParamsRegion string
+
+const (
+	BrowserPoolNewParamsRegionUsEast BrowserPoolNewParamsRegion = "us-east"
+	BrowserPoolNewParamsRegionEuWest BrowserPoolNewParamsRegion = "eu-west"
+)
 
 // Telemetry configuration applied to browsers warmed into this pool. Set enabled
 // to true to start capture using the default set, or provide browser category
@@ -848,6 +890,10 @@ type BrowserPoolListParams struct {
 	// Case-insensitive substring match against browser pool name. IDs match by exact
 	// value.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Filter pools by geographic region. Omit to list pools in all regions.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserPoolListParamsRegion `query:"region,omitzero" json:"-"`
 	paramObj
 }
 
@@ -858,6 +904,14 @@ func (r BrowserPoolListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Filter pools by geographic region. Omit to list pools in all regions.
+type BrowserPoolListParamsRegion string
+
+const (
+	BrowserPoolListParamsRegionUsEast BrowserPoolListParamsRegion = "us-east"
+	BrowserPoolListParamsRegionEuWest BrowserPoolListParamsRegion = "eu-west"
+)
 
 type BrowserPoolDeleteParams struct {
 	// If true, force delete even if browsers are currently leased. Leased browsers

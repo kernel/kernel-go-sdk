@@ -369,6 +369,10 @@ type BrowserNewResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserNewResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -440,6 +444,7 @@ type BrowserNewResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -472,6 +477,14 @@ func (r *BrowserNewResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserNewResponseRegion string
+
+const (
+	BrowserNewResponseRegionUsEast BrowserNewResponseRegion = "us-east"
+	BrowserNewResponseRegionEuWest BrowserNewResponseRegion = "eu-west"
+)
+
 type BrowserGetResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -479,6 +492,10 @@ type BrowserGetResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserGetResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -550,6 +567,7 @@ type BrowserGetResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -582,6 +600,14 @@ func (r *BrowserGetResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserGetResponseRegion string
+
+const (
+	BrowserGetResponseRegionUsEast BrowserGetResponseRegion = "us-east"
+	BrowserGetResponseRegionEuWest BrowserGetResponseRegion = "eu-west"
+)
+
 type BrowserUpdateResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -589,6 +615,10 @@ type BrowserUpdateResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserUpdateResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -660,6 +690,7 @@ type BrowserUpdateResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -692,6 +723,14 @@ func (r *BrowserUpdateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserUpdateResponseRegion string
+
+const (
+	BrowserUpdateResponseRegionUsEast BrowserUpdateResponseRegion = "us-east"
+	BrowserUpdateResponseRegionEuWest BrowserUpdateResponseRegion = "eu-west"
+)
+
 type BrowserListResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -699,6 +738,10 @@ type BrowserListResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserListResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
 	// Whether the browser session is running in stealth mode.
@@ -770,6 +813,7 @@ type BrowserListResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
 		TimeoutSeconds     respjson.Field
@@ -801,6 +845,14 @@ func (r BrowserListResponse) RawJSON() string { return r.JSON.raw }
 func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserListResponseRegion string
+
+const (
+	BrowserListResponseRegionUsEast BrowserListResponseRegion = "us-east"
+	BrowserListResponseRegionEuWest BrowserListResponseRegion = "eu-west"
+)
 
 // Structured response from the browser curl request.
 type BrowserCurlResponse struct {
@@ -889,6 +941,12 @@ type BrowserNewParams struct {
 	// egress when stealth=false. Select id or name to use that proxy regardless of
 	// stealth. Proxy selection does not change stealth or CAPTCHA solver behavior.
 	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
+	// Geographic region for the browser session. It is fixed once the session is
+	// created. Region selection requires a Start-Up or Enterprise plan, defaults to
+	// us-east when omitted on create.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserNewParamsRegion `json:"region,omitzero"`
 	// Optional user-defined key-value tags for the browser session, used to find and
 	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
 	// to 50 pairs.
@@ -916,6 +974,16 @@ func (r BrowserNewParams) MarshalJSON() (data []byte, err error) {
 func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Geographic region for the browser session. It is fixed once the session is
+// created. Region selection requires a Start-Up or Enterprise plan, defaults to
+// us-east when omitted on create.
+type BrowserNewParamsRegion string
+
+const (
+	BrowserNewParamsRegionUsEast BrowserNewParamsRegion = "us-east"
+	BrowserNewParamsRegionEuWest BrowserNewParamsRegion = "eu-west"
+)
 
 // Telemetry configuration for the browser session. Set enabled to true to start
 // capture using VM defaults, or provide browser category settings. If omitted,
@@ -1189,6 +1257,10 @@ type BrowserListParams struct {
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Search browsers by name, session ID, profile name or ID, proxy ID, or pool name.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Filter sessions by geographic region. Omit to list sessions in all regions.
+	//
+	// Any of "us-east", "eu-west".
+	Region BrowserListParamsRegion `query:"region,omitzero" json:"-"`
 	// Filter sessions by status. "active" returns only active sessions (default),
 	// "deleted" returns only soft-deleted sessions, "all" returns both.
 	//
@@ -1208,6 +1280,14 @@ func (r BrowserListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Filter sessions by geographic region. Omit to list sessions in all regions.
+type BrowserListParamsRegion string
+
+const (
+	BrowserListParamsRegionUsEast BrowserListParamsRegion = "us-east"
+	BrowserListParamsRegionEuWest BrowserListParamsRegion = "eu-west"
+)
 
 // Filter sessions by status. "active" returns only active sessions (default),
 // "deleted" returns only soft-deleted sessions, "all" returns both.
