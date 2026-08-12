@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.90.0](https://github.com/kernel/kernel-go-sdk/compare/v0.89.0...v0.90.0) (2026-08-12)
+
+
+### Features
+
+* Preserve canonical managed auth input metadata ([6a142ab](https://github.com/kernel/kernel-go-sdk/commit/6a142ab834fe7714d460b5507795546144b3c114))
+* Support project selection by ID or name ([79d4c5c](https://github.com/kernel/kernel-go-sdk/commit/79d4c5c4ab915159c0536019ea1504576a9c26f4))
+
 ## [0.89.0](https://github.com/kernel/kernel-go-sdk/compare/v0.88.0...v0.89.0) (2026-08-12)
 
 
