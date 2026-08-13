@@ -58,25 +58,25 @@ func (r *ProjectService) New(ctx context.Context, body ProjectNewParams, opts ..
 }
 
 // Get a project by its ID or by its name. Names are unique within an organization.
-func (r *ProjectService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *Project, err error) {
+func (r *ProjectService) Get(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *Project, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("org/projects/%s", id)
+	path := fmt.Sprintf("org/projects/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
 // Update a project's name or status.
-func (r *ProjectService) Update(ctx context.Context, id string, body ProjectUpdateParams, opts ...option.RequestOption) (res *Project, err error) {
+func (r *ProjectService) Update(ctx context.Context, idOrName string, body ProjectUpdateParams, opts ...option.RequestOption) (res *Project, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("org/projects/%s", id)
+	path := fmt.Sprintf("org/projects/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
@@ -105,21 +105,21 @@ func (r *ProjectService) ListAutoPaging(ctx context.Context, query ProjectListPa
 }
 
 // Soft-delete a project. The project must be empty (no active resources).
-func (r *ProjectService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+func (r *ProjectService) Delete(ctx context.Context, idOrName string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("org/projects/%s", id)
+	path := fmt.Sprintf("org/projects/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
 }
 
 // The property Name is required.
 type CreateProjectRequestParam struct {
-	// Project name (1-255 Unicode code points)
+	// Project name (1-255 Unicode code points; cannot contain `/` or `%`)
 	Name string `json:"name" api:"required"`
 	paramObj
 }
@@ -172,7 +172,7 @@ const (
 )
 
 type UpdateProjectRequestParam struct {
-	// New project name (1-255 Unicode code points)
+	// New project name (1-255 Unicode code points; cannot contain `/` or `%`)
 	Name param.Opt[string] `json:"name,omitzero"`
 	// New project status
 	//

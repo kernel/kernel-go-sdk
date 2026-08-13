@@ -26,7 +26,7 @@ func TestProjectLimitGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Projects.Limits.Get(context.TODO(), "id")
+	_, err := client.Projects.Limits.Get(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -51,7 +51,7 @@ func TestProjectLimitUpdateWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Projects.Limits.Update(
 		context.TODO(),
-		"id",
+		"id_or_name",
 		kernel.ProjectLimitUpdateParams{
 			UpdateProjectLimitsRequest: kernel.UpdateProjectLimitsRequestParam{
 				MaxConcurrentInvocations: kernel.Int(0),

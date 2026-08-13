@@ -42,13 +42,13 @@ func NewProjectLimitService(opts ...option.RequestOption) (r ProjectLimitService
 
 // Get the resource limit overrides for a project. Null values mean no
 // project-level cap (org limit applies).
-func (r *ProjectLimitService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ProjectLimits, err error) {
+func (r *ProjectLimitService) Get(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *ProjectLimits, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("org/projects/%s/limits", id)
+	path := fmt.Sprintf("org/projects/%s/limits", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
@@ -56,13 +56,13 @@ func (r *ProjectLimitService) Get(ctx context.Context, id string, opts ...option
 // Update resource limit overrides for a project. Only fields present in the
 // request are modified. Set a field to 0 to remove that limit cap; omit a field to
 // leave it unchanged.
-func (r *ProjectLimitService) Update(ctx context.Context, id string, body ProjectLimitUpdateParams, opts ...option.RequestOption) (res *ProjectLimits, err error) {
+func (r *ProjectLimitService) Update(ctx context.Context, idOrName string, body ProjectLimitUpdateParams, opts ...option.RequestOption) (res *ProjectLimits, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("org/projects/%s/limits", id)
+	path := fmt.Sprintf("org/projects/%s/limits", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
