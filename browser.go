@@ -36,7 +36,8 @@ import (
 // the [NewBrowserService] method instead.
 type BrowserService struct {
 	Options []option.RequestOption
-	// Stream live telemetry events from a browser session.
+	// Stream live telemetry events from a browser session, and manage the destinations
+	// sessions export them to.
 	Telemetry BrowserTelemetryService
 	// Record and manage browser session video replays.
 	Replays BrowserReplayService
@@ -165,6 +166,25 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body Bro
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
+
+// Memory allocated to the browser session.
+type BrowserMemory string
+
+const (
+	BrowserMemory1GiB  BrowserMemory = "1GiB"
+	BrowserMemory2GiB  BrowserMemory = "2GiB"
+	BrowserMemory6GiB  BrowserMemory = "6GiB"
+	BrowserMemory8GiB  BrowserMemory = "8GiB"
+	BrowserMemory16GiB BrowserMemory = "16GiB"
+)
+
+// Memory requested for a headful, non-GPU browser session.
+type BrowserMemoryRequest string
+
+const (
+	BrowserMemoryRequest8GiB  BrowserMemoryRequest = "8GiB"
+	BrowserMemoryRequest16GiB BrowserMemoryRequest = "16GiB"
+)
 
 // Network configuration for a browser session or browser pool.
 type BrowserNetworkConfig struct {
@@ -453,6 +473,10 @@ type BrowserNewResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
 	// Any of "us-east", "eu-west".
@@ -531,6 +555,7 @@ type BrowserNewResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Memory             respjson.Field
 		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
@@ -580,6 +605,10 @@ type BrowserGetResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
 	// Any of "us-east", "eu-west".
@@ -658,6 +687,7 @@ type BrowserGetResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Memory             respjson.Field
 		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
@@ -707,6 +737,10 @@ type BrowserUpdateResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
 	// Any of "us-east", "eu-west".
@@ -785,6 +819,7 @@ type BrowserUpdateResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Memory             respjson.Field
 		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
@@ -834,6 +869,10 @@ type BrowserListResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
 	// Any of "us-east", "eu-west".
@@ -912,6 +951,7 @@ type BrowserListResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Memory             respjson.Field
 		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
@@ -1029,6 +1069,10 @@ type BrowserNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Memory for a headful, non-GPU browser session. Defaults to 8GiB.
+	//
+	// Any of "8GiB", "16GiB".
+	Memory BrowserMemoryRequest `json:"memory,omitzero"`
 	// Network configuration for the browser session. Cannot be changed after creation.
 	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If

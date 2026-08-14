@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.91.0](https://github.com/kernel/kernel-go-sdk/compare/v0.90.0...v0.91.0) (2026-08-14)
+
+
+### Features
+
+* Add customer-facing OTLP destination CRUD API ([25f9b28](https://github.com/kernel/kernel-go-sdk/commit/25f9b283b2ec49a85a973bc267a6bde4c3872a76))
+* Expose configurable browser memory ([cb90eb7](https://github.com/kernel/kernel-go-sdk/commit/cb90eb77d34aaeb9302fb701a6a613d1f3ff51af))
+* Require a name on credential providers and backfill unnamed rows ([1f70e73](https://github.com/kernel/kernel-go-sdk/commit/1f70e735bad95b73c3eb89535479eac45f1c6dc3))
+
 ## [0.90.0](https://github.com/kernel/kernel-go-sdk/compare/v0.89.0...v0.90.0) (2026-08-12)
 
 

@@ -142,7 +142,8 @@ func (r *CredentialProviderService) Test(ctx context.Context, id string, opts ..
 type CreateCredentialProviderRequestParam struct {
 	// Service account token for the provider (e.g., 1Password service account token)
 	Token string `json:"token" api:"required"`
-	// Human-readable name for this provider instance (unique per org)
+	// Human-readable name for this provider instance (unique per org). Surrounding
+	// whitespace is trimmed and the trimmed value must be non-empty.
 	Name string `json:"name" api:"required"`
 	// Type of credential provider
 	//
@@ -299,7 +300,8 @@ type UpdateCredentialProviderRequestParam struct {
 	CacheTtlSeconds param.Opt[int64] `json:"cache_ttl_seconds,omitzero"`
 	// Whether the provider is enabled for credential lookups
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
-	// Human-readable name for this provider instance
+	// Human-readable name for this provider instance. Surrounding whitespace is
+	// trimmed and the trimmed value must be non-empty.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Priority order for credential lookups (lower numbers are checked first)
 	Priority param.Opt[int64] `json:"priority,omitzero"`

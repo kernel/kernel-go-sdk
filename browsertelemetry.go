@@ -22,7 +22,8 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared/constant"
 )
 
-// Stream live telemetry events from a browser session.
+// Stream live telemetry events from a browser session, and manage the destinations
+// sessions export them to.
 //
 // BrowserTelemetryService contains methods and other services that help with
 // interacting with the kernel API.
