@@ -30,8 +30,9 @@ type Client struct {
 	// Create and manage browser sessions.
 	Browsers BrowserService
 	// Create, list, retrieve, and delete browser profiles.
-	Profiles ProfileService
-	Auth     AuthService
+	Profiles  ProfileService
+	Auth      AuthService
+	Telemetry TelemetryService
 	// Create and manage proxy configurations for routing browser traffic.
 	Proxies ProxyService
 	// Create, list, retrieve, and delete browser extensions.
@@ -94,6 +95,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Browsers = NewBrowserService(opts...)
 	r.Profiles = NewProfileService(opts...)
 	r.Auth = NewAuthService(opts...)
+	r.Telemetry = NewTelemetryService(opts...)
 	r.Proxies = NewProxyService(opts...)
 	r.Extensions = NewExtensionService(opts...)
 	r.BrowserPools = NewBrowserPoolService(opts...)

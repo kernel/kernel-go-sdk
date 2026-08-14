@@ -36,7 +36,8 @@ import (
 // the [NewBrowserService] method instead.
 type BrowserService struct {
 	Options []option.RequestOption
-	// Stream live telemetry events from a browser session.
+	// Stream live telemetry events from a browser session, and manage the destinations
+	// sessions export them to.
 	Telemetry BrowserTelemetryService
 	// Record and manage browser session video replays.
 	Replays BrowserReplayService
