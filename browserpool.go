@@ -347,6 +347,10 @@ type BrowserPoolAcquireResponse struct {
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Whether the browser session is running in headless mode.
 	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
 	// Any of "us-east", "eu-west".
@@ -425,6 +429,7 @@ type BrowserPoolAcquireResponse struct {
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
+		Memory             respjson.Field
 		Region             respjson.Field
 		SessionID          respjson.Field
 		Stealth            respjson.Field
