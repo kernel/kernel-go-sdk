@@ -15,6 +15,8 @@ import (
 type OrganizationService struct {
 	Options []option.RequestOption
 	// Read and manage organization-level limits.
+	Entitlements OrganizationEntitlementService
+	// Read and manage organization-level limits.
 	Limits OrganizationLimitService
 }
 
@@ -24,6 +26,7 @@ type OrganizationService struct {
 func NewOrganizationService(opts ...option.RequestOption) (r OrganizationService) {
 	r = OrganizationService{}
 	r.Options = opts
+	r.Entitlements = NewOrganizationEntitlementService(opts...)
 	r.Limits = NewOrganizationLimitService(opts...)
 	return
 }
