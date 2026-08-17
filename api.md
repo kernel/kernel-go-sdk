@@ -449,6 +449,16 @@ Methods:
 
 # Organization
 
+## Entitlements
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgEntitlements">OrgEntitlements</a>
+
+Methods:
+
+- <code title="get /org/entitlements">client.Organization.Entitlements.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrganizationEntitlementService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OrgEntitlements">OrgEntitlements</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 ## Limits
 
 Params Types:
