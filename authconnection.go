@@ -784,6 +784,10 @@ func (r *ManagedAuthDiscoveredField) UnmarshalJSON(data []byte) error {
 type ManagedAuthField struct {
 	// Stable field identifier for canonical submit.
 	ID string `json:"id" api:"required"`
+	// Why the field requires user input.
+	//
+	// Any of "missing", "rejected".
+	Reason string `json:"reason" api:"required"`
 	// Credential reference name to store the submitted value under.
 	Ref string `json:"ref" api:"required"`
 	// Managed-auth field type.
@@ -796,20 +800,17 @@ type ManagedAuthField struct {
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
-	// Whether the submitted value must replace an existing credential after explicit
-	// rejection.
-	ReplaceExisting bool `json:"replace_existing"`
 	// Whether this field is required.
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
+		Reason           respjson.Field
 		Ref              respjson.Field
 		Type             respjson.Field
 		Hint             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
-		ReplaceExisting  respjson.Field
 		Required         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -2078,6 +2079,10 @@ func (r *AuthConnectionFollowResponseManagedAuthStateDiscoveredField) UnmarshalJ
 type AuthConnectionFollowResponseManagedAuthStateField struct {
 	// Stable field identifier for canonical submit.
 	ID string `json:"id" api:"required"`
+	// Why the field requires user input.
+	//
+	// Any of "missing", "rejected".
+	Reason string `json:"reason" api:"required"`
 	// Credential reference name to store the submitted value under.
 	Ref string `json:"ref" api:"required"`
 	// Managed-auth field type.
@@ -2090,20 +2095,17 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
-	// Whether the submitted value must replace an existing credential after explicit
-	// rejection.
-	ReplaceExisting bool `json:"replace_existing"`
 	// Whether this field is required.
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
+		Reason           respjson.Field
 		Ref              respjson.Field
 		Type             respjson.Field
 		Hint             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
-		ReplaceExisting  respjson.Field
 		Required         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
