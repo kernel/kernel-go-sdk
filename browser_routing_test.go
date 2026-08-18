@@ -254,7 +254,7 @@ func TestBrowserRoutingSkipsSubresourcesOutsideConfiguredAllowlist(t *testing.T)
 	}
 }
 
-func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurlTelemetryComputerAndPlaywright(t *testing.T) {
+func TestBrowserRoutingSubresourcesFromEnvDefaults(t *testing.T) {
 	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
 	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
 		t.Fatal(err)
