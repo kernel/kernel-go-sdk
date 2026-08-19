@@ -61,6 +61,7 @@ type PageLoad string                 // Always "page_load"
 type PageNavigation string           // Always "page_navigation"
 type PageNavigationSettled string    // Always "page_navigation_settled"
 type PageTabOpened string            // Always "page_tab_opened"
+type ProxyError string               // Always "proxy_error"
 type Screenshot string               // Always "screenshot"
 type ServiceCrashed string           // Always "service_crashed"
 type SseHeartbeat string             // Always "sse_heartbeat"
@@ -112,6 +113,7 @@ func (c PageLoad) Default() PageLoad                             { return "page_
 func (c PageNavigation) Default() PageNavigation                 { return "page_navigation" }
 func (c PageNavigationSettled) Default() PageNavigationSettled   { return "page_navigation_settled" }
 func (c PageTabOpened) Default() PageTabOpened                   { return "page_tab_opened" }
+func (c ProxyError) Default() ProxyError                         { return "proxy_error" }
 func (c Screenshot) Default() Screenshot                         { return "screenshot" }
 func (c ServiceCrashed) Default() ServiceCrashed                 { return "service_crashed" }
 func (c SseHeartbeat) Default() SseHeartbeat                     { return "sse_heartbeat" }
@@ -161,6 +163,7 @@ func (c PageLoad) MarshalJSON() ([]byte, error)                 { return marshal
 func (c PageNavigation) MarshalJSON() ([]byte, error)           { return marshalString(c) }
 func (c PageNavigationSettled) MarshalJSON() ([]byte, error)    { return marshalString(c) }
 func (c PageTabOpened) MarshalJSON() ([]byte, error)            { return marshalString(c) }
+func (c ProxyError) MarshalJSON() ([]byte, error)               { return marshalString(c) }
 func (c Screenshot) MarshalJSON() ([]byte, error)               { return marshalString(c) }
 func (c ServiceCrashed) MarshalJSON() ([]byte, error)           { return marshalString(c) }
 func (c SseHeartbeat) MarshalJSON() ([]byte, error)             { return marshalString(c) }
