@@ -399,6 +399,9 @@ type ManagedAuth struct {
 	HealthChecks bool `json:"health_checks"`
 	// URL to redirect user to for hosted login (present when flow in progress)
 	HostedURL string `json:"hosted_url" api:"nullable" format:"uri"`
+	// Opaque identifier for the current canonical interaction. Required when
+	// submitting fields or choices and changes for each new actionable pause.
+	InteractionID string `json:"interaction_id" api:"nullable"`
 	// Deprecated alias for `last_auth_check_at`. Despite the name, this is the last
 	// health-check timestamp, not the last successful authentication. Use
 	// `last_auth_check_at` instead.
@@ -466,6 +469,7 @@ type ManagedAuth struct {
 		HealthCheckInterval   respjson.Field
 		HealthChecks          respjson.Field
 		HostedURL             respjson.Field
+		InteractionID         respjson.Field
 		LastAuthAt            respjson.Field
 		LastAuthCheckAt       respjson.Field
 		LiveViewURL           respjson.Field
@@ -1727,6 +1731,9 @@ func (r *ManagedAuthUpdateRequestProxyParam) UnmarshalJSON(data []byte) error {
 // fields/sso_button_selector/sso_provider/mfa_option_id/sign_in_option_id remain
 // supported during deprecation.
 type SubmitFieldsRequestParam struct {
+	// Opaque interaction ID returned with canonical fields and choices. Required for
+	// canonical submissions.
+	InteractionID param.Opt[string] `json:"interaction_id,omitzero"`
 	// The MFA method type to select (when mfa_options were returned)
 	MfaOptionID param.Opt[string] `json:"mfa_option_id,omitzero"`
 	// Canonical choice ID selected by the user.
@@ -1805,6 +1812,8 @@ type AuthConnectionFollowResponseUnion struct {
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	HostedURL string `json:"hosted_url"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
+	InteractionID string `json:"interaction_id"`
+	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	LiveViewURL string `json:"live_view_url"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	MfaOptions []AuthConnectionFollowResponseManagedAuthStateMfaOption `json:"mfa_options"`
@@ -1831,6 +1840,7 @@ type AuthConnectionFollowResponseUnion struct {
 		Fields                respjson.Field
 		FlowType              respjson.Field
 		HostedURL             respjson.Field
+		InteractionID         respjson.Field
 		LiveViewURL           respjson.Field
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
@@ -1931,6 +1941,9 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	FlowType string `json:"flow_type"`
 	// URL to redirect user to for hosted login.
 	HostedURL string `json:"hosted_url" format:"uri"`
+	// Opaque identifier for the current canonical interaction. Required when
+	// submitting fields or choices and changes for each new actionable pause.
+	InteractionID string `json:"interaction_id"`
 	// Browser live view URL for debugging.
 	LiveViewURL string `json:"live_view_url" format:"uri"`
 	// MFA method options (present when flow_step=AWAITING_INPUT; may also be present
@@ -1962,6 +1975,7 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 		Fields                respjson.Field
 		FlowType              respjson.Field
 		HostedURL             respjson.Field
+		InteractionID         respjson.Field
 		LiveViewURL           respjson.Field
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
