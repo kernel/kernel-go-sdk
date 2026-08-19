@@ -1925,6 +1925,86 @@ func (r *BrowserPageTabOpenedEventData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A branded proxy-layer failure observed by the browser. Emitted when the metro
+// egress host-proxy serves a branded 5xx error page whose response carries the
+// X-Kernel-Proxy-Error header. Low-volume and carries a typed code. Its value is
+// per-session and per-URL attribution for sessions that already capture the
+// network stream: proxy failures are only observable while the CDP network
+// collector is running, so this is an opt-in refinement of the raw network events
+// rather than a default-on alerting signal.
+type BrowserProxyErrorEvent struct {
+	Category constant.Network `json:"category" default:"network"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64               `json:"ts" api:"required"`
+	Type constant.ProxyError `json:"type" default:"proxy_error"`
+	// Browser event context stamped by the browser monitor onto all CDP-sourced
+	// events. Identifies the target, frame, and navigation epoch in which the event
+	// occurred.
+	Data BrowserProxyErrorEventData `json:"data"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Data        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProxyErrorEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProxyErrorEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser event context stamped by the browser monitor onto all CDP-sourced
+// events. Identifies the target, frame, and navigation epoch in which the event
+// occurred.
+type BrowserProxyErrorEventData struct {
+	// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a
+	// branded 5xx error page served by the metro egress host-proxy. Values mirror what
+	// the proxy emits: destination_blocked, provider_blacklisted,
+	// provider_unreachable, proxy_unavailable, upstream_timeout, upstream_dns_failure,
+	// upstream_connect_failed. Unknown header values are dropped.
+	//
+	// Any of "destination_blocked", "provider_blacklisted", "provider_unreachable",
+	// "proxy_unavailable", "upstream_timeout", "upstream_dns_failure",
+	// "upstream_connect_failed".
+	Code string `json:"code" api:"required"`
+	// CDP request identifier matching the originating request.
+	RequestID string `json:"request_id" api:"required"`
+	// HTTP response status of the branded error page (502).
+	Status int64 `json:"status" api:"required"`
+	// HTTP method of the failed request, when known.
+	Method string `json:"method"`
+	// CDP Network.ResourceType for the request, when known.
+	ResourceType string `json:"resource_type"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Code         respjson.Field
+		RequestID    respjson.Field
+		Status       respjson.Field
+		Method       respjson.Field
+		ResourceType respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+	BrowserEventContext
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProxyErrorEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProxyErrorEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // A managed service exited unexpectedly. Intentional stops do not produce this
 // event; only unexpected exits and terminal restart-give-up transitions do.
 type BrowserServiceCrashedEvent struct {
@@ -2277,15 +2357,16 @@ func (r *BrowserTelemetryConfig) UnmarshalJSON(data []byte) error {
 // [BrowserConsoleLogEvent], [BrowserConsoleErrorEvent],
 // [BrowserNetworkRequestEvent], [BrowserNetworkResponseEvent],
 // [BrowserNetworkLoadingFailedEvent], [BrowserNetworkIdleEvent],
-// [BrowserPageNavigationEvent], [BrowserPageDomContentLoadedEvent],
-// [BrowserPageLoadEvent], [BrowserPageTabOpenedEvent],
-// [BrowserPageLayoutShiftEvent], [BrowserPageLcpEvent],
-// [BrowserPageLayoutSettledEvent], [BrowserPageNavigationSettledEvent],
-// [BrowserInteractionClickEvent], [BrowserInteractionKeyEvent],
-// [BrowserInteractionScrollSettledEvent], [BrowserMonitorScreenshotEvent],
-// [BrowserMonitorDisconnectedEvent], [BrowserMonitorReconnectedEvent],
-// [BrowserMonitorReconnectFailedEvent], [BrowserMonitorInitFailedEvent],
-// [BrowserAPICallEvent], [BrowserCdpConnectEvent], [BrowserCdpDisconnectEvent],
+// [BrowserProxyErrorEvent], [BrowserPageNavigationEvent],
+// [BrowserPageDomContentLoadedEvent], [BrowserPageLoadEvent],
+// [BrowserPageTabOpenedEvent], [BrowserPageLayoutShiftEvent],
+// [BrowserPageLcpEvent], [BrowserPageLayoutSettledEvent],
+// [BrowserPageNavigationSettledEvent], [BrowserInteractionClickEvent],
+// [BrowserInteractionKeyEvent], [BrowserInteractionScrollSettledEvent],
+// [BrowserMonitorScreenshotEvent], [BrowserMonitorDisconnectedEvent],
+// [BrowserMonitorReconnectedEvent], [BrowserMonitorReconnectFailedEvent],
+// [BrowserMonitorInitFailedEvent], [BrowserAPICallEvent],
+// [BrowserCdpConnectEvent], [BrowserCdpDisconnectEvent],
 // [BrowserLiveViewConnectEvent], [BrowserLiveViewDisconnectEvent],
 // [BrowserCaptchaSolveResultEvent], [BrowserSystemOomKillEvent],
 // [BrowserServiceCrashedEvent].
@@ -2299,7 +2380,7 @@ type BrowserTelemetryEventUnion struct {
 	Source BrowserEventSource `json:"source"`
 	Ts     int64              `json:"ts"`
 	// Any of "console_log", "console_error", "network_request", "network_response",
-	// "network_loading_failed", "network_idle", "page_navigation",
+	// "network_loading_failed", "network_idle", "proxy_error", "page_navigation",
 	// "page_dom_content_loaded", "page_load", "page_tab_opened", "page_layout_shift",
 	// "page_lcp", "page_layout_settled", "page_navigation_settled",
 	// "interaction_click", "interaction_key", "interaction_scroll_settled",
@@ -2311,17 +2392,18 @@ type BrowserTelemetryEventUnion struct {
 	// This field is a union of [BrowserConsoleLogEventData],
 	// [BrowserConsoleErrorEventData], [BrowserNetworkRequestEventData],
 	// [BrowserNetworkResponseEventData], [BrowserNetworkLoadingFailedEventData],
-	// [BrowserEventContext], [BrowserPageNavigationEventData],
-	// [BrowserPageDomContentLoadedEventData], [BrowserPageLoadEventData],
-	// [BrowserPageTabOpenedEventData], [BrowserPageLayoutShiftEventData],
-	// [BrowserPageLcpEventData], [BrowserInteractionClickEventData],
-	// [BrowserInteractionKeyEventData], [BrowserInteractionScrollSettledEventData],
-	// [BrowserMonitorScreenshotEventData], [BrowserMonitorDisconnectedEventData],
-	// [BrowserMonitorReconnectedEventData], [BrowserMonitorReconnectFailedEventData],
-	// [BrowserMonitorInitFailedEventData], [BrowserAPICallEventData],
-	// [BrowserCdpDisconnectEventData], [BrowserLiveViewConnectEventData],
-	// [BrowserLiveViewDisconnectEventData], [BrowserCaptchaSolveResultEventData],
-	// [BrowserSystemOomKillEventData], [BrowserServiceCrashedEventData]
+	// [BrowserEventContext], [BrowserProxyErrorEventData],
+	// [BrowserPageNavigationEventData], [BrowserPageDomContentLoadedEventData],
+	// [BrowserPageLoadEventData], [BrowserPageTabOpenedEventData],
+	// [BrowserPageLayoutShiftEventData], [BrowserPageLcpEventData],
+	// [BrowserInteractionClickEventData], [BrowserInteractionKeyEventData],
+	// [BrowserInteractionScrollSettledEventData], [BrowserMonitorScreenshotEventData],
+	// [BrowserMonitorDisconnectedEventData], [BrowserMonitorReconnectedEventData],
+	// [BrowserMonitorReconnectFailedEventData], [BrowserMonitorInitFailedEventData],
+	// [BrowserAPICallEventData], [BrowserCdpDisconnectEventData],
+	// [BrowserLiveViewConnectEventData], [BrowserLiveViewDisconnectEventData],
+	// [BrowserCaptchaSolveResultEventData], [BrowserSystemOomKillEventData],
+	// [BrowserServiceCrashedEventData]
 	Data      BrowserTelemetryEventUnionData `json:"data"`
 	Truncated bool                           `json:"truncated"`
 	JSON      struct {
@@ -2348,6 +2430,7 @@ func (BrowserNetworkRequestEvent) implBrowserTelemetryEventUnion()           {}
 func (BrowserNetworkResponseEvent) implBrowserTelemetryEventUnion()          {}
 func (BrowserNetworkLoadingFailedEvent) implBrowserTelemetryEventUnion()     {}
 func (BrowserNetworkIdleEvent) implBrowserTelemetryEventUnion()              {}
+func (BrowserProxyErrorEvent) implBrowserTelemetryEventUnion()               {}
 func (BrowserPageNavigationEvent) implBrowserTelemetryEventUnion()           {}
 func (BrowserPageDomContentLoadedEvent) implBrowserTelemetryEventUnion()     {}
 func (BrowserPageLoadEvent) implBrowserTelemetryEventUnion()                 {}
@@ -2382,6 +2465,7 @@ func (BrowserServiceCrashedEvent) implBrowserTelemetryEventUnion()           {}
 //	case kernel.BrowserNetworkResponseEvent:
 //	case kernel.BrowserNetworkLoadingFailedEvent:
 //	case kernel.BrowserNetworkIdleEvent:
+//	case kernel.BrowserProxyErrorEvent:
 //	case kernel.BrowserPageNavigationEvent:
 //	case kernel.BrowserPageDomContentLoadedEvent:
 //	case kernel.BrowserPageLoadEvent:
@@ -2423,6 +2507,8 @@ func (u BrowserTelemetryEventUnion) AsAny() anyBrowserTelemetryEvent {
 		return u.AsNetworkLoadingFailed()
 	case "network_idle":
 		return u.AsNetworkIdle()
+	case "proxy_error":
+		return u.AsProxyError()
 	case "page_navigation":
 		return u.AsPageNavigation()
 	case "page_dom_content_loaded":
@@ -2501,6 +2587,11 @@ func (u BrowserTelemetryEventUnion) AsNetworkLoadingFailed() (v BrowserNetworkLo
 }
 
 func (u BrowserTelemetryEventUnion) AsNetworkIdle() (v BrowserNetworkIdleEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsProxyError() (v BrowserProxyErrorEvent) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -2644,10 +2735,11 @@ type BrowserTelemetryEventUnionData struct {
 	// This field is from variant [BrowserConsoleLogEventData],
 	// [BrowserConsoleErrorEventData], [BrowserNetworkRequestEventData],
 	// [BrowserNetworkResponseEventData], [BrowserNetworkLoadingFailedEventData],
-	// [BrowserEventContext], [BrowserPageDomContentLoadedEventData],
-	// [BrowserPageLoadEventData], [BrowserPageLayoutShiftEventData],
-	// [BrowserPageLcpEventData], [BrowserInteractionClickEventData],
-	// [BrowserInteractionKeyEventData], [BrowserInteractionScrollSettledEventData].
+	// [BrowserEventContext], [BrowserProxyErrorEventData],
+	// [BrowserPageDomContentLoadedEventData], [BrowserPageLoadEventData],
+	// [BrowserPageLayoutShiftEventData], [BrowserPageLcpEventData],
+	// [BrowserInteractionClickEventData], [BrowserInteractionKeyEventData],
+	// [BrowserInteractionScrollSettledEventData].
 	NavSeq     int64    `json:"nav_seq"`
 	SessionID  string   `json:"session_id"`
 	TargetID   string   `json:"target_id"`
@@ -2683,7 +2775,7 @@ type BrowserTelemetryEventUnionData struct {
 	Body string `json:"body"`
 	// This field is from variant [BrowserNetworkResponseEventData].
 	MimeType string `json:"mime_type"`
-	// This field is a union of [int64], [int64], [string]
+	// This field is a union of [int64], [int64], [int64], [string]
 	Status BrowserTelemetryEventUnionDataStatus `json:"status"`
 	// This field is from variant [BrowserNetworkResponseEventData].
 	StatusText string `json:"status_text"`
@@ -2691,6 +2783,8 @@ type BrowserTelemetryEventUnionData struct {
 	Canceled bool `json:"canceled"`
 	// This field is from variant [BrowserNetworkLoadingFailedEventData].
 	ErrorText string `json:"error_text"`
+	// This field is from variant [BrowserProxyErrorEventData].
+	Code string `json:"code"`
 	// This field is from variant [BrowserPageNavigationEventData].
 	ParentFrameID string  `json:"parent_frame_id"`
 	CdpTimestamp  float64 `json:"cdp_timestamp"`
@@ -2797,6 +2891,7 @@ type BrowserTelemetryEventUnionData struct {
 		StatusText          respjson.Field
 		Canceled            respjson.Field
 		ErrorText           respjson.Field
+		Code                respjson.Field
 		ParentFrameID       respjson.Field
 		CdpTimestamp        respjson.Field
 		OpenerID            respjson.Field

@@ -509,6 +509,7 @@ func TestAuthConnectionSubmitWithOptionalParams(t *testing.T) {
 					"email":    "user@example.com",
 					"password": "secret",
 				},
+				InteractionID:     kernel.String("mai_abc123xyz"),
 				MfaOptionID:       kernel.String("sms"),
 				SelectedChoiceID:  kernel.String("google"),
 				SignInOptionID:    kernel.String("work-account"),
