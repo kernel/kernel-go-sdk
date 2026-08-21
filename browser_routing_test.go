@@ -254,7 +254,7 @@ func TestBrowserRoutingSkipsSubresourcesOutsideConfiguredAllowlist(t *testing.T)
 	}
 }
 
-func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurl(t *testing.T) {
+func TestBrowserRoutingSubresourcesFromEnvDefaults(t *testing.T) {
 	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
 	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
 		t.Fatal(err)
@@ -266,8 +266,8 @@ func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurl(t *testing.T) {
 		}
 		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
 	})
-	if got := browserRoutingSubresourcesFromEnv(); len(got) != 2 || got[0] != "curl" || got[1] != "telemetry/stream" {
-		t.Fatalf("expected default subresources [curl telemetry/stream], got %#v", got)
+	if got := browserRoutingSubresourcesFromEnv(); len(got) != 4 || got[0] != "curl" || got[1] != "telemetry/stream" || got[2] != "computer" || got[3] != "playwright" {
+		t.Fatalf("expected default subresources [curl telemetry/stream computer playwright], got %#v", got)
 	}
 
 	t.Setenv(browserRoutingSubresourcesEnv, "")
@@ -284,6 +284,169 @@ func TestBrowserRoutingSubresourcesFromEnvDefaultsToCurl(t *testing.T) {
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("expected %v, got %#v", want, got)
+		}
+	}
+}
+
+func TestBrowserRoutingDefaultsComputerAndPlaywrightToVM(t *testing.T) {
+	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
+	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !ok {
+			_ = os.Unsetenv(browserRoutingSubresourcesEnv)
+			return
+		}
+		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
+	})
+
+	var calls []struct {
+		Path string
+		Auth string
+	}
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls = append(calls, struct {
+			Path string
+			Auth string
+		}{Path: r.URL.Path + "?" + r.URL.RawQuery, Auth: r.Header.Get("Authorization")})
+
+		switch r.URL.Path {
+		case "/browsers":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"session_id": "sess-1",
+				"base_url":   srv.URL + "/browser/kernel",
+				"cdp_ws_url": "wss://browser-session.test/browser/cdp?jwt=token-abc",
+			})
+		case "/browser/kernel/computer/screenshot":
+			w.Header().Set("Content-Type", "image/png")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte{0x89, 0x50, 0x4e, 0x47})
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{"success": true})
+		}
+	}))
+	defer srv.Close()
+
+	client := NewClient(
+		option.WithBaseURL(srv.URL),
+		option.WithAPIKey("sk_test"),
+		option.WithHTTPClient(srv.Client()),
+	)
+
+	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
+		t.Fatal(err)
+	}
+	screenshot, err := client.Browsers.Computer.CaptureScreenshot(context.Background(), "sess-1", BrowserComputerCaptureScreenshotParams{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if screenshot != nil {
+		_ = screenshot.Body.Close()
+	}
+	if _, err := client.Browsers.Playwright.Execute(context.Background(), "sess-1", BrowserPlaywrightExecuteParams{Code: "return 1"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(calls) != 3 {
+		t.Fatalf("expected 3 calls, got %d %#v", len(calls), calls)
+	}
+	if calls[1].Path != "/browser/kernel/computer/screenshot?jwt=token-abc" {
+		t.Fatalf("expected direct VM screenshot path, got %q", calls[1].Path)
+	}
+	if calls[1].Auth != "" {
+		t.Fatalf("expected authorization header removed, got %q", calls[1].Auth)
+	}
+	if calls[2].Path != "/browser/kernel/playwright/execute?jwt=token-abc" {
+		t.Fatalf("expected direct VM playwright path, got %q", calls[2].Path)
+	}
+	if calls[2].Auth != "" {
+		t.Fatalf("expected authorization header removed, got %q", calls[2].Auth)
+	}
+}
+
+func TestBrowserRoutingDefaultsKeepProcessFsAndTelemetryEventsOnAPI(t *testing.T) {
+	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
+	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if !ok {
+			_ = os.Unsetenv(browserRoutingSubresourcesEnv)
+			return
+		}
+		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
+	})
+
+	var paths []string
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch {
+		case r.URL.Path == "/browsers":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"session_id": "sess-1",
+				"base_url":   srv.URL + "/browser/kernel",
+				"cdp_ws_url": "wss://browser-session.test/browser/cdp?jwt=token-abc",
+			})
+		case r.URL.Path == "/browsers/sess-1/fs/read_file":
+			w.Header().Set("Content-Type", "application/octet-stream")
+			w.WriteHeader(http.StatusOK)
+			_, _ = w.Write([]byte("x"))
+		case r.URL.Path == "/browsers/sess-1/telemetry/events":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode([]any{})
+		default:
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"duration_ms": 1,
+				"exit_code":   0,
+				"stderr_b64":  "",
+				"stdout_b64":  "",
+			})
+		}
+	}))
+	defer srv.Close()
+
+	client := NewClient(
+		option.WithBaseURL(srv.URL),
+		option.WithAPIKey("sk_test"),
+		option.WithHTTPClient(srv.Client()),
+	)
+
+	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := client.Browsers.Process.Exec(context.Background(), "sess-1", BrowserProcessExecParams{Command: "echo"}); err != nil {
+		t.Fatal(err)
+	}
+	fsResp, err := client.Browsers.Fs.ReadFile(context.Background(), "sess-1", BrowserFReadFileParams{Path: "/tmp/x"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fsResp != nil {
+		_ = fsResp.Body.Close()
+	}
+	if _, err := client.Browsers.Telemetry.Events(context.Background(), "sess-1", BrowserTelemetryEventsParams{}); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []string{
+		"/browsers",
+		"/browsers/sess-1/process/exec",
+		"/browsers/sess-1/fs/read_file",
+		"/browsers/sess-1/telemetry/events",
+	}
+	if len(paths) != len(want) {
+		t.Fatalf("expected paths %v, got %v", want, paths)
+	}
+	for i := range want {
+		if paths[i] != want[i] {
+			t.Fatalf("expected paths %v, got %v", want, paths)
 		}
 	}
 }

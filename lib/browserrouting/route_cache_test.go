@@ -67,6 +67,9 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 		{"telemetry streaming-config not a stream prefix", "/browsers/sess-1/telemetry/streaming-config", false},
 		{"bare telemetry -> control plane", "/browsers/sess-1/telemetry", false},
 		{"curl proxy -> VM", "/browsers/sess-1/curl/raw", true},
+		{"computer screenshot -> VM", "/browsers/sess-1/computer/screenshot", true},
+		{"playwright execute -> VM", "/browsers/sess-1/playwright/execute", true},
+		{"process exec -> control plane", "/browsers/sess-1/process/exec", false},
 		{"non-allowlisted subresource -> control plane", "/browsers/sess-1/fs/read", false},
 	}
 
@@ -78,7 +81,7 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 				BaseURL:   "https://browser.example/browser/kernel",
 				JWT:       "jwt-123",
 			})
-			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream"})
+			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright"})
 
 			reqURL, err := url.Parse("https://api.example" + tc.path)
 			if err != nil {
