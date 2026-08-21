@@ -394,3 +394,60 @@ func TestDirectVMRoutingMiddlewareDeleteWinsOverJSONCacheSniff(t *testing.T) {
 		t.Fatal("expected delete response to leave cached route evicted")
 	}
 }
+
+func TestDirectVMRoutingMiddlewareFallsBackOnStaleJWT(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"computer"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/computer/screenshot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+	}
+
+	var calls []string
+	res, err := middleware(req, func(next *http.Request) (*http.Response, error) {
+		calls = append(calls, next.URL.String())
+		if next.URL.Host == "browser.example" {
+			return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+			}, nil
+		}
+		if next.Header.Get("Authorization") != "Bearer sk_test" {
+			t.Fatalf("expected restored authorization, got %q", next.Header.Get("Authorization"))
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("png")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 after fallback, got %d", res.StatusCode)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("expected vm then control-plane call, got %v", calls)
+	}
+	if !strings.Contains(calls[0], "browser.example") || !strings.Contains(calls[0], "jwt=jwt-123") {
+		t.Fatalf("expected first call on VM with jwt, got %q", calls[0])
+	}
+	if !strings.Contains(calls[1], "api.example/browsers/sess-1/computer/screenshot") {
+		t.Fatalf("expected second call on control plane, got %q", calls[1])
+	}
+	if _, ok := cache.Load("sess-1"); ok {
+		t.Fatal("expected stale jwt to evict cached route")
+	}
+}
