@@ -71,6 +71,21 @@ func (c *RouteCache) Delete(sessionID string) {
 	delete(c.routes, sessionID)
 }
 
+// DeleteIfJWT removes the cached route only when its JWT still matches.
+func (c *RouteCache) DeleteIfJWT(sessionID, jwt string) bool {
+	if c == nil {
+		return false
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	route, ok := c.routes[sessionID]
+	if !ok || route.JWT != jwt {
+		return false
+	}
+	delete(c.routes, sessionID)
+	return true
+}
+
 // DirectVMRoutingMiddleware rewrites allowlisted browser subresource requests to
 // the browser VM using cached base_url and jwt data.
 func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.Middleware {
@@ -128,11 +143,12 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 			return res, err
 		}
 		if routed && isStaleDirectVMAuthResponse(res, req) {
+			failedJWT := req.URL.Query().Get("jwt")
 			if !prepareControlPlaneFallback(req, origURL, origHost, origAuth) {
 				return res, nil
 			}
 			if sessionID != "" {
-				cache.Delete(sessionID)
+				cache.DeleteIfJWT(sessionID, failedJWT)
 			}
 			if res.Body != nil {
 				_ = res.Body.Close()

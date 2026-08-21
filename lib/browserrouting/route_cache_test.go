@@ -452,6 +452,55 @@ func TestDirectVMRoutingMiddlewareFallsBackOnStaleJWT(t *testing.T) {
 	}
 }
 
+func TestDirectVMRoutingMiddlewareKeepsRefreshedRouteAfterStaleJWT(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"computer"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/computer/screenshot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+	}
+
+	_, err = middleware(req, func(next *http.Request) (*http.Response, error) {
+		if next.URL.Host == "browser.example" {
+			cache.Store(Route{
+				SessionID: "sess-1",
+				BaseURL:   "https://browser.example/browser/kernel",
+				JWT:       "jwt-FRESH",
+			})
+			return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+			}, nil
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("png")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	route, ok := cache.Load("sess-1")
+	if !ok {
+		t.Fatal("expected refreshed route to survive stale jwt fallback")
+	}
+	if route.JWT != "jwt-FRESH" {
+		t.Fatalf("expected jwt-FRESH, got %q", route.JWT)
+	}
+}
+
 func TestDirectVMRoutingMiddlewareRewindsBodyOnStaleJWTFallback(t *testing.T) {
 	cache := NewRouteCache()
 	cache.Store(Route{
