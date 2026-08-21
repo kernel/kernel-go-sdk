@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.93.0](https://github.com/kernel/kernel-go-sdk/compare/v0.92.0...v0.93.0) (2026-08-19)
+
+
+### Features
+
+* Add proxy_error to browser telemetry event schema ([467fea7](https://github.com/kernel/kernel-go-sdk/commit/467fea72ee93a0d8e4a520169cf5e14e5d4076ee))
+* Bind managed auth submissions to interactions ([796d424](https://github.com/kernel/kernel-go-sdk/commit/796d4245c87a39acbb0d408b05f0de830c500772))
+* Harden canonical managed auth interactions ([6e62bf5](https://github.com/kernel/kernel-go-sdk/commit/6e62bf5b91e5d315b90b6c9c7296e09e312fb338))
+
 ## [0.92.0](https://github.com/kernel/kernel-go-sdk/compare/v0.91.0...v0.92.0) (2026-08-17)
 
 

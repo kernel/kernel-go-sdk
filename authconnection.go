@@ -399,6 +399,9 @@ type ManagedAuth struct {
 	HealthChecks bool `json:"health_checks"`
 	// URL to redirect user to for hosted login (present when flow in progress)
 	HostedURL string `json:"hosted_url" api:"nullable" format:"uri"`
+	// Opaque identifier for the current canonical interaction. Required when
+	// submitting fields or choices and changes for each new actionable pause.
+	InteractionID string `json:"interaction_id" api:"nullable"`
 	// Deprecated alias for `last_auth_check_at`. Despite the name, this is the last
 	// health-check timestamp, not the last successful authentication. Use
 	// `last_auth_check_at` instead.
@@ -466,6 +469,7 @@ type ManagedAuth struct {
 		HealthCheckInterval   respjson.Field
 		HealthChecks          respjson.Field
 		HostedURL             respjson.Field
+		InteractionID         respjson.Field
 		LastAuthAt            respjson.Field
 		LastAuthCheckAt       respjson.Field
 		LiveViewURL           respjson.Field
@@ -784,6 +788,10 @@ func (r *ManagedAuthDiscoveredField) UnmarshalJSON(data []byte) error {
 type ManagedAuthField struct {
 	// Stable field identifier for canonical submit.
 	ID string `json:"id" api:"required"`
+	// Why the field requires user input.
+	//
+	// Any of "missing", "rejected".
+	Reason string `json:"reason" api:"required"`
 	// Credential reference name to store the submitted value under.
 	Ref string `json:"ref" api:"required"`
 	// Managed-auth field type.
@@ -796,20 +804,17 @@ type ManagedAuthField struct {
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
-	// Whether the submitted value must replace an existing credential after explicit
-	// rejection.
-	ReplaceExisting bool `json:"replace_existing"`
 	// Whether this field is required.
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
+		Reason           respjson.Field
 		Ref              respjson.Field
 		Type             respjson.Field
 		Hint             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
-		ReplaceExisting  respjson.Field
 		Required         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -1726,6 +1731,9 @@ func (r *ManagedAuthUpdateRequestProxyParam) UnmarshalJSON(data []byte) error {
 // fields/sso_button_selector/sso_provider/mfa_option_id/sign_in_option_id remain
 // supported during deprecation.
 type SubmitFieldsRequestParam struct {
+	// Opaque interaction ID returned with canonical fields and choices. Required for
+	// canonical submissions.
+	InteractionID param.Opt[string] `json:"interaction_id,omitzero"`
 	// The MFA method type to select (when mfa_options were returned)
 	MfaOptionID param.Opt[string] `json:"mfa_option_id,omitzero"`
 	// Canonical choice ID selected by the user.
@@ -1804,6 +1812,8 @@ type AuthConnectionFollowResponseUnion struct {
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	HostedURL string `json:"hosted_url"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
+	InteractionID string `json:"interaction_id"`
+	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	LiveViewURL string `json:"live_view_url"`
 	// This field is from variant [AuthConnectionFollowResponseManagedAuthState].
 	MfaOptions []AuthConnectionFollowResponseManagedAuthStateMfaOption `json:"mfa_options"`
@@ -1830,6 +1840,7 @@ type AuthConnectionFollowResponseUnion struct {
 		Fields                respjson.Field
 		FlowType              respjson.Field
 		HostedURL             respjson.Field
+		InteractionID         respjson.Field
 		LiveViewURL           respjson.Field
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
@@ -1930,6 +1941,9 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	FlowType string `json:"flow_type"`
 	// URL to redirect user to for hosted login.
 	HostedURL string `json:"hosted_url" format:"uri"`
+	// Opaque identifier for the current canonical interaction. Required when
+	// submitting fields or choices and changes for each new actionable pause.
+	InteractionID string `json:"interaction_id"`
 	// Browser live view URL for debugging.
 	LiveViewURL string `json:"live_view_url" format:"uri"`
 	// MFA method options (present when flow_step=AWAITING_INPUT; may also be present
@@ -1961,6 +1975,7 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 		Fields                respjson.Field
 		FlowType              respjson.Field
 		HostedURL             respjson.Field
+		InteractionID         respjson.Field
 		LiveViewURL           respjson.Field
 		MfaOptions            respjson.Field
 		PendingSSOButtons     respjson.Field
@@ -2078,6 +2093,10 @@ func (r *AuthConnectionFollowResponseManagedAuthStateDiscoveredField) UnmarshalJ
 type AuthConnectionFollowResponseManagedAuthStateField struct {
 	// Stable field identifier for canonical submit.
 	ID string `json:"id" api:"required"`
+	// Why the field requires user input.
+	//
+	// Any of "missing", "rejected".
+	Reason string `json:"reason" api:"required"`
 	// Credential reference name to store the submitted value under.
 	Ref string `json:"ref" api:"required"`
 	// Managed-auth field type.
@@ -2090,20 +2109,17 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
 	ObservedSelector string `json:"observed_selector" api:"nullable"`
-	// Whether the submitted value must replace an existing credential after explicit
-	// rejection.
-	ReplaceExisting bool `json:"replace_existing"`
 	// Whether this field is required.
 	Required bool `json:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
+		Reason           respjson.Field
 		Ref              respjson.Field
 		Type             respjson.Field
 		Hint             respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
-		ReplaceExisting  respjson.Field
 		Required         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
