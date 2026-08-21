@@ -139,7 +139,17 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 			q := req.URL.Query()
 			q.Del("jwt")
 			req.URL.RawQuery = q.Encode()
-			res.Body.Close()
+			if res.Body != nil {
+				_ = res.Body.Close()
+			}
+			if req.GetBody != nil {
+				req.Body, err = req.GetBody()
+				if err != nil {
+					return nil, err
+				}
+			} else if req.Body != nil {
+				return res, nil
+			}
 			res, err = next(req)
 			if err != nil {
 				return res, err
