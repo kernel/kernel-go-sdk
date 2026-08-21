@@ -91,7 +91,11 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		if err != nil {
 			return nil, err
 		}
+		origURL := cloneURL(req.URL)
+		origHost := req.Host
+		origAuth := req.Header.Get("Authorization")
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
+		routed := false
 		if ok {
 			if matchesDirectVMPrefix(subresource+suffix, allowPrefixes) {
 				route, ok := cache.Load(sessionID)
@@ -114,6 +118,7 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 					req.Host = base.Host
 					req.URL.Path = joinURLPath(base.Path, subresource, suffix)
 					req.URL.RawPath = ""
+					routed = true
 				}
 			}
 		}
@@ -121,6 +126,24 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		res, err := next(req)
 		if err != nil {
 			return res, err
+		}
+		if routed && isStaleDirectVMAuthResponse(res, req) {
+			if sessionID != "" {
+				cache.Delete(sessionID)
+			}
+			req.URL = origURL
+			req.Host = origHost
+			if origAuth != "" {
+				req.Header.Set("Authorization", origAuth)
+			}
+			q := req.URL.Query()
+			q.Del("jwt")
+			req.URL.RawQuery = q.Encode()
+			res.Body.Close()
+			res, err = next(req)
+			if err != nil {
+				return res, err
+			}
 		}
 		return finalizeResponse(res, cache, lifecycle)
 	}
@@ -331,6 +354,28 @@ func matchesDirectVMPrefix(tail string, prefixes []string) bool {
 		}
 	}
 	return false
+}
+
+func isStaleDirectVMAuthResponse(res *http.Response, req *http.Request) bool {
+	if res == nil || req == nil || req.URL == nil {
+		return false
+	}
+	if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusForbidden {
+		return false
+	}
+	return req.URL.Query().Get("jwt") != ""
+}
+
+func cloneURL(u *url.URL) *url.URL {
+	if u == nil {
+		return nil
+	}
+	c := *u
+	if u.User != nil {
+		user := *u.User
+		c.User = &user
+	}
+	return &c
 }
 
 func joinURLPath(basePath, subresource, suffix string) string {
