@@ -506,3 +506,51 @@ func TestDirectVMRoutingMiddlewareRewindsBodyOnStaleJWTFallback(t *testing.T) {
 		t.Fatalf("expected rewound body on fallback, got %v", gotBodies)
 	}
 }
+
+func TestDirectVMRoutingMiddlewareKeepsAuthResponseWhenBodyCannotRewind(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"playwright"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/playwright/execute")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+		Body:   io.NopCloser(strings.NewReader(`{"code":"return 1"}`)),
+	}
+
+	var calls int
+	res, err := middleware(req, func(next *http.Request) (*http.Response, error) {
+		calls++
+		_, _ = io.ReadAll(next.Body)
+		return &http.Response{
+			StatusCode: http.StatusUnauthorized,
+			Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("expected no control-plane retry without GetBody, got %d calls", calls)
+	}
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected original 401, got %d", res.StatusCode)
+	}
+	got, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("expected readable 401 body, got %v", err)
+	}
+	if string(got) != "Invalid JWT" {
+		t.Fatalf("expected Invalid JWT, got %q", got)
+	}
+}

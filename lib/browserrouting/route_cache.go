@@ -128,6 +128,15 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 			return res, err
 		}
 		if routed && isStaleDirectVMAuthResponse(res, req) {
+			if req.GetBody == nil && req.Body != nil {
+				return res, nil
+			}
+			if req.GetBody != nil {
+				req.Body, err = req.GetBody()
+				if err != nil {
+					return res, err
+				}
+			}
 			if sessionID != "" {
 				cache.Delete(sessionID)
 			}
@@ -141,14 +150,6 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 			req.URL.RawQuery = q.Encode()
 			if res.Body != nil {
 				_ = res.Body.Close()
-			}
-			if req.GetBody != nil {
-				req.Body, err = req.GetBody()
-				if err != nil {
-					return nil, err
-				}
-			} else if req.Body != nil {
-				return res, nil
 			}
 			res, err = next(req)
 			if err != nil {
