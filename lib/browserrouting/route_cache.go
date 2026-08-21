@@ -128,26 +128,12 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 			return res, err
 		}
 		if routed && isStaleDirectVMAuthResponse(res, req) {
-			if req.GetBody == nil && req.Body != nil {
+			if !prepareControlPlaneFallback(req, origURL, origHost, origAuth) {
 				return res, nil
-			}
-			if req.GetBody != nil {
-				req.Body, err = req.GetBody()
-				if err != nil {
-					return res, err
-				}
 			}
 			if sessionID != "" {
 				cache.Delete(sessionID)
 			}
-			req.URL = origURL
-			req.Host = origHost
-			if origAuth != "" {
-				req.Header.Set("Authorization", origAuth)
-			}
-			q := req.URL.Query()
-			q.Del("jwt")
-			req.URL.RawQuery = q.Encode()
 			if res.Body != nil {
 				_ = res.Body.Close()
 			}
@@ -365,6 +351,30 @@ func matchesDirectVMPrefix(tail string, prefixes []string) bool {
 		}
 	}
 	return false
+}
+
+func prepareControlPlaneFallback(req *http.Request, origURL *url.URL, origHost, origAuth string) bool {
+	if req.Body != nil && req.GetBody == nil {
+		return false
+	}
+	if req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return false
+		}
+		req.Body = body
+	}
+	req.URL = origURL
+	req.Host = origHost
+	if origAuth != "" {
+		req.Header.Set("Authorization", origAuth)
+	} else {
+		req.Header.Del("Authorization")
+	}
+	q := req.URL.Query()
+	q.Del("jwt")
+	req.URL.RawQuery = q.Encode()
+	return true
 }
 
 func isStaleDirectVMAuthResponse(res *http.Response, req *http.Request) bool {
