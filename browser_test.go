@@ -75,7 +75,10 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 				Console: kernel.BrowserTelemetryCategoryConfigParam{
 					Enabled: kernel.Bool(true),
 				},
-				Control: kernel.BrowserTelemetryCategoryConfigParam{
+				Control: kernel.BrowserTelemetryControlConfigParam{
+					Cdp: kernel.BrowserTelemetryCdpControlConfigParam{
+						ExcludedMethods: []kernel.BrowserCdpCommandMethod{kernel.BrowserCdpCommandMethodInputDispatchMouseEvent},
+					},
 					Enabled: kernel.Bool(true),
 				},
 				Interaction: kernel.BrowserTelemetryCategoryConfigParam{
@@ -85,6 +88,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 					Enabled: kernel.Bool(true),
 				},
 				Page: kernel.BrowserTelemetryCategoryConfigParam{
+					Enabled: kernel.Bool(true),
+				},
+				Platform: kernel.BrowserTelemetryCategoryConfigParam{
 					Enabled: kernel.Bool(true),
 				},
 				Screenshot: kernel.BrowserTelemetryCategoryConfigParam{
@@ -195,7 +201,10 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 					Console: kernel.BrowserTelemetryCategoryConfigParam{
 						Enabled: kernel.Bool(true),
 					},
-					Control: kernel.BrowserTelemetryCategoryConfigParam{
+					Control: kernel.BrowserTelemetryControlConfigParam{
+						Cdp: kernel.BrowserTelemetryCdpControlConfigParam{
+							ExcludedMethods: []kernel.BrowserCdpCommandMethod{kernel.BrowserCdpCommandMethodInputDispatchMouseEvent},
+						},
 						Enabled: kernel.Bool(true),
 					},
 					Interaction: kernel.BrowserTelemetryCategoryConfigParam{
@@ -205,6 +214,9 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 						Enabled: kernel.Bool(true),
 					},
 					Page: kernel.BrowserTelemetryCategoryConfigParam{
+						Enabled: kernel.Bool(true),
+					},
+					Platform: kernel.BrowserTelemetryCategoryConfigParam{
 						Enabled: kernel.Bool(true),
 					},
 					Screenshot: kernel.BrowserTelemetryCategoryConfigParam{

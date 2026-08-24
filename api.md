@@ -65,6 +65,36 @@ Methods:
 - <code title="get /invocations/{id}/events">client.Invocations.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationService.Follow">Follow</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationFollowParams">InvocationFollowParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationFollowResponseUnion">InvocationFollowResponseUnion</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /invocations/{id}/browsers">client.Invocations.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationService.ListBrowsers">ListBrowsers</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationListBrowsersResponse">InvocationListBrowsersResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# SiteConfigs
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LookupRequestParam">LookupRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ResolveRequestParam">ResolveRequestParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Analysis">Analysis</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AnalysisSummary">AnalysisSummary</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Browser">Browser</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Evidence">Evidence</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LookupResponse">LookupResponse</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#NoRecommendation">NoRecommendation</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyUnion">ProxyUnion</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Recommendation">Recommendation</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RecommendationResultUnion">RecommendationResultUnion</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RecommendationSummary">RecommendationSummary</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigResponse">SiteConfigResponse</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Target">Target</a>
+
+Methods:
+
+- <code title="get /site-configs/{id}">client.SiteConfigs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigResponse">SiteConfigResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /site-configs">client.SiteConfigs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigListParams">SiteConfigListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AnalysisSummary">AnalysisSummary</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /site-configs/recommendations">client.SiteConfigs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigService.ListRecommendations">ListRecommendations</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigListRecommendationsParams">SiteConfigListRecommendationsParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RecommendationSummary">RecommendationSummary</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /site-configs/lookup">client.SiteConfigs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigService.Lookup">Lookup</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigLookupParams">SiteConfigLookupParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LookupResponse">LookupResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /site-configs/resolve">client.SiteConfigs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigService.Resolve">Resolve</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigResolveParams">SiteConfigResolveParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SiteConfigResponse">SiteConfigResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Browsers
 
 Params Types:
@@ -106,14 +136,19 @@ Methods:
 
 Params Types:
 
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCdpCommandMethod">BrowserCdpCommandMethod</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCategoriesConfigParam">BrowserTelemetryCategoriesConfigParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCategoryConfigParam">BrowserTelemetryCategoryConfigParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCdpControlConfigParam">BrowserTelemetryCdpControlConfigParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryControlConfigParam">BrowserTelemetryControlConfigParam</a>
 
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserAPICallEvent">BrowserAPICallEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCallStack">BrowserCallStack</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCaptchaSolveResultEvent">BrowserCaptchaSolveResultEvent</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCdpCommandEvent">BrowserCdpCommandEvent</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCdpCommandMethod">BrowserCdpCommandMethod</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCdpConnectEvent">BrowserCdpConnectEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCdpDisconnectEvent">BrowserCdpDisconnectEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserConsoleErrorEvent">BrowserConsoleErrorEvent</a>
@@ -135,6 +170,7 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserNetworkLoadingFailedEvent">BrowserNetworkLoadingFailedEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserNetworkRequestEvent">BrowserNetworkRequestEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserNetworkResponseEvent">BrowserNetworkResponseEvent</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageCrashedEvent">BrowserPageCrashedEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageDomContentLoadedEvent">BrowserPageDomContentLoadedEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageLayoutSettledEvent">BrowserPageLayoutSettledEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageLayoutShiftEvent">BrowserPageLayoutShiftEvent</a>
@@ -143,12 +179,15 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageNavigationEvent">BrowserPageNavigationEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageNavigationSettledEvent">BrowserPageNavigationSettledEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPageTabOpenedEvent">BrowserPageTabOpenedEvent</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlatformAPICallEvent">BrowserPlatformAPICallEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserProxyErrorEvent">BrowserProxyErrorEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserServiceCrashedEvent">BrowserServiceCrashedEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserSystemOomKillEvent">BrowserSystemOomKillEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCategoriesConfig">BrowserTelemetryCategoriesConfig</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCategoryConfig">BrowserTelemetryCategoryConfig</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryCdpControlConfig">BrowserTelemetryCdpControlConfig</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryConfig">BrowserTelemetryConfig</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryControlConfig">BrowserTelemetryControlConfig</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryEventUnion">BrowserTelemetryEventUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryExportConfig">BrowserTelemetryExportConfig</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryOtlpExportConfig">BrowserTelemetryOtlpExportConfig</a>

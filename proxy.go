@@ -100,7 +100,10 @@ func (r *ProxyService) ListAutoPaging(ctx context.Context, query ProxyListParams
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Soft delete a proxy. Sessions referencing it are not modified.
+// Soft delete a proxy. Session records referencing it are not modified. If egress
+// binding polling is enabled, existing tunnels for active sessions using the proxy
+// are terminated within one polling interval; subsequent connections through the
+// deleted proxy are rejected.
 func (r *ProxyService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)

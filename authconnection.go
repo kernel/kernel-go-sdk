@@ -308,34 +308,34 @@ type ManagedAuth struct {
 	// Machine-readable reason for the current value of `can_reauth`. Affirmative
 	// values (re-auth is possible):
 	//
-	//   - `external_credential` — an external credential provider is attached
-	//   - `cua_has_credential` — CUA flow with a stored credential
-	//   - `has_credential` — Kernel credential is attached (optimistic; plan viability
-	//     not checked)
-	//   - `viable_plans_found` — at least one stored login plan can be replayed
-	//   - `no_requirements_recorded` — no recorded credential requirements to fail
-	//     against
-	//   - `requirements_satisfiable` — recorded requirements can be met by the attached
-	//     credential
+	// - `external_credential` — an external credential provider is attached
+	// - `cua_has_credential` — CUA flow with a stored credential
+	// - `has_credential` — Kernel credential is attached (optimistic; plan viability
+	//   not checked)
+	// - `viable_plans_found` — at least one stored login plan can be replayed
+	// - `no_requirements_recorded` — no recorded credential requirements to fail
+	//   against
+	// - `requirements_satisfiable` — recorded requirements can be met by the attached
+	//   credential
 	//
 	// Negative values (a human must complete the login flow):
 	//
-	//   - `no_prior_successful_login` — connection has never completed a successful
-	//     login
-	//   - `no_credential` — no Kernel or external credential attached
-	//   - `no_viable_plans` — credential attached but no replayable login plan exists
-	//     yet
-	//   - `viable_plans_require_external_action` — stored plans need an external step
-	//     (email link, push, etc.)
-	//   - `requires_external_action` — recorded requirements include an external step
-	//   - `requires_totp_without_secret` — flow needs a TOTP code but no TOTP secret is
-	//     stored
-	//   - `requires_sms_code` — flow needs an SMS code that cannot be received
-	//     automatically
-	//   - `requires_email_code` — flow needs an email code that cannot be received
-	//     automatically
-	//   - `requires_customer_input` — flow needs another field or choice that is
-	//     unavailable during unattended re-authentication
+	// - `no_prior_successful_login` — connection has never completed a successful
+	//   login
+	// - `no_credential` — no Kernel or external credential attached
+	// - `no_viable_plans` — credential attached but no replayable login plan exists
+	//   yet
+	// - `viable_plans_require_external_action` — stored plans need an external step
+	//   (email link, push, etc.)
+	// - `requires_external_action` — recorded requirements include an external step
+	// - `requires_totp_without_secret` — flow needs a TOTP code but no TOTP secret is
+	//   stored
+	// - `requires_sms_code` — flow needs an SMS code that cannot be received
+	//   automatically
+	// - `requires_email_code` — flow needs an email code that cannot be received
+	//   automatically
+	// - `requires_customer_input` — flow needs another field or choice that is
+	//   unavailable during unattended re-authentication
 	//
 	// Any of "external_credential", "cua_has_credential", "has_credential",
 	// "viable_plans_found", "no_requirements_recorded", "requirements_satisfiable",
@@ -508,12 +508,12 @@ type ManagedAuthBrowserTelemetry struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
 	// enabled=false to opt out. The CDP categories (console, network, page,
-	// interaction) and screenshot are off by default; set enabled=true to opt in. On
-	// create, provided categories layer onto the default set. On update, provided
-	// categories merge onto the session's current config; when no telemetry is active
-	// this falls back to the default set (matching create). If browser is omitted or
-	// empty, the default set is used. A browser config that disables every category
-	// stops capture on update and starts no capture on create.
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfig `json:"browser"`
 	// Request shortcut for browser telemetry capture. True enables capture; with no
 	// browser category settings it captures the default set (control, connection,
@@ -981,12 +981,12 @@ type ManagedAuthBrowserConfigTelemetry struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
 	// enabled=false to opt out. The CDP categories (console, network, page,
-	// interaction) and screenshot are off by default; set enabled=true to opt in. On
-	// create, provided categories layer onto the default set. On update, provided
-	// categories merge onto the session's current config; when no telemetry is active
-	// this falls back to the default set (matching create). If browser is omitted or
-	// empty, the default set is used. A browser config that disables every category
-	// stops capture on update and starts no capture on create.
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfig `json:"browser"`
 	// Request shortcut for browser telemetry capture. True enables capture; with no
 	// browser category settings it captures the default set (control, connection,
@@ -1119,12 +1119,12 @@ type ManagedAuthBrowserConfigTelemetryParam struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
 	// enabled=false to opt out. The CDP categories (console, network, page,
-	// interaction) and screenshot are off by default; set enabled=true to opt in. On
-	// create, provided categories layer onto the default set. On update, provided
-	// categories merge onto the session's current config; when no telemetry is active
-	// this falls back to the default set (matching create). If browser is omitted or
-	// empty, the default set is used. A browser config that disables every category
-	// stops capture on update and starts no capture on create.
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
@@ -1296,12 +1296,12 @@ type ManagedAuthCreateRequestBrowserTelemetryParam struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
 	// enabled=false to opt out. The CDP categories (console, network, page,
-	// interaction) and screenshot are off by default; set enabled=true to opt in. On
-	// create, provided categories layer onto the default set. On update, provided
-	// categories merge onto the session's current config; when no telemetry is active
-	// this falls back to the default set (matching create). If browser is omitted or
-	// empty, the default set is used. A browser config that disables every category
-	// stops capture on update and starts no capture on create.
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
@@ -1606,12 +1606,12 @@ type ManagedAuthUpdateRequestBrowserTelemetryParam struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
 	// enabled=false to opt out. The CDP categories (console, network, page,
-	// interaction) and screenshot are off by default; set enabled=true to opt in. On
-	// create, provided categories layer onto the default set. On update, provided
-	// categories merge onto the session's current config; when no telemetry is active
-	// this falls back to the default set (matching create). If browser is omitted or
-	// empty, the default set is used. A browser config that disables every category
-	// stops capture on update and starts no capture on create.
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
@@ -2303,12 +2303,12 @@ type AuthConnectionLoginParamsBrowserTelemetry struct {
 	// Per-category capture flags. The operational categories (control, connection,
 	// system, captcha) are captured whenever telemetry is enabled; set one to
 	// enabled=false to opt out. The CDP categories (console, network, page,
-	// interaction) and screenshot are off by default; set enabled=true to opt in. On
-	// create, provided categories layer onto the default set. On update, provided
-	// categories merge onto the session's current config; when no telemetry is active
-	// this falls back to the default set (matching create). If browser is omitted or
-	// empty, the default set is used. A browser config that disables every category
-	// stops capture on update and starts no capture on create.
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
 	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
