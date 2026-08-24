@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.94.0](https://github.com/kernel/kernel-go-sdk/compare/v0.93.0...v0.94.0) (2026-08-24)
+
+
+### Features
+
+* Mirror the control/platform telemetry split into the public API ([66b8824](https://github.com/kernel/kernel-go-sdk/commit/66b8824cbc531c173648f5e35edb4698988c0068))
+* Mirror the control/platform telemetry split into the public API ([9a36566](https://github.com/kernel/kernel-go-sdk/commit/9a36566d8999ca346a9eeccede0cbf88d651b93f))
+* site configs: report proxy-restricted analyses ([5e48c58](https://github.com/kernel/kernel-go-sdk/commit/5e48c587a312453969141e879b8e34d60cd1ab0f))
+
 ## [0.93.0](https://github.com/kernel/kernel-go-sdk/compare/v0.92.0...v0.93.0) (2026-08-19)
 
 
