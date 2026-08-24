@@ -37,6 +37,7 @@ type ConsoleError string                    // Always "console_error"
 type ConsoleLog string                      // Always "console_log"
 type Control string                         // Always "control"
 type DeploymentState string                 // Always "deployment_state"
+type Direct string                          // Always "direct"
 type DomFocus string                        // Always "DOM.focus"
 type DomScrollIntoViewIfNeeded string       // Always "DOM.scrollIntoViewIfNeeded"
 type DomSetFileInputFiles string            // Always "DOM.setFileInputFiles"
@@ -60,6 +61,7 @@ type InvocationState string                 // Always "invocation_state"
 type LiveViewConnect string                 // Always "live_view_connect"
 type LiveViewDisconnect string              // Always "live_view_disconnect"
 type Log string                             // Always "log"
+type Managed string                         // Always "managed"
 type ManagedAuthState string                // Always "managed_auth_state"
 type Monitor string                         // Always "monitor"
 type MonitorDisconnected string             // Always "monitor_disconnected"
@@ -72,6 +74,7 @@ type NetworkIdle string                     // Always "network_idle"
 type NetworkLoadingFailed string            // Always "network_loading_failed"
 type NetworkRequest string                  // Always "network_request"
 type NetworkResponse string                 // Always "network_response"
+type NoRecommendation string                // Always "no_recommendation"
 type Page string                            // Always "page"
 type PageCrashed string                     // Always "page_crashed"
 type PageDomContentLoaded string            // Always "page_dom_content_loaded"
@@ -98,6 +101,7 @@ type PageStopScreencast string              // Always "Page.stopScreencast"
 type Platform string                        // Always "platform"
 type PlatformAPICall string                 // Always "platform_api_call"
 type ProxyError string                      // Always "proxy_error"
+type Recommendation string                  // Always "recommendation"
 type Screenshot string                      // Always "screenshot"
 type ServiceCrashed string                  // Always "service_crashed"
 type SseHeartbeat string                    // Always "sse_heartbeat"
@@ -129,6 +133,7 @@ func (c ConsoleError) Default() ConsoleError                     { return "conso
 func (c ConsoleLog) Default() ConsoleLog                         { return "console_log" }
 func (c Control) Default() Control                               { return "control" }
 func (c DeploymentState) Default() DeploymentState               { return "deployment_state" }
+func (c Direct) Default() Direct                                 { return "direct" }
 func (c DomFocus) Default() DomFocus                             { return "DOM.focus" }
 func (c DomScrollIntoViewIfNeeded) Default() DomScrollIntoViewIfNeeded {
 	return "DOM.scrollIntoViewIfNeeded"
@@ -164,6 +169,7 @@ func (c InvocationState) Default() InvocationState               { return "invoc
 func (c LiveViewConnect) Default() LiveViewConnect               { return "live_view_connect" }
 func (c LiveViewDisconnect) Default() LiveViewDisconnect         { return "live_view_disconnect" }
 func (c Log) Default() Log                                       { return "log" }
+func (c Managed) Default() Managed                               { return "managed" }
 func (c ManagedAuthState) Default() ManagedAuthState             { return "managed_auth_state" }
 func (c Monitor) Default() Monitor                               { return "monitor" }
 func (c MonitorDisconnected) Default() MonitorDisconnected       { return "monitor_disconnected" }
@@ -176,6 +182,7 @@ func (c NetworkIdle) Default() NetworkIdle                       { return "netwo
 func (c NetworkLoadingFailed) Default() NetworkLoadingFailed     { return "network_loading_failed" }
 func (c NetworkRequest) Default() NetworkRequest                 { return "network_request" }
 func (c NetworkResponse) Default() NetworkResponse               { return "network_response" }
+func (c NoRecommendation) Default() NoRecommendation             { return "no_recommendation" }
 func (c Page) Default() Page                                     { return "page" }
 func (c PageCrashed) Default() PageCrashed                       { return "page_crashed" }
 func (c PageDomContentLoaded) Default() PageDomContentLoaded     { return "page_dom_content_loaded" }
@@ -208,6 +215,7 @@ func (c PageStopScreencast) Default() PageStopScreencast     { return "Page.stop
 func (c Platform) Default() Platform                         { return "platform" }
 func (c PlatformAPICall) Default() PlatformAPICall           { return "platform_api_call" }
 func (c ProxyError) Default() ProxyError                     { return "proxy_error" }
+func (c Recommendation) Default() Recommendation             { return "recommendation" }
 func (c Screenshot) Default() Screenshot                     { return "screenshot" }
 func (c ServiceCrashed) Default() ServiceCrashed             { return "service_crashed" }
 func (c SseHeartbeat) Default() SseHeartbeat                 { return "sse_heartbeat" }
@@ -243,6 +251,7 @@ func (c ConsoleError) MarshalJSON() ([]byte, error)                    { return 
 func (c ConsoleLog) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c Control) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c DeploymentState) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
+func (c Direct) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c DomFocus) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
 func (c DomScrollIntoViewIfNeeded) MarshalJSON() ([]byte, error)       { return marshalString(c) }
 func (c DomSetFileInputFiles) MarshalJSON() ([]byte, error)            { return marshalString(c) }
@@ -266,6 +275,7 @@ func (c InvocationState) MarshalJSON() ([]byte, error)                 { return 
 func (c LiveViewConnect) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c LiveViewDisconnect) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c Log) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
+func (c Managed) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ManagedAuthState) MarshalJSON() ([]byte, error)                { return marshalString(c) }
 func (c Monitor) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c MonitorDisconnected) MarshalJSON() ([]byte, error)             { return marshalString(c) }
@@ -278,6 +288,7 @@ func (c NetworkIdle) MarshalJSON() ([]byte, error)                     { return 
 func (c NetworkLoadingFailed) MarshalJSON() ([]byte, error)            { return marshalString(c) }
 func (c NetworkRequest) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c NetworkResponse) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
+func (c NoRecommendation) MarshalJSON() ([]byte, error)                { return marshalString(c) }
 func (c Page) MarshalJSON() ([]byte, error)                            { return marshalString(c) }
 func (c PageCrashed) MarshalJSON() ([]byte, error)                     { return marshalString(c) }
 func (c PageDomContentLoaded) MarshalJSON() ([]byte, error)            { return marshalString(c) }
@@ -304,6 +315,7 @@ func (c PageStopScreencast) MarshalJSON() ([]byte, error)              { return 
 func (c Platform) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
 func (c PlatformAPICall) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c ProxyError) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
+func (c Recommendation) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c Screenshot) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c ServiceCrashed) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c SseHeartbeat) MarshalJSON() ([]byte, error)                    { return marshalString(c) }

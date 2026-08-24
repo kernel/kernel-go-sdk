@@ -27,6 +27,8 @@ type Client struct {
 	Apps AppService
 	// Invoke actions and stream or query invocation status and events.
 	Invocations InvocationService
+	// Resolve browser and proxy recommendations for bot-protected sites.
+	SiteConfigs SiteConfigService
 	// Create and manage browser sessions.
 	Browsers BrowserService
 	// Create, list, retrieve, and delete browser profiles.
@@ -92,6 +94,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Deployments = NewDeploymentService(opts...)
 	r.Apps = NewAppService(opts...)
 	r.Invocations = NewInvocationService(opts...)
+	r.SiteConfigs = NewSiteConfigService(opts...)
 	r.Browsers = NewBrowserService(opts...)
 	r.Profiles = NewProfileService(opts...)
 	r.Auth = NewAuthService(opts...)
