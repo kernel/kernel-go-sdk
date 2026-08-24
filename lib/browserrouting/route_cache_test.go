@@ -394,3 +394,263 @@ func TestDirectVMRoutingMiddlewareDeleteWinsOverJSONCacheSniff(t *testing.T) {
 		t.Fatal("expected delete response to leave cached route evicted")
 	}
 }
+
+func TestDirectVMRoutingMiddlewareFallsBackOnStaleJWT(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"computer"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/computer/screenshot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+	}
+
+	var calls []string
+	res, err := middleware(req, func(next *http.Request) (*http.Response, error) {
+		calls = append(calls, next.URL.String())
+		if next.URL.Host == "browser.example" {
+			return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+			}, nil
+		}
+		if next.Header.Get("Authorization") != "Bearer sk_test" {
+			t.Fatalf("expected restored authorization, got %q", next.Header.Get("Authorization"))
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("png")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200 after fallback, got %d", res.StatusCode)
+	}
+	if len(calls) != 2 {
+		t.Fatalf("expected vm then control-plane call, got %v", calls)
+	}
+	if !strings.Contains(calls[0], "browser.example") || !strings.Contains(calls[0], "jwt=jwt-123") {
+		t.Fatalf("expected first call on VM with jwt, got %q", calls[0])
+	}
+	if !strings.Contains(calls[1], "api.example/browsers/sess-1/computer/screenshot") {
+		t.Fatalf("expected second call on control plane, got %q", calls[1])
+	}
+	if _, ok := cache.Load("sess-1"); ok {
+		t.Fatal("expected stale jwt to evict cached route")
+	}
+}
+
+func TestDirectVMRoutingMiddlewareKeepsRefreshedRouteAfterStaleJWT(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"computer"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/computer/screenshot")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+	}
+
+	_, err = middleware(req, func(next *http.Request) (*http.Response, error) {
+		if next.URL.Host == "browser.example" {
+			cache.Store(Route{
+				SessionID: "sess-1",
+				BaseURL:   "https://browser.example/browser/kernel",
+				JWT:       "jwt-FRESH",
+			})
+			return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+			}, nil
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("png")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	route, ok := cache.Load("sess-1")
+	if !ok {
+		t.Fatal("expected refreshed route to survive stale jwt fallback")
+	}
+	if route.JWT != "jwt-FRESH" {
+		t.Fatalf("expected jwt-FRESH, got %q", route.JWT)
+	}
+}
+
+func TestDirectVMRoutingMiddlewareRewindsBodyOnStaleJWTFallback(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	body := []byte(`{"code":"return 1"}`)
+	middleware := DirectVMRoutingMiddleware(cache, []string{"playwright"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/playwright/execute")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+		Body:   io.NopCloser(strings.NewReader(string(body))),
+		GetBody: func() (io.ReadCloser, error) {
+			return io.NopCloser(strings.NewReader(string(body))), nil
+		},
+		ContentLength: int64(len(body)),
+	}
+
+	var gotBodies []string
+	_, err = middleware(req, func(next *http.Request) (*http.Response, error) {
+		b, readErr := io.ReadAll(next.Body)
+		if readErr != nil {
+			return nil, readErr
+		}
+		gotBodies = append(gotBodies, string(b))
+		if next.URL.Host == "browser.example" {
+			return &http.Response{
+				StatusCode: http.StatusUnauthorized,
+				Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+			}, nil
+		}
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"success":true}`)),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(gotBodies) != 2 {
+		t.Fatalf("expected two bodies, got %v", gotBodies)
+	}
+	if gotBodies[0] != string(body) || gotBodies[1] != string(body) {
+		t.Fatalf("expected rewound body on fallback, got %v", gotBodies)
+	}
+}
+
+func TestDirectVMRoutingMiddlewareKeepsAuthResponseWhenBodyCannotRewind(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"playwright"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/playwright/execute")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+		Body:   io.NopCloser(strings.NewReader(`{"code":"return 1"}`)),
+	}
+
+	var calls int
+	res, err := middleware(req, func(next *http.Request) (*http.Response, error) {
+		calls++
+		_, _ = io.ReadAll(next.Body)
+		return &http.Response{
+			StatusCode: http.StatusUnauthorized,
+			Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 {
+		t.Fatalf("expected no control-plane retry without GetBody, got %d calls", calls)
+	}
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected original 401, got %d", res.StatusCode)
+	}
+	got, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("expected readable 401 body, got %v", err)
+	}
+	if string(got) != "Invalid JWT" {
+		t.Fatalf("expected Invalid JWT, got %q", got)
+	}
+}
+
+func TestDirectVMRoutingMiddlewareKeepsAuthResponseWhenGetBodyFails(t *testing.T) {
+	cache := NewRouteCache()
+	cache.Store(Route{
+		SessionID: "sess-1",
+		BaseURL:   "https://browser.example/browser/kernel",
+		JWT:       "jwt-123",
+	})
+
+	middleware := DirectVMRoutingMiddleware(cache, []string{"playwright"})
+	reqURL, err := url.Parse("https://api.example/browsers/sess-1/playwright/execute")
+	if err != nil {
+		t.Fatal(err)
+	}
+	req := &http.Request{
+		Method: http.MethodPost,
+		URL:    reqURL,
+		Header: http.Header{"Authorization": []string{"Bearer sk_test"}},
+		Host:   "api.example",
+		Body:   io.NopCloser(strings.NewReader(`{"code":"return 1"}`)),
+		GetBody: func() (io.ReadCloser, error) {
+			return nil, io.ErrUnexpectedEOF
+		},
+	}
+
+	var calls int
+	res, err := middleware(req, func(next *http.Request) (*http.Response, error) {
+		calls++
+		_, _ = io.ReadAll(next.Body)
+		return &http.Response{
+			StatusCode: http.StatusUnauthorized,
+			Body:       io.NopCloser(strings.NewReader("Invalid JWT")),
+		}, nil
+	})
+	if err != nil {
+		t.Fatalf("expected original auth response, got err %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("expected no control-plane retry when GetBody fails, got %d calls", calls)
+	}
+	if res.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected original 401, got %d", res.StatusCode)
+	}
+	got, err := io.ReadAll(res.Body)
+	if err != nil {
+		t.Fatalf("expected readable 401 body, got %v", err)
+	}
+	if string(got) != "Invalid JWT" {
+		t.Fatalf("expected Invalid JWT, got %q", got)
+	}
+}
