@@ -71,6 +71,21 @@ func (c *RouteCache) Delete(sessionID string) {
 	delete(c.routes, sessionID)
 }
 
+// DeleteIfJWT removes the cached route only when its JWT still matches.
+func (c *RouteCache) DeleteIfJWT(sessionID, jwt string) bool {
+	if c == nil {
+		return false
+	}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	route, ok := c.routes[sessionID]
+	if !ok || route.JWT != jwt {
+		return false
+	}
+	delete(c.routes, sessionID)
+	return true
+}
+
 // DirectVMRoutingMiddleware rewrites allowlisted browser subresource requests to
 // the browser VM using cached base_url and jwt data.
 func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.Middleware {
@@ -91,7 +106,11 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		if err != nil {
 			return nil, err
 		}
+		origURL := cloneURL(req.URL)
+		origHost := req.Host
+		origAuth := req.Header.Get("Authorization")
 		sessionID, subresource, suffix, ok := parseDirectVMPath(req.URL.Path)
+		routed := false
 		if ok {
 			if matchesDirectVMPrefix(subresource+suffix, allowPrefixes) {
 				route, ok := cache.Load(sessionID)
@@ -114,6 +133,7 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 					req.Host = base.Host
 					req.URL.Path = joinURLPath(base.Path, subresource, suffix)
 					req.URL.RawPath = ""
+					routed = true
 				}
 			}
 		}
@@ -121,6 +141,22 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 		res, err := next(req)
 		if err != nil {
 			return res, err
+		}
+		if routed && isStaleDirectVMAuthResponse(res, req) {
+			failedJWT := req.URL.Query().Get("jwt")
+			if !prepareControlPlaneFallback(req, origURL, origHost, origAuth) {
+				return res, nil
+			}
+			if sessionID != "" {
+				cache.DeleteIfJWT(sessionID, failedJWT)
+			}
+			if res.Body != nil {
+				_ = res.Body.Close()
+			}
+			res, err = next(req)
+			if err != nil {
+				return res, err
+			}
 		}
 		return finalizeResponse(res, cache, lifecycle)
 	}
@@ -331,6 +367,52 @@ func matchesDirectVMPrefix(tail string, prefixes []string) bool {
 		}
 	}
 	return false
+}
+
+func prepareControlPlaneFallback(req *http.Request, origURL *url.URL, origHost, origAuth string) bool {
+	if req.Body != nil && req.GetBody == nil {
+		return false
+	}
+	if req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return false
+		}
+		req.Body = body
+	}
+	req.URL = origURL
+	req.Host = origHost
+	if origAuth != "" {
+		req.Header.Set("Authorization", origAuth)
+	} else {
+		req.Header.Del("Authorization")
+	}
+	q := req.URL.Query()
+	q.Del("jwt")
+	req.URL.RawQuery = q.Encode()
+	return true
+}
+
+func isStaleDirectVMAuthResponse(res *http.Response, req *http.Request) bool {
+	if res == nil || req == nil || req.URL == nil {
+		return false
+	}
+	if res.StatusCode != http.StatusUnauthorized && res.StatusCode != http.StatusForbidden {
+		return false
+	}
+	return req.URL.Query().Get("jwt") != ""
+}
+
+func cloneURL(u *url.URL) *url.URL {
+	if u == nil {
+		return nil
+	}
+	c := *u
+	if u.User != nil {
+		user := *u.User
+		c.User = &user
+	}
+	return &c
 }
 
 func joinURLPath(basePath, subresource, suffix string) string {
