@@ -266,8 +266,8 @@ func TestBrowserRoutingSubresourcesFromEnvDefaults(t *testing.T) {
 		}
 		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
 	})
-	if got := browserRoutingSubresourcesFromEnv(); len(got) != 4 || got[0] != "curl" || got[1] != "telemetry/stream" || got[2] != "computer" || got[3] != "playwright" {
-		t.Fatalf("expected default subresources [curl telemetry/stream computer playwright], got %#v", got)
+	if got := browserRoutingSubresourcesFromEnv(); len(got) != 5 || got[0] != "curl" || got[1] != "telemetry/stream" || got[2] != "computer" || got[3] != "playwright" || got[4] != "process" {
+		t.Fatalf("expected default subresources [curl telemetry/stream computer playwright process], got %#v", got)
 	}
 
 	t.Setenv(browserRoutingSubresourcesEnv, "")
@@ -288,7 +288,7 @@ func TestBrowserRoutingSubresourcesFromEnvDefaults(t *testing.T) {
 	}
 }
 
-func TestBrowserRoutingDefaultsComputerAndPlaywrightToVM(t *testing.T) {
+func TestBrowserRoutingDefaultsRouteToVM(t *testing.T) {
 	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
 	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
 		t.Fatal(err)
@@ -324,6 +324,14 @@ func TestBrowserRoutingDefaultsComputerAndPlaywrightToVM(t *testing.T) {
 			w.Header().Set("Content-Type", "image/png")
 			w.WriteHeader(http.StatusOK)
 			_, _ = w.Write([]byte{0x89, 0x50, 0x4e, 0x47})
+		case "/browser/kernel/process/exec":
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"duration_ms": 1,
+				"exit_code":   0,
+				"stderr_b64":  "",
+				"stdout_b64":  "",
+			})
 		default:
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]any{"success": true})
@@ -350,9 +358,12 @@ func TestBrowserRoutingDefaultsComputerAndPlaywrightToVM(t *testing.T) {
 	if _, err := client.Browsers.Playwright.Execute(context.Background(), "sess-1", BrowserPlaywrightExecuteParams{Code: "return 1"}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := client.Browsers.Process.Exec(context.Background(), "sess-1", BrowserProcessExecParams{Command: "echo"}); err != nil {
+		t.Fatal(err)
+	}
 
-	if len(calls) != 3 {
-		t.Fatalf("expected 3 calls, got %d %#v", len(calls), calls)
+	if len(calls) != 4 {
+		t.Fatalf("expected 4 calls, got %d %#v", len(calls), calls)
 	}
 	if calls[1].Path != "/browser/kernel/computer/screenshot?jwt=token-abc" {
 		t.Fatalf("expected direct VM screenshot path, got %q", calls[1].Path)
@@ -366,9 +377,15 @@ func TestBrowserRoutingDefaultsComputerAndPlaywrightToVM(t *testing.T) {
 	if calls[2].Auth != "" {
 		t.Fatalf("expected authorization header removed, got %q", calls[2].Auth)
 	}
+	if calls[3].Path != "/browser/kernel/process/exec?jwt=token-abc" {
+		t.Fatalf("expected direct VM process path, got %q", calls[3].Path)
+	}
+	if calls[3].Auth != "" {
+		t.Fatalf("expected authorization header removed, got %q", calls[3].Auth)
+	}
 }
 
-func TestBrowserRoutingDefaultsKeepProcessFsAndTelemetryEventsOnAPI(t *testing.T) {
+func TestBrowserRoutingDefaultsKeepFsAndTelemetryEventsOnAPI(t *testing.T) {
 	original, ok := os.LookupEnv(browserRoutingSubresourcesEnv)
 	if err := os.Unsetenv(browserRoutingSubresourcesEnv); err != nil {
 		t.Fatal(err)
@@ -421,9 +438,6 @@ func TestBrowserRoutingDefaultsKeepProcessFsAndTelemetryEventsOnAPI(t *testing.T
 	if _, err := client.Browsers.New(context.Background(), BrowserNewParams{}); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := client.Browsers.Process.Exec(context.Background(), "sess-1", BrowserProcessExecParams{Command: "echo"}); err != nil {
-		t.Fatal(err)
-	}
 	fsResp, err := client.Browsers.Fs.ReadFile(context.Background(), "sess-1", BrowserFReadFileParams{Path: "/tmp/x"})
 	if err != nil {
 		t.Fatal(err)
@@ -437,7 +451,6 @@ func TestBrowserRoutingDefaultsKeepProcessFsAndTelemetryEventsOnAPI(t *testing.T
 
 	want := []string{
 		"/browsers",
-		"/browsers/sess-1/process/exec",
 		"/browsers/sess-1/fs/read_file",
 		"/browsers/sess-1/telemetry/events",
 	}

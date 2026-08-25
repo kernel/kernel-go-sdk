@@ -86,7 +86,7 @@ func browserRoutingSubresourcesFromEnv() []string {
 		// Path prefixes eligible for direct-to-VM routing. "telemetry/stream" is
 		// the live SSE endpoint (served by the VM); "telemetry/events" is a
 		// historical read served by the control plane (S2) and must NOT be here.
-		return []string{"curl", "telemetry/stream", "computer", "playwright"}
+		return []string{"curl", "telemetry/stream", "computer", "playwright", "process"}
 	}
 	if strings.TrimSpace(raw) == "" {
 		return []string{}
