@@ -69,7 +69,8 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 		{"curl proxy -> VM", "/browsers/sess-1/curl/raw", true},
 		{"computer screenshot -> VM", "/browsers/sess-1/computer/screenshot", true},
 		{"playwright execute -> VM", "/browsers/sess-1/playwright/execute", true},
-		{"process exec -> control plane", "/browsers/sess-1/process/exec", false},
+		{"process exec -> VM", "/browsers/sess-1/process/exec", true},
+		{"process stdout stream -> VM", "/browsers/sess-1/process/proc-1/stdout/stream", true},
 		{"non-allowlisted subresource -> control plane", "/browsers/sess-1/fs/read", false},
 	}
 
@@ -81,7 +82,7 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 				BaseURL:   "https://browser.example/browser/kernel",
 				JWT:       "jwt-123",
 			})
-			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright"})
+			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process"})
 
 			reqURL, err := url.Parse("https://api.example" + tc.path)
 			if err != nil {
