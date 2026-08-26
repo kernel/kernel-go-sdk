@@ -550,7 +550,7 @@ type InvocationListBrowsersResponseBrowser struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west".
+	// Any of "us-east", "eu-west", "ap-southeast".
 	Region string `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`

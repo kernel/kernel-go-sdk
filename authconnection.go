@@ -262,8 +262,10 @@ type ManagedAuth struct {
 	//
 	// Any of "AUTHENTICATED", "NEEDS_AUTH".
 	Status ManagedAuthStatus `json:"status" api:"required"`
-	// Additional domains that are valid for this auth flow (besides the primary
-	// domain). Useful when login pages redirect to different domains.
+	// Additional hostname roots valid for this auth flow, besides the primary domain.
+	// Each value allows credential entry on that exact hostname and its subdomains.
+	// Leading `www.` and `*.` labels are normalized away. When omitted or empty,
+	// credential entry is unrestricted.
 	//
 	// The following SSO/OAuth provider domains are automatically allowed by default
 	// and do not need to be specified:
@@ -1237,8 +1239,10 @@ type ManagedAuthCreateRequestParam struct {
 	//
 	// Deprecated: deprecated
 	BrowserTelemetry ManagedAuthCreateRequestBrowserTelemetryParam `json:"browser_telemetry,omitzero"`
-	// Additional domains valid for this auth flow (besides the primary domain). Useful
-	// when login pages redirect to different domains.
+	// Additional hostname roots valid for this auth flow, besides the primary domain.
+	// Each value allows credential entry on that exact hostname and its subdomains.
+	// Leading `www.` and `*.` labels are normalized away. When omitted or empty,
+	// credential entry is unrestricted.
 	//
 	// The following SSO/OAuth provider domains are automatically allowed by default
 	// and do not need to be specified:
@@ -1563,7 +1567,10 @@ type ManagedAuthUpdateRequestParam struct {
 	//
 	// Deprecated: deprecated
 	BrowserTelemetry ManagedAuthUpdateRequestBrowserTelemetryParam `json:"browser_telemetry,omitzero"`
-	// Additional domains valid for this auth flow (replaces existing list)
+	// Additional hostname roots valid for this auth flow. Each value allows credential
+	// entry on that exact hostname and its subdomains; leading `www.` and `*.` labels
+	// are normalized away. An empty list leaves credential entry unrestricted.
+	// Replaces the existing list.
 	AllowedDomains []string `json:"allowed_domains,omitzero"`
 	// Browser configuration updates for future login, reauthentication, and
 	// health-check sessions. Omitted properties remain unchanged.
