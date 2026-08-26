@@ -5,8 +5,6 @@ package kernel
 import (
 	"context"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"slices"
@@ -26,44 +24,35 @@ import (
 
 // Resolve browser and proxy recommendations for bot-protected sites.
 //
-// SiteConfigService contains methods and other services that help with interacting
-// with the kernel API.
+// ConfigRegistryService contains methods and other services that help with
+// interacting with the kernel API.
 //
 // Note, unlike clients, this service does not read variables from the environment
 // automatically. You should not instantiate this service directly, and instead use
-// the [NewSiteConfigService] method instead.
-type SiteConfigService struct {
+// the [NewConfigRegistryService] method instead.
+type ConfigRegistryService struct {
 	Options []option.RequestOption
+	// Resolve browser and proxy recommendations for bot-protected sites.
+	Analyses ConfigRegistryAnalysisService
 }
 
-// NewSiteConfigService generates a new service that applies the given options to
-// each request. These options are applied after the parent client's options (if
+// NewConfigRegistryService generates a new service that applies the given options
+// to each request. These options are applied after the parent client's options (if
 // there is one), and before any request-specific options.
-func NewSiteConfigService(opts ...option.RequestOption) (r SiteConfigService) {
-	r = SiteConfigService{}
+func NewConfigRegistryService(opts ...option.RequestOption) (r ConfigRegistryService) {
+	r = ConfigRegistryService{}
 	r.Options = opts
+	r.Analyses = NewConfigRegistryAnalysisService(opts...)
 	return
 }
 
-// Returns a project-scoped historical analysis and the recommendation outcome
-// concluded by that run. Later knowledge does not change this response.
-func (r *SiteConfigService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *SiteConfigResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
-		return nil, err
-	}
-	path := fmt.Sprintf("site-configs/%s", id)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return res, err
-}
-
-// Lists analyses for the selected project, newest first.
-func (r *SiteConfigService) List(ctx context.Context, query SiteConfigListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[AnalysisSummary], err error) {
+// Lists unique domains previously analyzed by the selected project with their
+// current domain-level recommendations.
+func (r *ConfigRegistryService) List(ctx context.Context, query ConfigRegistryListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[RecommendationSummary], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
-	path := "site-configs"
+	path := "config-registry"
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
 	if err != nil {
 		return nil, err
@@ -76,51 +65,27 @@ func (r *SiteConfigService) List(ctx context.Context, query SiteConfigListParams
 	return res, nil
 }
 
-// Lists analyses for the selected project, newest first.
-func (r *SiteConfigService) ListAutoPaging(ctx context.Context, query SiteConfigListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[AnalysisSummary] {
+// Lists unique domains previously analyzed by the selected project with their
+// current domain-level recommendations.
+func (r *ConfigRegistryService) ListAutoPaging(ctx context.Context, query ConfigRegistryListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[RecommendationSummary] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Lists unique domains previously analyzed by the selected project with their
-// current domain-level recommendations.
-func (r *SiteConfigService) ListRecommendations(ctx context.Context, query SiteConfigListRecommendationsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[RecommendationSummary], err error) {
-	var raw *http.Response
-	opts = slices.Concat(r.Options, opts)
-	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
-	path := "site-configs/recommendations"
-	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
-	if err != nil {
-		return nil, err
-	}
-	err = cfg.Execute()
-	if err != nil {
-		return nil, err
-	}
-	res.SetPageConfig(cfg, raw)
-	return res, nil
-}
-
-// Lists unique domains previously analyzed by the selected project with their
-// current domain-level recommendations.
-func (r *SiteConfigService) ListRecommendationsAutoPaging(ctx context.Context, query SiteConfigListRecommendationsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[RecommendationSummary] {
-	return pagination.NewOffsetPaginationAutoPager(r.ListRecommendations(ctx, query, opts...))
-}
-
 // Returns current global knowledge without resolving DNS, creating an analysis, or
-// updating Site Config data.
-func (r *SiteConfigService) Lookup(ctx context.Context, body SiteConfigLookupParams, opts ...option.RequestOption) (res *LookupResponse, err error) {
+// updating config registry data.
+func (r *ConfigRegistryService) Lookup(ctx context.Context, body ConfigRegistryLookupParams, opts ...option.RequestOption) (res *LookupResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "site-configs/lookup"
+	path := "config-registry/lookup"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
 // Explicitly starts or retries a project-scoped background analysis while
-// preserving current global knowledge when available. Use `/site-configs/lookup`
-// for side-effect-free reads.
-func (r *SiteConfigService) Resolve(ctx context.Context, body SiteConfigResolveParams, opts ...option.RequestOption) (res *SiteConfigResponse, err error) {
+// preserving current global knowledge when available. Use
+// `/config-registry/lookup` for side-effect-free reads.
+func (r *ConfigRegistryService) Resolve(ctx context.Context, body ConfigRegistryResolveParams, opts ...option.RequestOption) (res *ConfigRegistryResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "site-configs/resolve"
+	path := "config-registry/resolve"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
@@ -135,7 +100,7 @@ type Analysis struct {
 	Failure shared.ErrorModel `json:"failure" api:"required"`
 	// Time the analysis reached a terminal status. Null while it is running.
 	FinishedAt time.Time `json:"finished_at" api:"required" format:"date-time"`
-	// Lifecycle status of the background analysis.
+	// Lifecycle status of a background analysis.
 	//
 	// Any of "running", "completed", "failed", "canceled".
 	Status AnalysisStatus `json:"status" api:"required"`
@@ -157,7 +122,7 @@ func (r *Analysis) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Lifecycle status of the background analysis.
+// Lifecycle status of a background analysis.
 type AnalysisStatus string
 
 const (
@@ -217,6 +182,29 @@ type Browser struct {
 // Returns the unmodified JSON received from the API
 func (r Browser) RawJSON() string { return r.JSON.raw }
 func (r *Browser) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ConfigRegistryResponse struct {
+	// Pollable analysis after workflow submission is acknowledged. Null when no
+	// refresh was submitted.
+	Analysis Analysis `json:"analysis" api:"required"`
+	// A recommendation or a structured no-recommendation result.
+	Recommendation RecommendationResultUnion `json:"recommendation" api:"required"`
+	Target         Target                    `json:"target" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Analysis       respjson.Field
+		Recommendation respjson.Field
+		Target         respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ConfigRegistryResponse) RawJSON() string { return r.JSON.raw }
+func (r *ConfigRegistryResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -294,8 +282,7 @@ func (r *LookupResponse) UnmarshalJSON(data []byte) error {
 }
 
 type NoRecommendation struct {
-	// Machine-readable reason Kernel cannot currently provide a Site Config
-	// recommendation.
+	// Machine-readable reason Kernel cannot currently provide a config recommendation.
 	//
 	// Any of "proxy_restricted", "no_working_configuration", "inconclusive".
 	Code NoRecommendationCode `json:"code" api:"required"`
@@ -318,8 +305,7 @@ func (r *NoRecommendation) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Machine-readable reason Kernel cannot currently provide a Site Config
-// recommendation.
+// Machine-readable reason Kernel cannot currently provide a config recommendation.
 type NoRecommendationCode string
 
 const (
@@ -811,6 +797,12 @@ func (r *RecommendationResultUnion) UnmarshalJSON(data []byte) error {
 }
 
 type RecommendationSummary struct {
+	// ID of the most recently requested analysis for this domain.
+	AnalysisID string `json:"analysis_id" api:"required"`
+	// Lifecycle status of the most recently requested analysis for this domain.
+	//
+	// Any of "running", "completed", "failed", "canceled".
+	AnalysisStatus RecommendationSummaryAnalysisStatus `json:"analysis_status" api:"required"`
 	// Most recent time the selected project requested an analysis for this domain.
 	LastRequestedAt time.Time `json:"last_requested_at" api:"required" format:"date-time"`
 	// Current domain-level recommendation. Null when no eligible knowledge exists.
@@ -824,6 +816,8 @@ type RecommendationSummary struct {
 	Target string `json:"target" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		AnalysisID             respjson.Field
+		AnalysisStatus         respjson.Field
 		LastRequestedAt        respjson.Field
 		Recommendation         respjson.Field
 		RecommendedConfigLabel respjson.Field
@@ -839,6 +833,16 @@ func (r RecommendationSummary) RawJSON() string { return r.JSON.raw }
 func (r *RecommendationSummary) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Lifecycle status of the most recently requested analysis for this domain.
+type RecommendationSummaryAnalysisStatus string
+
+const (
+	RecommendationSummaryAnalysisStatusRunning   RecommendationSummaryAnalysisStatus = "running"
+	RecommendationSummaryAnalysisStatusCompleted RecommendationSummaryAnalysisStatus = "completed"
+	RecommendationSummaryAnalysisStatusFailed    RecommendationSummaryAnalysisStatus = "failed"
+	RecommendationSummaryAnalysisStatusCanceled  RecommendationSummaryAnalysisStatus = "canceled"
+)
 
 // The property URL is required.
 type ResolveRequestParam struct {
@@ -856,29 +860,6 @@ func (r ResolveRequestParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ResolveRequestParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SiteConfigResponse struct {
-	// Pollable analysis after workflow submission is acknowledged. Null when no
-	// refresh was submitted.
-	Analysis Analysis `json:"analysis" api:"required"`
-	// A recommendation or a structured no-recommendation result.
-	Recommendation RecommendationResultUnion `json:"recommendation" api:"required"`
-	Target         Target                    `json:"target" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Analysis       respjson.Field
-		Recommendation respjson.Field
-		Target         respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SiteConfigResponse) RawJSON() string { return r.JSON.raw }
-func (r *SiteConfigResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -905,75 +886,66 @@ func (r *Target) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type SiteConfigListParams struct {
+type ConfigRegistryListParams struct {
 	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
-	paramObj
-}
-
-// URLQuery serializes [SiteConfigListParams]'s query parameters as `url.Values`.
-func (r SiteConfigListParams) URLQuery() (v url.Values, err error) {
-	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
-		ArrayFormat:  apiquery.ArrayQueryFormatComma,
-		NestedFormat: apiquery.NestedQueryFormatBrackets,
-	})
-}
-
-type SiteConfigListRecommendationsParams struct {
-	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
-	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
-	// Any of "target", "recommended_config", "last_requested_at", "success_rate".
-	SortBy SiteConfigListRecommendationsParamsSortBy `query:"sort_by,omitzero" json:"-"`
+	// Case-insensitive domain search. Full URLs are reduced to their registrable
+	// domain.
+	Search param.Opt[string] `query:"search,omitzero" json:"-"`
+	// Any of "target", "analysis_status", "recommended_config", "last_requested_at",
+	// "success_rate".
+	SortBy ConfigRegistryListParamsSortBy `query:"sort_by,omitzero" json:"-"`
 	// Any of "asc", "desc".
-	SortOrder SiteConfigListRecommendationsParamsSortOrder `query:"sort_order,omitzero" json:"-"`
+	SortOrder ConfigRegistryListParamsSortOrder `query:"sort_order,omitzero" json:"-"`
 	paramObj
 }
 
-// URLQuery serializes [SiteConfigListRecommendationsParams]'s query parameters as
+// URLQuery serializes [ConfigRegistryListParams]'s query parameters as
 // `url.Values`.
-func (r SiteConfigListRecommendationsParams) URLQuery() (v url.Values, err error) {
+func (r ConfigRegistryListParams) URLQuery() (v url.Values, err error) {
 	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
 
-type SiteConfigListRecommendationsParamsSortBy string
+type ConfigRegistryListParamsSortBy string
 
 const (
-	SiteConfigListRecommendationsParamsSortByTarget            SiteConfigListRecommendationsParamsSortBy = "target"
-	SiteConfigListRecommendationsParamsSortByRecommendedConfig SiteConfigListRecommendationsParamsSortBy = "recommended_config"
-	SiteConfigListRecommendationsParamsSortByLastRequestedAt   SiteConfigListRecommendationsParamsSortBy = "last_requested_at"
-	SiteConfigListRecommendationsParamsSortBySuccessRate       SiteConfigListRecommendationsParamsSortBy = "success_rate"
+	ConfigRegistryListParamsSortByTarget            ConfigRegistryListParamsSortBy = "target"
+	ConfigRegistryListParamsSortByAnalysisStatus    ConfigRegistryListParamsSortBy = "analysis_status"
+	ConfigRegistryListParamsSortByRecommendedConfig ConfigRegistryListParamsSortBy = "recommended_config"
+	ConfigRegistryListParamsSortByLastRequestedAt   ConfigRegistryListParamsSortBy = "last_requested_at"
+	ConfigRegistryListParamsSortBySuccessRate       ConfigRegistryListParamsSortBy = "success_rate"
 )
 
-type SiteConfigListRecommendationsParamsSortOrder string
+type ConfigRegistryListParamsSortOrder string
 
 const (
-	SiteConfigListRecommendationsParamsSortOrderAsc  SiteConfigListRecommendationsParamsSortOrder = "asc"
-	SiteConfigListRecommendationsParamsSortOrderDesc SiteConfigListRecommendationsParamsSortOrder = "desc"
+	ConfigRegistryListParamsSortOrderAsc  ConfigRegistryListParamsSortOrder = "asc"
+	ConfigRegistryListParamsSortOrderDesc ConfigRegistryListParamsSortOrder = "desc"
 )
 
-type SiteConfigLookupParams struct {
+type ConfigRegistryLookupParams struct {
 	LookupRequest LookupRequestParam
 	paramObj
 }
 
-func (r SiteConfigLookupParams) MarshalJSON() (data []byte, err error) {
+func (r ConfigRegistryLookupParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.LookupRequest)
 }
-func (r *SiteConfigLookupParams) UnmarshalJSON(data []byte) error {
+func (r *ConfigRegistryLookupParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type SiteConfigResolveParams struct {
+type ConfigRegistryResolveParams struct {
 	ResolveRequest ResolveRequestParam
 	paramObj
 }
 
-func (r SiteConfigResolveParams) MarshalJSON() (data []byte, err error) {
+func (r ConfigRegistryResolveParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.ResolveRequest)
 }
-func (r *SiteConfigResolveParams) UnmarshalJSON(data []byte) error {
+func (r *ConfigRegistryResolveParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
