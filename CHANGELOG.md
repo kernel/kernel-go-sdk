@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.95.0](https://github.com/kernel/kernel-go-sdk/compare/v0.94.0...v0.95.0) (2026-08-26)
+
+
+### Features
+
+* Add OTLP destination delivery health storage ([46978e2](https://github.com/kernel/kernel-go-sdk/commit/46978e2734f160b348b5a04d72fbd5ef0e83715a))
+* route process calls directly to browser VMs ([71c0e50](https://github.com/kernel/kernel-go-sdk/commit/71c0e509a24e4cc4db3ad0d2af61a2536981e312))
+
 ## [0.94.0](https://github.com/kernel/kernel-go-sdk/compare/v0.93.0...v0.94.0) (2026-08-24)
 
 
