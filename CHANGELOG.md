@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.96.0](https://github.com/kernel/kernel-go-sdk/compare/v0.95.0...v0.96.0) (2026-08-27)
+
+
+### Features
+
+* Rename the site configs API to config registry ([d348ffc](https://github.com/kernel/kernel-go-sdk/commit/d348ffc2b54ec8bc313b09abb34184d8cfe5681c))
+
 ## [0.95.0](https://github.com/kernel/kernel-go-sdk/compare/v0.94.0...v0.95.0) (2026-08-26)
 
 
