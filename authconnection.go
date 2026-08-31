@@ -317,8 +317,10 @@ type ManagedAuth struct {
 	// - `viable_plans_found` — at least one stored login plan can be replayed
 	// - `no_requirements_recorded` — no recorded credential requirements to fail
 	//   against
-	// - `requirements_satisfiable` — recorded requirements can be met by the attached
-	//   credential
+	// - `totp_reauth_allowed` — TOTP is the only recorded requirement and is safe to
+	//   attempt automatically
+	// - `requirements_satisfiable` — recorded requirements contain no recognized
+	//   blocker
 	//
 	// Negative values (a human must complete the login flow):
 	//
@@ -340,11 +342,11 @@ type ManagedAuth struct {
 	//   unavailable during unattended re-authentication
 	//
 	// Any of "external_credential", "cua_has_credential", "has_credential",
-	// "viable_plans_found", "no_requirements_recorded", "requirements_satisfiable",
-	// "no_prior_successful_login", "no_credential", "no_viable_plans",
-	// "viable_plans_require_external_action", "requires_external_action",
-	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code",
-	// "requires_customer_input".
+	// "viable_plans_found", "no_requirements_recorded", "totp_reauth_allowed",
+	// "requirements_satisfiable", "no_prior_successful_login", "no_credential",
+	// "no_viable_plans", "viable_plans_require_external_action",
+	// "requires_external_action", "requires_totp_without_secret", "requires_sms_code",
+	// "requires_email_code", "requires_customer_input".
 	CanReauthReason ManagedAuthCanReauthReason `json:"can_reauth_reason"`
 	// Canonical choices awaiting selection. Prefer this over pending_sso_buttons,
 	// mfa_options, and sign_in_options when present.
@@ -620,8 +622,10 @@ func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []
 //   - `viable_plans_found` — at least one stored login plan can be replayed
 //   - `no_requirements_recorded` — no recorded credential requirements to fail
 //     against
-//   - `requirements_satisfiable` — recorded requirements can be met by the attached
-//     credential
+//   - `totp_reauth_allowed` — TOTP is the only recorded requirement and is safe to
+//     attempt automatically
+//   - `requirements_satisfiable` — recorded requirements contain no recognized
+//     blocker
 //
 // Negative values (a human must complete the login flow):
 //
@@ -649,6 +653,7 @@ const (
 	ManagedAuthCanReauthReasonHasCredential                    ManagedAuthCanReauthReason = "has_credential"
 	ManagedAuthCanReauthReasonViablePlansFound                 ManagedAuthCanReauthReason = "viable_plans_found"
 	ManagedAuthCanReauthReasonNoRequirementsRecorded           ManagedAuthCanReauthReason = "no_requirements_recorded"
+	ManagedAuthCanReauthReasonTotpReauthAllowed                ManagedAuthCanReauthReason = "totp_reauth_allowed"
 	ManagedAuthCanReauthReasonRequirementsSatisfiable          ManagedAuthCanReauthReason = "requirements_satisfiable"
 	ManagedAuthCanReauthReasonNoPriorSuccessfulLogin           ManagedAuthCanReauthReason = "no_prior_successful_login"
 	ManagedAuthCanReauthReasonNoCredential                     ManagedAuthCanReauthReason = "no_credential"
