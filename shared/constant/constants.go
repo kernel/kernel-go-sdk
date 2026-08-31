@@ -27,7 +27,9 @@ type BrowserClose string                    // Always "Browser.close"
 type BrowserSetContentsSize string          // Always "Browser.setContentsSize"
 type BrowserSetWindowBounds string          // Always "Browser.setWindowBounds"
 type Captcha string                         // Always "captcha"
+type CaptchaChallengeResult string          // Always "captcha_challenge_result"
 type CaptchaSolveResult string              // Always "captcha_solve_result"
+type CaptchaSolveStarted string             // Always "captcha_solve_started"
 type CdpCommand string                      // Always "cdp_command"
 type CdpConnect string                      // Always "cdp_connect"
 type CdpDisconnect string                   // Always "cdp_disconnect"
@@ -123,7 +125,9 @@ func (c BrowserClose) Default() BrowserClose                     { return "Brows
 func (c BrowserSetContentsSize) Default() BrowserSetContentsSize { return "Browser.setContentsSize" }
 func (c BrowserSetWindowBounds) Default() BrowserSetWindowBounds { return "Browser.setWindowBounds" }
 func (c Captcha) Default() Captcha                               { return "captcha" }
+func (c CaptchaChallengeResult) Default() CaptchaChallengeResult { return "captcha_challenge_result" }
 func (c CaptchaSolveResult) Default() CaptchaSolveResult         { return "captcha_solve_result" }
+func (c CaptchaSolveStarted) Default() CaptchaSolveStarted       { return "captcha_solve_started" }
 func (c CdpCommand) Default() CdpCommand                         { return "cdp_command" }
 func (c CdpConnect) Default() CdpConnect                         { return "cdp_connect" }
 func (c CdpDisconnect) Default() CdpDisconnect                   { return "cdp_disconnect" }
@@ -241,7 +245,9 @@ func (c BrowserClose) MarshalJSON() ([]byte, error)                    { return 
 func (c BrowserSetContentsSize) MarshalJSON() ([]byte, error)          { return marshalString(c) }
 func (c BrowserSetWindowBounds) MarshalJSON() ([]byte, error)          { return marshalString(c) }
 func (c Captcha) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
+func (c CaptchaChallengeResult) MarshalJSON() ([]byte, error)          { return marshalString(c) }
 func (c CaptchaSolveResult) MarshalJSON() ([]byte, error)              { return marshalString(c) }
+func (c CaptchaSolveStarted) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c CdpCommand) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c CdpConnect) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c CdpDisconnect) MarshalJSON() ([]byte, error)                   { return marshalString(c) }

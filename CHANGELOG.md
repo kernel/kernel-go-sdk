@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.97.0](https://github.com/kernel/kernel-go-sdk/compare/v0.96.0...v0.97.0) (2026-08-31)
+
+
+### Features
+
+* Expose captcha task and challenge outcomes ([6e498fb](https://github.com/kernel/kernel-go-sdk/commit/6e498fbbc12d5992adbcceba6638398457a1aca9))
+* Unify managed auth reauth eligibility and blockers ([94c784a](https://github.com/kernel/kernel-go-sdk/commit/94c784ab31693069f07fab5c627c635555591fc8))
+
 ## [0.96.0](https://github.com/kernel/kernel-go-sdk/compare/v0.95.0...v0.96.0) (2026-08-27)
 
 

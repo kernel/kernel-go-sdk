@@ -223,6 +223,95 @@ func (r *BrowserCallStackCallFrame) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A visible captcha challenge reached a terminal outcome.
+type BrowserCaptchaChallengeResultEvent struct {
+	Category constant.Captcha `json:"category" default:"captcha"`
+	// Per-challenge payload. This event is emitted once per challenge and determines
+	// its overall outcome; captcha_solve_started and captcha_solve_result describe
+	// individual tasks and may occur multiple times within the challenge.
+	Data BrowserCaptchaChallengeResultEventData `json:"data" api:"required"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                           `json:"ts" api:"required"`
+	Type constant.CaptchaChallengeResult `json:"type" default:"captcha_challenge_result"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Data        respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaChallengeResultEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaChallengeResultEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Per-challenge payload. This event is emitted once per challenge and determines
+// its overall outcome; captcha_solve_started and captcha_solve_result describe
+// individual tasks and may occur multiple times within the challenge.
+type BrowserCaptchaChallengeResultEventData struct {
+	// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version
+	// bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use
+	// press_and_hold, and unlisted kinds use other.
+	//
+	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
+	// "press_and_hold", "other".
+	CaptchaType string `json:"captcha_type" api:"required"`
+	// Opaque identifier shared by events for one visible challenge. An image-grid
+	// captcha may create multiple task_id values for one challenge_id. The same value
+	// may continue across a page reload when the challenge episode continues. It does
+	// not indicate task ordering or challenge completion.
+	ChallengeID string `json:"challenge_id" api:"required"`
+	// Wall-clock duration from the challenge appearing to its terminal outcome,
+	// covering every solver attempt in between.
+	DurationMs float64 `json:"duration_ms" api:"required"`
+	// Terminal outcome of the visible challenge. solved: the page observed the
+	// challenge clear after a solver attempt. failure: a terminal solver failure
+	// occurred, or all attempts ended while the challenge remained. timeout: the
+	// challenge-level wait budget expired while the challenge remained. abandoned:
+	// observation ended without an attributable terminal challenge outcome. This
+	// includes a dismissed widget or page unload without a solved signal or terminal
+	// solver outcome, and a token appearing while multiple same-provider challenges
+	// are open, because the producer cannot attribute that token to this visible
+	// challenge. A captcha_solve_result with the same challenge_id may therefore
+	// report success while the challenge result reports abandoned. A solved challenge
+	// does not prove the site accepted the token or that the guarded action succeeded.
+	//
+	// Any of "solved", "failure", "timeout", "abandoned".
+	Status string `json:"status" api:"required"`
+	// Host of the page where the challenge appeared.
+	WebsiteHost string `json:"website_host"`
+	// Path of the page where the challenge appeared. Query string excluded.
+	WebsitePath string `json:"website_path"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CaptchaType respjson.Field
+		ChallengeID respjson.Field
+		DurationMs  respjson.Field
+		Status      respjson.Field
+		WebsiteHost respjson.Field
+		WebsitePath respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaChallengeResultEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaChallengeResultEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // A captcha solve attempt reached a terminal outcome.
 type BrowserCaptchaSolveResultEvent struct {
 	Category constant.Captcha `json:"category" default:"captcha"`
@@ -254,13 +343,16 @@ func (r *BrowserCaptchaSolveResultEvent) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserCaptchaSolveResultEventData struct {
-	// Captcha vendor family. Provider-specific task names are normalized into this
-	// set; anything not covered is reported as other.
+	// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version
+	// bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use
+	// press_and_hold, and unlisted kinds use other.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
-	// "other".
+	// "press_and_hold", "other".
 	CaptchaType string `json:"captcha_type" api:"required"`
-	// Wall-clock duration from solve start to terminal outcome.
+	// Wall-clock duration from solve start to terminal outcome. Authoritative solve
+	// timing; do not derive it from the gap to a captcha_solve_started event, whose
+	// delivery and ordering are not guaranteed.
 	DurationMs float64 `json:"duration_ms" api:"required"`
 	// Terminal outcome. success: solver returned a usable solution. failure: solver
 	// returned an error (see error_code). timeout: solver did not return within the
@@ -269,10 +361,15 @@ type BrowserCaptchaSolveResultEventData struct {
 	//
 	// Any of "success", "failure", "timeout", "abandoned".
 	Status string `json:"status" api:"required"`
+	// Opaque identifier shared by events for one visible challenge. An image-grid
+	// captcha may create multiple task_id values for one challenge_id. The same value
+	// may continue across a page reload when the challenge episode continues. It does
+	// not indicate task ordering or challenge completion.
+	ChallengeID string `json:"challenge_id"`
 	// Solver-specific error code on failure (e.g. ERROR_CAPTCHA_UNSOLVABLE). Absent on
 	// success.
 	ErrorCode string `json:"error_code"`
-	// Solver-assigned identifier. Opaque, useful for support cross-references.
+	// Opaque identifier shared with the matching captcha_solve_started.
 	TaskID string `json:"task_id"`
 	// Host of the page where the captcha was solved.
 	WebsiteHost string `json:"website_host"`
@@ -283,6 +380,7 @@ type BrowserCaptchaSolveResultEventData struct {
 		CaptchaType respjson.Field
 		DurationMs  respjson.Field
 		Status      respjson.Field
+		ChallengeID respjson.Field
 		ErrorCode   respjson.Field
 		TaskID      respjson.Field
 		WebsiteHost respjson.Field
@@ -295,6 +393,82 @@ type BrowserCaptchaSolveResultEventData struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserCaptchaSolveResultEventData) RawJSON() string { return r.JSON.raw }
 func (r *BrowserCaptchaSolveResultEventData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A captcha solver accepted a task.
+type BrowserCaptchaSolveStartedEvent struct {
+	Category constant.Captcha `json:"category" default:"captcha"`
+	// Per-task payload. A visible challenge may create multiple tasks. When present,
+	// task_id correlates this event with a captcha_solve_result, while challenge_id
+	// groups tasks from the same challenge. Events may arrive out of order or be
+	// absent, so their arrival does not indicate current solve state.
+	Data BrowserCaptchaSolveStartedEventData `json:"data" api:"required"`
+	// Provenance metadata identifying which producer emitted the event.
+	Source BrowserEventSource `json:"source" api:"required"`
+	// Event timestamp in Unix microseconds.
+	Ts   int64                        `json:"ts" api:"required"`
+	Type constant.CaptchaSolveStarted `json:"type" default:"captcha_solve_started"`
+	// True if the data field was truncated due to size limits.
+	Truncated bool `json:"truncated"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Category    respjson.Field
+		Data        respjson.Field
+		Source      respjson.Field
+		Ts          respjson.Field
+		Type        respjson.Field
+		Truncated   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaSolveStartedEvent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaSolveStartedEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Per-task payload. A visible challenge may create multiple tasks. When present,
+// task_id correlates this event with a captcha_solve_result, while challenge_id
+// groups tasks from the same challenge. Events may arrive out of order or be
+// absent, so their arrival does not indicate current solve state.
+type BrowserCaptchaSolveStartedEventData struct {
+	// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version
+	// bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use
+	// press_and_hold, and unlisted kinds use other.
+	//
+	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
+	// "press_and_hold", "other".
+	CaptchaType string `json:"captcha_type" api:"required"`
+	// Opaque identifier shared by events for one visible challenge. An image-grid
+	// captcha may create multiple task_id values for one challenge_id. The same value
+	// may continue across a page reload when the challenge episode continues. It does
+	// not indicate task ordering or challenge completion.
+	ChallengeID string `json:"challenge_id"`
+	// Opaque identifier shared with the matching captcha_solve_result.
+	TaskID string `json:"task_id"`
+	// Host of the page where the captcha is being solved. May be empty for solver
+	// tasks that carry no page URL.
+	WebsiteHost string `json:"website_host"`
+	// Path of the page where the captcha is being solved. Query string excluded.
+	WebsitePath string `json:"website_path"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CaptchaType respjson.Field
+		ChallengeID respjson.Field
+		TaskID      respjson.Field
+		WebsiteHost respjson.Field
+		WebsitePath respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaSolveStartedEventData) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaSolveStartedEventData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5144,7 +5318,7 @@ func (r *BrowserSystemOomKillEventDataTopTask) UnmarshalJSON(data []byte) error 
 // (console, network, page, interaction), screenshot and platform are off by
 // default and are opt-in: set enabled=true to capture them.
 type BrowserTelemetryCategoriesConfig struct {
-	// Captcha solve attempt outcomes. On by default.
+	// Captcha solver tasks and visible challenge outcomes. On by default.
 	Captcha BrowserTelemetryCategoryConfig `json:"captcha"`
 	// Client attach/detach lifecycle for the CDP proxy and live view. On by default.
 	Connection BrowserTelemetryCategoryConfig `json:"connection"`
@@ -5216,7 +5390,7 @@ func (r BrowserTelemetryCategoriesConfig) ToParam() BrowserTelemetryCategoriesCo
 // (console, network, page, interaction), screenshot and platform are off by
 // default and are opt-in: set enabled=true to capture them.
 type BrowserTelemetryCategoriesConfigParam struct {
-	// Captcha solve attempt outcomes. On by default.
+	// Captcha solver tasks and visible challenge outcomes. On by default.
 	Captcha BrowserTelemetryCategoryConfigParam `json:"captcha,omitzero"`
 	// Client attach/detach lifecycle for the CDP proxy and live view. On by default.
 	Connection BrowserTelemetryCategoryConfigParam `json:"connection,omitzero"`
@@ -5460,7 +5634,8 @@ func (r *BrowserTelemetryControlConfigParam) UnmarshalJSON(data []byte) error {
 // [BrowserAPICallEvent], [BrowserPlatformAPICallEvent], [BrowserCdpCommandEvent],
 // [BrowserCdpConnectEvent], [BrowserCdpDisconnectEvent],
 // [BrowserLiveViewConnectEvent], [BrowserLiveViewDisconnectEvent],
-// [BrowserCaptchaSolveResultEvent], [BrowserSystemOomKillEvent],
+// [BrowserCaptchaSolveStartedEvent], [BrowserCaptchaSolveResultEvent],
+// [BrowserCaptchaChallengeResultEvent], [BrowserSystemOomKillEvent],
 // [BrowserServiceCrashedEvent].
 //
 // Use the [BrowserTelemetryEventUnion.AsAny] method to switch on the variant.
@@ -5479,8 +5654,9 @@ type BrowserTelemetryEventUnion struct {
 	// "interaction_scroll_settled", "monitor_screenshot", "monitor_disconnected",
 	// "monitor_reconnected", "monitor_reconnect_failed", "monitor_init_failed",
 	// "api_call", "platform_api_call", "cdp_command", "cdp_connect", "cdp_disconnect",
-	// "live_view_connect", "live_view_disconnect", "captcha_solve_result",
-	// "system_oom_kill", "service_crashed".
+	// "live_view_connect", "live_view_disconnect", "captcha_solve_started",
+	// "captcha_solve_result", "captcha_challenge_result", "system_oom_kill",
+	// "service_crashed".
 	Type string `json:"type"`
 	// This field is a union of [BrowserConsoleLogEventData],
 	// [BrowserConsoleErrorEventData], [BrowserNetworkRequestEventData],
@@ -5497,7 +5673,8 @@ type BrowserTelemetryEventUnion struct {
 	// [BrowserPlatformAPICallEventData], [BrowserCdpCommandEventDataUnion],
 	// [BrowserCdpConnectEventData], [BrowserCdpDisconnectEventData],
 	// [BrowserLiveViewConnectEventData], [BrowserLiveViewDisconnectEventData],
-	// [BrowserCaptchaSolveResultEventData], [BrowserSystemOomKillEventData],
+	// [BrowserCaptchaSolveStartedEventData], [BrowserCaptchaSolveResultEventData],
+	// [BrowserCaptchaChallengeResultEventData], [BrowserSystemOomKillEventData],
 	// [BrowserServiceCrashedEventData]
 	Data      BrowserTelemetryEventUnionData `json:"data"`
 	Truncated bool                           `json:"truncated"`
@@ -5550,7 +5727,9 @@ func (BrowserCdpConnectEvent) implBrowserTelemetryEventUnion()               {}
 func (BrowserCdpDisconnectEvent) implBrowserTelemetryEventUnion()            {}
 func (BrowserLiveViewConnectEvent) implBrowserTelemetryEventUnion()          {}
 func (BrowserLiveViewDisconnectEvent) implBrowserTelemetryEventUnion()       {}
+func (BrowserCaptchaSolveStartedEvent) implBrowserTelemetryEventUnion()      {}
 func (BrowserCaptchaSolveResultEvent) implBrowserTelemetryEventUnion()       {}
+func (BrowserCaptchaChallengeResultEvent) implBrowserTelemetryEventUnion()   {}
 func (BrowserSystemOomKillEvent) implBrowserTelemetryEventUnion()            {}
 func (BrowserServiceCrashedEvent) implBrowserTelemetryEventUnion()           {}
 
@@ -5588,7 +5767,9 @@ func (BrowserServiceCrashedEvent) implBrowserTelemetryEventUnion()           {}
 //	case kernel.BrowserCdpDisconnectEvent:
 //	case kernel.BrowserLiveViewConnectEvent:
 //	case kernel.BrowserLiveViewDisconnectEvent:
+//	case kernel.BrowserCaptchaSolveStartedEvent:
 //	case kernel.BrowserCaptchaSolveResultEvent:
+//	case kernel.BrowserCaptchaChallengeResultEvent:
 //	case kernel.BrowserSystemOomKillEvent:
 //	case kernel.BrowserServiceCrashedEvent:
 //	default:
@@ -5658,8 +5839,12 @@ func (u BrowserTelemetryEventUnion) AsAny() anyBrowserTelemetryEvent {
 		return u.AsLiveViewConnect()
 	case "live_view_disconnect":
 		return u.AsLiveViewDisconnect()
+	case "captcha_solve_started":
+		return u.AsCaptchaSolveStarted()
 	case "captcha_solve_result":
 		return u.AsCaptchaSolveResult()
+	case "captcha_challenge_result":
+		return u.AsCaptchaChallengeResult()
 	case "system_oom_kill":
 		return u.AsSystemOomKill()
 	case "service_crashed":
@@ -5823,7 +6008,17 @@ func (u BrowserTelemetryEventUnion) AsLiveViewDisconnect() (v BrowserLiveViewDis
 	return
 }
 
+func (u BrowserTelemetryEventUnion) AsCaptchaSolveStarted() (v BrowserCaptchaSolveStartedEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 func (u BrowserTelemetryEventUnion) AsCaptchaSolveResult() (v BrowserCaptchaSolveResultEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserTelemetryEventUnion) AsCaptchaChallengeResult() (v BrowserCaptchaChallengeResultEvent) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -5897,7 +6092,7 @@ type BrowserTelemetryEventUnionData struct {
 	Body string `json:"body"`
 	// This field is from variant [BrowserNetworkResponseEventData].
 	MimeType string `json:"mime_type"`
-	// This field is a union of [int64], [int64], [int64], [int64], [string]
+	// This field is a union of [int64], [int64], [int64], [int64], [string], [string]
 	Status BrowserTelemetryEventUnionDataStatus `json:"status"`
 	// This field is from variant [BrowserNetworkResponseEventData].
 	StatusText string `json:"status_text"`
@@ -6159,18 +6354,15 @@ type BrowserTelemetryEventUnionData struct {
 	// This field is from variant [BrowserCdpDisconnectEventData].
 	TelemetryDropped int64 `json:"telemetry_dropped"`
 	// This field is from variant [BrowserCdpDisconnectEventData].
-	TelemetryExcluded int64 `json:"telemetry_excluded"`
-	// This field is from variant [BrowserCaptchaSolveResultEventData].
-	CaptchaType string `json:"captcha_type"`
+	TelemetryExcluded int64  `json:"telemetry_excluded"`
+	CaptchaType       string `json:"captcha_type"`
+	ChallengeID       string `json:"challenge_id"`
+	TaskID            string `json:"task_id"`
+	WebsiteHost       string `json:"website_host"`
+	WebsitePath       string `json:"website_path"`
 	// This field is from variant [BrowserCaptchaSolveResultEventData].
 	ErrorCode string `json:"error_code"`
-	// This field is from variant [BrowserCaptchaSolveResultEventData].
-	TaskID string `json:"task_id"`
-	// This field is from variant [BrowserCaptchaSolveResultEventData].
-	WebsiteHost string `json:"website_host"`
-	// This field is from variant [BrowserCaptchaSolveResultEventData].
-	WebsitePath string `json:"website_path"`
-	Pid         int64  `json:"pid"`
+	Pid       int64  `json:"pid"`
 	// This field is from variant [BrowserSystemOomKillEventData].
 	ProcessName string `json:"process_name"`
 	// This field is from variant [BrowserSystemOomKillEventData].
@@ -6367,10 +6559,11 @@ type BrowserTelemetryEventUnionData struct {
 		TelemetryDropped                  respjson.Field
 		TelemetryExcluded                 respjson.Field
 		CaptchaType                       respjson.Field
-		ErrorCode                         respjson.Field
+		ChallengeID                       respjson.Field
 		TaskID                            respjson.Field
 		WebsiteHost                       respjson.Field
 		WebsitePath                       respjson.Field
+		ErrorCode                         respjson.Field
 		Pid                               respjson.Field
 		ProcessName                       respjson.Field
 		RssKB                             respjson.Field
@@ -6398,16 +6591,16 @@ func (r *BrowserTelemetryEventUnionData) UnmarshalJSON(data []byte) error {
 // [BrowserTelemetryEventUnion].
 //
 // If the underlying value is not a json object, one of the following properties
-// will be valid: OfInt OfBrowserCaptchaSolveResultEventDataStatus]
+// will be valid: OfInt OfBrowserCaptchaChallengeResultEventDataStatus]
 type BrowserTelemetryEventUnionDataStatus struct {
 	// This field will be present if the value is a [int64] instead of an object.
 	OfInt int64 `json:",inline"`
 	// This field will be present if the value is a [string] instead of an object.
-	OfBrowserCaptchaSolveResultEventDataStatus string `json:",inline"`
-	JSON                                       struct {
-		OfInt                                      respjson.Field
-		OfBrowserCaptchaSolveResultEventDataStatus respjson.Field
-		raw                                        string
+	OfBrowserCaptchaChallengeResultEventDataStatus string `json:",inline"`
+	JSON                                           struct {
+		OfInt                                          respjson.Field
+		OfBrowserCaptchaChallengeResultEventDataStatus respjson.Field
+		raw                                            string
 	} `json:"-"`
 }
 
