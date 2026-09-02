@@ -28,7 +28,7 @@ func TestBrowserProcessExecWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Browsers.Process.Exec(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserProcessExecParams{
 			Command: "command",
 			Args:    []string{"string"},
@@ -67,8 +67,8 @@ func TestBrowserProcessKill(t *testing.T) {
 		context.TODO(),
 		"182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		kernel.BrowserProcessKillParams{
-			ID:     "id",
-			Signal: kernel.BrowserProcessKillParamsSignalTerm,
+			IDOrName: "htzv5orfit78e1m2biiifpbv",
+			Signal:   kernel.BrowserProcessKillParamsSignalTerm,
 		},
 	)
 	if err != nil {
@@ -97,9 +97,9 @@ func TestBrowserProcessResize(t *testing.T) {
 		context.TODO(),
 		"182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		kernel.BrowserProcessResizeParams{
-			ID:   "id",
-			Cols: 1,
-			Rows: 1,
+			IDOrName: "htzv5orfit78e1m2biiifpbv",
+			Cols:     1,
+			Rows:     1,
 		},
 	)
 	if err != nil {
@@ -126,7 +126,7 @@ func TestBrowserProcessSpawnWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Browsers.Process.Spawn(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserProcessSpawnParams{
 			Command:     "command",
 			AllocateTty: kernel.Bool(true),
@@ -168,7 +168,7 @@ func TestBrowserProcessStatus(t *testing.T) {
 		context.TODO(),
 		"182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		kernel.BrowserProcessStatusParams{
-			ID: "id",
+			IDOrName: "htzv5orfit78e1m2biiifpbv",
 		},
 	)
 	if err != nil {
@@ -197,8 +197,8 @@ func TestBrowserProcessStdin(t *testing.T) {
 		context.TODO(),
 		"182bd5e5-6e1a-4fe4-a799-aa6d9a6ab26e",
 		kernel.BrowserProcessStdinParams{
-			ID:      "id",
-			DataB64: "data_b64",
+			IDOrName: "htzv5orfit78e1m2biiifpbv",
+			DataB64:  "data_b64",
 		},
 	)
 	if err != nil {

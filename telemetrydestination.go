@@ -42,8 +42,9 @@ func NewTelemetryDestinationService(opts ...option.RequestOption) (r TelemetryDe
 	return
 }
 
-// Create an OTLP export destination in the resolved project. Names must be unique
-// within the project.
+// Create an OTLP export destination in the authenticated organization. Names must
+// be unique within the organization. Requires an organization-scoped credential or
+// dashboard authentication; project-scoped credentials receive a 403.
 func (r *TelemetryDestinationService) New(ctx context.Context, body TelemetryDestinationNewParams, opts ...option.RequestOption) (res *OtlpDestination, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "telemetry/destinations"
@@ -51,7 +52,10 @@ func (r *TelemetryDestinationService) New(ctx context.Context, body TelemetryDes
 	return res, err
 }
 
-// Retrieve a single OTLP destination in the resolved project by its ID or name.
+// Retrieve a customer-visible OTLP destination in the authenticated organization
+// by its ID or name. Project-scoped credentials can retrieve these destinations
+// for selection by workloads in their project. Non-dashboard reads return header
+// values redacted.
 func (r *TelemetryDestinationService) Get(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *OtlpDestination, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
@@ -67,10 +71,11 @@ func (r *TelemetryDestinationService) Get(ctx context.Context, idOrName string, 
 // values without restarting, which makes this the way to rotate credentials
 // without interrupting export.
 //
-// Names must be unique within the project. Renaming is refused with a 409 while a
-// managed auth connection selects this destination by name, since that connection
-// resolves the name on every login. Every other field, including `headers`, stays
-// editable.
+// Names must be unique within the organization. Renaming is refused with a 409
+// while a managed auth connection selects this destination by name, since that
+// connection resolves the name on every login. Every other field, including
+// `headers`, stays editable. Requires an organization-scoped credential or
+// dashboard authentication; project-scoped credentials receive a 403.
 func (r *TelemetryDestinationService) Update(ctx context.Context, idOrName string, body TelemetryDestinationUpdateParams, opts ...option.RequestOption) (res *OtlpDestination, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
@@ -82,7 +87,10 @@ func (r *TelemetryDestinationService) Update(ctx context.Context, idOrName strin
 	return res, err
 }
 
-// List OTLP export destinations in the resolved project.
+// List customer-visible OTLP export destinations in the authenticated
+// organization. Project-scoped credentials can list these destinations for
+// selection by workloads in their project. Non-dashboard reads return header
+// values redacted.
 func (r *TelemetryDestinationService) List(ctx context.Context, query TelemetryDestinationListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[OtlpDestination], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -100,7 +108,10 @@ func (r *TelemetryDestinationService) List(ctx context.Context, query TelemetryD
 	return res, nil
 }
 
-// List OTLP export destinations in the resolved project.
+// List customer-visible OTLP export destinations in the authenticated
+// organization. Project-scoped credentials can list these destinations for
+// selection by workloads in their project. Non-dashboard reads return header
+// values redacted.
 func (r *TelemetryDestinationService) ListAutoPaging(ctx context.Context, query TelemetryDestinationListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[OtlpDestination] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
@@ -110,6 +121,8 @@ func (r *TelemetryDestinationService) ListAutoPaging(ctx context.Context, query 
 // end or delete them first. It is refused the same way while a managed auth
 // connection still selects it, because that connection re-resolves the destination
 // on every login, and while a managed auth login using it is still in progress.
+// Requires an organization-scoped credential or dashboard authentication;
+// project-scoped credentials receive a 403.
 func (r *TelemetryDestinationService) Delete(ctx context.Context, idOrName string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -131,10 +144,11 @@ type OtlpDestination struct {
 	// OTLP/HTTP endpoint telemetry is sent to.
 	Endpoint string `json:"endpoint" api:"required"`
 	// Headers sent with each export request. Names are returned in canonical form
-	// (`Authorization`, not `authorization`). Values are returned redacted as empty
-	// strings, so the keys are visible but the credentials are not.
+	// (`Authorization`, not `authorization`). Non-dashboard reads return values
+	// redacted as empty strings, so the keys are visible but the credentials are not.
+	// Dashboard reads return the stored values.
 	Headers map[string]string `json:"headers" api:"required"`
-	// Unique within the project. Usable in place of the ID when selecting a
+	// Unique within the organization. Usable in place of the ID when selecting a
 	// destination, so it cannot be shaped like an ID.
 	Name        string    `json:"name" api:"required"`
 	UpdatedAt   time.Time `json:"updated_at" api:"required" format:"date-time"`
@@ -172,7 +186,7 @@ type TelemetryDestinationNewParams struct {
 	// `https://otlp.datadoghq.com` (Datadog's OTLP intake for US1, not its logs
 	// intake).
 	Endpoint string `json:"endpoint" api:"required"`
-	// Unique within the project.
+	// Unique within the organization.
 	Name        string            `json:"name" api:"required"`
 	Description param.Opt[string] `json:"description,omitzero"`
 	// Headers sent with each export request, typically an ingestion key. Encrypted at

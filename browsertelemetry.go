@@ -48,15 +48,15 @@ func NewBrowserTelemetryService(opts ...option.RequestOption) (r BrowserTelemetr
 // results, pass the X-Next-Offset value from the previous response as offset and
 // repeat while X-Has-More is true. Returns an empty list when telemetry data is
 // unavailable.
-func (r *BrowserTelemetryService) Events(ctx context.Context, id string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserTelemetryEventsResponse], err error) {
+func (r *BrowserTelemetryService) Events(ctx context.Context, idOrName string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserTelemetryEventsResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/telemetry/events", id)
+	path := fmt.Sprintf("browsers/%s/telemetry/events", idOrName)
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
 	if err != nil {
 		return nil, err
@@ -73,8 +73,8 @@ func (r *BrowserTelemetryService) Events(ctx context.Context, id string, query B
 // results, pass the X-Next-Offset value from the previous response as offset and
 // repeat while X-Has-More is true. Returns an empty list when telemetry data is
 // unavailable.
-func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, id string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserTelemetryEventsResponse] {
-	return pagination.NewOffsetPaginationAutoPager(r.Events(ctx, id, query, opts...))
+func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, idOrName string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserTelemetryEventsResponse] {
+	return pagination.NewOffsetPaginationAutoPager(r.Events(ctx, idOrName, query, opts...))
 }
 
 // Streams browser telemetry events as a server-sent events (SSE) stream. The
@@ -86,7 +86,7 @@ func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, id strin
 // not exist. If telemetry was not enabled on the session, the stream opens but no
 // events are delivered. Fresh connections only see new events; pass replay=all to
 // start from the oldest retained event instead.
-func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string, params BrowserTelemetryStreamParams, opts ...option.RequestOption) (stream *ssestream.Stream[BrowserTelemetryStreamResponse]) {
+func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, idOrName string, params BrowserTelemetryStreamParams, opts ...option.RequestOption) (stream *ssestream.Stream[BrowserTelemetryStreamResponse]) {
 	var (
 		raw *http.Response
 		err error
@@ -96,11 +96,11 @@ func (r *BrowserTelemetryService) StreamStreaming(ctx context.Context, id string
 	}
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return ssestream.NewStream[BrowserTelemetryStreamResponse](nil, err)
 	}
-	path := fmt.Sprintf("browsers/%s/telemetry/stream", id)
+	path := fmt.Sprintf("browsers/%s/telemetry/stream", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, params, &raw, opts...)
 	return ssestream.NewStream[BrowserTelemetryStreamResponse](ssestream.NewDecoder(raw), err)
 }

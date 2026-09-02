@@ -28,7 +28,7 @@ func TestBrowserTelemetryEventsWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Browsers.Telemetry.Events(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserTelemetryEventsParams{
 			Category: []string{"console"},
 			Limit:    kernel.Int(1),

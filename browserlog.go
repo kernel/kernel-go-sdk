@@ -40,18 +40,18 @@ func NewBrowserLogService(opts ...option.RequestOption) (r BrowserLogService) {
 }
 
 // Stream log files on the browser instance via SSE
-func (r *BrowserLogService) StreamStreaming(ctx context.Context, id string, query BrowserLogStreamParams, opts ...option.RequestOption) (stream *ssestream.Stream[shared.LogEvent]) {
+func (r *BrowserLogService) StreamStreaming(ctx context.Context, idOrName string, query BrowserLogStreamParams, opts ...option.RequestOption) (stream *ssestream.Stream[shared.LogEvent]) {
 	var (
 		raw *http.Response
 		err error
 	)
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return ssestream.NewStream[shared.LogEvent](nil, err)
 	}
-	path := fmt.Sprintf("browsers/%s/logs/stream", id)
+	path := fmt.Sprintf("browsers/%s/logs/stream", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
 	return ssestream.NewStream[shared.LogEvent](ssestream.NewDecoder(raw), err)
 }
