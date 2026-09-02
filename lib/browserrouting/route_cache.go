@@ -143,12 +143,14 @@ func DirectVMRoutingMiddleware(cache *RouteCache, subresources []string) option.
 			return res, err
 		}
 		if routed && isStaleDirectVMAuthResponse(res, req) {
-			failedJWT := req.URL.Query().Get("jwt")
+			if sessionID != "" {
+				cache.DeleteIfJWT(sessionID, req.URL.Query().Get("jwt"))
+			}
+			// Without a replayable body the fallback would send a truncated request,
+			// so surface the auth failure instead; the route is already evicted, so a
+			// later call from the caller goes to the control plane.
 			if !prepareControlPlaneFallback(req, origURL, origHost, origAuth) {
 				return res, nil
-			}
-			if sessionID != "" {
-				cache.DeleteIfJWT(sessionID, failedJWT)
 			}
 			if res.Body != nil {
 				_ = res.Body.Close()
