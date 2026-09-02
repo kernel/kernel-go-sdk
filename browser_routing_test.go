@@ -270,7 +270,7 @@ func TestBrowserRoutingSubresourcesFromEnvDefaults(t *testing.T) {
 		}
 		_ = os.Setenv(browserRoutingSubresourcesEnv, original)
 	})
-	want := []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs"}
+	want := []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream"}
 	if got := browserRoutingSubresourcesFromEnv(); !slices.Equal(got, want) {
 		t.Fatalf("expected default subresources %v, got %#v", want, got)
 	}

@@ -75,6 +75,9 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 		{"fs watch events -> VM", "/browsers/sess-1/fs/watch/watch-1/events", true},
 		{"fs-prefixed segment not matched", "/browsers/sess-1/fsx/read_file", false},
 		{"logs stream -> VM", "/browsers/sess-1/logs/stream", true},
+		{"logs stream suffix -> VM", "/browsers/sess-1/logs/stream/x", true},
+		{"bare logs -> control plane", "/browsers/sess-1/logs", false},
+		{"logs history -> control plane", "/browsers/sess-1/logs/history", false},
 		{"logs-prefixed segment not matched", "/browsers/sess-1/logstream", false},
 		{"extensions -> control plane", "/browsers/sess-1/extensions", false},
 		{"replays -> control plane", "/browsers/sess-1/replays/rec-1", false},
@@ -88,7 +91,7 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 				BaseURL:   "https://browser.example/browser/kernel",
 				JWT:       "jwt-123",
 			})
-			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs"})
+			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream"})
 
 			reqURL, err := url.Parse("https://api.example" + tc.path)
 			if err != nil {
