@@ -509,7 +509,7 @@ func TestBrowserRoutingDefaultsRouteFsAndLogsToVM(t *testing.T) {
 	}); err != nil {
 		t.Fatal(err)
 	}
-	watchStream := client.Browsers.Fs.Watch.EventsStreaming(context.Background(), "watch-1", BrowserFWatchEventsParams{ID: "sess-1"})
+	watchStream := client.Browsers.Fs.Watch.EventsStreaming(context.Background(), "watch-1", BrowserFWatchEventsParams{IDOrName: "sess-1"})
 	for watchStream.Next() {
 	}
 	if err := watchStream.Err(); err != nil {
