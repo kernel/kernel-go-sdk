@@ -30,7 +30,7 @@ func TestBrowserReplayList(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Browsers.Replays.List(context.TODO(), "id")
+	_, err := client.Browsers.Replays.List(context.TODO(), "htzv5orfit78e1m2biiifpbv")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -55,7 +55,7 @@ func TestBrowserReplayDownload(t *testing.T) {
 		context.TODO(),
 		"replay_id",
 		kernel.BrowserReplayDownloadParams{
-			ID: "id",
+			IDOrName: "htzv5orfit78e1m2biiifpbv",
 		},
 	)
 	if err != nil {
@@ -95,7 +95,7 @@ func TestBrowserReplayStartWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Browsers.Replays.Start(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserReplayStartParams{
 			Framerate:            kernel.Int(1),
 			MaxDurationInSeconds: kernel.Int(1),
@@ -128,7 +128,7 @@ func TestBrowserReplayStop(t *testing.T) {
 		context.TODO(),
 		"replay_id",
 		kernel.BrowserReplayStopParams{
-			ID: "id",
+			IDOrName: "htzv5orfit78e1m2biiifpbv",
 		},
 	)
 	if err != nil {

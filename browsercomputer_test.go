@@ -32,7 +32,7 @@ func TestBrowserComputerBatch(t *testing.T) {
 	)
 	err := client.Browsers.Computer.Batch(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerBatchParams{
 			Actions: []kernel.BrowserComputerBatchParamsAction{{
 				Type: "click_mouse",
@@ -108,7 +108,7 @@ func TestBrowserComputerCaptureScreenshotWithOptionalParams(t *testing.T) {
 	)
 	resp, err := client.Browsers.Computer.CaptureScreenshot(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerCaptureScreenshotParams{
 			Region: kernel.BrowserComputerCaptureScreenshotParamsRegion{
 				Height: 0,
@@ -155,7 +155,7 @@ func TestBrowserComputerClickMouseWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Computer.ClickMouse(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerClickMouseParams{
 			X:         0,
 			Y:         0,
@@ -189,7 +189,7 @@ func TestBrowserComputerDragMouseWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Computer.DragMouse(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerDragMouseParams{
 			Path:            [][]int64{{0, 0}, {0, 0}},
 			Button:          kernel.BrowserComputerDragMouseParamsButtonLeft,
@@ -223,7 +223,7 @@ func TestBrowserComputerGetMousePosition(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Browsers.Computer.GetMousePosition(context.TODO(), "id")
+	_, err := client.Browsers.Computer.GetMousePosition(context.TODO(), "htzv5orfit78e1m2biiifpbv")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -248,7 +248,7 @@ func TestBrowserComputerMoveMouseWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Computer.MoveMouse(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerMoveMouseParams{
 			X:          0,
 			Y:          0,
@@ -281,7 +281,7 @@ func TestBrowserComputerPressKeyWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Computer.PressKey(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerPressKeyParams{
 			Keys:     []string{"string"},
 			Duration: kernel.Int(0),
@@ -310,7 +310,7 @@ func TestBrowserComputerReadClipboard(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Browsers.Computer.ReadClipboard(context.TODO(), "id")
+	_, err := client.Browsers.Computer.ReadClipboard(context.TODO(), "htzv5orfit78e1m2biiifpbv")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -335,7 +335,7 @@ func TestBrowserComputerScrollWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Computer.Scroll(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerScrollParams{
 			X:        0,
 			Y:        0,
@@ -368,7 +368,7 @@ func TestBrowserComputerSetCursorVisibility(t *testing.T) {
 	)
 	_, err := client.Browsers.Computer.SetCursorVisibility(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerSetCursorVisibilityParams{
 			Hidden: true,
 		},
@@ -397,7 +397,7 @@ func TestBrowserComputerTypeTextWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Computer.TypeText(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerTypeTextParams{
 			Text:  "text",
 			Delay: kernel.Int(0),
@@ -427,7 +427,7 @@ func TestBrowserComputerWriteClipboard(t *testing.T) {
 	)
 	err := client.Browsers.Computer.WriteClipboard(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserComputerWriteClipboardParams{
 			Text: "text",
 		},

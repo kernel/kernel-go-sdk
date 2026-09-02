@@ -28,7 +28,7 @@ func TestBrowserPlaywrightExecuteWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Browsers.Playwright.Execute(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserPlaywrightExecuteParams{
 			Code:       "code",
 			TimeoutSec: kernel.Int(1),

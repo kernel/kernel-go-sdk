@@ -32,7 +32,7 @@ func TestBrowserFNewDirectoryWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Fs.NewDirectory(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFNewDirectoryParams{
 			Path: "/J!",
 			Mode: kernel.String("0611"),
@@ -62,7 +62,7 @@ func TestBrowserFDeleteDirectory(t *testing.T) {
 	)
 	err := client.Browsers.Fs.DeleteDirectory(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFDeleteDirectoryParams{
 			Path: "/J!",
 		},
@@ -91,7 +91,7 @@ func TestBrowserFDeleteFile(t *testing.T) {
 	)
 	err := client.Browsers.Fs.DeleteFile(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFDeleteFileParams{
 			Path: "/J!",
 		},
@@ -118,7 +118,7 @@ func TestBrowserFDownloadDirZip(t *testing.T) {
 	)
 	resp, err := client.Browsers.Fs.DownloadDirZip(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFDownloadDirZipParams{
 			Path: "/J!",
 		},
@@ -160,7 +160,7 @@ func TestBrowserFFileInfo(t *testing.T) {
 	)
 	_, err := client.Browsers.Fs.FileInfo(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFFileInfoParams{
 			Path: "/J!",
 		},
@@ -189,7 +189,7 @@ func TestBrowserFListFiles(t *testing.T) {
 	)
 	_, err := client.Browsers.Fs.ListFiles(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFListFilesParams{
 			Path: "/J!",
 		},
@@ -218,7 +218,7 @@ func TestBrowserFMove(t *testing.T) {
 	)
 	err := client.Browsers.Fs.Move(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFMoveParams{
 			DestPath: "/J!",
 			SrcPath:  "/J!",
@@ -246,7 +246,7 @@ func TestBrowserFReadFile(t *testing.T) {
 	)
 	resp, err := client.Browsers.Fs.ReadFile(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFReadFileParams{
 			Path: "/J!",
 		},
@@ -288,7 +288,7 @@ func TestBrowserFSetFilePermissionsWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Fs.SetFilePermissions(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFSetFilePermissionsParams{
 			Mode:  "0611",
 			Path:  "/J!",
@@ -320,7 +320,7 @@ func TestBrowserFUpload(t *testing.T) {
 	)
 	err := client.Browsers.Fs.Upload(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFUploadParams{
 			Files: []kernel.BrowserFUploadParamsFile{{
 				DestPath: "/J!",
@@ -352,7 +352,7 @@ func TestBrowserFUploadZip(t *testing.T) {
 	)
 	err := client.Browsers.Fs.UploadZip(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserFUploadZipParams{
 			DestPath: "/J!",
 			ZipFile:  io.Reader(bytes.NewBuffer([]byte("Example data"))),
@@ -382,7 +382,7 @@ func TestBrowserFWriteFileWithOptionalParams(t *testing.T) {
 	)
 	err := client.Browsers.Fs.WriteFile(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		kernel.BrowserFWriteFileParams{
 			Path: "/J!",
