@@ -46,27 +46,27 @@ func (r *BrowserFWatchService) EventsStreaming(ctx context.Context, watchID stri
 	)
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
-	if query.ID == "" {
-		err = errors.New("missing required id parameter")
+	if query.IDOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return ssestream.NewStream[BrowserFWatchEventsResponse](nil, err)
 	}
 	if watchID == "" {
 		err = errors.New("missing required watch_id parameter")
 		return ssestream.NewStream[BrowserFWatchEventsResponse](nil, err)
 	}
-	path := fmt.Sprintf("browsers/%s/fs/watch/%s/events", query.ID, watchID)
+	path := fmt.Sprintf("browsers/%s/fs/watch/%s/events", query.IDOrName, watchID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &raw, opts...)
 	return ssestream.NewStream[BrowserFWatchEventsResponse](ssestream.NewDecoder(raw), err)
 }
 
 // Watch a directory for changes
-func (r *BrowserFWatchService) Start(ctx context.Context, id string, body BrowserFWatchStartParams, opts ...option.RequestOption) (res *BrowserFWatchStartResponse, err error) {
+func (r *BrowserFWatchService) Start(ctx context.Context, idOrName string, body BrowserFWatchStartParams, opts ...option.RequestOption) (res *BrowserFWatchStartResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/watch", id)
+	path := fmt.Sprintf("browsers/%s/fs/watch", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
@@ -75,15 +75,15 @@ func (r *BrowserFWatchService) Start(ctx context.Context, id string, body Browse
 func (r *BrowserFWatchService) Stop(ctx context.Context, watchID string, body BrowserFWatchStopParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if body.ID == "" {
-		err = errors.New("missing required id parameter")
+	if body.IDOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
 	if watchID == "" {
 		err = errors.New("missing required watch_id parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/watch/%s", body.ID, watchID)
+	path := fmt.Sprintf("browsers/%s/fs/watch/%s", body.IDOrName, watchID)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
 }
@@ -145,7 +145,7 @@ func (r *BrowserFWatchStartResponse) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserFWatchEventsParams struct {
-	ID string `path:"id" api:"required" json:"-"`
+	IDOrName string `path:"id_or_name" api:"required" json:"-"`
 	paramObj
 }
 
@@ -166,6 +166,6 @@ func (r *BrowserFWatchStartParams) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserFWatchStopParams struct {
-	ID string `path:"id" api:"required" json:"-"`
+	IDOrName string `path:"id_or_name" api:"required" json:"-"`
 	paramObj
 }

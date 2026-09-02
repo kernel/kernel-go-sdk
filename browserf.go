@@ -48,155 +48,155 @@ func NewBrowserFService(opts ...option.RequestOption) (r BrowserFService) {
 }
 
 // Create a new directory
-func (r *BrowserFService) NewDirectory(ctx context.Context, id string, body BrowserFNewDirectoryParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) NewDirectory(ctx context.Context, idOrName string, body BrowserFNewDirectoryParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/create_directory", id)
+	path := fmt.Sprintf("browsers/%s/fs/create_directory", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
 	return err
 }
 
 // Delete a directory
-func (r *BrowserFService) DeleteDirectory(ctx context.Context, id string, body BrowserFDeleteDirectoryParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) DeleteDirectory(ctx context.Context, idOrName string, body BrowserFDeleteDirectoryParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/delete_directory", id)
+	path := fmt.Sprintf("browsers/%s/fs/delete_directory", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
 	return err
 }
 
 // Delete a file
-func (r *BrowserFService) DeleteFile(ctx context.Context, id string, body BrowserFDeleteFileParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) DeleteFile(ctx context.Context, idOrName string, body BrowserFDeleteFileParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/delete_file", id)
+	path := fmt.Sprintf("browsers/%s/fs/delete_file", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
 	return err
 }
 
 // Returns a ZIP file containing the contents of the specified directory.
-func (r *BrowserFService) DownloadDirZip(ctx context.Context, id string, query BrowserFDownloadDirZipParams, opts ...option.RequestOption) (res *http.Response, err error) {
+func (r *BrowserFService) DownloadDirZip(ctx context.Context, idOrName string, query BrowserFDownloadDirZipParams, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/zip")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/download_dir_zip", id)
+	path := fmt.Sprintf("browsers/%s/fs/download_dir_zip", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
 // Get information about a file or directory
-func (r *BrowserFService) FileInfo(ctx context.Context, id string, query BrowserFFileInfoParams, opts ...option.RequestOption) (res *BrowserFFileInfoResponse, err error) {
+func (r *BrowserFService) FileInfo(ctx context.Context, idOrName string, query BrowserFFileInfoParams, opts ...option.RequestOption) (res *BrowserFFileInfoResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/file_info", id)
+	path := fmt.Sprintf("browsers/%s/fs/file_info", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
 // List files in a directory
-func (r *BrowserFService) ListFiles(ctx context.Context, id string, query BrowserFListFilesParams, opts ...option.RequestOption) (res *[]BrowserFListFilesResponse, err error) {
+func (r *BrowserFService) ListFiles(ctx context.Context, idOrName string, query BrowserFListFilesParams, opts ...option.RequestOption) (res *[]BrowserFListFilesResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/list_files", id)
+	path := fmt.Sprintf("browsers/%s/fs/list_files", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
 // Move or rename a file or directory
-func (r *BrowserFService) Move(ctx context.Context, id string, body BrowserFMoveParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) Move(ctx context.Context, idOrName string, body BrowserFMoveParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/move", id)
+	path := fmt.Sprintf("browsers/%s/fs/move", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
 	return err
 }
 
 // Read file contents
-func (r *BrowserFService) ReadFile(ctx context.Context, id string, query BrowserFReadFileParams, opts ...option.RequestOption) (res *http.Response, err error) {
+func (r *BrowserFService) ReadFile(ctx context.Context, idOrName string, query BrowserFReadFileParams, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "application/octet-stream")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/read_file", id)
+	path := fmt.Sprintf("browsers/%s/fs/read_file", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
 // Set file or directory permissions/ownership
-func (r *BrowserFService) SetFilePermissions(ctx context.Context, id string, body BrowserFSetFilePermissionsParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) SetFilePermissions(ctx context.Context, idOrName string, body BrowserFSetFilePermissionsParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/set_file_permissions", id)
+	path := fmt.Sprintf("browsers/%s/fs/set_file_permissions", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, body, nil, opts...)
 	return err
 }
 
 // Allows uploading single or multiple files to the remote filesystem.
-func (r *BrowserFService) Upload(ctx context.Context, id string, body BrowserFUploadParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) Upload(ctx context.Context, idOrName string, body BrowserFUploadParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/upload", id)
+	path := fmt.Sprintf("browsers/%s/fs/upload", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Upload a zip file and extract its contents to the specified destination path.
-func (r *BrowserFService) UploadZip(ctx context.Context, id string, body BrowserFUploadZipParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) UploadZip(ctx context.Context, idOrName string, body BrowserFUploadZipParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/upload_zip", id)
+	path := fmt.Sprintf("browsers/%s/fs/upload_zip", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Write or create a file
-func (r *BrowserFService) WriteFile(ctx context.Context, id string, contents io.Reader, params BrowserFWriteFileParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserFService) WriteFile(ctx context.Context, idOrName string, contents io.Reader, params BrowserFWriteFileParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*"), option.WithRequestBody("application/octet-stream", contents)}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/fs/write_file", id)
+	path := fmt.Sprintf("browsers/%s/fs/write_file", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, params, nil, opts...)
 	return err
 }

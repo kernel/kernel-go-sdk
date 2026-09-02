@@ -304,7 +304,7 @@ func TestBrowserCurlWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Browsers.Curl(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserCurlParams{
 			URL:  "url",
 			Body: kernel.String("body"),
@@ -363,7 +363,7 @@ func TestBrowserLoadExtensions(t *testing.T) {
 	)
 	err := client.Browsers.LoadExtensions(
 		context.TODO(),
-		"id",
+		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserLoadExtensionsParams{
 			Extensions: []kernel.BrowserLoadExtensionsParamsExtension{{
 				Name:    "name",

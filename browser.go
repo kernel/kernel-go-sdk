@@ -51,6 +51,8 @@ type BrowserService struct {
 	Computer BrowserComputerService
 	// Execute Playwright code against the browser instance.
 	Playwright BrowserPlaywrightService
+	// Discover and invoke native page tools across the browser instance.
+	Webmcp BrowserWebmcpService
 }
 
 // NewBrowserService generates a new service that applies the given options to each
@@ -66,6 +68,7 @@ func NewBrowserService(opts ...option.RequestOption) (r BrowserService) {
 	r.Logs = NewBrowserLogService(opts...)
 	r.Computer = NewBrowserComputerService(opts...)
 	r.Playwright = NewBrowserPlaywrightService(opts...)
+	r.Webmcp = NewBrowserWebmcpService(opts...)
 	return
 }
 
@@ -129,13 +132,13 @@ func (r *BrowserService) ListAutoPaging(ctx context.Context, query BrowserListPa
 // Sends an HTTP request through Chrome's HTTP request stack, inheriting the
 // browser's TLS fingerprint, cookies, proxy configuration, and headers. Returns a
 // structured JSON response with status, headers, body, and timing.
-func (r *BrowserService) Curl(ctx context.Context, id string, body BrowserCurlParams, opts ...option.RequestOption) (res *BrowserCurlResponse, err error) {
+func (r *BrowserService) Curl(ctx context.Context, idOrName string, body BrowserCurlParams, opts ...option.RequestOption) (res *BrowserCurlResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/curl", id)
+	path := fmt.Sprintf("browsers/%s/curl", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
@@ -155,14 +158,14 @@ func (r *BrowserService) DeleteByID(ctx context.Context, idOrName string, opts .
 
 // Loads one or more unpacked extensions using live CDP activation when eligible.
 // Chromium restarts when enterprise policy requires it or live activation fails.
-func (r *BrowserService) LoadExtensions(ctx context.Context, id string, body BrowserLoadExtensionsParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserService) LoadExtensions(ctx context.Context, idOrName string, body BrowserLoadExtensionsParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/extensions", id)
+	path := fmt.Sprintf("browsers/%s/extensions", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }

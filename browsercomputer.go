@@ -40,154 +40,154 @@ func NewBrowserComputerService(opts ...option.RequestOption) (r BrowserComputerS
 // Send an array of computer actions to execute in order on the browser instance.
 // Execution stops on the first error. This reduces network latency compared to
 // sending individual action requests.
-func (r *BrowserComputerService) Batch(ctx context.Context, id string, body BrowserComputerBatchParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) Batch(ctx context.Context, idOrName string, body BrowserComputerBatchParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/batch", id)
+	path := fmt.Sprintf("browsers/%s/computer/batch", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Capture a screenshot of the browser instance
-func (r *BrowserComputerService) CaptureScreenshot(ctx context.Context, id string, body BrowserComputerCaptureScreenshotParams, opts ...option.RequestOption) (res *http.Response, err error) {
+func (r *BrowserComputerService) CaptureScreenshot(ctx context.Context, idOrName string, body BrowserComputerCaptureScreenshotParams, opts ...option.RequestOption) (res *http.Response, err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "image/png")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/screenshot", id)
+	path := fmt.Sprintf("browsers/%s/computer/screenshot", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
 // Simulate a mouse click action on the browser instance
-func (r *BrowserComputerService) ClickMouse(ctx context.Context, id string, body BrowserComputerClickMouseParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) ClickMouse(ctx context.Context, idOrName string, body BrowserComputerClickMouseParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/click_mouse", id)
+	path := fmt.Sprintf("browsers/%s/computer/click_mouse", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Drag the mouse along a path
-func (r *BrowserComputerService) DragMouse(ctx context.Context, id string, body BrowserComputerDragMouseParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) DragMouse(ctx context.Context, idOrName string, body BrowserComputerDragMouseParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/drag_mouse", id)
+	path := fmt.Sprintf("browsers/%s/computer/drag_mouse", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Get the current mouse cursor position on the browser instance
-func (r *BrowserComputerService) GetMousePosition(ctx context.Context, id string, opts ...option.RequestOption) (res *BrowserComputerGetMousePositionResponse, err error) {
+func (r *BrowserComputerService) GetMousePosition(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *BrowserComputerGetMousePositionResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/get_mouse_position", id)
+	path := fmt.Sprintf("browsers/%s/computer/get_mouse_position", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
 	return res, err
 }
 
 // Move the mouse cursor to the specified coordinates on the browser instance
-func (r *BrowserComputerService) MoveMouse(ctx context.Context, id string, body BrowserComputerMoveMouseParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) MoveMouse(ctx context.Context, idOrName string, body BrowserComputerMoveMouseParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/move_mouse", id)
+	path := fmt.Sprintf("browsers/%s/computer/move_mouse", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Press one or more keys on the host computer
-func (r *BrowserComputerService) PressKey(ctx context.Context, id string, body BrowserComputerPressKeyParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) PressKey(ctx context.Context, idOrName string, body BrowserComputerPressKeyParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/press_key", id)
+	path := fmt.Sprintf("browsers/%s/computer/press_key", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Read text from the clipboard on the browser instance
-func (r *BrowserComputerService) ReadClipboard(ctx context.Context, id string, opts ...option.RequestOption) (res *BrowserComputerReadClipboardResponse, err error) {
+func (r *BrowserComputerService) ReadClipboard(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *BrowserComputerReadClipboardResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/clipboard/read", id)
+	path := fmt.Sprintf("browsers/%s/computer/clipboard/read", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
 	return res, err
 }
 
 // Scroll the mouse wheel at a position on the host computer
-func (r *BrowserComputerService) Scroll(ctx context.Context, id string, body BrowserComputerScrollParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) Scroll(ctx context.Context, idOrName string, body BrowserComputerScrollParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/scroll", id)
+	path := fmt.Sprintf("browsers/%s/computer/scroll", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Set cursor visibility
-func (r *BrowserComputerService) SetCursorVisibility(ctx context.Context, id string, body BrowserComputerSetCursorVisibilityParams, opts ...option.RequestOption) (res *BrowserComputerSetCursorVisibilityResponse, err error) {
+func (r *BrowserComputerService) SetCursorVisibility(ctx context.Context, idOrName string, body BrowserComputerSetCursorVisibilityParams, opts ...option.RequestOption) (res *BrowserComputerSetCursorVisibilityResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/cursor", id)
+	path := fmt.Sprintf("browsers/%s/computer/cursor", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
 // Type text on the browser instance
-func (r *BrowserComputerService) TypeText(ctx context.Context, id string, body BrowserComputerTypeTextParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) TypeText(ctx context.Context, idOrName string, body BrowserComputerTypeTextParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/type", id)
+	path := fmt.Sprintf("browsers/%s/computer/type", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }
 
 // Write text to the clipboard on the browser instance
-func (r *BrowserComputerService) WriteClipboard(ctx context.Context, id string, body BrowserComputerWriteClipboardParams, opts ...option.RequestOption) (err error) {
+func (r *BrowserComputerService) WriteClipboard(ctx context.Context, idOrName string, body BrowserComputerWriteClipboardParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("browsers/%s/computer/clipboard/write", id)
+	path := fmt.Sprintf("browsers/%s/computer/clipboard/write", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
 }

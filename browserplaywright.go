@@ -39,15 +39,18 @@ func NewBrowserPlaywrightService(opts ...option.RequestOption) (r BrowserPlaywri
 
 // Execute arbitrary Playwright code in a fresh execution context against the
 // browser. The code runs in the same VM as the browser, minimizing latency and
-// maximizing throughput. It has access to 'page', 'context', and 'browser'
-// variables. It can `return` a value, and this value is returned in the response.
-func (r *BrowserPlaywrightService) Execute(ctx context.Context, id string, body BrowserPlaywrightExecuteParams, opts ...option.RequestOption) (res *BrowserPlaywrightExecuteResponse, err error) {
+// maximizing throughput. It has access to 'page', 'context', 'browser', and
+// 'webmcp' variables. Use 'webmcp.listTools()' to discover browser-wide WebMCP
+// tools and 'webmcp.invokeTool(toolRef, input?, { timeoutSec? })' to invoke an
+// exact registration. It can `return` a value, and this value is returned in the
+// response.
+func (r *BrowserPlaywrightService) Execute(ctx context.Context, idOrName string, body BrowserPlaywrightExecuteParams, opts ...option.RequestOption) (res *BrowserPlaywrightExecuteResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("browsers/%s/playwright/execute", id)
+	path := fmt.Sprintf("browsers/%s/playwright/execute", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }

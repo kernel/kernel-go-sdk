@@ -13,7 +13,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-func TestBrowserFWatchStartWithOptionalParams(t *testing.T) {
+func TestBrowserWebmcpInvokeToolWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -26,12 +26,17 @@ func TestBrowserFWatchStartWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Browsers.Fs.Watch.Start(
+	_, err := client.Browsers.Webmcp.InvokeTool(
 		context.TODO(),
 		"htzv5orfit78e1m2biiifpbv",
-		kernel.BrowserFWatchStartParams{
-			Path:      "path",
-			Recursive: kernel.Bool(true),
+		kernel.BrowserWebmcpInvokeToolParams{
+			InvokeRequest: kernel.InvokeRequestParam{
+				Input: map[string]any{
+					"foo": "bar",
+				},
+				ToolRef:    "x",
+				TimeoutSec: kernel.Int(1),
+			},
 		},
 	)
 	if err != nil {
@@ -43,7 +48,7 @@ func TestBrowserFWatchStartWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestBrowserFWatchStop(t *testing.T) {
+func TestBrowserWebmcpListTools(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -56,13 +61,7 @@ func TestBrowserFWatchStop(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Browsers.Fs.Watch.Stop(
-		context.TODO(),
-		"watch_id",
-		kernel.BrowserFWatchStopParams{
-			IDOrName: "htzv5orfit78e1m2biiifpbv",
-		},
-	)
+	_, err := client.Browsers.Webmcp.ListTools(context.TODO(), "htzv5orfit78e1m2biiifpbv")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
