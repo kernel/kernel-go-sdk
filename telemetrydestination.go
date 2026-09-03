@@ -139,8 +139,12 @@ func (r *TelemetryDestinationService) Delete(ctx context.Context, idOrName strin
 // `telemetry.export.otlp.destination` when creating a browser to export that
 // session's captured telemetry to it.
 type OtlpDestination struct {
-	ID        string    `json:"id" api:"required"`
-	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	ID string `json:"id" api:"required"`
+	// Failed deliveries since the last success, as observed by the relay process that
+	// wrote the latest outcome. Zero means the most recently recorded outcome
+	// succeeded.
+	ConsecutiveFailures int64     `json:"consecutive_failures" api:"required"`
+	CreatedAt           time.Time `json:"created_at" api:"required" format:"date-time"`
 	// OTLP/HTTP endpoint telemetry is sent to.
 	Endpoint string `json:"endpoint" api:"required"`
 	// Headers sent with each export request. Names are returned in canonical form
@@ -153,17 +157,32 @@ type OtlpDestination struct {
 	Name        string    `json:"name" api:"required"`
 	UpdatedAt   time.Time `json:"updated_at" api:"required" format:"date-time"`
 	Description string    `json:"description"`
+	// Sanitized class of the delivery failure recorded at `last_error_at`. It is
+	// retained after a later success, so its presence does not mean the destination is
+	// currently failing. Response bodies, endpoint URLs, credentials, and raw
+	// transport errors are never returned.
+	LastError string `json:"last_error"`
+	// Timestamp of the most recent failed delivery. It is retained after a later
+	// success, so it can predate `last_export_at`. Read `consecutive_failures` to tell
+	// whether the destination is currently failing.
+	LastErrorAt time.Time `json:"last_error_at" format:"date-time"`
+	// Timestamp of the most recent successful delivery. Moves only on success.
+	LastExportAt time.Time `json:"last_export_at" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		CreatedAt   respjson.Field
-		Endpoint    respjson.Field
-		Headers     respjson.Field
-		Name        respjson.Field
-		UpdatedAt   respjson.Field
-		Description respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID                  respjson.Field
+		ConsecutiveFailures respjson.Field
+		CreatedAt           respjson.Field
+		Endpoint            respjson.Field
+		Headers             respjson.Field
+		Name                respjson.Field
+		UpdatedAt           respjson.Field
+		Description         respjson.Field
+		LastError           respjson.Field
+		LastErrorAt         respjson.Field
+		LastExportAt        respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
 	} `json:"-"`
 }
 
