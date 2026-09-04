@@ -71,7 +71,16 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 		{"playwright execute -> VM", "/browsers/sess-1/playwright/execute", true},
 		{"process exec -> VM", "/browsers/sess-1/process/exec", true},
 		{"process stdout stream -> VM", "/browsers/sess-1/process/proc-1/stdout/stream", true},
-		{"non-allowlisted subresource -> control plane", "/browsers/sess-1/fs/read", false},
+		{"fs read_file -> VM", "/browsers/sess-1/fs/read_file", true},
+		{"fs watch events -> VM", "/browsers/sess-1/fs/watch/watch-1/events", true},
+		{"fs-prefixed segment not matched", "/browsers/sess-1/fsx/read_file", false},
+		{"logs stream -> VM", "/browsers/sess-1/logs/stream", true},
+		{"logs stream suffix -> VM", "/browsers/sess-1/logs/stream/x", true},
+		{"bare logs -> control plane", "/browsers/sess-1/logs", false},
+		{"logs history -> control plane", "/browsers/sess-1/logs/history", false},
+		{"logs-prefixed segment not matched", "/browsers/sess-1/logstream", false},
+		{"extensions -> control plane", "/browsers/sess-1/extensions", false},
+		{"replays -> control plane", "/browsers/sess-1/replays/rec-1", false},
 	}
 
 	for _, tc := range cases {
@@ -82,7 +91,7 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 				BaseURL:   "https://browser.example/browser/kernel",
 				JWT:       "jwt-123",
 			})
-			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process"})
+			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream"})
 
 			reqURL, err := url.Parse("https://api.example" + tc.path)
 			if err != nil {
@@ -593,6 +602,9 @@ func TestDirectVMRoutingMiddlewareKeepsAuthResponseWhenBodyCannotRewind(t *testi
 	if calls != 1 {
 		t.Fatalf("expected no control-plane retry without GetBody, got %d calls", calls)
 	}
+	if _, ok := cache.Load("sess-1"); ok {
+		t.Fatal("expected the stale route to be evicted even without a retry")
+	}
 	if res.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected original 401, got %d", res.StatusCode)
 	}
@@ -643,6 +655,9 @@ func TestDirectVMRoutingMiddlewareKeepsAuthResponseWhenGetBodyFails(t *testing.T
 	}
 	if calls != 1 {
 		t.Fatalf("expected no control-plane retry when GetBody fails, got %d calls", calls)
+	}
+	if _, ok := cache.Load("sess-1"); ok {
+		t.Fatal("expected the stale route to be evicted even without a retry")
 	}
 	if res.StatusCode != http.StatusUnauthorized {
 		t.Fatalf("expected original 401, got %d", res.StatusCode)
