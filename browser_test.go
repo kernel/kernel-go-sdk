@@ -112,6 +112,10 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			},
 		},
 		TimeoutSeconds: kernel.Int(10),
+		Vaults: []kernel.VaultReferenceParam{{
+			ID:   kernel.String("id"),
+			Name: kernel.String("x"),
+		}},
 		Viewport: shared.BrowserViewportParam{
 			Height:      800,
 			Width:       1280,

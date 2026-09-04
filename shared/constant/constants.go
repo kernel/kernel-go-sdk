@@ -18,6 +18,7 @@ func ValueOf[T Constant[T]]() T {
 	return t.Default()
 }
 
+type Agentcard string                       // Always "agentcard"
 type APICall string                         // Always "api_call"
 type AppVersionSummary string               // Always "app_version_summary"
 type AutofillTrigger string                 // Always "Autofill.trigger"
@@ -30,9 +31,12 @@ type Captcha string                         // Always "captcha"
 type CaptchaChallengeResult string          // Always "captcha_challenge_result"
 type CaptchaSolveResult string              // Always "captcha_solve_result"
 type CaptchaSolveStarted string             // Always "captcha_solve_started"
+type Card string                            // Always "card"
+type CardEnrollment string                  // Always "card_enrollment"
 type CdpCommand string                      // Always "cdp_command"
 type CdpConnect string                      // Always "cdp_connect"
 type CdpDisconnect string                   // Always "cdp_disconnect"
+type Collect string                         // Always "collect"
 type Connection string                      // Always "connection"
 type Console string                         // Always "console"
 type ConsoleError string                    // Always "console_error"
@@ -43,6 +47,7 @@ type Direct string                          // Always "direct"
 type DomFocus string                        // Always "DOM.focus"
 type DomScrollIntoViewIfNeeded string       // Always "DOM.scrollIntoViewIfNeeded"
 type DomSetFileInputFiles string            // Always "DOM.setFileInputFiles"
+type EmbeddedCeremony string                // Always "embedded_ceremony"
 type Error string                           // Always "error"
 type InputCancelDragging string             // Always "Input.cancelDragging"
 type InputDispatchDragEvent string          // Always "Input.dispatchDragEvent"
@@ -60,11 +65,14 @@ type InteractionClick string                // Always "interaction_click"
 type InteractionKey string                  // Always "interaction_key"
 type InteractionScrollSettled string        // Always "interaction_scroll_settled"
 type InvocationState string                 // Always "invocation_state"
+type Link string                            // Always "link"
+type LinkOAuth string                       // Always "link_oauth"
 type LiveViewConnect string                 // Always "live_view_connect"
 type LiveViewDisconnect string              // Always "live_view_disconnect"
 type Log string                             // Always "log"
 type Managed string                         // Always "managed"
 type ManagedAuthState string                // Always "managed_auth_state"
+type Mfa string                             // Always "mfa"
 type Monitor string                         // Always "monitor"
 type MonitorDisconnected string             // Always "monitor_disconnected"
 type MonitorInitFailed string               // Always "monitor_init_failed"
@@ -103,9 +111,11 @@ type PageStopScreencast string              // Always "Page.stopScreencast"
 type Platform string                        // Always "platform"
 type PlatformAPICall string                 // Always "platform_api_call"
 type ProxyError string                      // Always "proxy_error"
+type PushApproval string                    // Always "push_approval"
 type Recommendation string                  // Always "recommendation"
 type Screenshot string                      // Always "screenshot"
 type ServiceCrashed string                  // Always "service_crashed"
+type SpendApproval string                   // Always "spend_approval"
 type SseHeartbeat string                    // Always "sse_heartbeat"
 type System string                          // Always "system"
 type SystemOomKill string                   // Always "system_oom_kill"
@@ -115,7 +125,9 @@ type TargetCreateBrowserContext string      // Always "Target.createBrowserConte
 type TargetCreateTarget string              // Always "Target.createTarget"
 type TargetDisposeBrowserContext string     // Always "Target.disposeBrowserContext"
 type TargetOpenDevTools string              // Always "Target.openDevTools"
+type Wallet string                          // Always "wallet"
 
+func (c Agentcard) Default() Agentcard                           { return "agentcard" }
 func (c APICall) Default() APICall                               { return "api_call" }
 func (c AppVersionSummary) Default() AppVersionSummary           { return "app_version_summary" }
 func (c AutofillTrigger) Default() AutofillTrigger               { return "Autofill.trigger" }
@@ -128,9 +140,12 @@ func (c Captcha) Default() Captcha                               { return "captc
 func (c CaptchaChallengeResult) Default() CaptchaChallengeResult { return "captcha_challenge_result" }
 func (c CaptchaSolveResult) Default() CaptchaSolveResult         { return "captcha_solve_result" }
 func (c CaptchaSolveStarted) Default() CaptchaSolveStarted       { return "captcha_solve_started" }
+func (c Card) Default() Card                                     { return "card" }
+func (c CardEnrollment) Default() CardEnrollment                 { return "card_enrollment" }
 func (c CdpCommand) Default() CdpCommand                         { return "cdp_command" }
 func (c CdpConnect) Default() CdpConnect                         { return "cdp_connect" }
 func (c CdpDisconnect) Default() CdpDisconnect                   { return "cdp_disconnect" }
+func (c Collect) Default() Collect                               { return "collect" }
 func (c Connection) Default() Connection                         { return "connection" }
 func (c Console) Default() Console                               { return "console" }
 func (c ConsoleError) Default() ConsoleError                     { return "console_error" }
@@ -143,6 +158,7 @@ func (c DomScrollIntoViewIfNeeded) Default() DomScrollIntoViewIfNeeded {
 	return "DOM.scrollIntoViewIfNeeded"
 }
 func (c DomSetFileInputFiles) Default() DomSetFileInputFiles       { return "DOM.setFileInputFiles" }
+func (c EmbeddedCeremony) Default() EmbeddedCeremony               { return "embedded_ceremony" }
 func (c Error) Default() Error                                     { return "error" }
 func (c InputCancelDragging) Default() InputCancelDragging         { return "Input.cancelDragging" }
 func (c InputDispatchDragEvent) Default() InputDispatchDragEvent   { return "Input.dispatchDragEvent" }
@@ -170,11 +186,14 @@ func (c InteractionScrollSettled) Default() InteractionScrollSettled {
 	return "interaction_scroll_settled"
 }
 func (c InvocationState) Default() InvocationState               { return "invocation_state" }
+func (c Link) Default() Link                                     { return "link" }
+func (c LinkOAuth) Default() LinkOAuth                           { return "link_oauth" }
 func (c LiveViewConnect) Default() LiveViewConnect               { return "live_view_connect" }
 func (c LiveViewDisconnect) Default() LiveViewDisconnect         { return "live_view_disconnect" }
 func (c Log) Default() Log                                       { return "log" }
 func (c Managed) Default() Managed                               { return "managed" }
 func (c ManagedAuthState) Default() ManagedAuthState             { return "managed_auth_state" }
+func (c Mfa) Default() Mfa                                       { return "mfa" }
 func (c Monitor) Default() Monitor                               { return "monitor" }
 func (c MonitorDisconnected) Default() MonitorDisconnected       { return "monitor_disconnected" }
 func (c MonitorInitFailed) Default() MonitorInitFailed           { return "monitor_init_failed" }
@@ -219,9 +238,11 @@ func (c PageStopScreencast) Default() PageStopScreencast     { return "Page.stop
 func (c Platform) Default() Platform                         { return "platform" }
 func (c PlatformAPICall) Default() PlatformAPICall           { return "platform_api_call" }
 func (c ProxyError) Default() ProxyError                     { return "proxy_error" }
+func (c PushApproval) Default() PushApproval                 { return "push_approval" }
 func (c Recommendation) Default() Recommendation             { return "recommendation" }
 func (c Screenshot) Default() Screenshot                     { return "screenshot" }
 func (c ServiceCrashed) Default() ServiceCrashed             { return "service_crashed" }
+func (c SpendApproval) Default() SpendApproval               { return "spend_approval" }
 func (c SseHeartbeat) Default() SseHeartbeat                 { return "sse_heartbeat" }
 func (c System) Default() System                             { return "system" }
 func (c SystemOomKill) Default() SystemOomKill               { return "system_oom_kill" }
@@ -235,7 +256,9 @@ func (c TargetDisposeBrowserContext) Default() TargetDisposeBrowserContext {
 	return "Target.disposeBrowserContext"
 }
 func (c TargetOpenDevTools) Default() TargetOpenDevTools { return "Target.openDevTools" }
+func (c Wallet) Default() Wallet                         { return "wallet" }
 
+func (c Agentcard) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c APICall) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c AppVersionSummary) MarshalJSON() ([]byte, error)               { return marshalString(c) }
 func (c AutofillTrigger) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
@@ -248,9 +271,12 @@ func (c Captcha) MarshalJSON() ([]byte, error)                         { return 
 func (c CaptchaChallengeResult) MarshalJSON() ([]byte, error)          { return marshalString(c) }
 func (c CaptchaSolveResult) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c CaptchaSolveStarted) MarshalJSON() ([]byte, error)             { return marshalString(c) }
+func (c Card) MarshalJSON() ([]byte, error)                            { return marshalString(c) }
+func (c CardEnrollment) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c CdpCommand) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c CdpConnect) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c CdpDisconnect) MarshalJSON() ([]byte, error)                   { return marshalString(c) }
+func (c Collect) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c Connection) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c Console) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ConsoleError) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
@@ -261,6 +287,7 @@ func (c Direct) MarshalJSON() ([]byte, error)                          { return 
 func (c DomFocus) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
 func (c DomScrollIntoViewIfNeeded) MarshalJSON() ([]byte, error)       { return marshalString(c) }
 func (c DomSetFileInputFiles) MarshalJSON() ([]byte, error)            { return marshalString(c) }
+func (c EmbeddedCeremony) MarshalJSON() ([]byte, error)                { return marshalString(c) }
 func (c Error) MarshalJSON() ([]byte, error)                           { return marshalString(c) }
 func (c InputCancelDragging) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c InputDispatchDragEvent) MarshalJSON() ([]byte, error)          { return marshalString(c) }
@@ -278,11 +305,14 @@ func (c InteractionClick) MarshalJSON() ([]byte, error)                { return 
 func (c InteractionKey) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c InteractionScrollSettled) MarshalJSON() ([]byte, error)        { return marshalString(c) }
 func (c InvocationState) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
+func (c Link) MarshalJSON() ([]byte, error)                            { return marshalString(c) }
+func (c LinkOAuth) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c LiveViewConnect) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c LiveViewDisconnect) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c Log) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
 func (c Managed) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ManagedAuthState) MarshalJSON() ([]byte, error)                { return marshalString(c) }
+func (c Mfa) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
 func (c Monitor) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c MonitorDisconnected) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c MonitorInitFailed) MarshalJSON() ([]byte, error)               { return marshalString(c) }
@@ -321,9 +351,11 @@ func (c PageStopScreencast) MarshalJSON() ([]byte, error)              { return 
 func (c Platform) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
 func (c PlatformAPICall) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c ProxyError) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
+func (c PushApproval) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c Recommendation) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c Screenshot) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c ServiceCrashed) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
+func (c SpendApproval) MarshalJSON() ([]byte, error)                   { return marshalString(c) }
 func (c SseHeartbeat) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c System) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c SystemOomKill) MarshalJSON() ([]byte, error)                   { return marshalString(c) }
@@ -333,6 +365,7 @@ func (c TargetCreateBrowserContext) MarshalJSON() ([]byte, error)      { return 
 func (c TargetCreateTarget) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c TargetDisposeBrowserContext) MarshalJSON() ([]byte, error)     { return marshalString(c) }
 func (c TargetOpenDevTools) MarshalJSON() ([]byte, error)              { return marshalString(c) }
+func (c Wallet) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 
 type constant[T any] interface {
 	Constant[T]

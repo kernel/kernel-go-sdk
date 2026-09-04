@@ -412,6 +412,13 @@ type BrowserPoolAcquireResponse struct {
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserPoolAcquireResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -453,6 +460,8 @@ type BrowserPoolAcquireResponse struct {
 		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -472,6 +481,15 @@ const (
 	BrowserPoolAcquireResponseRegionUsEast      BrowserPoolAcquireResponseRegion = "us-east"
 	BrowserPoolAcquireResponseRegionEuWest      BrowserPoolAcquireResponseRegion = "eu-west"
 	BrowserPoolAcquireResponseRegionApSoutheast BrowserPoolAcquireResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserPoolAcquireResponseUsageStatus string
+
+const (
+	BrowserPoolAcquireResponseUsageStatusPending BrowserPoolAcquireResponseUsageStatus = "pending"
+	BrowserPoolAcquireResponseUsageStatusReady   BrowserPoolAcquireResponseUsageStatus = "ready"
 )
 
 type BrowserPoolNewParams struct {
