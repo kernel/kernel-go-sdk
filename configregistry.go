@@ -46,8 +46,8 @@ func NewConfigRegistryService(opts ...option.RequestOption) (r ConfigRegistrySer
 	return
 }
 
-// Lists unique domains previously analyzed by the selected project with their
-// current domain-level recommendations.
+// Lists unique exact targets previously analyzed by the selected project with the
+// recommendation produced by each target's latest analysis.
 func (r *ConfigRegistryService) List(ctx context.Context, query ConfigRegistryListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[RecommendationSummary], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -65,8 +65,8 @@ func (r *ConfigRegistryService) List(ctx context.Context, query ConfigRegistryLi
 	return res, nil
 }
 
-// Lists unique domains previously analyzed by the selected project with their
-// current domain-level recommendations.
+// Lists unique exact targets previously analyzed by the selected project with the
+// recommendation produced by each target's latest analysis.
 func (r *ConfigRegistryService) ListAutoPaging(ctx context.Context, query ConfigRegistryListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[RecommendationSummary] {
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
@@ -797,22 +797,25 @@ func (r *RecommendationResultUnion) UnmarshalJSON(data []byte) error {
 }
 
 type RecommendationSummary struct {
-	// ID of the most recently requested analysis for this domain.
+	// ID of the most recently requested analysis for this exact target.
 	AnalysisID string `json:"analysis_id" api:"required"`
-	// Lifecycle status of the most recently requested analysis for this domain.
+	// Lifecycle status of the most recently requested analysis for this exact target.
 	//
 	// Any of "running", "completed", "failed", "canceled".
 	AnalysisStatus RecommendationSummaryAnalysisStatus `json:"analysis_status" api:"required"`
-	// Most recent time the selected project requested an analysis for this domain.
+	// Most recent time the selected project requested an analysis for this exact
+	// target.
 	LastRequestedAt time.Time `json:"last_requested_at" api:"required" format:"date-time"`
-	// Current domain-level recommendation. Null when no eligible knowledge exists.
+	// Recommendation produced by the latest analysis. Null when that analysis did not
+	// produce one.
 	Recommendation Recommendation `json:"recommendation" api:"required"`
 	// Display label for the recommended browser configuration.
 	RecommendedConfigLabel string `json:"recommended_config_label" api:"required"`
-	// Success rate for the recommended configuration. Null when no eligible knowledge
-	// exists.
+	// Success rate for the recommended configuration. Null when the latest analysis
+	// did not produce one.
 	SuccessRate float64 `json:"success_rate" api:"required"`
-	// Registrable domain previously analyzed by the selected project.
+	// Normalized exact target previously analyzed by the selected project, including
+	// scheme, host, port, and path.
 	Target string `json:"target" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -834,7 +837,7 @@ func (r *RecommendationSummary) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Lifecycle status of the most recently requested analysis for this domain.
+// Lifecycle status of the most recently requested analysis for this exact target.
 type RecommendationSummaryAnalysisStatus string
 
 const (
@@ -889,8 +892,8 @@ func (r *Target) UnmarshalJSON(data []byte) error {
 type ConfigRegistryListParams struct {
 	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
-	// Case-insensitive domain search. Full URLs are reduced to their registrable
-	// domain.
+	// Case-insensitive substring search over normalized targets, including domain,
+	// subdomain, and path.
 	Search param.Opt[string] `query:"search,omitzero" json:"-"`
 	// Any of "target", "analysis_status", "recommended_config", "last_requested_at",
 	// "success_rate".

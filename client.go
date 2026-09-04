@@ -41,6 +41,7 @@ type Client struct {
 	Extensions ExtensionService
 	// Create and manage browser pools for acquiring and releasing browsers.
 	BrowserPools BrowserPoolService
+	Vaults       VaultService
 	// Create and manage credentials for authentication.
 	Credentials CredentialService
 	// Create and manage projects for resource isolation within an organization. When
@@ -102,6 +103,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Proxies = NewProxyService(opts...)
 	r.Extensions = NewExtensionService(opts...)
 	r.BrowserPools = NewBrowserPoolService(opts...)
+	r.Vaults = NewVaultService(opts...)
 	r.Credentials = NewCredentialService(opts...)
 	r.Projects = NewProjectService(opts...)
 	r.Organization = NewOrganizationService(opts...)

@@ -469,6 +469,49 @@ func (r *Profile) UnmarshalJSON(data []byte) error {
 
 type Tags map[string]string
 
+// Reference to a project-scoped vault. Provide exactly one of id or name.
+type VaultReference struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultReference) RawJSON() string { return r.JSON.raw }
+func (r *VaultReference) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this VaultReference to a VaultReferenceParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// VaultReferenceParam.Overrides()
+func (r VaultReference) ToParam() VaultReferenceParam {
+	return param.Override[VaultReferenceParam](json.RawMessage(r.RawJSON()))
+}
+
+// Reference to a project-scoped vault. Provide exactly one of id or name.
+type VaultReferenceParam struct {
+	ID   param.Opt[string] `json:"id,omitzero"`
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r VaultReferenceParam) MarshalJSON() (data []byte, err error) {
+	type shadow VaultReferenceParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultReferenceParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BrowserNewResponse struct {
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
@@ -540,6 +583,13 @@ type BrowserNewResponse struct {
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserNewResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -581,6 +631,8 @@ type BrowserNewResponse struct {
 		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -600,6 +652,15 @@ const (
 	BrowserNewResponseRegionUsEast      BrowserNewResponseRegion = "us-east"
 	BrowserNewResponseRegionEuWest      BrowserNewResponseRegion = "eu-west"
 	BrowserNewResponseRegionApSoutheast BrowserNewResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserNewResponseUsageStatus string
+
+const (
+	BrowserNewResponseUsageStatusPending BrowserNewResponseUsageStatus = "pending"
+	BrowserNewResponseUsageStatusReady   BrowserNewResponseUsageStatus = "ready"
 )
 
 type BrowserGetResponse struct {
@@ -673,6 +734,13 @@ type BrowserGetResponse struct {
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserGetResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -714,6 +782,8 @@ type BrowserGetResponse struct {
 		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -733,6 +803,15 @@ const (
 	BrowserGetResponseRegionUsEast      BrowserGetResponseRegion = "us-east"
 	BrowserGetResponseRegionEuWest      BrowserGetResponseRegion = "eu-west"
 	BrowserGetResponseRegionApSoutheast BrowserGetResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserGetResponseUsageStatus string
+
+const (
+	BrowserGetResponseUsageStatusPending BrowserGetResponseUsageStatus = "pending"
+	BrowserGetResponseUsageStatusReady   BrowserGetResponseUsageStatus = "ready"
 )
 
 type BrowserUpdateResponse struct {
@@ -806,6 +885,13 @@ type BrowserUpdateResponse struct {
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserUpdateResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -847,6 +933,8 @@ type BrowserUpdateResponse struct {
 		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -866,6 +954,15 @@ const (
 	BrowserUpdateResponseRegionUsEast      BrowserUpdateResponseRegion = "us-east"
 	BrowserUpdateResponseRegionEuWest      BrowserUpdateResponseRegion = "eu-west"
 	BrowserUpdateResponseRegionApSoutheast BrowserUpdateResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserUpdateResponseUsageStatus string
+
+const (
+	BrowserUpdateResponseUsageStatusPending BrowserUpdateResponseUsageStatus = "pending"
+	BrowserUpdateResponseUsageStatusReady   BrowserUpdateResponseUsageStatus = "ready"
 )
 
 type BrowserListResponse struct {
@@ -939,6 +1036,13 @@ type BrowserListResponse struct {
 	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
 	// Session usage metrics.
 	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserListResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -980,6 +1084,8 @@ type BrowserListResponse struct {
 		Tags               respjson.Field
 		Telemetry          respjson.Field
 		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -999,6 +1105,15 @@ const (
 	BrowserListResponseRegionUsEast      BrowserListResponseRegion = "us-east"
 	BrowserListResponseRegionEuWest      BrowserListResponseRegion = "eu-west"
 	BrowserListResponseRegionApSoutheast BrowserListResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserListResponseUsageStatus string
+
+const (
+	BrowserListResponseUsageStatusPending BrowserListResponseUsageStatus = "pending"
+	BrowserListResponseUsageStatusReady   BrowserListResponseUsageStatus = "ready"
 )
 
 // Structured response from the browser curl request.
@@ -1104,6 +1219,9 @@ type BrowserNewParams struct {
 	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
 	// to 50 pairs.
 	Tags Tags `json:"tags,omitzero"`
+	// Project-scoped vaults to link to the browser session. Links are immutable after
+	// creation.
+	Vaults []VaultReferenceParam `json:"vaults,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
