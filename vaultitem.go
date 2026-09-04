@@ -123,7 +123,9 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 
 // Retrieve the item first and invoke only an operation listed in
 // `available_operations`, following its natural-language description. Operations
-// may call an external provider and can return the item's updated state.
+// may call an external provider and can return the item's updated state. If the
+// provider rate limits spend-request creation, returns HTTP 429 with code
+// `spend_request_rate_limited`; stop and back off before retrying.
 func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemUnion, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if params.IDOrName == "" {
@@ -267,9 +269,7 @@ type CardVaultItemSpecUnion struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	// Any of "link", "agentcard".
 	Provider string `json:"provider"`
-	// This field is from variant [CardVaultItemSpecLink].
-	Test   bool   `json:"test"`
-	Wallet string `json:"wallet"`
+	Wallet   string `json:"wallet"`
 	// This field is from variant [CardVaultItemSpecLink].
 	ExpiresAt int64 `json:"expires_at"`
 	// This field is from variant [CardVaultItemSpecLink].
@@ -290,7 +290,6 @@ type CardVaultItemSpecUnion struct {
 		MerchantURL     respjson.Field
 		PaymentMethodID respjson.Field
 		Provider        respjson.Field
-		Test            respjson.Field
 		Wallet          respjson.Field
 		ExpiresAt       respjson.Field
 		LineItems       respjson.Field
@@ -355,6 +354,7 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 	return param.Override[CardVaultItemSpecUnionParam](json.RawMessage(r.RawJSON()))
 }
 
+// Live payment card. Test-mode card creation is not supported.
 type CardVaultItemSpecLink struct {
 	// Integer amount in minor currency units.
 	Amount       int64  `json:"amount" api:"required"`
@@ -367,9 +367,6 @@ type CardVaultItemSpecLink struct {
 	// request.
 	PaymentMethodID string        `json:"payment_method_id" api:"required"`
 	Provider        constant.Link `json:"provider" default:"link"`
-	// Whether Link should return test credentials instead of a live payment
-	// credential.
-	Test bool `json:"test" api:"required"`
 	// Wallet item key used to mint this card.
 	Wallet    string                          `json:"wallet" api:"required"`
 	ExpiresAt int64                           `json:"expires_at"`
@@ -385,7 +382,6 @@ type CardVaultItemSpecLink struct {
 		MerchantURL     respjson.Field
 		PaymentMethodID respjson.Field
 		Provider        respjson.Field
-		Test            respjson.Field
 		Wallet          respjson.Field
 		ExpiresAt       respjson.Field
 		LineItems       respjson.Field
@@ -477,8 +473,9 @@ func (r *CardVaultItemSpecLinkTotal) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// AgentCard reusable card. Each checkout creates an approval-gated authorization
-// for spec.merchant / spec.amount. The card stays ready after each authorization.
+// AgentCard reusable live payment card. Test-mode card creation is not supported.
+// Each checkout creates an approval-gated authorization for spec.merchant /
+// spec.amount. The card stays ready after each authorization.
 type CardVaultItemSpecAgentcard struct {
 	// Integer amount in minor currency units.
 	Amount   int64  `json:"amount" api:"required"`
@@ -563,14 +560,6 @@ func (u CardVaultItemSpecUnionParam) GetMerchantURL() *string {
 func (u CardVaultItemSpecUnionParam) GetPaymentMethodID() *string {
 	if vt := u.OfLink; vt != nil {
 		return &vt.PaymentMethodID
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetTest() *bool {
-	if vt := u.OfLink; vt != nil {
-		return &vt.Test
 	}
 	return nil
 }
@@ -671,8 +660,10 @@ func init() {
 	)
 }
 
+// Live payment card. Test-mode card creation is not supported.
+//
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
-// PaymentMethodID, Provider, Test, Wallet are required.
+// PaymentMethodID, Provider, Wallet are required.
 type CardVaultItemSpecLinkParam struct {
 	// Integer amount in minor currency units.
 	Amount       int64  `json:"amount" api:"required"`
@@ -684,9 +675,6 @@ type CardVaultItemSpecLinkParam struct {
 	// The provider decides whether the selected funding method can satisfy the card
 	// request.
 	PaymentMethodID string `json:"payment_method_id" api:"required"`
-	// Whether Link should return test credentials instead of a live payment
-	// credential.
-	Test bool `json:"test" api:"required"`
 	// Wallet item key used to mint this card.
 	Wallet    string                               `json:"wallet" api:"required"`
 	ExpiresAt param.Opt[int64]                     `json:"expires_at,omitzero"`
@@ -763,8 +751,9 @@ func (r *CardVaultItemSpecLinkTotalParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// AgentCard reusable card. Each checkout creates an approval-gated authorization
-// for spec.merchant / spec.amount. The card stays ready after each authorization.
+// AgentCard reusable live payment card. Test-mode card creation is not supported.
+// Each checkout creates an approval-gated authorization for spec.merchant /
+// spec.amount. The card stays ready after each authorization.
 //
 // The properties Amount, Currency, Merchant, Provider, Wallet are required.
 type CardVaultItemSpecAgentcardParam struct {
@@ -1172,9 +1161,7 @@ type VaultItemUnionSpec struct {
 	MerchantURL string `json:"merchant_url"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	PaymentMethodID string `json:"payment_method_id"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Test   bool   `json:"test"`
-	Wallet string `json:"wallet"`
+	Wallet          string `json:"wallet"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	ExpiresAt int64 `json:"expires_at"`
 	// This field is from variant [CardVaultItemSpecUnion].
@@ -1197,7 +1184,6 @@ type VaultItemUnionSpec struct {
 		MerchantName    respjson.Field
 		MerchantURL     respjson.Field
 		PaymentMethodID respjson.Field
-		Test            respjson.Field
 		Wallet          respjson.Field
 		ExpiresAt       respjson.Field
 		LineItems       respjson.Field
@@ -1380,8 +1366,7 @@ type VaultItemCard struct {
 	CreatedAt           time.Time                         `json:"created_at" api:"required" format:"date-time"`
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
-	// AgentCard reusable card. Each checkout creates an approval-gated authorization
-	// for spec.merchant / spec.amount. The card stays ready after each authorization.
+	// Live payment card. Test-mode card creation is not supported.
 	Spec      CardVaultItemSpecUnion  `json:"spec" api:"required"`
 	State     CardVaultItemStateUnion `json:"state" api:"required"`
 	Type      constant.Card           `json:"type" default:"card"`
@@ -2222,8 +2207,7 @@ func (r VaultItemGetParams) URLQuery() (v url.Values, err error) {
 
 type VaultItemUpdateParams struct {
 	IDOrName string `path:"id_or_name" api:"required" json:"-"`
-	// AgentCard reusable card. Each checkout creates an approval-gated authorization
-	// for spec.merchant / spec.amount. The card stays ready after each authorization.
+	// Live payment card. Test-mode card creation is not supported.
 	Spec CardVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	paramObj
 }
@@ -2322,8 +2306,7 @@ func (r *VaultItemUpsertParamsBodyWallet) UnmarshalJSON(data []byte) error {
 
 // The properties Spec, Type are required.
 type VaultItemUpsertParamsBodyCard struct {
-	// AgentCard reusable card. Each checkout creates an approval-gated authorization
-	// for spec.merchant / spec.amount. The card stays ready after each authorization.
+	// Live payment card. Test-mode card creation is not supported.
 	Spec CardVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// This field can be elided, and will marshal its zero value as "card".
 	Type constant.Card `json:"type" default:"card"`
