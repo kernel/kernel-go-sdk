@@ -70,7 +70,6 @@ func TestVaultItemUpdateWithOptionalParams(t *testing.T) {
 					MerchantName:    "x",
 					MerchantURL:     "https://example.com",
 					PaymentMethodID: "x",
-					Test:            true,
 					Wallet:          "wallet",
 					ExpiresAt:       kernel.Int(0),
 					LineItems: []kernel.CardVaultItemSpecLinkLineItemParam{{
