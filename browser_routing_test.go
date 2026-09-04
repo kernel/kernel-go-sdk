@@ -662,7 +662,7 @@ func TestBrowserRoutingFsFallsBackToControlPlaneOnStaleJWT(t *testing.T) {
 			w.WriteHeader(http.StatusUnauthorized)
 			_, _ = w.Write([]byte("Invalid JWT"))
 		default:
-			w.WriteHeader(http.StatusNoContent)
+			w.WriteHeader(http.StatusCreated)
 		}
 	}))
 	defer srv.Close()
