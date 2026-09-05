@@ -36,7 +36,7 @@ func NewOrganizationLimitService(opts ...option.RequestOption) (r OrganizationLi
 	return
 }
 
-// Get the organization's effective limits and managed auth usage.
+// Get the organization's effective limits and managed auth and vault usage.
 func (r *OrganizationLimitService) Get(ctx context.Context, opts ...option.RequestOption) (res *OrgLimits, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "org/limits"
@@ -62,10 +62,15 @@ type OrgLimits struct {
 	// Maximum managed auth connections the organization's plan allows. Null means
 	// unlimited. Counted org-wide, so it cannot be multiplied across projects.
 	MaxAuthConnections int64 `json:"max_auth_connections" api:"required"`
+	// Maximum non-deleted vaults allowed org-wide across all projects. Null means
+	// unlimited.
+	MaxVaults int64 `json:"max_vaults" api:"required"`
 	// Smallest health_check_interval the organization's plan accepts on a managed auth
 	// connection. Requests below this are rejected with 400. Existing connections
 	// stored below the floor are grandfathered until edited.
 	MinHealthCheckIntervalSeconds int64 `json:"min_health_check_interval_seconds" api:"required"`
+	// Current non-deleted vault count across all projects in the organization.
+	VaultsUsed int64 `json:"vaults_used" api:"required"`
 	// Default maximum concurrent browsers applied to every project that has no
 	// explicit per-project override. Null means no org-level default, so such projects
 	// are uncapped (only the org-wide limit applies). Applies to existing and newly
@@ -80,7 +85,9 @@ type OrgLimits struct {
 	JSON struct {
 		AuthConnectionsUsed                 respjson.Field
 		MaxAuthConnections                  respjson.Field
+		MaxVaults                           respjson.Field
 		MinHealthCheckIntervalSeconds       respjson.Field
+		VaultsUsed                          respjson.Field
 		DefaultProjectMaxConcurrentSessions respjson.Field
 		MaxConcurrentSessions               respjson.Field
 		ExtraFields                         map[string]respjson.Field

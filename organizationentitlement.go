@@ -364,11 +364,15 @@ type OrgEntitlementsLimits struct {
 	MaxConcurrentBrowsers int64 `json:"max_concurrent_browsers" api:"required"`
 	// Effective organization-wide concurrent app invocation ceiling.
 	MaxConcurrentInvocations int64 `json:"max_concurrent_invocations" api:"required"`
+	// Maximum non-deleted vaults allowed org-wide across all projects. Null means
+	// unlimited. The vaults feature flag still controls access.
+	MaxVaults int64 `json:"max_vaults" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		DefaultMaxConcurrentInvocationsPerApp respjson.Field
 		MaxConcurrentBrowsers                 respjson.Field
 		MaxConcurrentInvocations              respjson.Field
+		MaxVaults                             respjson.Field
 		ExtraFields                           map[string]respjson.Field
 		raw                                   string
 	} `json:"-"`
