@@ -82,6 +82,9 @@ type OrgEntitlementsFeatures struct {
 	ManagedProxies      OrgEntitlementsFeaturesManagedProxies      `json:"managed_proxies" api:"required"`
 	Profiles            OrgEntitlementsFeaturesProfiles            `json:"profiles" api:"required"`
 	ProxyBypassHosts    OrgEntitlementsFeaturesProxyBypassHosts    `json:"proxy_bypass_hosts" api:"required"`
+	// Whether the organization can access vaults, using the same access check as vault
+	// API routes.
+	Vaults OrgEntitlementsFeaturesVaults `json:"vaults" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		BrowserExtensions   respjson.Field
@@ -96,6 +99,7 @@ type OrgEntitlementsFeatures struct {
 		ManagedProxies      respjson.Field
 		Profiles            respjson.Field
 		ProxyBypassHosts    respjson.Field
+		Vaults              respjson.Field
 		ExtraFields         map[string]respjson.Field
 		raw                 string
 	} `json:"-"`
@@ -332,6 +336,25 @@ func (r *OrgEntitlementsFeaturesProxyBypassHosts) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Whether the organization can access vaults, using the same access check as vault
+// API routes.
+type OrgEntitlementsFeaturesVaults struct {
+	// Whether the organization is entitled to use this feature.
+	Enabled bool `json:"enabled" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OrgEntitlementsFeaturesVaults) RawJSON() string { return r.JSON.raw }
+func (r *OrgEntitlementsFeaturesVaults) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type OrgEntitlementsLimits struct {
 	// Effective org-level default concurrent invocation ceiling for apps without an
 	// app-specific override. App-specific overrides are not represented here.
@@ -341,11 +364,15 @@ type OrgEntitlementsLimits struct {
 	MaxConcurrentBrowsers int64 `json:"max_concurrent_browsers" api:"required"`
 	// Effective organization-wide concurrent app invocation ceiling.
 	MaxConcurrentInvocations int64 `json:"max_concurrent_invocations" api:"required"`
+	// Maximum non-deleted vaults allowed org-wide across all projects. Null means
+	// unlimited. The vaults feature flag still controls access.
+	MaxVaults int64 `json:"max_vaults" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		DefaultMaxConcurrentInvocationsPerApp respjson.Field
 		MaxConcurrentBrowsers                 respjson.Field
 		MaxConcurrentInvocations              respjson.Field
+		MaxVaults                             respjson.Field
 		ExtraFields                           map[string]respjson.Field
 		raw                                   string
 	} `json:"-"`

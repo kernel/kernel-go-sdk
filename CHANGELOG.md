@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.101.0](https://github.com/kernel/kernel-go-sdk/compare/v0.100.0...v0.101.0) (2026-09-05)
+
+
+### Features
+
+* Expose vault access in organization entitlements ([4b985af](https://github.com/kernel/kernel-go-sdk/commit/4b985afe0962cb38ec029b0b7769411c0632bd79))
+* Limit free organizations to three vaults ([8abbe5e](https://github.com/kernel/kernel-go-sdk/commit/8abbe5e87d792f63c11f20c9c3ebe8046457ad4a))
+
 ## [0.100.0](https://github.com/kernel/kernel-go-sdk/compare/v0.99.0...v0.100.0) (2026-09-04)
 
 
