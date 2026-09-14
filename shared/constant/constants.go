@@ -21,7 +21,6 @@ func ValueOf[T Constant[T]]() T {
 type Agentcard string                       // Always "agentcard"
 type APICall string                         // Always "api_call"
 type AppVersionSummary string               // Always "app_version_summary"
-type Authorize string                       // Always "authorize"
 type AutofillTrigger string                 // Always "Autofill.trigger"
 type AwsUsEast1a string                     // Always "aws.us-east-1a"
 type BrowserCancelDownload string           // Always "Browser.cancelDownload"
@@ -133,7 +132,6 @@ type Wallet string                          // Always "wallet"
 func (c Agentcard) Default() Agentcard                           { return "agentcard" }
 func (c APICall) Default() APICall                               { return "api_call" }
 func (c AppVersionSummary) Default() AppVersionSummary           { return "app_version_summary" }
-func (c Authorize) Default() Authorize                           { return "authorize" }
 func (c AutofillTrigger) Default() AutofillTrigger               { return "Autofill.trigger" }
 func (c AwsUsEast1a) Default() AwsUsEast1a                       { return "aws.us-east-1a" }
 func (c BrowserCancelDownload) Default() BrowserCancelDownload   { return "Browser.cancelDownload" }
@@ -267,7 +265,6 @@ func (c Wallet) Default() Wallet                         { return "wallet" }
 func (c Agentcard) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c APICall) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c AppVersionSummary) MarshalJSON() ([]byte, error)               { return marshalString(c) }
-func (c Authorize) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c AutofillTrigger) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c AwsUsEast1a) MarshalJSON() ([]byte, error)                     { return marshalString(c) }
 func (c BrowserCancelDownload) MarshalJSON() ([]byte, error)           { return marshalString(c) }

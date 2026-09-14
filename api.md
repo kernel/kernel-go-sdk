@@ -492,13 +492,17 @@ Methods:
 
 Params Types:
 
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthorizeVaultItemOperationRequestParam">AuthorizeVaultItemOperationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CardVaultItemSpecUnionParam">CardVaultItemSpecUnionParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#FillVaultItemOperationRequestParam">FillVaultItemOperationRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#PrepareCheckoutVaultItemOperationRequestParam">PrepareCheckoutVaultItemOperationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultCardFillFieldUnionParam">VaultCardFillFieldUnionParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultCheckoutContextParam">VaultCheckoutContextParam</a>
 
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentcardCheckoutAuthorization">AgentcardCheckoutAuthorization</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentcardCheckoutPreparation">AgentcardCheckoutPreparation</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CardVaultItemSpecUnion">CardVaultItemSpecUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CardVaultItemStateUnion">CardVaultItemStateUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#FillVaultItemOperationResult">FillVaultItemOperationResult</a>
