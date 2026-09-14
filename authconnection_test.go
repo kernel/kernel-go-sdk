@@ -38,6 +38,7 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 					Mode: kernel.BrowserProxyModeDirect,
 					Name: kernel.String("x"),
 				},
+				Region:  kernel.ManagedAuthBrowserConfigRegionUsEast,
 				Stealth: kernel.Bool(false),
 				Telemetry: kernel.ManagedAuthBrowserConfigTelemetryParam{
 					Browser: kernel.BrowserTelemetryCategoriesConfigParam{
@@ -209,6 +210,7 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 						Mode: kernel.BrowserProxyModeDirect,
 						Name: kernel.String("x"),
 					},
+					Region:  kernel.ManagedAuthBrowserConfigRegionUsEast,
 					Stealth: kernel.Bool(false),
 					Telemetry: kernel.ManagedAuthBrowserConfigTelemetryParam{
 						Browser: kernel.BrowserTelemetryCategoriesConfigParam{
@@ -407,6 +409,7 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 					Mode: kernel.BrowserProxyModeDirect,
 					Name: kernel.String("x"),
 				},
+				Region:  kernel.ManagedAuthBrowserConfigRegionUsEast,
 				Stealth: kernel.Bool(false),
 				Telemetry: kernel.ManagedAuthBrowserConfigTelemetryParam{
 					Browser: kernel.BrowserTelemetryCategoriesConfigParam{

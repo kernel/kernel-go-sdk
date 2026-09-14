@@ -952,6 +952,12 @@ type ManagedAuthBrowserConfig struct {
 	// the default from stealth, or on update and login to preserve or inherit the
 	// connection default.
 	Proxy BrowserProxyConfig `json:"proxy"`
+	// Browser region. Omit on create to use us-east, on update to keep the current
+	// region, or on login to inherit it. Login overrides apply only to that login.
+	// Non-default regions require an eligible plan and organization access.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region ManagedAuthBrowserConfigRegion `json:"region"`
 	// Whether managed auth browser sessions use stealth mode. Defaults to true when
 	// omitted.
 	Stealth bool `json:"stealth"`
@@ -960,6 +966,7 @@ type ManagedAuthBrowserConfig struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Proxy       respjson.Field
+		Region      respjson.Field
 		Stealth     respjson.Field
 		Telemetry   respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -982,6 +989,17 @@ func (r *ManagedAuthBrowserConfig) UnmarshalJSON(data []byte) error {
 func (r ManagedAuthBrowserConfig) ToParam() ManagedAuthBrowserConfigParam {
 	return param.Override[ManagedAuthBrowserConfigParam](json.RawMessage(r.RawJSON()))
 }
+
+// Browser region. Omit on create to use us-east, on update to keep the current
+// region, or on login to inherit it. Login overrides apply only to that login.
+// Non-default regions require an eligible plan and organization access.
+type ManagedAuthBrowserConfigRegion string
+
+const (
+	ManagedAuthBrowserConfigRegionUsEast      ManagedAuthBrowserConfigRegion = "us-east"
+	ManagedAuthBrowserConfigRegionEuWest      ManagedAuthBrowserConfigRegion = "eu-west"
+	ManagedAuthBrowserConfigRegionApSoutheast ManagedAuthBrowserConfigRegion = "ap-southeast"
+)
 
 // Browser telemetry configuration using the same semantics as browser create.
 type ManagedAuthBrowserConfigTelemetry struct {
@@ -1101,6 +1119,12 @@ type ManagedAuthBrowserConfigParam struct {
 	// the default from stealth, or on update and login to preserve or inherit the
 	// connection default.
 	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
+	// Browser region. Omit on create to use us-east, on update to keep the current
+	// region, or on login to inherit it. Login overrides apply only to that login.
+	// Non-default regions require an eligible plan and organization access.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region ManagedAuthBrowserConfigRegion `json:"region,omitzero"`
 	paramObj
 }
 
