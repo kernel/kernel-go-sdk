@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.102.0](https://github.com/kernel/kernel-go-sdk/compare/v0.101.0...v0.102.0) (2026-09-13)
+
+
+### Features
+
+* Add guarded vault card fill operations ([b4278bb](https://github.com/kernel/kernel-go-sdk/commit/b4278bbc29928b8ef3ba3eadd0927438faeba5e9))
+* Allow replacing AgentCard cards after unknown creates ([410bbab](https://github.com/kernel/kernel-go-sdk/commit/410bbabd91ea07f7df07a72ffacbb872b0d6d2f1))
+* Document punctuation key sequences ([86e3d38](https://github.com/kernel/kernel-go-sdk/commit/86e3d38ceac4ef799e5a77ede267ab4a70baf073))
+* Reapply vendor guidance recommendations ([b22a63c](https://github.com/kernel/kernel-go-sdk/commit/b22a63c49fc35a1e3c25b209ac0a39394227536b))
+* Report proxy-restricted targets from config registry lookup ([dc39717](https://github.com/kernel/kernel-go-sdk/commit/dc397177716f3af909acc707f5940daefcaa9415))
+
 ## [0.101.0](https://github.com/kernel/kernel-go-sdk/compare/v0.100.0...v0.101.0) (2026-09-11)
 
 

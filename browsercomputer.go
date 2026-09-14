@@ -406,7 +406,9 @@ type BrowserComputerBatchParamsActionPressKey struct {
 	// List of key symbols to press. Each item should be a key symbol supported by
 	// xdotool (see X11 keysym definitions). Examples include "Return", "Shift",
 	// "Ctrl", "Alt", "F5". Items in this list could also be combinations, e.g.
-	// "Ctrl+t" or "Ctrl+Shift+Tab".
+	// "Ctrl+t" or "Ctrl+Shift+Tab". Use X11 names for punctuation in combinations,
+	// such as "Ctrl+minus" or "Ctrl+plus". A literal hyphen is also accepted as an
+	// alias, so "Ctrl+-" is normalized to "Ctrl+minus".
 	Keys []string `json:"keys,omitzero" api:"required"`
 	// Duration to hold the keys down in milliseconds. If omitted or 0, keys are
 	// tapped.
@@ -650,7 +652,9 @@ type BrowserComputerPressKeyParams struct {
 	// List of key symbols to press. Each item should be a key symbol supported by
 	// xdotool (see X11 keysym definitions). Examples include "Return", "Shift",
 	// "Ctrl", "Alt", "F5". Items in this list could also be combinations, e.g.
-	// "Ctrl+t" or "Ctrl+Shift+Tab".
+	// "Ctrl+t" or "Ctrl+Shift+Tab". Use X11 names for punctuation in combinations,
+	// such as "Ctrl+minus" or "Ctrl+plus". A literal hyphen is also accepted as an
+	// alias, so "Ctrl+-" is normalized to "Ctrl+minus".
 	Keys []string `json:"keys,omitzero" api:"required"`
 	// Duration to hold the keys down in milliseconds. If omitted or 0, keys are
 	// tapped.

@@ -196,11 +196,17 @@ type ConfigRegistryResponse struct {
 	// A recommendation or a structured no-recommendation result.
 	Recommendation RecommendationResultUnion `json:"recommendation" api:"required"`
 	Target         Target                    `json:"target" api:"required"`
+	// Short advisory markdown to facilitate navigating this target. Returned even when
+	// no configuration reached the target, since knowing what prevented success is
+	// useful without a configuration. Not verified against this target. Null when
+	// nothing applicable was observed or no notes exist.
+	Guidance string `json:"guidance" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Analysis       respjson.Field
 		Recommendation respjson.Field
 		Target         respjson.Field
+		Guidance       respjson.Field
 		ExtraFields    map[string]respjson.Field
 		raw            string
 	} `json:"-"`
@@ -268,12 +274,19 @@ func (r *LookupRequestParam) UnmarshalJSON(data []byte) error {
 }
 
 type LookupResponse struct {
-	Recommendation Recommendation `json:"recommendation" api:"required"`
-	Target         Target         `json:"target" api:"required"`
+	// A recommendation or a structured no-recommendation result.
+	Recommendation RecommendationResultUnion `json:"recommendation" api:"required"`
+	Target         Target                    `json:"target" api:"required"`
+	// Short advisory markdown to facilitate navigating this target. Returned even when
+	// no configuration reached the target, since knowing what prevented success is
+	// useful without a configuration. Not verified against this target. Null when
+	// nothing applicable was observed or no notes exist.
+	Guidance string `json:"guidance" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Recommendation respjson.Field
 		Target         respjson.Field
+		Guidance       respjson.Field
 		ExtraFields    map[string]respjson.Field
 		raw            string
 	} `json:"-"`

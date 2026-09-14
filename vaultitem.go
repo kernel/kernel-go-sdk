@@ -94,9 +94,11 @@ func (r *VaultItemService) List(ctx context.Context, idOrName string, opts ...op
 	return res, err
 }
 
-// Unresolved payment operations block deletion, including operations on child
-// cards of a wallet. Reconcile the original attempt with the provider or support
-// first; deleting or recreating an item is not proof that a payment did not occur.
+// Unresolved payment operations normally block deletion, including operations on
+// child cards of a wallet. An AgentCard checkout whose create response returned no
+// authorization ID may be explicitly abandoned by deleting that card directly;
+// deleting its wallet or vault remains blocked. Deleting or recreating an item is
+// not proof that a payment did not occur.
 func (r *VaultItemService) Delete(ctx context.Context, key string, body VaultItemDeleteParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -130,13 +132,21 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 }
 
 // Retrieve the item first and invoke only an operation listed in
-// `available_operations`, following its natural-language description. Operations
-// may call an external provider and return updated state. Link cards advertise
-// authorize. AgentCard cards are created with PUT and request approval when their
-// aliases are used at checkout; they do not expose this operation. If
-// spend-request creation is rate limited, returns HTTP 429 with code
+// `available_operations`, following its natural-language description. Availability
+// is rechecked at execution time; unavailable operations return 409. Authorization
+// may call an external provider and returns the updated item. Link cards advertise
+// authorize when eligible. AgentCard cards are created with PUT and request
+// approval when their aliases are used at checkout; they do not expose authorize.
+// If spend-request creation is rate limited, returns HTTP 429 with code
 // `spend_request_rate_limited`; stop and back off before retrying.
-func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemUnion, err error) {
+//
+// Fill returns a value-free execution result. Validation failures before writing
+// return 400 (invalid request or targets), 403 (access or destination denied), 404
+// (resource not found), or 409 (item or browser not ready). Once writing starts,
+// known partial failures and indeterminate field outcomes return 200 with status
+// `failed` or `unknown`, not an automatic-retry signal. A transport error may
+// leave the outcome unknown; do not automatically retry.
+func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemOperationResponseUnion, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if params.IDOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
@@ -947,10 +957,12 @@ func (r *CardVaultItemStateLinkMasks) UnmarshalJSON(data []byte) error {
 
 type CardVaultItemStateAgentcard struct {
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
-	// recovery_required means the original checkout outcome is unresolved. Do not
-	// retry, delete, or replace it. Known authorization IDs may be reconciled through
-	// provider observations; otherwise contact the provider or support for manual
-	// reconciliation. It does not mean declined or expired.
+	// recovery_required means the original checkout outcome is unresolved. Automatic
+	// reuse is blocked. Known authorization IDs must be reconciled through provider
+	// observations or support. When no authorization ID was returned, an explicitly
+	// confirmed item deletion may abandon the unresolved attempt so the caller can
+	// create a replacement; deletion does not prove that the original attempt failed.
+	// It does not mean declined or expired.
 	//
 	// Any of "requested", "ready", "pending_approval", "degraded",
 	// "recovery_required".
@@ -999,6 +1011,109 @@ func (r *CardVaultItemStateAgentcardMasks) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Fill selected fields from one ready, unexpired card into a browser linked to its
+// vault. Only supported for card items created from Link wallets. Only invoke when
+// the item advertises `fill`. Browser and vault must belong to the same project.
+// Kernel checks access and allowed destinations before filling; providing a page
+// URL does not authorize a destination.
+//
+// Find exactly one open page matching `page_url`. For each selector, search the
+// main frame and all descendant frames for editable inputs or selects matched
+// directly or contained within matching elements. Each selector must resolve to
+// one unique editable element across all frames; zero or multiple candidates fail.
+// Count each element once, even if multiple matching containers contain it.
+// Validate all bindings before filling. Select elements match an option by its
+// value, not its label. If the page navigates or a target disappears during
+// filling, stop rather than selecting a different page or element.
+//
+// Fill in request order and stop on the first failure. This operation is not
+// atomic: previously filled fields are not rolled back. Never submit the form or
+// click buttons, though input/change events may trigger site behavior. Fill is the
+// preferred browser-checkout path. Aliases remain an alternative for explicitly
+// chosen egress-substitution integrations. Do not automatically retry or fall back
+// to aliases after a failed or indeterminate operation.
+//
+// Secret values are never returned or included in operation logs, traces, audit
+// events, or error details. This does not prevent an agent with unrestricted
+// browser access from reading values from the page or other browser observation
+// surfaces.
+//
+// The properties BrowserID, Fields, PageURL, Type are required.
+type FillVaultItemOperationRequestParam struct {
+	// Browser session ID, not a reusable browser name.
+	BrowserID string `json:"browser_id" api:"required"`
+	// Field bindings for this step. No two bindings may resolve to the same element.
+	Fields []VaultCardFillFieldUnionParam `json:"fields,omitzero" api:"required"`
+	// Exact current top-level page URL, including path, query, and fragment. Must
+	// match exactly one open page in the browser; zero or multiple matches fail. No
+	// prefix or glob matching. Must use HTTPS without embedded credentials.
+	PageURL string `json:"page_url" api:"required" format:"uri"`
+	// Any of "fill".
+	Type FillVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Total operation deadline in milliseconds, not a per-field timeout.
+	TimeoutMs param.Opt[int64] `json:"timeout_ms,omitzero"`
+	paramObj
+}
+
+func (r FillVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow FillVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *FillVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type FillVaultItemOperationRequestType string
+
+const (
+	FillVaultItemOperationRequestTypeFill FillVaultItemOperationRequestType = "fill"
+)
+
+type FillVaultItemOperationResult struct {
+	// Exactly one result per request binding, in request order. After the first failed
+	// or unknown field, all remaining fields are not_attempted.
+	Fields []VaultFillFieldResult `json:"fields" api:"required"`
+	// Completed only when all fields were filled. Failed when execution stopped with
+	// known outcomes. Unknown when any field's outcome cannot be determined. None of
+	// these statuses confirms payment or merchant acceptance.
+	//
+	// Any of "completed", "failed", "unknown".
+	Status FillVaultItemOperationResultStatus `json:"status" api:"required"`
+	// Any of "fill".
+	Type FillVaultItemOperationResultType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Fields      respjson.Field
+		Status      respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FillVaultItemOperationResult) RawJSON() string { return r.JSON.raw }
+func (r *FillVaultItemOperationResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Completed only when all fields were filled. Failed when execution stopped with
+// known outcomes. Unknown when any field's outcome cannot be determined. None of
+// these statuses confirms payment or merchant acceptance.
+type FillVaultItemOperationResultStatus string
+
+const (
+	FillVaultItemOperationResultStatusCompleted FillVaultItemOperationResultStatus = "completed"
+	FillVaultItemOperationResultStatusFailed    FillVaultItemOperationResultStatus = "failed"
+	FillVaultItemOperationResultStatusUnknown   FillVaultItemOperationResultStatus = "unknown"
+)
+
+type FillVaultItemOperationResultType string
+
+const (
+	FillVaultItemOperationResultTypeFill FillVaultItemOperationResultType = "fill"
+)
+
 type VaultCardAliases struct {
 	Cvc      string `json:"cvc" api:"required"`
 	ExpMonth string `json:"exp_month" api:"required"`
@@ -1020,6 +1135,194 @@ func (r VaultCardAliases) RawJSON() string { return r.JSON.raw }
 func (r *VaultCardAliases) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+func VaultCardFillFieldParamOfVaultCardFillFieldVaultCardStoredFillField(field string, selector string) VaultCardFillFieldUnionParam {
+	var variant VaultCardFillFieldVaultCardStoredFillFieldParam
+	variant.Field = field
+	variant.Selector = selector
+	return VaultCardFillFieldUnionParam{OfVaultCardFillFieldVaultCardStoredFillField: &variant}
+}
+
+func VaultCardFillFieldParamOfVaultCardFillFieldVaultCardExpirationFillField(field string, format string, selector string) VaultCardFillFieldUnionParam {
+	var variant VaultCardFillFieldVaultCardExpirationFillFieldParam
+	variant.Field = field
+	variant.Format = format
+	variant.Selector = selector
+	return VaultCardFillFieldUnionParam{OfVaultCardFillFieldVaultCardExpirationFillField: &variant}
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type VaultCardFillFieldUnionParam struct {
+	OfVaultCardFillFieldVaultCardStoredFillField     *VaultCardFillFieldVaultCardStoredFillFieldParam     `json:",omitzero,inline"`
+	OfVaultCardFillFieldVaultCardExpirationFillField *VaultCardFillFieldVaultCardExpirationFillFieldParam `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u VaultCardFillFieldUnionParam) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfVaultCardFillFieldVaultCardStoredFillField, u.OfVaultCardFillFieldVaultCardExpirationFillField)
+}
+func (u *VaultCardFillFieldUnionParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+func (u *VaultCardFillFieldUnionParam) asAny() any {
+	if !param.IsOmitted(u.OfVaultCardFillFieldVaultCardStoredFillField) {
+		return u.OfVaultCardFillFieldVaultCardStoredFillField
+	} else if !param.IsOmitted(u.OfVaultCardFillFieldVaultCardExpirationFillField) {
+		return u.OfVaultCardFillFieldVaultCardExpirationFillField
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u VaultCardFillFieldUnionParam) GetFormat() *string {
+	if vt := u.OfVaultCardFillFieldVaultCardExpirationFillField; vt != nil {
+		return &vt.Format
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u VaultCardFillFieldUnionParam) GetField() *string {
+	if vt := u.OfVaultCardFillFieldVaultCardStoredFillField; vt != nil {
+		return (*string)(&vt.Field)
+	} else if vt := u.OfVaultCardFillFieldVaultCardExpirationFillField; vt != nil {
+		return (*string)(&vt.Field)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u VaultCardFillFieldUnionParam) GetSelector() *string {
+	if vt := u.OfVaultCardFillFieldVaultCardStoredFillField; vt != nil {
+		return (*string)(&vt.Selector)
+	} else if vt := u.OfVaultCardFillFieldVaultCardExpirationFillField; vt != nil {
+		return (*string)(&vt.Selector)
+	}
+	return nil
+}
+
+// The properties Field, Selector are required.
+type VaultCardFillFieldVaultCardStoredFillFieldParam struct {
+	// Field in the decrypted card, not an alias. Number and CVC preserve leading
+	// zeros; month uses two digits and year uses four digits. Billing fields use the
+	// provider's stored billing address (name, line1, line2, city, state, postal_code,
+	// country) without reformatting. Request only needed billing fields. An absent or
+	// empty requested billing field returns 400 field_unavailable before any browser
+	// writes; it does not make other card fields unavailable.
+	//
+	// Any of "number", "exp_month", "exp_year", "cvc", "billing_name",
+	// "billing_line1", "billing_line2", "billing_city", "billing_state",
+	// "billing_postal_code", "billing_country".
+	Field string `json:"field,omitzero" api:"required"`
+	// CSS selector for an editable input or select, or a containing element. Must
+	// resolve to one unique editable element across all page frames.
+	Selector string `json:"selector" api:"required"`
+	paramObj
+}
+
+func (r VaultCardFillFieldVaultCardStoredFillFieldParam) MarshalJSON() (data []byte, err error) {
+	type shadow VaultCardFillFieldVaultCardStoredFillFieldParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultCardFillFieldVaultCardStoredFillFieldParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[VaultCardFillFieldVaultCardStoredFillFieldParam](
+		"field", "number", "exp_month", "exp_year", "cvc", "billing_name", "billing_line1", "billing_line2", "billing_city", "billing_state", "billing_postal_code", "billing_country",
+	)
+}
+
+// Combined expiration derived from the stored month and year; not a separate
+// stored secret.
+//
+// The properties Field, Format, Selector are required.
+type VaultCardFillFieldVaultCardExpirationFillFieldParam struct {
+	// Any of "expiration".
+	Field string `json:"field,omitzero" api:"required"`
+	// Any of "MM/YY", "MM/YYYY".
+	Format string `json:"format,omitzero" api:"required"`
+	// CSS selector for an editable input or select, or a containing element. Must
+	// resolve to one unique editable element across all page frames.
+	Selector string `json:"selector" api:"required"`
+	paramObj
+}
+
+func (r VaultCardFillFieldVaultCardExpirationFillFieldParam) MarshalJSON() (data []byte, err error) {
+	type shadow VaultCardFillFieldVaultCardExpirationFillFieldParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultCardFillFieldVaultCardExpirationFillFieldParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[VaultCardFillFieldVaultCardExpirationFillFieldParam](
+		"field", "expiration",
+	)
+	apijson.RegisterFieldValidator[VaultCardFillFieldVaultCardExpirationFillFieldParam](
+		"format", "MM/YY", "MM/YYYY",
+	)
+}
+
+type VaultFillFieldResult struct {
+	// Zero-based index into the request fields array.
+	Index int64 `json:"index" api:"required"`
+	// Filled means the fill action completed, not that the website retained or
+	// accepted the value.
+	//
+	// Any of "filled", "failed", "not_attempted", "unknown".
+	Status VaultFillFieldResultStatus `json:"status" api:"required"`
+	// Present only for failed or unknown fields. Never includes secret values, DOM
+	// content, or raw browser errors.
+	//
+	// Any of "target_changed", "element_not_found", "ambiguous_selector",
+	// "element_not_editable", "option_not_found", "timeout", "execution_failed".
+	ErrorCode VaultFillFieldResultErrorCode `json:"error_code"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Index       respjson.Field
+		Status      respjson.Field
+		ErrorCode   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultFillFieldResult) RawJSON() string { return r.JSON.raw }
+func (r *VaultFillFieldResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Filled means the fill action completed, not that the website retained or
+// accepted the value.
+type VaultFillFieldResultStatus string
+
+const (
+	VaultFillFieldResultStatusFilled       VaultFillFieldResultStatus = "filled"
+	VaultFillFieldResultStatusFailed       VaultFillFieldResultStatus = "failed"
+	VaultFillFieldResultStatusNotAttempted VaultFillFieldResultStatus = "not_attempted"
+	VaultFillFieldResultStatusUnknown      VaultFillFieldResultStatus = "unknown"
+)
+
+// Present only for failed or unknown fields. Never includes secret values, DOM
+// content, or raw browser errors.
+type VaultFillFieldResultErrorCode string
+
+const (
+	VaultFillFieldResultErrorCodeTargetChanged      VaultFillFieldResultErrorCode = "target_changed"
+	VaultFillFieldResultErrorCodeElementNotFound    VaultFillFieldResultErrorCode = "element_not_found"
+	VaultFillFieldResultErrorCodeAmbiguousSelector  VaultFillFieldResultErrorCode = "ambiguous_selector"
+	VaultFillFieldResultErrorCodeElementNotEditable VaultFillFieldResultErrorCode = "element_not_editable"
+	VaultFillFieldResultErrorCodeOptionNotFound     VaultFillFieldResultErrorCode = "option_not_found"
+	VaultFillFieldResultErrorCodeTimeout            VaultFillFieldResultErrorCode = "timeout"
+	VaultFillFieldResultErrorCodeExecutionFailed    VaultFillFieldResultErrorCode = "execution_failed"
+)
 
 // VaultItemUnion contains all possible properties and values from
 // [VaultItemWallet], [VaultItemCard].
@@ -1358,7 +1661,7 @@ func (r *VaultItemWalletAvailableExpansion) UnmarshalJSON(data []byte) error {
 // invoking it through the item operations endpoint.
 type VaultItemWalletAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize".
+	// Any of "authorize", "fill".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1455,7 +1758,7 @@ func (r *VaultItemCardAvailableExpansion) UnmarshalJSON(data []byte) error {
 // invoking it through the item operations endpoint.
 type VaultItemCardAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize".
+	// Any of "authorize", "fill".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1721,6 +2024,457 @@ type VaultItemEvent struct {
 // Returns the unmodified JSON received from the API
 func (r VaultItemEvent) RawJSON() string { return r.JSON.raw }
 func (r *VaultItemEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnion contains all possible properties and values from
+// [VaultItemOperationResponseWalletVaultItem],
+// [VaultItemOperationResponseCardVaultItem], [FillVaultItemOperationResult].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type VaultItemOperationResponseUnion struct {
+	ID string `json:"id"`
+	// This field is a union of
+	// [[]VaultItemOperationResponseWalletVaultItemAvailableExpansion],
+	// [[]VaultItemOperationResponseCardVaultItemAvailableExpansion]
+	AvailableExpansions VaultItemOperationResponseUnionAvailableExpansions `json:"available_expansions"`
+	// This field is a union of
+	// [[]VaultItemOperationResponseWalletVaultItemAvailableOperation],
+	// [[]VaultItemOperationResponseCardVaultItemAvailableOperation]
+	AvailableOperations VaultItemOperationResponseUnionAvailableOperations `json:"available_operations"`
+	CreatedAt           time.Time                                          `json:"created_at"`
+	Key                 string                                             `json:"key"`
+	// This field is a union of [WalletVaultItemSpecUnion], [CardVaultItemSpecUnion]
+	Spec VaultItemOperationResponseUnionSpec `json:"spec"`
+	// This field is a union of [WalletVaultItemStateUnion], [CardVaultItemStateUnion]
+	State     VaultItemOperationResponseUnionState `json:"state"`
+	Type      string                               `json:"type"`
+	UpdatedAt time.Time                            `json:"updated_at"`
+	// This field is from variant [VaultItemOperationResponseWalletVaultItem].
+	Action VaultItemActionUnion `json:"action"`
+	// This field is from variant [VaultItemOperationResponseWalletVaultItem].
+	Expanded  VaultItemOperationResponseWalletVaultItemExpanded `json:"expanded"`
+	ExpiresAt time.Time                                         `json:"expires_at"`
+	// This field is from variant [FillVaultItemOperationResult].
+	Fields []VaultFillFieldResult `json:"fields"`
+	// This field is from variant [FillVaultItemOperationResult].
+	Status FillVaultItemOperationResultStatus `json:"status"`
+	JSON   struct {
+		ID                  respjson.Field
+		AvailableExpansions respjson.Field
+		AvailableOperations respjson.Field
+		CreatedAt           respjson.Field
+		Key                 respjson.Field
+		Spec                respjson.Field
+		State               respjson.Field
+		Type                respjson.Field
+		UpdatedAt           respjson.Field
+		Action              respjson.Field
+		Expanded            respjson.Field
+		ExpiresAt           respjson.Field
+		Fields              respjson.Field
+		Status              respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+func (u VaultItemOperationResponseUnion) AsVaultItemOperationResponseWalletVaultItem() (v VaultItemOperationResponseWalletVaultItem) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsVaultItemOperationResponseCardVaultItem() (v VaultItemOperationResponseCardVaultItem) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsFillVaultItemOperationResult() (v FillVaultItemOperationResult) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u VaultItemOperationResponseUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *VaultItemOperationResponseUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionAvailableExpansions is an implicit subunion of
+// [VaultItemOperationResponseUnion].
+// VaultItemOperationResponseUnionAvailableExpansions provides convenient access to
+// the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfVaultItemOperationResponseWalletVaultItemAvailableExpansions
+// OfVaultItemOperationResponseCardVaultItemAvailableExpansions]
+type VaultItemOperationResponseUnionAvailableExpansions struct {
+	// This field will be present if the value is a
+	// [[]VaultItemOperationResponseWalletVaultItemAvailableExpansion] instead of an
+	// object.
+	OfVaultItemOperationResponseWalletVaultItemAvailableExpansions []VaultItemOperationResponseWalletVaultItemAvailableExpansion `json:",inline"`
+	// This field will be present if the value is a
+	// [[]VaultItemOperationResponseCardVaultItemAvailableExpansion] instead of an
+	// object.
+	OfVaultItemOperationResponseCardVaultItemAvailableExpansions []VaultItemOperationResponseCardVaultItemAvailableExpansion `json:",inline"`
+	JSON                                                         struct {
+		OfVaultItemOperationResponseWalletVaultItemAvailableExpansions respjson.Field
+		OfVaultItemOperationResponseCardVaultItemAvailableExpansions   respjson.Field
+		raw                                                            string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionAvailableExpansions) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionAvailableOperations is an implicit subunion of
+// [VaultItemOperationResponseUnion].
+// VaultItemOperationResponseUnionAvailableOperations provides convenient access to
+// the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfVaultItemOperationResponseWalletVaultItemAvailableOperations
+// OfVaultItemOperationResponseCardVaultItemAvailableOperations]
+type VaultItemOperationResponseUnionAvailableOperations struct {
+	// This field will be present if the value is a
+	// [[]VaultItemOperationResponseWalletVaultItemAvailableOperation] instead of an
+	// object.
+	OfVaultItemOperationResponseWalletVaultItemAvailableOperations []VaultItemOperationResponseWalletVaultItemAvailableOperation `json:",inline"`
+	// This field will be present if the value is a
+	// [[]VaultItemOperationResponseCardVaultItemAvailableOperation] instead of an
+	// object.
+	OfVaultItemOperationResponseCardVaultItemAvailableOperations []VaultItemOperationResponseCardVaultItemAvailableOperation `json:",inline"`
+	JSON                                                         struct {
+		OfVaultItemOperationResponseWalletVaultItemAvailableOperations respjson.Field
+		OfVaultItemOperationResponseCardVaultItemAvailableOperations   respjson.Field
+		raw                                                            string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionAvailableOperations) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionSpec is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionSpec provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+type VaultItemOperationResponseUnionSpec struct {
+	// This field is from variant [WalletVaultItemSpecUnion].
+	Authorization WalletVaultItemSpecLinkAuthorization `json:"authorization"`
+	Provider      string                               `json:"provider"`
+	// This field is from variant [WalletVaultItemSpecUnion].
+	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
+	// This field is from variant [WalletVaultItemSpecUnion].
+	UserID string `json:"user_id"`
+	Amount int64  `json:"amount"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Context  string `json:"context"`
+	Currency string `json:"currency"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantName string `json:"merchant_name"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantURL string `json:"merchant_url"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	PaymentMethodID string `json:"payment_method_id"`
+	Wallet          string `json:"wallet"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	ExpiresAt int64 `json:"expires_at"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Metadata map[string]string `json:"metadata"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Merchant string `json:"merchant"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	CardID string `json:"card_id"`
+	JSON   struct {
+		Authorization   respjson.Field
+		Provider        respjson.Field
+		ProviderConfig  respjson.Field
+		UserID          respjson.Field
+		Amount          respjson.Field
+		Context         respjson.Field
+		Currency        respjson.Field
+		MerchantName    respjson.Field
+		MerchantURL     respjson.Field
+		PaymentMethodID respjson.Field
+		Wallet          respjson.Field
+		ExpiresAt       respjson.Field
+		LineItems       respjson.Field
+		Metadata        respjson.Field
+		Totals          respjson.Field
+		Merchant        respjson.Field
+		CardID          respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionState is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionState provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+type VaultItemOperationResponseUnionState struct {
+	Provider     string `json:"provider"`
+	Status       string `json:"status"`
+	StatusReason string `json:"status_reason"`
+	// This field is from variant [WalletVaultItemStateUnion].
+	UserID string `json:"user_id"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Aliases VaultCardAliases `json:"aliases"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Domains []string `json:"domains"`
+	// This field is a union of [CardVaultItemStateLinkMasks],
+	// [CardVaultItemStateAgentcardMasks]
+	Masks VaultItemOperationResponseUnionStateMasks `json:"masks"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
+	JSON          struct {
+		Provider      respjson.Field
+		Status        respjson.Field
+		StatusReason  respjson.Field
+		UserID        respjson.Field
+		Aliases       respjson.Field
+		Domains       respjson.Field
+		Masks         respjson.Field
+		Authorization respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionStateMasks is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionStateMasks
+// provides convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+type VaultItemOperationResponseUnionStateMasks struct {
+	Brand string `json:"brand"`
+	Last4 string `json:"last4"`
+	JSON  struct {
+		Brand respjson.Field
+		Last4 respjson.Field
+		raw   string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionStateMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type VaultItemOperationResponseWalletVaultItem struct {
+	ID                  string                                                        `json:"id" api:"required"`
+	AvailableExpansions []VaultItemOperationResponseWalletVaultItemAvailableExpansion `json:"available_expansions" api:"required"`
+	AvailableOperations []VaultItemOperationResponseWalletVaultItemAvailableOperation `json:"available_operations" api:"required"`
+	CreatedAt           time.Time                                                     `json:"created_at" api:"required" format:"date-time"`
+	// Immutable item key assigned when the item is created.
+	Key string `json:"key" api:"required"`
+	// AgentCard wallet. Omit provider_config to use Kernel-managed credentials, or
+	// select a customer-owned configuration. Mode (sandbox vs live) is determined by
+	// the selected credential; there is no per-item test flag. Without user_id,
+	// creation returns a hosted enrollment action and Kernel polls until the user
+	// connects. user_id may only reference a user already enrolled by a wallet in this
+	// organization under the same configuration.
+	Spec  WalletVaultItemSpecUnion  `json:"spec" api:"required"`
+	State WalletVaultItemStateUnion `json:"state" api:"required"`
+	// Any of "wallet".
+	Type      string               `json:"type" api:"required"`
+	UpdatedAt time.Time            `json:"updated_at" api:"required" format:"date-time"`
+	Action    VaultItemActionUnion `json:"action"`
+	// Live, non-persisted data requested through the item GET expand parameter.
+	Expanded  VaultItemOperationResponseWalletVaultItemExpanded `json:"expanded"`
+	ExpiresAt time.Time                                         `json:"expires_at" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                  respjson.Field
+		AvailableExpansions respjson.Field
+		AvailableOperations respjson.Field
+		CreatedAt           respjson.Field
+		Key                 respjson.Field
+		Spec                respjson.Field
+		State               respjson.Field
+		Type                respjson.Field
+		UpdatedAt           respjson.Field
+		Action              respjson.Field
+		Expanded            respjson.Field
+		ExpiresAt           respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseWalletVaultItem) RawJSON() string { return r.JSON.raw }
+func (r *VaultItemOperationResponseWalletVaultItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Live data that can currently be requested by passing its type to the item GET
+// expand parameter.
+type VaultItemOperationResponseWalletVaultItemAvailableExpansion struct {
+	Description string `json:"description" api:"required"`
+	// Any of "payment_methods".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseWalletVaultItemAvailableExpansion) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *VaultItemOperationResponseWalletVaultItemAvailableExpansion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// An operation that is currently valid for this item. Read the description before
+// invoking it through the item operations endpoint.
+type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
+	Description string `json:"description" api:"required"`
+	// Any of "authorize", "fill".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseWalletVaultItemAvailableOperation) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *VaultItemOperationResponseWalletVaultItemAvailableOperation) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Live, non-persisted data requested through the item GET expand parameter.
+type VaultItemOperationResponseWalletVaultItemExpanded struct {
+	PaymentMethods []VaultPaymentMethod `json:"payment_methods"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		PaymentMethods respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseWalletVaultItemExpanded) RawJSON() string { return r.JSON.raw }
+func (r *VaultItemOperationResponseWalletVaultItemExpanded) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type VaultItemOperationResponseCardVaultItem struct {
+	ID                  string                                                      `json:"id" api:"required"`
+	AvailableExpansions []VaultItemOperationResponseCardVaultItemAvailableExpansion `json:"available_expansions" api:"required"`
+	AvailableOperations []VaultItemOperationResponseCardVaultItemAvailableOperation `json:"available_operations" api:"required"`
+	CreatedAt           time.Time                                                   `json:"created_at" api:"required" format:"date-time"`
+	// Immutable item key assigned when the item is created.
+	Key string `json:"key" api:"required"`
+	// Live payment card. Test-mode card creation is not supported.
+	Spec  CardVaultItemSpecUnion  `json:"spec" api:"required"`
+	State CardVaultItemStateUnion `json:"state" api:"required"`
+	// Any of "card".
+	Type      string               `json:"type" api:"required"`
+	UpdatedAt time.Time            `json:"updated_at" api:"required" format:"date-time"`
+	Action    VaultItemActionUnion `json:"action"`
+	ExpiresAt time.Time            `json:"expires_at" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                  respjson.Field
+		AvailableExpansions respjson.Field
+		AvailableOperations respjson.Field
+		CreatedAt           respjson.Field
+		Key                 respjson.Field
+		Spec                respjson.Field
+		State               respjson.Field
+		Type                respjson.Field
+		UpdatedAt           respjson.Field
+		Action              respjson.Field
+		ExpiresAt           respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseCardVaultItem) RawJSON() string { return r.JSON.raw }
+func (r *VaultItemOperationResponseCardVaultItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Live data that can currently be requested by passing its type to the item GET
+// expand parameter.
+type VaultItemOperationResponseCardVaultItemAvailableExpansion struct {
+	Description string `json:"description" api:"required"`
+	// Any of "payment_methods".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseCardVaultItemAvailableExpansion) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *VaultItemOperationResponseCardVaultItemAvailableExpansion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// An operation that is currently valid for this item. Read the description before
+// invoking it through the item operations endpoint.
+type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
+	Description string `json:"description" api:"required"`
+	// Any of "authorize", "fill".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemOperationResponseCardVaultItemAvailableOperation) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *VaultItemOperationResponseCardVaultItemAvailableOperation) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2266,24 +3020,72 @@ func (r VaultItemEventsParams) URLQuery() (v url.Values, err error) {
 
 type VaultItemPerformOperationParams struct {
 	IDOrName string `path:"id_or_name" api:"required" json:"-"`
-	// Any of "authorize".
-	Type VaultItemPerformOperationParamsType `json:"type,omitzero" api:"required"`
+
+	//
+	// Request body variants
+	//
+
+	// This field is a request body variant, only one variant field can be set.
+	OfAuthorize *VaultItemPerformOperationParamsBodyAuthorize `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Fill
+	// selected fields from one ready, unexpired card into a browser linked to its
+	// vault. Only supported for card items created from Link wallets. Only invoke when
+	// the item advertises `fill`. Browser and vault must belong to the same project.
+	// Kernel checks access and allowed destinations before filling; providing a page
+	// URL does not authorize a destination.
+	//
+	// Find exactly one open page matching `page_url`. For each selector, search the
+	// main frame and all descendant frames for editable inputs or selects matched
+	// directly or contained within matching elements. Each selector must resolve to
+	// one unique editable element across all frames; zero or multiple candidates fail.
+	// Count each element once, even if multiple matching containers contain it.
+	// Validate all bindings before filling. Select elements match an option by its
+	// value, not its label. If the page navigates or a target disappears during
+	// filling, stop rather than selecting a different page or element.
+	//
+	// Fill in request order and stop on the first failure. This operation is not
+	// atomic: previously filled fields are not rolled back. Never submit the form or
+	// click buttons, though input/change events may trigger site behavior. Fill is the
+	// preferred browser-checkout path. Aliases remain an alternative for explicitly
+	// chosen egress-substitution integrations. Do not automatically retry or fall back
+	// to aliases after a failed or indeterminate operation.
+	//
+	// Secret values are never returned or included in operation logs, traces, audit
+	// events, or error details. This does not prevent an agent with unrestricted
+	// browser access from reading values from the page or other browser observation
+	// surfaces.
+	OfFill *FillVaultItemOperationRequestParam `json:",inline"`
+
 	paramObj
 }
 
-func (r VaultItemPerformOperationParams) MarshalJSON() (data []byte, err error) {
-	type shadow VaultItemPerformOperationParams
-	return param.MarshalObject(r, (*shadow)(&r))
+func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfAuthorize, u.OfFill)
 }
 func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type VaultItemPerformOperationParamsType string
+func NewVaultItemPerformOperationParamsBodyAuthorize() VaultItemPerformOperationParamsBodyAuthorize {
+	return VaultItemPerformOperationParamsBodyAuthorize{
+		Type: "authorize",
+	}
+}
 
-const (
-	VaultItemPerformOperationParamsTypeAuthorize VaultItemPerformOperationParamsType = "authorize"
-)
+// This struct has a constant value, construct it with
+// [NewVaultItemPerformOperationParamsBodyAuthorize].
+type VaultItemPerformOperationParamsBodyAuthorize struct {
+	Type constant.Authorize `json:"type" default:"authorize"`
+	paramObj
+}
+
+func (r VaultItemPerformOperationParamsBodyAuthorize) MarshalJSON() (data []byte, err error) {
+	type shadow VaultItemPerformOperationParamsBodyAuthorize
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultItemPerformOperationParamsBodyAuthorize) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type VaultItemUpsertParams struct {
 	IDOrName string `path:"id_or_name" api:"required" json:"-"`
