@@ -87,6 +87,7 @@ func TestConfigRegistryResolveWithOptionalParams(t *testing.T) {
 		ResolveRequest: kernel.ResolveRequestParam{
 			URL:                   "https://example.com",
 			AllowedProxyCountries: []string{"US"},
+			Intent:                kernel.String("search for a black hoodie and add it to the cart"),
 		},
 	})
 	if err != nil {
