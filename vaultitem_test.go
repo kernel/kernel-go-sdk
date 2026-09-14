@@ -208,8 +208,10 @@ func TestVaultItemPerformOperationWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"key",
 		kernel.VaultItemPerformOperationParams{
-			IDOrName:    "id_or_name",
-			OfAuthorize: &kernel.VaultItemPerformOperationParamsBodyAuthorize{},
+			IDOrName: "id_or_name",
+			OfAuthorize: &kernel.AuthorizeVaultItemOperationRequestParam{
+				Type: kernel.AuthorizeVaultItemOperationRequestTypeAuthorize,
+			},
 		},
 	)
 	if err != nil {

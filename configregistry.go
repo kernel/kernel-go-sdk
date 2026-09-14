@@ -201,14 +201,22 @@ type ConfigRegistryResponse struct {
 	// useful without a configuration. Not verified against this target. Null when
 	// nothing applicable was observed or no notes exist.
 	Guidance string `json:"guidance" api:"nullable"`
+	// How far the workload pass got, when an intent was supplied and a pass ran. A run
+	// outcome rather than advice, so it is reported whether or not any guidance could
+	// be assembled. Null when no intent was supplied or no pass ran.
+	//
+	// Any of "completed", "turn_limit", "auth_required", "payment_required",
+	// "blocked", "error".
+	WorkloadOutcome ConfigRegistryResponseWorkloadOutcome `json:"workload_outcome" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Analysis       respjson.Field
-		Recommendation respjson.Field
-		Target         respjson.Field
-		Guidance       respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		Analysis        respjson.Field
+		Recommendation  respjson.Field
+		Target          respjson.Field
+		Guidance        respjson.Field
+		WorkloadOutcome respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -217,6 +225,20 @@ func (r ConfigRegistryResponse) RawJSON() string { return r.JSON.raw }
 func (r *ConfigRegistryResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// How far the workload pass got, when an intent was supplied and a pass ran. A run
+// outcome rather than advice, so it is reported whether or not any guidance could
+// be assembled. Null when no intent was supplied or no pass ran.
+type ConfigRegistryResponseWorkloadOutcome string
+
+const (
+	ConfigRegistryResponseWorkloadOutcomeCompleted       ConfigRegistryResponseWorkloadOutcome = "completed"
+	ConfigRegistryResponseWorkloadOutcomeTurnLimit       ConfigRegistryResponseWorkloadOutcome = "turn_limit"
+	ConfigRegistryResponseWorkloadOutcomeAuthRequired    ConfigRegistryResponseWorkloadOutcome = "auth_required"
+	ConfigRegistryResponseWorkloadOutcomePaymentRequired ConfigRegistryResponseWorkloadOutcome = "payment_required"
+	ConfigRegistryResponseWorkloadOutcomeBlocked         ConfigRegistryResponseWorkloadOutcome = "blocked"
+	ConfigRegistryResponseWorkloadOutcomeError           ConfigRegistryResponseWorkloadOutcome = "error"
+)
 
 type Evidence struct {
 	Accessed     int64 `json:"accessed" api:"required"`
@@ -872,6 +894,14 @@ const (
 type ResolveRequestParam struct {
 	// Public HTTP(S) URL to refresh.
 	URL string `json:"url" api:"required" format:"uri"`
+	// Plain-language description of the workload you intend to run against this
+	// target, in a sentence or two. Requires an https target, because the pass treats
+	// any non-HTTPS destination as off-site and will not drive an http one. Kernel
+	// uses it to drive the browser further into the site, where it can observe
+	// protections that only appear once a session interacts. When this target already
+	// has a verified configuration, the run confirms that one instead of re-deriving
+	// the whole matrix, so supplying an intent narrows what can be recommended.
+	Intent param.Opt[string] `json:"intent,omitzero"`
 	// ISO 3166 country codes Kernel may use when searching for or returning a proxy
 	// configuration. Kernel may test a subset of allowed countries. When omitted,
 	// Kernel uses its default country selection.
