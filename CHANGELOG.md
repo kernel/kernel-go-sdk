@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.103.0](https://github.com/kernel/kernel-go-sdk/compare/v0.102.0...v0.103.0) (2026-09-14)
+
+
+### Features
+
+* Accept a workload intent and use it to widen vendor coverage ([7c60d81](https://github.com/kernel/kernel-go-sdk/commit/7c60d81c9fa15cc9116c6838a9ba173e8e95405a))
+* Add single-use AgentCard prepare_checkout for Square ([ec63b01](https://github.com/kernel/kernel-go-sdk/commit/ec63b0146054357d65e420f148a1eb980bd051b0))
+* Honor managed auth browser regions ([2e5c061](https://github.com/kernel/kernel-go-sdk/commit/2e5c06117d8597f1808b3bd43a4df746a19fe8c7))
+
 ## [0.102.0](https://github.com/kernel/kernel-go-sdk/compare/v0.101.0...v0.102.0) (2026-09-13)
 
 
