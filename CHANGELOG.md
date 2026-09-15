@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.104.0](https://github.com/kernel/kernel-go-sdk/compare/v0.103.0...v0.104.0) (2026-09-15)
+
+
+### Features
+
+* chore(stlc): seal custom-code tracking files ([5839bab](https://github.com/kernel/kernel-go-sdk/commit/5839babda6a9a2fe4788f384665c833a3f41da9f))
+* Expose managed auth field input modes ([55c88c0](https://github.com/kernel/kernel-go-sdk/commit/55c88c0144a0eb00f4e9378a265774b96acf41f0))
+* Return working config registry configurations ([bcf94cc](https://github.com/kernel/kernel-go-sdk/commit/bcf94cc5a1bd1fcc02ff4b2ed749b3e6b0244628))
+
+
+### Bug Fixes
+
+* disable automatic vault operation retries in SDKs ([f0d3293](https://github.com/kernel/kernel-go-sdk/commit/f0d32931f752e88d8d5d74277edbdaf3685b566b))
+
 ## [0.103.0](https://github.com/kernel/kernel-go-sdk/compare/v0.102.0...v0.103.0) (2026-09-14)
 
 
