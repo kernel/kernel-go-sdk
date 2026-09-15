@@ -161,7 +161,7 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // `failed` or `unknown`, not an automatic-retry signal. A transport error may
 // leave the outcome unknown; do not automatically retry.
 func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemOperationResponseUnion, err error) {
-	opts = slices.Concat(r.Options, opts)
+	opts = slices.Concat(r.Options, []option.RequestOption{option.WithMaxRetries(0)}, opts)
 	if params.IDOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
 		return nil, err
