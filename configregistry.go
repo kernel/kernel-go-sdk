@@ -196,6 +196,9 @@ type ConfigRegistryResponse struct {
 	// A recommendation or a structured no-recommendation result.
 	Recommendation RecommendationResultUnion `json:"recommendation" api:"required"`
 	Target         Target                    `json:"target" api:"required"`
+	// Working configurations for the target, ordered with the recommended
+	// configuration first.
+	WorkingConfigurations []Recommendation `json:"working_configurations" api:"required"`
 	// Short advisory markdown to facilitate navigating this target. Returned even when
 	// no configuration reached the target, since knowing what prevented success is
 	// useful without a configuration. Not verified against this target. Null when
@@ -210,13 +213,14 @@ type ConfigRegistryResponse struct {
 	WorkloadOutcome ConfigRegistryResponseWorkloadOutcome `json:"workload_outcome" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Analysis        respjson.Field
-		Recommendation  respjson.Field
-		Target          respjson.Field
-		Guidance        respjson.Field
-		WorkloadOutcome respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
+		Analysis              respjson.Field
+		Recommendation        respjson.Field
+		Target                respjson.Field
+		WorkingConfigurations respjson.Field
+		Guidance              respjson.Field
+		WorkloadOutcome       respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
 	} `json:"-"`
 }
 
@@ -299,6 +303,9 @@ type LookupResponse struct {
 	// A recommendation or a structured no-recommendation result.
 	Recommendation RecommendationResultUnion `json:"recommendation" api:"required"`
 	Target         Target                    `json:"target" api:"required"`
+	// Working configurations for the target, ordered with the recommended
+	// configuration first.
+	WorkingConfigurations []Recommendation `json:"working_configurations" api:"required"`
 	// Short advisory markdown to facilitate navigating this target. Returned even when
 	// no configuration reached the target, since knowing what prevented success is
 	// useful without a configuration. Not verified against this target. Null when
@@ -306,11 +313,12 @@ type LookupResponse struct {
 	Guidance string `json:"guidance" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Recommendation respjson.Field
-		Target         respjson.Field
-		Guidance       respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		Recommendation        respjson.Field
+		Target                respjson.Field
+		WorkingConfigurations respjson.Field
+		Guidance              respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
 	} `json:"-"`
 }
 
