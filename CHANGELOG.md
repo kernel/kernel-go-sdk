@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.105.0](https://github.com/kernel/kernel-go-sdk/compare/v0.104.0...v0.105.0) (2026-09-15)
+
+
+### Features
+
+* Expose the WebMCP `awaiting_submission` status ([fe4b49f](https://github.com/kernel/kernel-go-sdk/commit/fe4b49f374669ebbc5244be04f136488576e49f7))
+
 ## [0.104.0](https://github.com/kernel/kernel-go-sdk/compare/v0.103.0...v0.104.0) (2026-09-15)
 
 

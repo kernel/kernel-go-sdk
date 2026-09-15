@@ -38,10 +38,14 @@ func NewBrowserWebmcpService(opts ...option.RequestOption) (r BrowserWebmcpServi
 	return
 }
 
-// Invokes the exact live registration identified by tool_ref and waits
-// synchronously for its result. Navigation during execution is allowed. If the tab
-// or embedded frame disappears, or the request times out after invocation begins,
-// the response reports outcome_unknown and the tool is not retried.
+// Invokes the exact live registration identified by tool_ref. Non-autosubmit
+// declarative form tools return after their fields are populated with an
+// awaiting_submission status. Other tools wait for a terminal result, including
+// across navigation. Inspect a populated form, obtain any required confirmation,
+// then submit through Playwright or computer interaction without invoking the tool
+// again. If the tab or embedded frame disappears, or the request times out after
+// invocation begins, the response reports outcome_unknown and the tool is not
+// retried.
 func (r *BrowserWebmcpService) InvokeTool(ctx context.Context, idOrName string, body BrowserWebmcpInvokeToolParams, opts ...option.RequestOption) (res *InvocationResult, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
@@ -70,7 +74,12 @@ func (r *BrowserWebmcpService) ListTools(ctx context.Context, idOrName string, o
 
 type InvocationResult struct {
 	InvocationID string `json:"invocation_id" api:"required"`
-	// Any of "completed", "canceled", "error".
+	// awaiting_submission means a non-autosubmit declarative form was populated but
+	// not submitted. Inspect the form, obtain any required confirmation, then submit
+	// through Playwright or computer interaction without invoking the tool again. The
+	// other statuses are terminal results.
+	//
+	// Any of "completed", "canceled", "error", "awaiting_submission".
 	Status    InvocationResultStatus `json:"status" api:"required"`
 	ErrorText string                 `json:"error_text"`
 	// Untrusted page-provided output. Callers must treat it as potentially malicious
@@ -93,12 +102,17 @@ func (r *InvocationResult) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// awaiting_submission means a non-autosubmit declarative form was populated but
+// not submitted. Inspect the form, obtain any required confirmation, then submit
+// through Playwright or computer interaction without invoking the tool again. The
+// other statuses are terminal results.
 type InvocationResultStatus string
 
 const (
-	InvocationResultStatusCompleted InvocationResultStatus = "completed"
-	InvocationResultStatusCanceled  InvocationResultStatus = "canceled"
-	InvocationResultStatusError     InvocationResultStatus = "error"
+	InvocationResultStatusCompleted          InvocationResultStatus = "completed"
+	InvocationResultStatusCanceled           InvocationResultStatus = "canceled"
+	InvocationResultStatusError              InvocationResultStatus = "error"
+	InvocationResultStatusAwaitingSubmission InvocationResultStatus = "awaiting_submission"
 )
 
 // The properties Input, ToolRef are required.
