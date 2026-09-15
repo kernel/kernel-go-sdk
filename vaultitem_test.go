@@ -62,40 +62,43 @@ func TestVaultItemUpdateWithOptionalParams(t *testing.T) {
 		"x",
 		kernel.VaultItemUpdateParams{
 			IDOrName: "id_or_name",
-			Spec: kernel.CardVaultItemSpecUnionParam{
-				OfLink: &kernel.CardVaultItemSpecLinkParam{
-					Amount:          3000,
-					Context:         "The order total changed to USD 30.00 including shipping and taxes for one notebook. Update this unapproved request rather than creating a second payment.",
-					Currency:        "usd",
-					MerchantName:    "Example Store",
-					MerchantURL:     "https://store.example.com",
-					PaymentMethodID: "pm_example",
-					Wallet:          "link-wallet",
-					ExpiresAt:       kernel.Int(0),
-					LineItems: []kernel.CardVaultItemSpecLinkLineItemParam{{
-						Name:        "name",
-						Description: kernel.String("description"),
-						ImageURL:    kernel.String("image_url"),
-						ProductURL:  kernel.String("product_url"),
-						Quantity:    kernel.Int(1),
-						SKU:         kernel.String("sku"),
-						Totals: []kernel.CardVaultItemSpecLinkLineItemTotalParam{{
+			OfCardVaultItemUpdateRequest: &kernel.VaultItemUpdateParamsBodyCardVaultItemUpdateRequest{
+				Spec: kernel.CardVaultItemSpecUnionParam{
+					OfLink: &kernel.CardVaultItemSpecLinkParam{
+						Amount:          3000,
+						Context:         "The order total changed to USD 30.00 including shipping and taxes for one notebook. Update this unapproved request rather than creating a second payment.",
+						Currency:        "usd",
+						MerchantName:    "Example Store",
+						MerchantURL:     "https://store.example.com",
+						PaymentMethodID: "pm_example",
+						Wallet:          "link-wallet",
+						ExpiresAt:       kernel.Int(0),
+						LineItems: []kernel.CardVaultItemSpecLinkLineItemParam{{
+							Name:        "name",
+							Description: kernel.String("description"),
+							ImageURL:    kernel.String("image_url"),
+							ProductURL:  kernel.String("product_url"),
+							Quantity:    kernel.Int(1),
+							SKU:         kernel.String("sku"),
+							Totals: []kernel.CardVaultItemSpecLinkLineItemTotalParam{{
+								Amount:      0,
+								DisplayText: "display_text",
+								Type:        "type",
+							}},
+							UnitAmount: kernel.Int(0),
+							URL:        kernel.String("url"),
+						}},
+						Metadata: map[string]string{
+							"foo": "string",
+						},
+						Totals: []kernel.CardVaultItemSpecLinkTotalParam{{
 							Amount:      0,
 							DisplayText: "display_text",
 							Type:        "type",
 						}},
-						UnitAmount: kernel.Int(0),
-						URL:        kernel.String("url"),
-					}},
-					Metadata: map[string]string{
-						"foo": "string",
 					},
-					Totals: []kernel.CardVaultItemSpecLinkTotalParam{{
-						Amount:      0,
-						DisplayText: "display_text",
-						Type:        "type",
-					}},
 				},
+				Type: "card",
 			},
 		},
 	)

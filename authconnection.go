@@ -807,6 +807,10 @@ type ManagedAuthField struct {
 	Type string `json:"type" api:"required"`
 	// Context shown near the field, including a masked code destination.
 	Hint string `json:"hint"`
+	// Virtual keyboard hint, independent of field type and browser validation.
+	//
+	// Any of "text", "email", "tel", "numeric".
+	InputMode string `json:"input_mode"`
 	// Human-readable label shown to the user.
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
@@ -820,6 +824,7 @@ type ManagedAuthField struct {
 		Ref              respjson.Field
 		Type             respjson.Field
 		Hint             respjson.Field
+		InputMode        respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
 		Required         respjson.Field
@@ -2141,6 +2146,10 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 	Type string `json:"type" api:"required"`
 	// Context shown near the field, including a masked code destination.
 	Hint string `json:"hint"`
+	// Virtual keyboard hint, independent of field type and browser validation.
+	//
+	// Any of "text", "email", "tel", "numeric".
+	InputMode string `json:"input_mode"`
 	// Human-readable label shown to the user.
 	Label string `json:"label"`
 	// Selector for the visible field, when available.
@@ -2154,6 +2163,7 @@ type AuthConnectionFollowResponseManagedAuthStateField struct {
 		Ref              respjson.Field
 		Type             respjson.Field
 		Hint             respjson.Field
+		InputMode        respjson.Field
 		Label            respjson.Field
 		ObservedSelector respjson.Field
 		Required         respjson.Field
