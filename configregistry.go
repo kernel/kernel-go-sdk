@@ -106,6 +106,9 @@ type Analysis struct {
 	//
 	// Any of "running", "completed", "failed", "canceled", "expired".
 	Status AnalysisStatus `json:"status" api:"required"`
+	// The workload description supplied for this analysis. Null when the analysis only
+	// tested connectivity.
+	Intent string `json:"intent" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -114,6 +117,7 @@ type Analysis struct {
 		Failure     respjson.Field
 		FinishedAt  respjson.Field
 		Status      respjson.Field
+		Intent      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
