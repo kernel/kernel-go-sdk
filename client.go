@@ -29,8 +29,7 @@ type Client struct {
 	Invocations InvocationService
 	// Resolve browser and proxy recommendations for bot-protected sites.
 	ConfigRegistry ConfigRegistryService
-	// Create and manage browser sessions.
-	Browsers BrowserService
+	Browsers       BrowserService
 	// Create, list, retrieve, and delete browser profiles.
 	Profiles  ProfileService
 	Auth      AuthService
