@@ -260,22 +260,22 @@ type Evidence struct {
 	SampleSize int64 `json:"sample_size" api:"required"`
 	// Accessed trials divided by judged trials. Inconclusive trials are excluded.
 	SuccessRate float64 `json:"success_rate" api:"required"`
-	// Most recent contributing run where this config met the success threshold.
-	// Omitted for knowledge assembled from runs that did not independently meet the
-	// threshold.
-	LastVerifiedAt time.Time `json:"last_verified_at" api:"nullable" format:"date-time"`
+	// Most recent contributing run whose evidence supported recommending this
+	// configuration. Omitted when no individual run independently met the
+	// recommendation threshold.
+	LastSupportedAt time.Time `json:"last_supported_at" api:"nullable" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Accessed       respjson.Field
-		Blocked        respjson.Field
-		Inconclusive   respjson.Field
-		LastObservedAt respjson.Field
-		RunCount       respjson.Field
-		SampleSize     respjson.Field
-		SuccessRate    respjson.Field
-		LastVerifiedAt respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		Accessed        respjson.Field
+		Blocked         respjson.Field
+		Inconclusive    respjson.Field
+		LastObservedAt  respjson.Field
+		RunCount        respjson.Field
+		SampleSize      respjson.Field
+		SuccessRate     respjson.Field
+		LastSupportedAt respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -712,7 +712,9 @@ type Recommendation struct {
 	// Browser settings that can be passed directly to `POST /browsers`.
 	Browser  Browser  `json:"browser" api:"required"`
 	Evidence Evidence `json:"evidence" api:"required"`
-	// Specificity of knowledge matched for this recommendation.
+	// Specificity of knowledge matched for this recommendation. Exact matches use
+	// knowledge for the requested target; host and domain matches use broader fallback
+	// knowledge.
 	//
 	// Any of "exact", "host", "domain".
 	MatchScope RecommendationMatchScope `json:"match_scope" api:"required"`
@@ -721,12 +723,6 @@ type Recommendation struct {
 	// Proxy recipe for the recommended browser.
 	Proxy ProxyUnion              `json:"proxy" api:"required"`
 	Type  constant.Recommendation `json:"type" default:"recommendation"`
-	// Exact matches meet the evidence threshold; host and domain fallbacks are
-	// inferred. Check evidence.last_verified_at for successful verification age and
-	// last_observed_at for the latest evidence.
-	//
-	// Any of "verified", "inferred".
-	Verification RecommendationVerification `json:"verification" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browser       respjson.Field
@@ -735,7 +731,6 @@ type Recommendation struct {
 		MatchedTarget respjson.Field
 		Proxy         respjson.Field
 		Type          respjson.Field
-		Verification  respjson.Field
 		ExtraFields   map[string]respjson.Field
 		raw           string
 	} `json:"-"`
@@ -747,23 +742,15 @@ func (r *Recommendation) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Specificity of knowledge matched for this recommendation.
+// Specificity of knowledge matched for this recommendation. Exact matches use
+// knowledge for the requested target; host and domain matches use broader fallback
+// knowledge.
 type RecommendationMatchScope string
 
 const (
 	RecommendationMatchScopeExact  RecommendationMatchScope = "exact"
 	RecommendationMatchScopeHost   RecommendationMatchScope = "host"
 	RecommendationMatchScopeDomain RecommendationMatchScope = "domain"
-)
-
-// Exact matches meet the evidence threshold; host and domain fallbacks are
-// inferred. Check evidence.last_verified_at for successful verification age and
-// last_observed_at for the latest evidence.
-type RecommendationVerification string
-
-const (
-	RecommendationVerificationVerified RecommendationVerification = "verified"
-	RecommendationVerificationInferred RecommendationVerification = "inferred"
 )
 
 // RecommendationResultUnion contains all possible properties and values from
@@ -785,8 +772,6 @@ type RecommendationResultUnion struct {
 	Proxy ProxyUnion `json:"proxy"`
 	// Any of "recommendation", "no_recommendation".
 	Type string `json:"type"`
-	// This field is from variant [Recommendation].
-	Verification RecommendationVerification `json:"verification"`
 	// This field is from variant [NoRecommendation].
 	Code NoRecommendationCode `json:"code"`
 	// This field is from variant [NoRecommendation].
@@ -798,7 +783,6 @@ type RecommendationResultUnion struct {
 		MatchedTarget respjson.Field
 		Proxy         respjson.Field
 		Type          respjson.Field
-		Verification  respjson.Field
 		Code          respjson.Field
 		Message       respjson.Field
 		raw           string
@@ -911,8 +895,9 @@ type ResolveRequestParam struct {
 	// any non-HTTPS destination as off-site and will not drive an http one. Kernel
 	// uses it to drive the browser further into the site, where it can observe
 	// protections that only appear once a session interacts. When this target already
-	// has a verified configuration, the run confirms that one instead of re-deriving
-	// the whole matrix, so supplying an intent narrows what can be recommended.
+	// has a recommended configuration, the run confirms that one instead of
+	// re-deriving the whole matrix, so supplying an intent narrows what can be
+	// recommended.
 	Intent param.Opt[string] `json:"intent,omitzero"`
 	// ISO 3166 country codes Kernel may use when searching for or returning a proxy
 	// configuration. Kernel may test a subset of allowed countries. When omitted,

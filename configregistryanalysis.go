@@ -74,6 +74,21 @@ func (r *ConfigRegistryAnalysisService) ListAutoPaging(ctx context.Context, quer
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
+// Requests cancellation of a running project-scoped analysis. Cancellation is
+// asynchronous; poll the analysis until its status becomes canceled. Repeating the
+// request after the analysis reaches a terminal state returns the existing
+// outcome.
+func (r *ConfigRegistryAnalysisService) Cancel(ctx context.Context, id string, opts ...option.RequestOption) (res *ConfigRegistryResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("config-registry/analyses/%s/cancel", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return res, err
+}
+
 type ConfigRegistryAnalysisListParams struct {
 	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
