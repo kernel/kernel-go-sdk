@@ -335,7 +335,8 @@ func (r *LookupResponse) UnmarshalJSON(data []byte) error {
 type NoRecommendation struct {
 	// Machine-readable reason Kernel cannot currently provide a config recommendation.
 	//
-	// Any of "proxy_restricted", "no_working_configuration", "inconclusive".
+	// Any of "proxy_restricted", "target_not_evaluable", "no_working_configuration",
+	// "inconclusive".
 	Code NoRecommendationCode `json:"code" api:"required"`
 	// Human-readable explanation suitable for display.
 	Message string                    `json:"message" api:"required"`
@@ -361,6 +362,7 @@ type NoRecommendationCode string
 
 const (
 	NoRecommendationCodeProxyRestricted        NoRecommendationCode = "proxy_restricted"
+	NoRecommendationCodeTargetNotEvaluable     NoRecommendationCode = "target_not_evaluable"
 	NoRecommendationCodeNoWorkingConfiguration NoRecommendationCode = "no_working_configuration"
 	NoRecommendationCodeInconclusive           NoRecommendationCode = "inconclusive"
 )
