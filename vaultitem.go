@@ -940,13 +940,13 @@ type CardVaultItemStateUnion struct {
 	Provider string `json:"provider"`
 	Status   string `json:"status"`
 	// This field is from variant [CardVaultItemStateLink].
-	Aliases VaultCardAliases `json:"aliases"`
-	// This field is from variant [CardVaultItemStateLink].
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks]
 	Masks        CardVaultItemStateUnionMasks `json:"masks"`
 	StatusReason string                       `json:"status_reason"`
+	// This field is from variant [CardVaultItemStateAgentcard].
+	Aliases VaultCardAliases `json:"aliases"`
 	// This field is from variant [CardVaultItemStateAgentcard].
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateAgentcard].
@@ -954,10 +954,10 @@ type CardVaultItemStateUnion struct {
 	JSON        struct {
 		Provider      respjson.Field
 		Status        respjson.Field
-		Aliases       respjson.Field
 		Domains       respjson.Field
 		Masks         respjson.Field
 		StatusReason  respjson.Field
+		Aliases       respjson.Field
 		Authorization respjson.Field
 		Preparation   respjson.Field
 		raw           string
@@ -1029,6 +1029,8 @@ func (r *CardVaultItemStateUnionMasks) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Issued Link cards retain encrypted card material for the fill operation. Link
+// cards do not expose aliases or support egress substitution.
 type CardVaultItemStateLink struct {
 	Provider constant.Link `json:"provider" default:"link"`
 	// recovery_required means an original provider operation has an unresolved
@@ -1040,7 +1042,6 @@ type CardVaultItemStateLink struct {
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
 	Status       string                      `json:"status" api:"required"`
-	Aliases      VaultCardAliases            `json:"aliases"`
 	Domains      []string                    `json:"domains"`
 	Masks        CardVaultItemStateLinkMasks `json:"masks"`
 	StatusReason string                      `json:"status_reason"`
@@ -1048,7 +1049,6 @@ type CardVaultItemStateLink struct {
 	JSON struct {
 		Provider     respjson.Field
 		Status       respjson.Field
-		Aliases      respjson.Field
 		Domains      respjson.Field
 		Masks        respjson.Field
 		StatusReason respjson.Field
@@ -1666,10 +1666,9 @@ const (
 //
 // Fill in request order and stop on the first failure. This operation is not
 // atomic: previously filled fields are not rolled back. Never submit the form or
-// click buttons, though input/change events may trigger site behavior. Fill is the
-// preferred browser-checkout path. Aliases remain an alternative for explicitly
-// chosen egress-substitution integrations. Do not automatically retry or fall back
-// to aliases after a failed or indeterminate operation.
+// click buttons, though input/change events may trigger site behavior. Link cards
+// use fill for browser checkout and do not expose aliases or support egress
+// substitution. Do not automatically retry a failed or indeterminate operation.
 //
 // Secret values are never returned or included in operation logs, traces, audit
 // events, or error details. This does not prevent an agent with unrestricted
@@ -2193,12 +2192,12 @@ type VaultItemUnionState struct {
 	// This field is from variant [WalletVaultItemStateUnion].
 	UserID string `json:"user_id"`
 	// This field is from variant [CardVaultItemStateUnion].
-	Aliases VaultCardAliases `json:"aliases"`
-	// This field is from variant [CardVaultItemStateUnion].
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks]
 	Masks VaultItemUnionStateMasks `json:"masks"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Aliases VaultCardAliases `json:"aliases"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
@@ -2210,9 +2209,9 @@ type VaultItemUnionState struct {
 		Status        respjson.Field
 		StatusReason  respjson.Field
 		UserID        respjson.Field
-		Aliases       respjson.Field
 		Domains       respjson.Field
 		Masks         respjson.Field
+		Aliases       respjson.Field
 		Authorization respjson.Field
 		Preparation   respjson.Field
 		Fields        respjson.Field
@@ -2380,7 +2379,9 @@ type VaultItemCard struct {
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
 	// Live payment card. Test-mode card creation is not supported.
-	Spec      CardVaultItemSpecUnion  `json:"spec" api:"required"`
+	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
+	// Issued Link cards retain encrypted card material for the fill operation. Link
+	// cards do not expose aliases or support egress substitution.
 	State     CardVaultItemStateUnion `json:"state" api:"required"`
 	Type      constant.Card           `json:"type" default:"card"`
 	UpdatedAt time.Time               `json:"updated_at" api:"required" format:"date-time"`
@@ -2944,12 +2945,12 @@ type VaultItemOperationResponseUnionState struct {
 	// This field is from variant [WalletVaultItemStateUnion].
 	UserID string `json:"user_id"`
 	// This field is from variant [CardVaultItemStateUnion].
-	Aliases VaultCardAliases `json:"aliases"`
-	// This field is from variant [CardVaultItemStateUnion].
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks]
 	Masks VaultItemOperationResponseUnionStateMasks `json:"masks"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Aliases VaultCardAliases `json:"aliases"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
@@ -2961,9 +2962,9 @@ type VaultItemOperationResponseUnionState struct {
 		Status        respjson.Field
 		StatusReason  respjson.Field
 		UserID        respjson.Field
-		Aliases       respjson.Field
 		Domains       respjson.Field
 		Masks         respjson.Field
+		Aliases       respjson.Field
 		Authorization respjson.Field
 		Preparation   respjson.Field
 		Fields        respjson.Field
@@ -3136,7 +3137,9 @@ type VaultItemOperationResponseCardVaultItem struct {
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
 	// Live payment card. Test-mode card creation is not supported.
-	Spec  CardVaultItemSpecUnion  `json:"spec" api:"required"`
+	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
+	// Issued Link cards retain encrypted card material for the fill operation. Link
+	// cards do not expose aliases or support egress substitution.
 	State CardVaultItemStateUnion `json:"state" api:"required"`
 	// Any of "card".
 	Type      string               `json:"type" api:"required"`
@@ -3849,10 +3852,9 @@ type VaultItemPerformOperationParams struct {
 	//
 	// Fill in request order and stop on the first failure. This operation is not
 	// atomic: previously filled fields are not rolled back. Never submit the form or
-	// click buttons, though input/change events may trigger site behavior. Fill is the
-	// preferred browser-checkout path. Aliases remain an alternative for explicitly
-	// chosen egress-substitution integrations. Do not automatically retry or fall back
-	// to aliases after a failed or indeterminate operation.
+	// click buttons, though input/change events may trigger site behavior. Link cards
+	// use fill for browser checkout and do not expose aliases or support egress
+	// substitution. Do not automatically retry a failed or indeterminate operation.
 	//
 	// Secret values are never returned or included in operation logs, traces, audit
 	// events, or error details. This does not prevent an agent with unrestricted

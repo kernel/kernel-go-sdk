@@ -570,7 +570,7 @@ type BrowserNewResponse struct {
 	//
 	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
-	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// URL the session was most recently asked to navigate to, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
 	// without waiting for it to load, and any errors (DNS failure, bad status,
 	// timeout) are silently dropped. Captures what was requested, not what the browser
@@ -721,7 +721,7 @@ type BrowserGetResponse struct {
 	//
 	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
-	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// URL the session was most recently asked to navigate to, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
 	// without waiting for it to load, and any errors (DNS failure, bad status,
 	// timeout) are silently dropped. Captures what was requested, not what the browser
@@ -872,7 +872,7 @@ type BrowserUpdateResponse struct {
 	//
 	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
-	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// URL the session was most recently asked to navigate to, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
 	// without waiting for it to load, and any errors (DNS failure, bad status,
 	// timeout) are silently dropped. Captures what was requested, not what the browser
@@ -1023,7 +1023,7 @@ type BrowserListResponse struct {
 	//
 	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
-	// URL the session was asked to navigate to on creation, if any. Recorded for
+	// URL the session was most recently asked to navigate to, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
 	// without waiting for it to load, and any errors (DNS failure, bad status,
 	// timeout) are silently dropped. Captures what was requested, not what the browser
@@ -1375,6 +1375,11 @@ type BrowserUpdateParams struct {
 	// If true, stealth browsers connect directly instead of using the default stealth
 	// proxy. Deprecated in favor of proxy.mode.
 	DisableDefaultProxy param.Opt[bool] `json:"disable_default_proxy,omitzero"`
+	// Optional URL to navigate the browser to after applying this update. When a
+	// profile is loaded in the same update, this overrides the profile's restored
+	// tabs. Navigation is best-effort, so failures do not fail the update. Omit or set
+	// to an empty string to leave the current page unchanged.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
 	// leave the existing configuration unchanged. Set enabled to true to enable
 	// capture using VM defaults. Set enabled to false to stop capture. Provide browser
