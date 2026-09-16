@@ -18,6 +18,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/internal/apiform"
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
 	"github.com/kernel/kernel-go-sdk/internal/apiquery"
+	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
 	"github.com/kernel/kernel-go-sdk/packages/pagination"
@@ -26,8 +27,6 @@ import (
 	"github.com/kernel/kernel-go-sdk/shared"
 )
 
-// Create and manage browser sessions.
-//
 // BrowserService contains methods and other services that help with interacting
 // with the kernel API.
 //
@@ -168,6 +167,30 @@ func (r *BrowserService) LoadExtensions(ctx context.Context, idOrName string, bo
 	path := fmt.Sprintf("browsers/%s/extensions", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
 	return err
+}
+
+// Execute JavaScript in a persistent Node.js runtime inside the browser VM.
+// Top-level bindings, closures, mutations, and dynamically imported modules
+// persist across calls until the REPL is reset or replaced. Start with
+// `repl.help()` to list available methods, or call `repl.help("click")` for
+// detailed help.
+//
+// Expression values are ignored. Emit ordered text or image output with
+// `repl.write(...)`, console methods, or `repl.emitImage(...)`. The runtime also
+// exposes browser-control helpers, WebMCP, Patchright, Playwright, and raw CDP.
+//
+// Executions are serialized. A timeout, crash, OOM, or protocol failure terminates
+// the REPL and changes its `repl_id`. This is unrestricted code execution inside
+// the browser VM and is not sandboxed.
+func (r *BrowserService) Repl(ctx context.Context, idOrName string, body BrowserReplParams, opts ...option.RequestOption) (res *BrowserReplResult, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s/repl", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
 }
 
 // Memory allocated to the browser session.
@@ -417,6 +440,214 @@ type BrowserProxyMode string
 const (
 	BrowserProxyModeDirect  BrowserProxyMode = "direct"
 	BrowserProxyModeDefault BrowserProxyMode = "default"
+)
+
+// BrowserReplContentUnion contains all possible properties and values from
+// [BrowserReplTextContent], [BrowserReplImageContent].
+//
+// Use the [BrowserReplContentUnion.AsAny] method to switch on the variant.
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type BrowserReplContentUnion struct {
+	// This field is from variant [BrowserReplTextContent].
+	Channel BrowserReplTextContentChannel `json:"channel"`
+	// This field is from variant [BrowserReplTextContent].
+	Text string `json:"text"`
+	// Any of "text", "image".
+	Type string `json:"type"`
+	// This field is from variant [BrowserReplImageContent].
+	DataB64 string `json:"data_b64"`
+	// This field is from variant [BrowserReplImageContent].
+	MimeType string `json:"mime_type"`
+	JSON     struct {
+		Channel  respjson.Field
+		Text     respjson.Field
+		Type     respjson.Field
+		DataB64  respjson.Field
+		MimeType respjson.Field
+		raw      string
+	} `json:"-"`
+}
+
+// anyBrowserReplContent is implemented by each variant of
+// [BrowserReplContentUnion] to add type safety for the return type of
+// [BrowserReplContentUnion.AsAny]
+type anyBrowserReplContent interface {
+	implBrowserReplContentUnion()
+}
+
+func (BrowserReplTextContent) implBrowserReplContentUnion()  {}
+func (BrowserReplImageContent) implBrowserReplContentUnion() {}
+
+// Use the following switch statement to find the correct variant
+//
+//	switch variant := BrowserReplContentUnion.AsAny().(type) {
+//	case kernel.BrowserReplTextContent:
+//	case kernel.BrowserReplImageContent:
+//	default:
+//	  fmt.Errorf("no variant present")
+//	}
+func (u BrowserReplContentUnion) AsAny() anyBrowserReplContent {
+	switch u.Type {
+	case "text":
+		return u.AsText()
+	case "image":
+		return u.AsImage()
+	}
+	return nil
+}
+
+func (u BrowserReplContentUnion) AsText() (v BrowserReplTextContent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserReplContentUnion) AsImage() (v BrowserReplImageContent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u BrowserReplContentUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *BrowserReplContentUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplImageContent struct {
+	DataB64  string `json:"data_b64" api:"required"`
+	MimeType string `json:"mime_type" api:"required"`
+	// Any of "image".
+	Type BrowserReplImageContentType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DataB64     respjson.Field
+		MimeType    respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserReplImageContent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserReplImageContent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplImageContentType string
+
+const (
+	BrowserReplImageContentTypeImage BrowserReplImageContentType = "image"
+)
+
+// Request to execute code in the persistent Browser REPL.
+//
+// The property Code is required.
+type BrowserReplRequestParam struct {
+	// JavaScript evaluated in a persistent Node.js runtime. Top-level bindings persist
+	// until the browser VM's API process exits, the REPL is reset, or the REPL is
+	// terminated after a crash or timeout. Static top-level imports are unsupported;
+	// use dynamic `import()`. Expression values are ignored; emit output with
+	// `repl.write(...)`, console methods, or `repl.emitImage(...)`. May be empty only
+	// when `reset` is true.
+	Code string `json:"code" api:"required"`
+	// Terminate the current REPL, start a fresh one, and then evaluate code.
+	Reset param.Opt[bool] `json:"reset,omitzero"`
+	// Maximum execution time in seconds. Default is 60.
+	TimeoutSec param.Opt[int64] `json:"timeout_sec,omitzero"`
+	paramObj
+}
+
+func (r BrowserReplRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserReplRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserReplRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Result of Browser REPL code execution.
+type BrowserReplResult struct {
+	// CUID2 identifying the exact state-holding REPL process used for this execution.
+	// Stable across calls and Chromium reconnects; changes after an API restart,
+	// explicit reset, execution timeout, or REPL crash.
+	ReplID string `json:"repl_id" api:"required"`
+	// Whether the code executed successfully.
+	Success bool `json:"success" api:"required"`
+	// Optional ordered text/image output produced by the execution.
+	Content []BrowserReplContentUnion `json:"content"`
+	// True if text or image output was dropped or truncated due to response limits.
+	ContentTruncated bool `json:"content_truncated"`
+	// Wall-clock execution time in milliseconds.
+	DurationMs int64 `json:"duration_ms"`
+	// Error message if execution failed.
+	Error string `json:"error"`
+	// True if the REPL identified by `repl_id` was terminated by this request. The
+	// next request lazily starts a fresh REPL with a new `repl_id`.
+	ReplTerminated bool `json:"repl_terminated"`
+	// Stack trace if execution failed.
+	Stack string `json:"stack"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ReplID           respjson.Field
+		Success          respjson.Field
+		Content          respjson.Field
+		ContentTruncated respjson.Field
+		DurationMs       respjson.Field
+		Error            respjson.Field
+		ReplTerminated   respjson.Field
+		Stack            respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserReplResult) RawJSON() string { return r.JSON.raw }
+func (r *BrowserReplResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplTextContent struct {
+	// `write` is emitted by `repl.write`; `stdout` and `stderr` are emitted by console
+	// methods.
+	//
+	// Any of "write", "stdout", "stderr".
+	Channel BrowserReplTextContentChannel `json:"channel" api:"required"`
+	Text    string                        `json:"text" api:"required"`
+	// Any of "text".
+	Type BrowserReplTextContentType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Channel     respjson.Field
+		Text        respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserReplTextContent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserReplTextContent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// `write` is emitted by `repl.write`; `stdout` and `stderr` are emitted by console
+// methods.
+type BrowserReplTextContentChannel string
+
+const (
+	BrowserReplTextContentChannelWrite  BrowserReplTextContentChannel = "write"
+	BrowserReplTextContentChannelStdout BrowserReplTextContentChannel = "stdout"
+	BrowserReplTextContentChannelStderr BrowserReplTextContentChannel = "stderr"
+)
+
+type BrowserReplTextContentType string
+
+const (
+	BrowserReplTextContentTypeText BrowserReplTextContentType = "text"
 )
 
 // Session usage metrics.
@@ -1665,5 +1896,18 @@ func (r BrowserLoadExtensionsParamsExtension) MarshalJSON() (data []byte, err er
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserLoadExtensionsParamsExtension) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplParams struct {
+	// Request to execute code in the persistent Browser REPL.
+	BrowserReplRequest BrowserReplRequestParam
+	paramObj
+}
+
+func (r BrowserReplParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.BrowserReplRequest)
+}
+func (r *BrowserReplParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
