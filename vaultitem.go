@@ -151,8 +151,10 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // device approval before native Square Pay. Keep the returned approval page open,
 // poll until ready_to_submit, then submit before preparation.expires_at. Unused
 // preparations expire automatically and cannot be reused. If spend-request
-// creation is rate limited, returns HTTP 429 with code
-// `spend_request_rate_limited`; stop and back off before retrying.
+// creation is rejected with a non-retryable provider error, the card item is
+// deleted and the provider's error code and message are returned. Rate limits
+// return HTTP 429 and retain the card item; stop, back off, and retry the same
+// authorize operation.
 //
 // Fill returns a value-free execution result. Validation failures before writing
 // return 400 (invalid request or targets), 403 (access or destination denied), 404
@@ -505,7 +507,8 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 
 // Live payment card. Test-mode card creation is not supported.
 type CardVaultItemSpecLink struct {
-	// Integer amount in minor currency units.
+	// Integer amount in minor currency units. Link permits at most 50000 per spend
+	// request.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -814,7 +817,8 @@ func init() {
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
 type CardVaultItemSpecLinkParam struct {
-	// Integer amount in minor currency units.
+	// Integer amount in minor currency units. Link permits at most 50000 per spend
+	// request.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
