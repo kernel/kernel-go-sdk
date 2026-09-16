@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.107.0](https://github.com/kernel/kernel-go-sdk/compare/v0.106.0...v0.107.0) (2026-09-16)
+
+
+### Features
+
+* Classify unevaluable config registry targets ([dab5c07](https://github.com/kernel/kernel-go-sdk/commit/dab5c0714192e701d845953f1ed95b938e49130f))
+* Expose persistent Browser REPL through the API ([04402bd](https://github.com/kernel/kernel-go-sdk/commit/04402bd6d41a98d217394d26b1aaf56609591759))
+* Return Link spend request errors directly ([800e638](https://github.com/kernel/kernel-go-sdk/commit/800e638e87487e096fef35fa35e82c91e0ffed04))
+
 ## [0.106.0](https://github.com/kernel/kernel-go-sdk/compare/v0.105.0...v0.106.0) (2026-09-16)
 
 
