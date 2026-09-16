@@ -99,6 +99,7 @@ Methods:
 
 - <code title="get /config-registry/analyses/{id}">client.ConfigRegistry.Analyses.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ConfigRegistryAnalysisService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ConfigRegistryResponse">ConfigRegistryResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /config-registry/analyses">client.ConfigRegistry.Analyses.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ConfigRegistryAnalysisService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ConfigRegistryAnalysisListParams">ConfigRegistryAnalysisListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AnalysisSummary">AnalysisSummary</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /config-registry/analyses/{id}/cancel">client.ConfigRegistry.Analyses.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ConfigRegistryAnalysisService.Cancel">Cancel</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ConfigRegistryResponse">ConfigRegistryResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 # Browsers
 
@@ -492,6 +493,7 @@ Methods:
 
 Params Types:
 
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentcardPreparedProcessor">AgentcardPreparedProcessor</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthorizeVaultItemOperationRequestParam">AuthorizeVaultItemOperationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CardVaultItemSpecUnionParam">CardVaultItemSpecUnionParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CollectVaultItemOperationRequestParam">CollectVaultItemOperationRequestParam</a>
@@ -511,6 +513,7 @@ Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentcardCheckoutAuthorization">AgentcardCheckoutAuthorization</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentcardCheckoutPreparation">AgentcardCheckoutPreparation</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AgentcardPreparedProcessor">AgentcardPreparedProcessor</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CardVaultItemSpecUnion">CardVaultItemSpecUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CardVaultItemStateUnion">CardVaultItemStateUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialCollectionAction">CredentialCollectionAction</a>

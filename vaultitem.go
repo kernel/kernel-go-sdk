@@ -292,15 +292,17 @@ const (
 	AgentcardCheckoutAuthorizationChargedKindNone       AgentcardCheckoutAuthorizationChargedKind = "none"
 )
 
-// One-use Square checkout preparation. Keep the approval page open through token
-// handoff. The amount is display-only and does not constrain the merchant's
-// eventual charge.
+// One-use processor-bound checkout preparation. Keep the approval page open
+// through token handoff. The amount is display-only and does not constrain the
+// merchant's eventual charge.
 type AgentcardCheckoutPreparation struct {
 	BrowserID string    `json:"browser_id" api:"required"`
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
-	// Any of "production", "sandbox".
+	// Any of "production", "sandbox", "shared".
 	Environment    AgentcardCheckoutPreparationEnvironment `json:"environment" api:"required"`
 	MerchantOrigin string                                  `json:"merchant_origin" api:"required"`
+	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago".
+	Psp AgentcardPreparedProcessor `json:"psp" api:"required"`
 	// Preparation consumed means egress claimed the preparation and it cannot be
 	// reused. It does not mean the attempt settled. Use the enclosing item's status as
 	// the lifecycle indicator; item consumed means the attempt settled, not that an
@@ -321,6 +323,7 @@ type AgentcardCheckoutPreparation struct {
 		CreatedAt      respjson.Field
 		Environment    respjson.Field
 		MerchantOrigin respjson.Field
+		Psp            respjson.Field
 		Status         respjson.Field
 		ID             respjson.Field
 		ApprovalURL    respjson.Field
@@ -341,6 +344,7 @@ type AgentcardCheckoutPreparationEnvironment string
 const (
 	AgentcardCheckoutPreparationEnvironmentProduction AgentcardCheckoutPreparationEnvironment = "production"
 	AgentcardCheckoutPreparationEnvironmentSandbox    AgentcardCheckoutPreparationEnvironment = "sandbox"
+	AgentcardCheckoutPreparationEnvironmentShared     AgentcardCheckoutPreparationEnvironment = "shared"
 )
 
 // Preparation consumed means egress claimed the preparation and it cannot be
@@ -357,6 +361,16 @@ const (
 	AgentcardCheckoutPreparationStatusCancelled        AgentcardCheckoutPreparationStatus = "cancelled"
 	AgentcardCheckoutPreparationStatusExpired          AgentcardCheckoutPreparationStatus = "expired"
 	AgentcardCheckoutPreparationStatusUnknown          AgentcardCheckoutPreparationStatus = "unknown"
+)
+
+type AgentcardPreparedProcessor string
+
+const (
+	AgentcardPreparedProcessorSquare      AgentcardPreparedProcessor = "square"
+	AgentcardPreparedProcessorBraintree   AgentcardPreparedProcessor = "braintree"
+	AgentcardPreparedProcessorWorldpay    AgentcardPreparedProcessor = "worldpay"
+	AgentcardPreparedProcessorBambora     AgentcardPreparedProcessor = "bambora"
+	AgentcardPreparedProcessorMercadoPago AgentcardPreparedProcessor = "mercado_pago"
 )
 
 // Authorize a Link card using its existing purchase specification. Use only after
@@ -926,13 +940,13 @@ type CardVaultItemStateUnion struct {
 	Provider string `json:"provider"`
 	Status   string `json:"status"`
 	// This field is from variant [CardVaultItemStateLink].
-	Aliases VaultCardAliases `json:"aliases"`
-	// This field is from variant [CardVaultItemStateLink].
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks]
 	Masks        CardVaultItemStateUnionMasks `json:"masks"`
 	StatusReason string                       `json:"status_reason"`
+	// This field is from variant [CardVaultItemStateAgentcard].
+	Aliases VaultCardAliases `json:"aliases"`
 	// This field is from variant [CardVaultItemStateAgentcard].
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateAgentcard].
@@ -940,10 +954,10 @@ type CardVaultItemStateUnion struct {
 	JSON        struct {
 		Provider      respjson.Field
 		Status        respjson.Field
-		Aliases       respjson.Field
 		Domains       respjson.Field
 		Masks         respjson.Field
 		StatusReason  respjson.Field
+		Aliases       respjson.Field
 		Authorization respjson.Field
 		Preparation   respjson.Field
 		raw           string
@@ -1015,6 +1029,8 @@ func (r *CardVaultItemStateUnionMasks) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Issued Link cards retain encrypted card material for the fill operation. Link
+// cards do not expose aliases or support egress substitution.
 type CardVaultItemStateLink struct {
 	Provider constant.Link `json:"provider" default:"link"`
 	// recovery_required means an original provider operation has an unresolved
@@ -1026,7 +1042,6 @@ type CardVaultItemStateLink struct {
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
 	Status       string                      `json:"status" api:"required"`
-	Aliases      VaultCardAliases            `json:"aliases"`
 	Domains      []string                    `json:"domains"`
 	Masks        CardVaultItemStateLinkMasks `json:"masks"`
 	StatusReason string                      `json:"status_reason"`
@@ -1034,7 +1049,6 @@ type CardVaultItemStateLink struct {
 	JSON struct {
 		Provider     respjson.Field
 		Status       respjson.Field
-		Aliases      respjson.Field
 		Domains      respjson.Field
 		Masks        respjson.Field
 		StatusReason respjson.Field
@@ -1088,9 +1102,9 @@ type CardVaultItemStateAgentcard struct {
 	// pending approval and after it settles.
 	Authorization AgentcardCheckoutAuthorization   `json:"authorization"`
 	Masks         CardVaultItemStateAgentcardMasks `json:"masks"`
-	// One-use Square checkout preparation. Keep the approval page open through token
-	// handoff. The amount is display-only and does not constrain the merchant's
-	// eventual charge.
+	// One-use processor-bound checkout preparation. Keep the approval page open
+	// through token handoff. The amount is display-only and does not constrain the
+	// merchant's eventual charge.
 	Preparation  AgentcardCheckoutPreparation `json:"preparation"`
 	StatusReason string                       `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1652,10 +1666,9 @@ const (
 //
 // Fill in request order and stop on the first failure. This operation is not
 // atomic: previously filled fields are not rolled back. Never submit the form or
-// click buttons, though input/change events may trigger site behavior. Fill is the
-// preferred browser-checkout path. Aliases remain an alternative for explicitly
-// chosen egress-substitution integrations. Do not automatically retry or fall back
-// to aliases after a failed or indeterminate operation.
+// click buttons, though input/change events may trigger site behavior. Link cards
+// use fill for browser checkout and do not expose aliases or support egress
+// substitution. Do not automatically retry a failed or indeterminate operation.
 //
 // Secret values are never returned or included in operation logs, traces, audit
 // events, or error details. This does not prevent an agent with unrestricted
@@ -1740,8 +1753,8 @@ const (
 	FillVaultItemOperationResultTypeFill FillVaultItemOperationResultType = "fill"
 )
 
-// Prepare an unused AgentCard card for Square checkout. Deliver the returned
-// approval URL and keep the approval page open. Poll the item until
+// Prepare an unused AgentCard card for a supported tokenization checkout. Deliver
+// the returned approval URL and keep the approval page open. Poll the item until
 // ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
 // lasts at most 30 seconds. Unused preparations expire automatically. Preparations
 // are single-use even after failure or expiry; do not automatically retry and
@@ -1749,11 +1762,11 @@ const (
 //
 // The properties Checkout, Type are required.
 type PrepareCheckoutVaultItemOperationRequestParam struct {
-	// Required when preparing an unused AgentCard card for Square. Consent is bound to
-	// this browser and declared merchant origin, not a tab. Wait for the item's
-	// ready_to_submit status before native Pay and submit within its readiness
-	// deadline. Unused preparations expire automatically; every preparation is
-	// single-use, including after failure or expiry.
+	// Required when preparing an unused AgentCard card for a supported tokenization
+	// processor. Consent is bound to this browser and declared merchant origin, not a
+	// tab. Wait for the item's ready_to_submit status before native Pay and submit
+	// within its readiness deadline. Unused preparations expire automatically; every
+	// preparation is single-use, including after failure or expiry.
 	Checkout VaultCheckoutContextParam `json:"checkout,omitzero" api:"required"`
 	// Any of "prepare_checkout".
 	Type PrepareCheckoutVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
@@ -1796,23 +1809,31 @@ func (r *VaultCardAliases) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Required when preparing an unused AgentCard card for Square. Consent is bound to
-// this browser and declared merchant origin, not a tab. Wait for the item's
-// ready_to_submit status before native Pay and submit within its readiness
-// deadline. Unused preparations expire automatically; every preparation is
-// single-use, including after failure or expiry.
+// Required when preparing an unused AgentCard card for a supported tokenization
+// processor. Consent is bound to this browser and declared merchant origin, not a
+// tab. Wait for the item's ready_to_submit status before native Pay and submit
+// within its readiness deadline. Unused preparations expire automatically; every
+// preparation is single-use, including after failure or expiry.
 //
 // The properties BrowserID, Environment, MerchantOrigin are required.
 type VaultCheckoutContextParam struct {
 	// Active browser session with this vault bound to it.
 	BrowserID string `json:"browser_id" api:"required"`
-	// Square environment, independent of the AgentCard credential mode.
+	// Use production or sandbox for Square, Braintree and Worldpay; shared for Bambora
+	// and Mercado Pago. Shared endpoints do not establish test mode. Merchant
+	// credentials/configuration determine processor test mode, independently of the
+	// AgentCard credential mode.
 	//
-	// Any of "production", "sandbox".
+	// Any of "production", "sandbox", "shared".
 	Environment VaultCheckoutContextEnvironment `json:"environment,omitzero" api:"required"`
-	// Canonical HTTPS origin of the top-level merchant document, not the Square
+	// Canonical HTTPS origin of the top-level merchant document, not a processor
 	// iframe. HTTP localhost is accepted for tests.
 	MerchantOrigin string `json:"merchant_origin" api:"required"`
+	// Tokenization processor. Omit for Square compatibility. Non-Square processors
+	// require multi-processor preparation enablement.
+	//
+	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago".
+	Psp AgentcardPreparedProcessor `json:"psp,omitzero"`
 	paramObj
 }
 
@@ -1824,12 +1845,16 @@ func (r *VaultCheckoutContextParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Square environment, independent of the AgentCard credential mode.
+// Use production or sandbox for Square, Braintree and Worldpay; shared for Bambora
+// and Mercado Pago. Shared endpoints do not establish test mode. Merchant
+// credentials/configuration determine processor test mode, independently of the
+// AgentCard credential mode.
 type VaultCheckoutContextEnvironment string
 
 const (
 	VaultCheckoutContextEnvironmentProduction VaultCheckoutContextEnvironment = "production"
 	VaultCheckoutContextEnvironmentSandbox    VaultCheckoutContextEnvironment = "sandbox"
+	VaultCheckoutContextEnvironmentShared     VaultCheckoutContextEnvironment = "shared"
 )
 
 // The properties Field, Selector are required.
@@ -2167,12 +2192,12 @@ type VaultItemUnionState struct {
 	// This field is from variant [WalletVaultItemStateUnion].
 	UserID string `json:"user_id"`
 	// This field is from variant [CardVaultItemStateUnion].
-	Aliases VaultCardAliases `json:"aliases"`
-	// This field is from variant [CardVaultItemStateUnion].
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks]
 	Masks VaultItemUnionStateMasks `json:"masks"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Aliases VaultCardAliases `json:"aliases"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
@@ -2184,9 +2209,9 @@ type VaultItemUnionState struct {
 		Status        respjson.Field
 		StatusReason  respjson.Field
 		UserID        respjson.Field
-		Aliases       respjson.Field
 		Domains       respjson.Field
 		Masks         respjson.Field
+		Aliases       respjson.Field
 		Authorization respjson.Field
 		Preparation   respjson.Field
 		Fields        respjson.Field
@@ -2354,7 +2379,9 @@ type VaultItemCard struct {
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
 	// Live payment card. Test-mode card creation is not supported.
-	Spec      CardVaultItemSpecUnion  `json:"spec" api:"required"`
+	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
+	// Issued Link cards retain encrypted card material for the fill operation. Link
+	// cards do not expose aliases or support egress substitution.
 	State     CardVaultItemStateUnion `json:"state" api:"required"`
 	Type      constant.Card           `json:"type" default:"card"`
 	UpdatedAt time.Time               `json:"updated_at" api:"required" format:"date-time"`
@@ -2918,12 +2945,12 @@ type VaultItemOperationResponseUnionState struct {
 	// This field is from variant [WalletVaultItemStateUnion].
 	UserID string `json:"user_id"`
 	// This field is from variant [CardVaultItemStateUnion].
-	Aliases VaultCardAliases `json:"aliases"`
-	// This field is from variant [CardVaultItemStateUnion].
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks]
 	Masks VaultItemOperationResponseUnionStateMasks `json:"masks"`
+	// This field is from variant [CardVaultItemStateUnion].
+	Aliases VaultCardAliases `json:"aliases"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
@@ -2935,9 +2962,9 @@ type VaultItemOperationResponseUnionState struct {
 		Status        respjson.Field
 		StatusReason  respjson.Field
 		UserID        respjson.Field
-		Aliases       respjson.Field
 		Domains       respjson.Field
 		Masks         respjson.Field
+		Aliases       respjson.Field
 		Authorization respjson.Field
 		Preparation   respjson.Field
 		Fields        respjson.Field
@@ -3110,7 +3137,9 @@ type VaultItemOperationResponseCardVaultItem struct {
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
 	// Live payment card. Test-mode card creation is not supported.
-	Spec  CardVaultItemSpecUnion  `json:"spec" api:"required"`
+	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
+	// Issued Link cards retain encrypted card material for the fill operation. Link
+	// cards do not expose aliases or support egress substitution.
 	State CardVaultItemStateUnion `json:"state" api:"required"`
 	// Any of "card".
 	Type      string               `json:"type" api:"required"`
@@ -3795,12 +3824,12 @@ type VaultItemPerformOperationParams struct {
 	// parameter waits for readiness, not edits.
 	OfCollect *CollectVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Prepare
-	// an unused AgentCard card for Square checkout. Deliver the returned approval URL
-	// and keep the approval page open. Poll the item until ready_to_submit, then
-	// submit native Pay before preparation.expires_at. Readiness lasts at most 30
-	// seconds. Unused preparations expire automatically. Preparations are single-use
-	// even after failure or expiry; do not automatically retry and reconcile uncertain
-	// outcomes with the merchant.
+	// an unused AgentCard card for a supported tokenization checkout. Deliver the
+	// returned approval URL and keep the approval page open. Poll the item until
+	// ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
+	// lasts at most 30 seconds. Unused preparations expire automatically. Preparations
+	// are single-use even after failure or expiry; do not automatically retry and
+	// reconcile uncertain outcomes with the merchant.
 	OfPrepareCheckout *PrepareCheckoutVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Fill
 	// selected fields from one ready credential or ready, unexpired Link card into a
@@ -3823,10 +3852,9 @@ type VaultItemPerformOperationParams struct {
 	//
 	// Fill in request order and stop on the first failure. This operation is not
 	// atomic: previously filled fields are not rolled back. Never submit the form or
-	// click buttons, though input/change events may trigger site behavior. Fill is the
-	// preferred browser-checkout path. Aliases remain an alternative for explicitly
-	// chosen egress-substitution integrations. Do not automatically retry or fall back
-	// to aliases after a failed or indeterminate operation.
+	// click buttons, though input/change events may trigger site behavior. Link cards
+	// use fill for browser checkout and do not expose aliases or support egress
+	// substitution. Do not automatically retry a failed or indeterminate operation.
 	//
 	// Secret values are never returned or included in operation logs, traces, audit
 	// events, or error details. This does not prevent an agent with unrestricted

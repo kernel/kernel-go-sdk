@@ -189,7 +189,8 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 				Mode: kernel.BrowserProxyModeDirect,
 				Name: kernel.String("x"),
 			},
-			ProxyID: kernel.String("proxy_id"),
+			ProxyID:  kernel.String("proxy_id"),
+			StartURL: kernel.String("https://example.com"),
 			Tags: kernel.Tags{
 				"team": "backend",
 				"env":  "staging",

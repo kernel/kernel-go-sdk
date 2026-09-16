@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.106.0](https://github.com/kernel/kernel-go-sdk/compare/v0.105.0...v0.106.0) (2026-09-16)
+
+
+### Features
+
+* Add processor-bound AgentCard preparation contracts ([cbf9d2b](https://github.com/kernel/kernel-go-sdk/commit/cbf9d2b797efefcff6b4bda87b55b5a36decf6d5))
+* Add start_url to browser session updates ([d66d956](https://github.com/kernel/kernel-go-sdk/commit/d66d956a00ea2ce3f2d8cf836d69f31f227c11d3))
+* Polish and publish the Config Registry API ([425e8f8](https://github.com/kernel/kernel-go-sdk/commit/425e8f86fe7eaab16e76865246a3b4b90bb44a46))
+* Square UKP and Hypeman placement load factors ([aac4d0c](https://github.com/kernel/kernel-go-sdk/commit/aac4d0c606518c16baad5e10687d99e1dd805ea4))
+
 ## [0.105.0](https://github.com/kernel/kernel-go-sdk/compare/v0.104.0...v0.105.0) (2026-09-15)
 
 
