@@ -292,15 +292,17 @@ const (
 	AgentcardCheckoutAuthorizationChargedKindNone       AgentcardCheckoutAuthorizationChargedKind = "none"
 )
 
-// One-use Square checkout preparation. Keep the approval page open through token
-// handoff. The amount is display-only and does not constrain the merchant's
-// eventual charge.
+// One-use processor-bound checkout preparation. Keep the approval page open
+// through token handoff. The amount is display-only and does not constrain the
+// merchant's eventual charge.
 type AgentcardCheckoutPreparation struct {
 	BrowserID string    `json:"browser_id" api:"required"`
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
-	// Any of "production", "sandbox".
+	// Any of "production", "sandbox", "shared".
 	Environment    AgentcardCheckoutPreparationEnvironment `json:"environment" api:"required"`
 	MerchantOrigin string                                  `json:"merchant_origin" api:"required"`
+	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago".
+	Psp AgentcardPreparedProcessor `json:"psp" api:"required"`
 	// Preparation consumed means egress claimed the preparation and it cannot be
 	// reused. It does not mean the attempt settled. Use the enclosing item's status as
 	// the lifecycle indicator; item consumed means the attempt settled, not that an
@@ -321,6 +323,7 @@ type AgentcardCheckoutPreparation struct {
 		CreatedAt      respjson.Field
 		Environment    respjson.Field
 		MerchantOrigin respjson.Field
+		Psp            respjson.Field
 		Status         respjson.Field
 		ID             respjson.Field
 		ApprovalURL    respjson.Field
@@ -341,6 +344,7 @@ type AgentcardCheckoutPreparationEnvironment string
 const (
 	AgentcardCheckoutPreparationEnvironmentProduction AgentcardCheckoutPreparationEnvironment = "production"
 	AgentcardCheckoutPreparationEnvironmentSandbox    AgentcardCheckoutPreparationEnvironment = "sandbox"
+	AgentcardCheckoutPreparationEnvironmentShared     AgentcardCheckoutPreparationEnvironment = "shared"
 )
 
 // Preparation consumed means egress claimed the preparation and it cannot be
@@ -357,6 +361,16 @@ const (
 	AgentcardCheckoutPreparationStatusCancelled        AgentcardCheckoutPreparationStatus = "cancelled"
 	AgentcardCheckoutPreparationStatusExpired          AgentcardCheckoutPreparationStatus = "expired"
 	AgentcardCheckoutPreparationStatusUnknown          AgentcardCheckoutPreparationStatus = "unknown"
+)
+
+type AgentcardPreparedProcessor string
+
+const (
+	AgentcardPreparedProcessorSquare      AgentcardPreparedProcessor = "square"
+	AgentcardPreparedProcessorBraintree   AgentcardPreparedProcessor = "braintree"
+	AgentcardPreparedProcessorWorldpay    AgentcardPreparedProcessor = "worldpay"
+	AgentcardPreparedProcessorBambora     AgentcardPreparedProcessor = "bambora"
+	AgentcardPreparedProcessorMercadoPago AgentcardPreparedProcessor = "mercado_pago"
 )
 
 // Authorize a Link card using its existing purchase specification. Use only after
@@ -1088,9 +1102,9 @@ type CardVaultItemStateAgentcard struct {
 	// pending approval and after it settles.
 	Authorization AgentcardCheckoutAuthorization   `json:"authorization"`
 	Masks         CardVaultItemStateAgentcardMasks `json:"masks"`
-	// One-use Square checkout preparation. Keep the approval page open through token
-	// handoff. The amount is display-only and does not constrain the merchant's
-	// eventual charge.
+	// One-use processor-bound checkout preparation. Keep the approval page open
+	// through token handoff. The amount is display-only and does not constrain the
+	// merchant's eventual charge.
 	Preparation  AgentcardCheckoutPreparation `json:"preparation"`
 	StatusReason string                       `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1740,8 +1754,8 @@ const (
 	FillVaultItemOperationResultTypeFill FillVaultItemOperationResultType = "fill"
 )
 
-// Prepare an unused AgentCard card for Square checkout. Deliver the returned
-// approval URL and keep the approval page open. Poll the item until
+// Prepare an unused AgentCard card for a supported tokenization checkout. Deliver
+// the returned approval URL and keep the approval page open. Poll the item until
 // ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
 // lasts at most 30 seconds. Unused preparations expire automatically. Preparations
 // are single-use even after failure or expiry; do not automatically retry and
@@ -1749,11 +1763,11 @@ const (
 //
 // The properties Checkout, Type are required.
 type PrepareCheckoutVaultItemOperationRequestParam struct {
-	// Required when preparing an unused AgentCard card for Square. Consent is bound to
-	// this browser and declared merchant origin, not a tab. Wait for the item's
-	// ready_to_submit status before native Pay and submit within its readiness
-	// deadline. Unused preparations expire automatically; every preparation is
-	// single-use, including after failure or expiry.
+	// Required when preparing an unused AgentCard card for a supported tokenization
+	// processor. Consent is bound to this browser and declared merchant origin, not a
+	// tab. Wait for the item's ready_to_submit status before native Pay and submit
+	// within its readiness deadline. Unused preparations expire automatically; every
+	// preparation is single-use, including after failure or expiry.
 	Checkout VaultCheckoutContextParam `json:"checkout,omitzero" api:"required"`
 	// Any of "prepare_checkout".
 	Type PrepareCheckoutVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
@@ -1796,23 +1810,31 @@ func (r *VaultCardAliases) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Required when preparing an unused AgentCard card for Square. Consent is bound to
-// this browser and declared merchant origin, not a tab. Wait for the item's
-// ready_to_submit status before native Pay and submit within its readiness
-// deadline. Unused preparations expire automatically; every preparation is
-// single-use, including after failure or expiry.
+// Required when preparing an unused AgentCard card for a supported tokenization
+// processor. Consent is bound to this browser and declared merchant origin, not a
+// tab. Wait for the item's ready_to_submit status before native Pay and submit
+// within its readiness deadline. Unused preparations expire automatically; every
+// preparation is single-use, including after failure or expiry.
 //
 // The properties BrowserID, Environment, MerchantOrigin are required.
 type VaultCheckoutContextParam struct {
 	// Active browser session with this vault bound to it.
 	BrowserID string `json:"browser_id" api:"required"`
-	// Square environment, independent of the AgentCard credential mode.
+	// Use production or sandbox for Square, Braintree and Worldpay; shared for Bambora
+	// and Mercado Pago. Shared endpoints do not establish test mode. Merchant
+	// credentials/configuration determine processor test mode, independently of the
+	// AgentCard credential mode.
 	//
-	// Any of "production", "sandbox".
+	// Any of "production", "sandbox", "shared".
 	Environment VaultCheckoutContextEnvironment `json:"environment,omitzero" api:"required"`
-	// Canonical HTTPS origin of the top-level merchant document, not the Square
+	// Canonical HTTPS origin of the top-level merchant document, not a processor
 	// iframe. HTTP localhost is accepted for tests.
 	MerchantOrigin string `json:"merchant_origin" api:"required"`
+	// Tokenization processor. Omit for Square compatibility. Non-Square processors
+	// require multi-processor preparation enablement.
+	//
+	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago".
+	Psp AgentcardPreparedProcessor `json:"psp,omitzero"`
 	paramObj
 }
 
@@ -1824,12 +1846,16 @@ func (r *VaultCheckoutContextParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Square environment, independent of the AgentCard credential mode.
+// Use production or sandbox for Square, Braintree and Worldpay; shared for Bambora
+// and Mercado Pago. Shared endpoints do not establish test mode. Merchant
+// credentials/configuration determine processor test mode, independently of the
+// AgentCard credential mode.
 type VaultCheckoutContextEnvironment string
 
 const (
 	VaultCheckoutContextEnvironmentProduction VaultCheckoutContextEnvironment = "production"
 	VaultCheckoutContextEnvironmentSandbox    VaultCheckoutContextEnvironment = "sandbox"
+	VaultCheckoutContextEnvironmentShared     VaultCheckoutContextEnvironment = "shared"
 )
 
 // The properties Field, Selector are required.
@@ -3795,12 +3821,12 @@ type VaultItemPerformOperationParams struct {
 	// parameter waits for readiness, not edits.
 	OfCollect *CollectVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Prepare
-	// an unused AgentCard card for Square checkout. Deliver the returned approval URL
-	// and keep the approval page open. Poll the item until ready_to_submit, then
-	// submit native Pay before preparation.expires_at. Readiness lasts at most 30
-	// seconds. Unused preparations expire automatically. Preparations are single-use
-	// even after failure or expiry; do not automatically retry and reconcile uncertain
-	// outcomes with the merchant.
+	// an unused AgentCard card for a supported tokenization checkout. Deliver the
+	// returned approval URL and keep the approval page open. Poll the item until
+	// ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
+	// lasts at most 30 seconds. Unused preparations expire automatically. Preparations
+	// are single-use even after failure or expiry; do not automatically retry and
+	// reconcile uncertain outcomes with the merchant.
 	OfPrepareCheckout *PrepareCheckoutVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Fill
 	// selected fields from one ready credential or ready, unexpired Link card into a
