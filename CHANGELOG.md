@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.109.0](https://github.com/kernel/kernel-go-sdk/compare/v0.108.0...v0.109.0) (2026-09-17)
+
+
+### Features
+
+* Accept opaque AgentCard vaulted card IDs ([5cfcedd](https://github.com/kernel/kernel-go-sdk/commit/5cfceddfb1ea8ad60df078bd8e89b11ca1aaa8d2))
+* Expose organization-wide concurrent browser capacity ([6367486](https://github.com/kernel/kernel-go-sdk/commit/6367486e6e06cdc3d9dc13c107dddca490e9b9bc))
+* Preserve credential field order ([3038f83](https://github.com/kernel/kernel-go-sdk/commit/3038f83eb3f7cc6a59059a0a04bdb111300ea77c))
+
 ## [0.108.0](https://github.com/kernel/kernel-go-sdk/compare/v0.107.0...v0.108.0) (2026-09-17)
 
 
