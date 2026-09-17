@@ -637,8 +637,9 @@ type CardVaultItemSpecAgentcard struct {
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
 	// Wallet item key used to authorize checkouts.
 	Wallet string `json:"wallet" api:"required"`
-	// AgentCard vaulted card to pay with. Omitted, the cardholder picks on the
-	// approval screen.
+	// Opaque card ID returned by AgentCard for a card in the connected wallet. Pass it
+	// through unchanged without assuming a prefix or format. Omitted, the cardholder
+	// picks on the approval screen.
 	CardID string `json:"card_id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -917,8 +918,9 @@ type CardVaultItemSpecAgentcardParam struct {
 	Merchant string `json:"merchant" api:"required"`
 	// Wallet item key used to authorize checkouts.
 	Wallet string `json:"wallet" api:"required"`
-	// AgentCard vaulted card to pay with. Omitted, the cardholder picks on the
-	// approval screen.
+	// Opaque card ID returned by AgentCard for a card in the connected wallet. Pass it
+	// through unchanged without assuming a prefix or format. Omitted, the cardholder
+	// picks on the approval screen.
 	CardID param.Opt[string] `json:"card_id,omitzero"`
 	// This field can be elided, and will marshal its zero value as "agentcard".
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
