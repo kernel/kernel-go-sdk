@@ -36,7 +36,8 @@ func NewOrganizationLimitService(opts ...option.RequestOption) (r OrganizationLi
 	return
 }
 
-// Get the organization's effective limits and managed auth and vault usage.
+// Get the organization's effective limits and current concurrency, managed auth,
+// and vault usage.
 func (r *OrganizationLimitService) Get(ctx context.Context, opts ...option.RequestOption) (res *OrgLimits, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "org/limits"
@@ -59,6 +60,13 @@ type OrgLimits struct {
 	// org-wide across every project. Compare against max_auth_connections to show
 	// remaining capacity before a create is rejected with 403 insufficient_plan.
 	AuthConnectionsUsed int64 `json:"auth_connections_used" api:"required"`
+	// Number of concurrent browser slots currently available to the organization. This
+	// is the effective concurrency limit minus active on-demand sessions and browser
+	// pool reservations, floored at zero. Null when usage cannot be read.
+	ConcurrentSessionsAvailable int64 `json:"concurrent_sessions_available" api:"required"`
+	// Current organization-wide concurrent browser usage, including active on-demand
+	// sessions and browser pool reservations. Null when usage cannot be read.
+	ConcurrentSessionsUsed int64 `json:"concurrent_sessions_used" api:"required"`
 	// Maximum managed auth connections the organization's plan allows. Null means
 	// unlimited. Counted org-wide, so it cannot be multiplied across projects.
 	MaxAuthConnections int64 `json:"max_auth_connections" api:"required"`
@@ -84,6 +92,8 @@ type OrgLimits struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		AuthConnectionsUsed                 respjson.Field
+		ConcurrentSessionsAvailable         respjson.Field
+		ConcurrentSessionsUsed              respjson.Field
 		MaxAuthConnections                  respjson.Field
 		MaxVaults                           respjson.Field
 		MinHealthCheckIntervalSeconds       respjson.Field

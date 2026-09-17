@@ -637,8 +637,9 @@ type CardVaultItemSpecAgentcard struct {
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
 	// Wallet item key used to authorize checkouts.
 	Wallet string `json:"wallet" api:"required"`
-	// AgentCard vaulted card to pay with. Omitted, the cardholder picks on the
-	// approval screen.
+	// Opaque card ID returned by AgentCard for a card in the connected wallet. Pass it
+	// through unchanged without assuming a prefix or format. Omitted, the cardholder
+	// picks on the approval screen.
 	CardID string `json:"card_id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -917,8 +918,9 @@ type CardVaultItemSpecAgentcardParam struct {
 	Merchant string `json:"merchant" api:"required"`
 	// Wallet item key used to authorize checkouts.
 	Wallet string `json:"wallet" api:"required"`
-	// AgentCard vaulted card to pay with. Omitted, the cardholder picks on the
-	// approval screen.
+	// Opaque card ID returned by AgentCard for a card in the connected wallet. Pass it
+	// through unchanged without assuming a prefix or format. Omitted, the cardholder
+	// picks on the approval screen.
 	CardID param.Opt[string] `json:"card_id,omitzero"`
 	// This field can be elided, and will marshal its zero value as "agentcard".
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
@@ -1240,6 +1242,8 @@ const (
 )
 
 type CredentialVaultFieldDefinition struct {
+	// Stable field name used to key values, updates, and browser fills.
+	Name string `json:"name" api:"required"`
 	// Whether a nonempty value is required for readiness and form submission.
 	Required bool `json:"required" api:"required"`
 	// Whether the value is omitted from every item response. Reserve true for secrets
@@ -1259,6 +1263,7 @@ type CredentialVaultFieldDefinition struct {
 	Type CredentialVaultFieldType `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Name        respjson.Field
 		Required    respjson.Field
 		Sensitive   respjson.Field
 		Type        respjson.Field
@@ -1273,8 +1278,10 @@ func (r *CredentialVaultFieldDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The property Type is required.
+// The properties Name, Type are required.
 type CredentialVaultFieldInputParam struct {
+	// Unique stable field name used to key values, updates, and browser fills.
+	Name string `json:"name" api:"required"`
 	// Text, email, and password have form inputs; totp does not and is omitted from
 	// both Kernel-hosted and customer React forms. Password and totp must be
 	// sensitive. A totp value is an RFC 4648 Base32 generator seed (case-insensitive,
@@ -1498,7 +1505,9 @@ const (
 type CredentialVaultItemRequestParam struct {
 	// Credential fields are for login and other non-payment credentials. Do not store,
 	// collect, or fill credit card data in credential items. Use wallet and card item
-	// types for credit cards and payment checkout instead.
+	// types for credit cards and payment checkout instead. Field order is preserved in
+	// the user-facing collection form, so list fields in the same top-to-bottom order
+	// as the website.
 	Spec CredentialVaultItemSpecInputParam `json:"spec,omitzero" api:"required"`
 	// Any of "credential".
 	Type CredentialVaultItemRequestType `json:"type,omitzero" api:"required"`
@@ -1520,7 +1529,8 @@ const (
 )
 
 type CredentialVaultItemSpec struct {
-	Fields map[string]CredentialVaultFieldDefinition `json:"fields" api:"required"`
+	// Ordered field definitions rendered in this order by credential collection forms.
+	Fields []CredentialVaultFieldDefinition `json:"fields" api:"required"`
 	// Recognizable site or service name displayed verbatim as the form title, without
 	// suffixes such as sign-in credentials. Display text only, not an enforced
 	// destination policy.
@@ -1542,11 +1552,15 @@ func (r *CredentialVaultItemSpec) UnmarshalJSON(data []byte) error {
 
 // Credential fields are for login and other non-payment credentials. Do not store,
 // collect, or fill credit card data in credential items. Use wallet and card item
-// types for credit cards and payment checkout instead.
+// types for credit cards and payment checkout instead. Field order is preserved in
+// the user-facing collection form, so list fields in the same top-to-bottom order
+// as the website.
 //
 // The property Fields is required.
 type CredentialVaultItemSpecInputParam struct {
-	Fields map[string]CredentialVaultFieldInputParam `json:"fields,omitzero" api:"required"`
+	// Ordered field definitions. Use the website's top-to-bottom field order; the
+	// collection form renders this order unchanged.
+	Fields []CredentialVaultFieldInputParam `json:"fields,omitzero" api:"required"`
 	// The site's recognizable display name, used verbatim as the user-facing form
 	// title (for example, Hacker News). Use only the site or service name; do not
 	// append sign-in, login, credentials, or task instructions. This is display text,
@@ -2152,7 +2166,7 @@ type VaultItemUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
 	// This field is from variant [CredentialVaultItemSpec].
-	Fields map[string]CredentialVaultFieldDefinition `json:"fields"`
+	Fields []CredentialVaultFieldDefinition `json:"fields"`
 	// This field is from variant [CredentialVaultItemSpec].
 	Description string `json:"description"`
 	JSON        struct {
@@ -2905,7 +2919,7 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
 	// This field is from variant [CredentialVaultItemSpec].
-	Fields map[string]CredentialVaultFieldDefinition `json:"fields"`
+	Fields []CredentialVaultFieldDefinition `json:"fields"`
 	// This field is from variant [CredentialVaultItemSpec].
 	Description string `json:"description"`
 	JSON        struct {
