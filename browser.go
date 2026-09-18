@@ -1,0 +1,1913 @@
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+package kernel
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"slices"
+	"time"
+
+	"github.com/kernel/kernel-go-sdk/internal/apiform"
+	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
+	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
+	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
+	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/kernel/kernel-go-sdk/shared"
+)
+
+// BrowserService contains methods and other services that help with interacting
+// with the kernel API.
+//
+// Note, unlike clients, this service does not read variables from the environment
+// automatically. You should not instantiate this service directly, and instead use
+// the [NewBrowserService] method instead.
+type BrowserService struct {
+	Options []option.RequestOption
+	// Stream live telemetry events from a browser session, and manage the destinations
+	// sessions export them to.
+	Telemetry BrowserTelemetryService
+	// Record and manage browser session video replays.
+	Replays BrowserReplayService
+	// Read, write, and manage files on the browser instance.
+	Fs BrowserFService
+	// Execute and manage processes on the browser instance.
+	Process BrowserProcessService
+	// Stream logs from the browser instance.
+	Logs BrowserLogService
+	// Control mouse, keyboard, and screen on the browser instance.
+	Computer BrowserComputerService
+	// Execute Playwright code against the browser instance.
+	Playwright BrowserPlaywrightService
+	// Discover and invoke native page tools across the browser instance.
+	Webmcp BrowserWebmcpService
+}
+
+// NewBrowserService generates a new service that applies the given options to each
+// request. These options are applied after the parent client's options (if there
+// is one), and before any request-specific options.
+func NewBrowserService(opts ...option.RequestOption) (r BrowserService) {
+	r = BrowserService{}
+	r.Options = opts
+	r.Telemetry = NewBrowserTelemetryService(opts...)
+	r.Replays = NewBrowserReplayService(opts...)
+	r.Fs = NewBrowserFService(opts...)
+	r.Process = NewBrowserProcessService(opts...)
+	r.Logs = NewBrowserLogService(opts...)
+	r.Computer = NewBrowserComputerService(opts...)
+	r.Playwright = NewBrowserPlaywrightService(opts...)
+	r.Webmcp = NewBrowserWebmcpService(opts...)
+	return
+}
+
+// Create a new browser session from within an action.
+func (r *BrowserService) New(ctx context.Context, body BrowserNewParams, opts ...option.RequestOption) (res *BrowserNewResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "browsers"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Get information about a browser session.
+func (r *BrowserService) Get(ctx context.Context, idOrName string, query BrowserGetParams, opts ...option.RequestOption) (res *BrowserGetResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// Update a browser session.
+func (r *BrowserService) Update(ctx context.Context, idOrName string, body BrowserUpdateParams, opts ...option.RequestOption) (res *BrowserUpdateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return res, err
+}
+
+// List all browser sessions with pagination support. Use status parameter to
+// filter by session state.
+func (r *BrowserService) List(ctx context.Context, query BrowserListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserListResponse], err error) {
+	var raw *http.Response
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
+	path := "browsers"
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// List all browser sessions with pagination support. Use status parameter to
+// filter by session state.
+func (r *BrowserService) ListAutoPaging(ctx context.Context, query BrowserListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserListResponse] {
+	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
+}
+
+// Sends an HTTP request through Chrome's HTTP request stack, inheriting the
+// browser's TLS fingerprint, cookies, proxy configuration, and headers. Returns a
+// structured JSON response with status, headers, body, and timing.
+func (r *BrowserService) Curl(ctx context.Context, idOrName string, body BrowserCurlParams, opts ...option.RequestOption) (res *BrowserCurlResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s/curl", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Delete a browser session by ID or name
+func (r *BrowserService) DeleteByID(ctx context.Context, idOrName string, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return err
+	}
+	path := fmt.Sprintf("browsers/%s", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return err
+}
+
+// Loads one or more unpacked extensions using live CDP activation when eligible.
+// Chromium restarts when enterprise policy requires it or live activation fails.
+func (r *BrowserService) LoadExtensions(ctx context.Context, idOrName string, body BrowserLoadExtensionsParams, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return err
+	}
+	path := fmt.Sprintf("browsers/%s/extensions", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, nil, opts...)
+	return err
+}
+
+// Execute JavaScript in a persistent Node.js runtime inside the browser VM.
+// Top-level bindings, closures, mutations, and dynamically imported modules
+// persist across calls until the REPL is reset or replaced. Start with
+// `repl.help()` to list available methods, or call `repl.help("click")` for
+// detailed help.
+//
+// Expression values are ignored. Emit ordered text or image output with
+// `repl.write(...)`, console methods, or `repl.emitImage(...)`. The runtime also
+// exposes browser-control helpers, WebMCP, Patchright, Playwright, and raw CDP.
+//
+// Executions are serialized. A timeout, crash, OOM, or protocol failure terminates
+// the REPL and changes its `repl_id`. This is unrestricted code execution inside
+// the browser VM and is not sandboxed.
+func (r *BrowserService) Repl(ctx context.Context, idOrName string, body BrowserReplParams, opts ...option.RequestOption) (res *BrowserReplResult, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s/repl", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Memory allocated to the browser session.
+type BrowserMemory string
+
+const (
+	BrowserMemory1GiB  BrowserMemory = "1GiB"
+	BrowserMemory2GiB  BrowserMemory = "2GiB"
+	BrowserMemory6GiB  BrowserMemory = "6GiB"
+	BrowserMemory8GiB  BrowserMemory = "8GiB"
+	BrowserMemory16GiB BrowserMemory = "16GiB"
+)
+
+// Memory requested for a headful, non-GPU browser session.
+type BrowserMemoryRequest string
+
+const (
+	BrowserMemoryRequest8GiB  BrowserMemoryRequest = "8GiB"
+	BrowserMemoryRequest16GiB BrowserMemoryRequest = "16GiB"
+)
+
+// Network configuration for a browser session or browser pool.
+type BrowserNetworkConfig struct {
+	// Destinations the browser reaches directly through the session's own network
+	// instead of through Kernel-managed egress — for private hosts reachable over a
+	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
+	// private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12,
+	// 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An
+	// explicitly supplied list replaces those defaults with exactly the entries given,
+	// and an empty list ([]) disables them so all traffic uses Kernel-managed egress;
+	// omit private_hosts to keep the defaults. Entries are hostname patterns
+	// ("_.example.ts.net", "preview.internal") or IP/CIDR literals ("100.64.0.0/10",
+	// "10.1.30.63"). IP and CIDR entries only match URLs written with a literal IP
+	// address; they never match hostnames that resolve into the range, so private DNS
+	// names need a hostname entry even when they resolve inside the default ranges.
+	// CIDRs must be in canonical masked form (host bits zero), and only the private
+	// ranges listed above are accepted; public, loopback, link-local, and unspecified
+	// ranges are rejected. Exact IPv6 addresses must be bracketed ("[fd00::1]"); IPv6
+	// CIDR ranges are unbracketed ("fd00::/8"). Wildcards are limited to one leading
+	// "_." over a suffix with at least two labels that is not a public suffix (so
+	// "_.co.uk" or "_.ts.net" are rejected, while "\*.example.ts.net" is accepted).
+	// Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries
+	// are not resolved during validation, so callers must ensure they identify private
+	// destinations. Not related to a proxy's bypass_hosts, which selects between
+	// upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
+	PrivateHosts []string `json:"private_hosts"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		PrivateHosts respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserNetworkConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserNetworkConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserNetworkConfig to a BrowserNetworkConfigParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserNetworkConfigParam.Overrides()
+func (r BrowserNetworkConfig) ToParam() BrowserNetworkConfigParam {
+	return param.Override[BrowserNetworkConfigParam](json.RawMessage(r.RawJSON()))
+}
+
+// Network configuration for a browser session or browser pool.
+type BrowserNetworkConfigParam struct {
+	// Destinations the browser reaches directly through the session's own network
+	// instead of through Kernel-managed egress — for private hosts reachable over a
+	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
+	// private IP ranges already route directly: RFC1918 (10.0.0.0/8, 172.16.0.0/12,
+	// 192.168.0.0/16), CGNAT/Tailscale (100.64.0.0/10), and IPv6 ULA (fc00::/7). An
+	// explicitly supplied list replaces those defaults with exactly the entries given,
+	// and an empty list ([]) disables them so all traffic uses Kernel-managed egress;
+	// omit private_hosts to keep the defaults. Entries are hostname patterns
+	// ("_.example.ts.net", "preview.internal") or IP/CIDR literals ("100.64.0.0/10",
+	// "10.1.30.63"). IP and CIDR entries only match URLs written with a literal IP
+	// address; they never match hostnames that resolve into the range, so private DNS
+	// names need a hostname entry even when they resolve inside the default ranges.
+	// CIDRs must be in canonical masked form (host bits zero), and only the private
+	// ranges listed above are accepted; public, loopback, link-local, and unspecified
+	// ranges are rejected. Exact IPv6 addresses must be bracketed ("[fd00::1]"); IPv6
+	// CIDR ranges are unbracketed ("fd00::/8"). Wildcards are limited to one leading
+	// "_." over a suffix with at least two labels that is not a public suffix (so
+	// "_.co.uk" or "_.ts.net" are rejected, while "\*.example.ts.net" is accepted).
+	// Hostname and IP entries may carry a port; CIDR ranges may not. Hostname entries
+	// are not resolved during validation, so callers must ensure they identify private
+	// destinations. Not related to a proxy's bypass_hosts, which selects between
+	// upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
+	PrivateHosts []string `json:"private_hosts,omitzero"`
+	paramObj
+}
+
+func (r BrowserNetworkConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNetworkConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNetworkConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser pool this session was acquired from, if any.
+type BrowserPoolRef struct {
+	// Browser pool ID
+	ID string `json:"id" api:"required"`
+	// Browser pool name, if set
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserPoolRef) RawJSON() string { return r.JSON.raw }
+func (r *BrowserPoolRef) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Resolved proxy configuration for a browser session. Selected proxies are
+// returned by stable ID.
+type BrowserProxy struct {
+	// Selected proxy ID.
+	ID string `json:"id"`
+	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+	// the browser's stealth-derived default: Kernel's default stealth proxy when
+	// stealth=true, or direct egress when stealth=false. default is primarily useful
+	// on browser update to restore the browser default after selected-proxy egress.
+	//
+	// Any of "direct", "default".
+	Mode BrowserProxyMode `json:"mode"`
+	// Selected proxy name.
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Mode        respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProxy) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProxy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser proxy configuration. Provide exactly one of mode, id, or name; an empty
+// object is invalid. Set mode to direct for no proxy regardless of stealth. Set
+// mode to default to use the browser's stealth-derived default: Kernel's default
+// stealth proxy when stealth=true, or direct egress when stealth=false. Select id
+// or name to use that proxy regardless of stealth. The selected proxy must be in
+// the same project as the browser. Names must match exactly one active proxy; use
+// id for stable references. Proxy configuration changes only egress and does not
+// change stealth or CAPTCHA solver behavior. A stealth browser using mode=direct
+// still runs in stealth mode with the CAPTCHA solver enabled. When proxy is
+// omitted on browser creation, stealth browsers use Kernel's default stealth proxy
+// and non-stealth browsers use direct egress. When omitted on update, the current
+// configuration is unchanged.
+type BrowserProxyConfig struct {
+	// Proxy ID.
+	ID string `json:"id"`
+	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+	// the browser's stealth-derived default: Kernel's default stealth proxy when
+	// stealth=true, or direct egress when stealth=false. default is primarily useful
+	// on browser update to restore the browser default after selected-proxy egress.
+	//
+	// Any of "direct", "default".
+	Mode BrowserProxyMode `json:"mode"`
+	// Proxy name. Must match exactly one active proxy in the project.
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Mode        respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserProxyConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserProxyConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserProxyConfig to a BrowserProxyConfigParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserProxyConfigParam.Overrides()
+func (r BrowserProxyConfig) ToParam() BrowserProxyConfigParam {
+	return param.Override[BrowserProxyConfigParam](json.RawMessage(r.RawJSON()))
+}
+
+// Browser proxy configuration. Provide exactly one of mode, id, or name; an empty
+// object is invalid. Set mode to direct for no proxy regardless of stealth. Set
+// mode to default to use the browser's stealth-derived default: Kernel's default
+// stealth proxy when stealth=true, or direct egress when stealth=false. Select id
+// or name to use that proxy regardless of stealth. The selected proxy must be in
+// the same project as the browser. Names must match exactly one active proxy; use
+// id for stable references. Proxy configuration changes only egress and does not
+// change stealth or CAPTCHA solver behavior. A stealth browser using mode=direct
+// still runs in stealth mode with the CAPTCHA solver enabled. When proxy is
+// omitted on browser creation, stealth browsers use Kernel's default stealth proxy
+// and non-stealth browsers use direct egress. When omitted on update, the current
+// configuration is unchanged.
+type BrowserProxyConfigParam struct {
+	// Proxy ID.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Proxy name. Must match exactly one active proxy in the project.
+	Name param.Opt[string] `json:"name,omitzero"`
+	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+	// the browser's stealth-derived default: Kernel's default stealth proxy when
+	// stealth=true, or direct egress when stealth=false. default is primarily useful
+	// on browser update to restore the browser default after selected-proxy egress.
+	//
+	// Any of "direct", "default".
+	Mode BrowserProxyMode `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r BrowserProxyConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserProxyConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserProxyConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
+// the browser's stealth-derived default: Kernel's default stealth proxy when
+// stealth=true, or direct egress when stealth=false. default is primarily useful
+// on browser update to restore the browser default after selected-proxy egress.
+type BrowserProxyMode string
+
+const (
+	BrowserProxyModeDirect  BrowserProxyMode = "direct"
+	BrowserProxyModeDefault BrowserProxyMode = "default"
+)
+
+// BrowserReplContentUnion contains all possible properties and values from
+// [BrowserReplTextContent], [BrowserReplImageContent].
+//
+// Use the [BrowserReplContentUnion.AsAny] method to switch on the variant.
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type BrowserReplContentUnion struct {
+	// This field is from variant [BrowserReplTextContent].
+	Channel BrowserReplTextContentChannel `json:"channel"`
+	// This field is from variant [BrowserReplTextContent].
+	Text string `json:"text"`
+	// Any of "text", "image".
+	Type string `json:"type"`
+	// This field is from variant [BrowserReplImageContent].
+	DataB64 string `json:"data_b64"`
+	// This field is from variant [BrowserReplImageContent].
+	MimeType string `json:"mime_type"`
+	JSON     struct {
+		Channel  respjson.Field
+		Text     respjson.Field
+		Type     respjson.Field
+		DataB64  respjson.Field
+		MimeType respjson.Field
+		raw      string
+	} `json:"-"`
+}
+
+// anyBrowserReplContent is implemented by each variant of
+// [BrowserReplContentUnion] to add type safety for the return type of
+// [BrowserReplContentUnion.AsAny]
+type anyBrowserReplContent interface {
+	implBrowserReplContentUnion()
+}
+
+func (BrowserReplTextContent) implBrowserReplContentUnion()  {}
+func (BrowserReplImageContent) implBrowserReplContentUnion() {}
+
+// Use the following switch statement to find the correct variant
+//
+//	switch variant := BrowserReplContentUnion.AsAny().(type) {
+//	case kernel.BrowserReplTextContent:
+//	case kernel.BrowserReplImageContent:
+//	default:
+//	  fmt.Errorf("no variant present")
+//	}
+func (u BrowserReplContentUnion) AsAny() anyBrowserReplContent {
+	switch u.Type {
+	case "text":
+		return u.AsText()
+	case "image":
+		return u.AsImage()
+	}
+	return nil
+}
+
+func (u BrowserReplContentUnion) AsText() (v BrowserReplTextContent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u BrowserReplContentUnion) AsImage() (v BrowserReplImageContent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u BrowserReplContentUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *BrowserReplContentUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplImageContent struct {
+	DataB64  string `json:"data_b64" api:"required"`
+	MimeType string `json:"mime_type" api:"required"`
+	// Any of "image".
+	Type BrowserReplImageContentType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DataB64     respjson.Field
+		MimeType    respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserReplImageContent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserReplImageContent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplImageContentType string
+
+const (
+	BrowserReplImageContentTypeImage BrowserReplImageContentType = "image"
+)
+
+// Request to execute code in the persistent Browser REPL.
+//
+// The property Code is required.
+type BrowserReplRequestParam struct {
+	// JavaScript evaluated in a persistent Node.js runtime. Top-level bindings persist
+	// until the browser VM's API process exits, the REPL is reset, or the REPL is
+	// terminated after a crash or timeout. Static top-level imports are unsupported;
+	// use dynamic `import()`. Expression values are ignored; emit output with
+	// `repl.write(...)`, console methods, or `repl.emitImage(...)`. May be empty only
+	// when `reset` is true.
+	Code string `json:"code" api:"required"`
+	// Terminate the current REPL, start a fresh one, and then evaluate code.
+	Reset param.Opt[bool] `json:"reset,omitzero"`
+	// Maximum execution time in seconds. Default is 60.
+	TimeoutSec param.Opt[int64] `json:"timeout_sec,omitzero"`
+	paramObj
+}
+
+func (r BrowserReplRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserReplRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserReplRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Result of Browser REPL code execution.
+type BrowserReplResult struct {
+	// CUID2 identifying the exact state-holding REPL process used for this execution.
+	// Stable across calls and Chromium reconnects; changes after an API restart,
+	// explicit reset, execution timeout, or REPL crash.
+	ReplID string `json:"repl_id" api:"required"`
+	// Whether the code executed successfully.
+	Success bool `json:"success" api:"required"`
+	// Optional ordered text/image output produced by the execution.
+	Content []BrowserReplContentUnion `json:"content"`
+	// True if text or image output was dropped or truncated due to response limits.
+	ContentTruncated bool `json:"content_truncated"`
+	// Wall-clock execution time in milliseconds.
+	DurationMs int64 `json:"duration_ms"`
+	// Error message if execution failed.
+	Error string `json:"error"`
+	// True if the REPL identified by `repl_id` was terminated by this request. The
+	// next request lazily starts a fresh REPL with a new `repl_id`.
+	ReplTerminated bool `json:"repl_terminated"`
+	// Stack trace if execution failed.
+	Stack string `json:"stack"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ReplID           respjson.Field
+		Success          respjson.Field
+		Content          respjson.Field
+		ContentTruncated respjson.Field
+		DurationMs       respjson.Field
+		Error            respjson.Field
+		ReplTerminated   respjson.Field
+		Stack            respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserReplResult) RawJSON() string { return r.JSON.raw }
+func (r *BrowserReplResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplTextContent struct {
+	// `write` is emitted by `repl.write`; `stdout` and `stderr` are emitted by console
+	// methods.
+	//
+	// Any of "write", "stdout", "stderr".
+	Channel BrowserReplTextContentChannel `json:"channel" api:"required"`
+	Text    string                        `json:"text" api:"required"`
+	// Any of "text".
+	Type BrowserReplTextContentType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Channel     respjson.Field
+		Text        respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserReplTextContent) RawJSON() string { return r.JSON.raw }
+func (r *BrowserReplTextContent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// `write` is emitted by `repl.write`; `stdout` and `stderr` are emitted by console
+// methods.
+type BrowserReplTextContentChannel string
+
+const (
+	BrowserReplTextContentChannelWrite  BrowserReplTextContentChannel = "write"
+	BrowserReplTextContentChannelStdout BrowserReplTextContentChannel = "stdout"
+	BrowserReplTextContentChannelStderr BrowserReplTextContentChannel = "stderr"
+)
+
+type BrowserReplTextContentType string
+
+const (
+	BrowserReplTextContentTypeText BrowserReplTextContentType = "text"
+)
+
+// Session usage metrics.
+type BrowserUsage struct {
+	// Time in milliseconds the session was actively running.
+	UptimeMs int64 `json:"uptime_ms" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		UptimeMs    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserUsage) RawJSON() string { return r.JSON.raw }
+func (r *BrowserUsage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser profile metadata.
+type Profile struct {
+	// Unique identifier for the profile
+	ID string `json:"id" api:"required"`
+	// Timestamp when the profile was created
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Timestamp when the profile was last used
+	LastUsedAt time.Time `json:"last_used_at" format:"date-time"`
+	// Optional, easier-to-reference name for the profile
+	Name string `json:"name" api:"nullable"`
+	// Timestamp when the profile was last updated
+	UpdatedAt time.Time `json:"updated_at" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		CreatedAt   respjson.Field
+		LastUsedAt  respjson.Field
+		Name        respjson.Field
+		UpdatedAt   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r Profile) RawJSON() string { return r.JSON.raw }
+func (r *Profile) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type Tags map[string]string
+
+// Reference to a project-scoped vault. Provide exactly one of id or name.
+type VaultReference struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultReference) RawJSON() string { return r.JSON.raw }
+func (r *VaultReference) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this VaultReference to a VaultReferenceParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// VaultReferenceParam.Overrides()
+func (r VaultReference) ToParam() VaultReferenceParam {
+	return param.Override[VaultReferenceParam](json.RawMessage(r.RawJSON()))
+}
+
+// Reference to a project-scoped vault. Provide exactly one of id or name.
+type VaultReferenceParam struct {
+	ID   param.Opt[string] `json:"id,omitzero"`
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r VaultReferenceParam) MarshalJSON() (data []byte, err error) {
+	type shadow VaultReferenceParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultReferenceParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserNewResponse struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region BrowserNewResponseRegion `json:"region" api:"required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id" api:"required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth" api:"required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
+	// Metro-API HTTP base URL for this browser session.
+	BaseURL string `json:"base_url"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
+	GPU bool `json:"gpu"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// Whether changes made during this browser session are saved back to its profile
+	// when the session ends. Omitted when no profile is attached.
+	ProfileSaveChanges bool `json:"profile_save_changes"`
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
+	ProxyID string `json:"proxy_id"`
+	// URL the session was most recently asked to navigate to, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
+	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserNewResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60. For
+	// GPU images, recommended presets use one of these resolutions with refresh rates
+	// 60, 30, 25, or 10: 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800,
+	// 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250,
+	// 768x1024, 800x1600. Viewports outside this list may exhibit unstable live view
+	// or recording behavior. If refresh_rate is not provided, it will be automatically
+	// determined based on the resolution (higher resolutions use lower refresh rates
+	// to keep bandwidth reasonable).
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		Memory             respjson.Field
+		Region             respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
+		BaseURL            respjson.Field
+		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
+		DeletedAt          respjson.Field
+		GPU                respjson.Field
+		KioskMode          respjson.Field
+		Name               respjson.Field
+		Network            respjson.Field
+		Pool               respjson.Field
+		Profile            respjson.Field
+		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
+		ProxyID            respjson.Field
+		StartURL           respjson.Field
+		Tags               respjson.Field
+		Telemetry          respjson.Field
+		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserNewResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserNewResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserNewResponseRegion string
+
+const (
+	BrowserNewResponseRegionUsEast      BrowserNewResponseRegion = "us-east"
+	BrowserNewResponseRegionEuWest      BrowserNewResponseRegion = "eu-west"
+	BrowserNewResponseRegionApSoutheast BrowserNewResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserNewResponseUsageStatus string
+
+const (
+	BrowserNewResponseUsageStatusPending BrowserNewResponseUsageStatus = "pending"
+	BrowserNewResponseUsageStatusReady   BrowserNewResponseUsageStatus = "ready"
+)
+
+type BrowserGetResponse struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region BrowserGetResponseRegion `json:"region" api:"required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id" api:"required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth" api:"required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
+	// Metro-API HTTP base URL for this browser session.
+	BaseURL string `json:"base_url"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
+	GPU bool `json:"gpu"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// Whether changes made during this browser session are saved back to its profile
+	// when the session ends. Omitted when no profile is attached.
+	ProfileSaveChanges bool `json:"profile_save_changes"`
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
+	ProxyID string `json:"proxy_id"`
+	// URL the session was most recently asked to navigate to, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
+	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserGetResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60. For
+	// GPU images, recommended presets use one of these resolutions with refresh rates
+	// 60, 30, 25, or 10: 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800,
+	// 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250,
+	// 768x1024, 800x1600. Viewports outside this list may exhibit unstable live view
+	// or recording behavior. If refresh_rate is not provided, it will be automatically
+	// determined based on the resolution (higher resolutions use lower refresh rates
+	// to keep bandwidth reasonable).
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		Memory             respjson.Field
+		Region             respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
+		BaseURL            respjson.Field
+		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
+		DeletedAt          respjson.Field
+		GPU                respjson.Field
+		KioskMode          respjson.Field
+		Name               respjson.Field
+		Network            respjson.Field
+		Pool               respjson.Field
+		Profile            respjson.Field
+		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
+		ProxyID            respjson.Field
+		StartURL           respjson.Field
+		Tags               respjson.Field
+		Telemetry          respjson.Field
+		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserGetResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserGetResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserGetResponseRegion string
+
+const (
+	BrowserGetResponseRegionUsEast      BrowserGetResponseRegion = "us-east"
+	BrowserGetResponseRegionEuWest      BrowserGetResponseRegion = "eu-west"
+	BrowserGetResponseRegionApSoutheast BrowserGetResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserGetResponseUsageStatus string
+
+const (
+	BrowserGetResponseUsageStatusPending BrowserGetResponseUsageStatus = "pending"
+	BrowserGetResponseUsageStatusReady   BrowserGetResponseUsageStatus = "ready"
+)
+
+type BrowserUpdateResponse struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region BrowserUpdateResponseRegion `json:"region" api:"required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id" api:"required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth" api:"required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
+	// Metro-API HTTP base URL for this browser session.
+	BaseURL string `json:"base_url"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
+	GPU bool `json:"gpu"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// Whether changes made during this browser session are saved back to its profile
+	// when the session ends. Omitted when no profile is attached.
+	ProfileSaveChanges bool `json:"profile_save_changes"`
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
+	ProxyID string `json:"proxy_id"`
+	// URL the session was most recently asked to navigate to, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
+	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserUpdateResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60. For
+	// GPU images, recommended presets use one of these resolutions with refresh rates
+	// 60, 30, 25, or 10: 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800,
+	// 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250,
+	// 768x1024, 800x1600. Viewports outside this list may exhibit unstable live view
+	// or recording behavior. If refresh_rate is not provided, it will be automatically
+	// determined based on the resolution (higher resolutions use lower refresh rates
+	// to keep bandwidth reasonable).
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		Memory             respjson.Field
+		Region             respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
+		BaseURL            respjson.Field
+		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
+		DeletedAt          respjson.Field
+		GPU                respjson.Field
+		KioskMode          respjson.Field
+		Name               respjson.Field
+		Network            respjson.Field
+		Pool               respjson.Field
+		Profile            respjson.Field
+		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
+		ProxyID            respjson.Field
+		StartURL           respjson.Field
+		Tags               respjson.Field
+		Telemetry          respjson.Field
+		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserUpdateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserUpdateResponseRegion string
+
+const (
+	BrowserUpdateResponseRegionUsEast      BrowserUpdateResponseRegion = "us-east"
+	BrowserUpdateResponseRegionEuWest      BrowserUpdateResponseRegion = "eu-west"
+	BrowserUpdateResponseRegionApSoutheast BrowserUpdateResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserUpdateResponseUsageStatus string
+
+const (
+	BrowserUpdateResponseUsageStatusPending BrowserUpdateResponseUsageStatus = "pending"
+	BrowserUpdateResponseUsageStatusReady   BrowserUpdateResponseUsageStatus = "ready"
+)
+
+type BrowserListResponse struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region BrowserListResponseRegion `json:"region" api:"required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id" api:"required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth" api:"required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
+	// Metro-API HTTP base URL for this browser session.
+	BaseURL string `json:"base_url"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
+	GPU bool `json:"gpu"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// Whether changes made during this browser session are saved back to its profile
+	// when the session ends. Omitted when no profile is attached.
+	ProfileSaveChanges bool `json:"profile_save_changes"`
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
+	ProxyID string `json:"proxy_id"`
+	// URL the session was most recently asked to navigate to, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
+	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus BrowserListResponseUsageStatus `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60. For
+	// GPU images, recommended presets use one of these resolutions with refresh rates
+	// 60, 30, 25, or 10: 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800,
+	// 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250,
+	// 768x1024, 800x1600. Viewports outside this list may exhibit unstable live view
+	// or recording behavior. If refresh_rate is not provided, it will be automatically
+	// determined based on the resolution (higher resolutions use lower refresh rates
+	// to keep bandwidth reasonable).
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		Memory             respjson.Field
+		Region             respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
+		BaseURL            respjson.Field
+		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
+		DeletedAt          respjson.Field
+		GPU                respjson.Field
+		KioskMode          respjson.Field
+		Name               respjson.Field
+		Network            respjson.Field
+		Pool               respjson.Field
+		Profile            respjson.Field
+		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
+		ProxyID            respjson.Field
+		StartURL           respjson.Field
+		Tags               respjson.Field
+		Telemetry          respjson.Field
+		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserListResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserListResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Geographic region of the browser session. Fixed once the session is created.
+type BrowserListResponseRegion string
+
+const (
+	BrowserListResponseRegionUsEast      BrowserListResponseRegion = "us-east"
+	BrowserListResponseRegionEuWest      BrowserListResponseRegion = "eu-west"
+	BrowserListResponseRegionApSoutheast BrowserListResponseRegion = "ap-southeast"
+)
+
+// Whether final usage billing is still pending or complete. Only present for
+// deleted sessions.
+type BrowserListResponseUsageStatus string
+
+const (
+	BrowserListResponseUsageStatusPending BrowserListResponseUsageStatus = "pending"
+	BrowserListResponseUsageStatusReady   BrowserListResponseUsageStatus = "ready"
+)
+
+// Structured response from the browser curl request.
+type BrowserCurlResponse struct {
+	// Response body (UTF-8 string or base64 depending on request).
+	Body string `json:"body" api:"required"`
+	// Total request duration in milliseconds.
+	DurationMs int64 `json:"duration_ms" api:"required"`
+	// Response headers (multi-value).
+	Headers map[string][]string `json:"headers" api:"required"`
+	// HTTP status code from target.
+	Status int64 `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		DurationMs  respjson.Field
+		Headers     respjson.Field
+		Status      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCurlResponse) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCurlResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserNewParams struct {
+	// If true, enables GPU acceleration for the browser session. Requires Start-Up or
+	// Enterprise plan, headless=false, and region=us-east.
+	GPU param.Opt[bool] `json:"gpu,omitzero"`
+	// If true, launches the browser using a headless image (no VNC/GUI). Defaults to
+	// false.
+	Headless param.Opt[bool] `json:"headless,omitzero"`
+	// action invocation ID
+	InvocationID param.Opt[string] `json:"invocation_id,omitzero"`
+	// If true, launches the browser in kiosk mode to hide address bar and tabs in live
+	// view.
+	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
+	// Optional human-readable name for the browser session, used to find it later in
+	// the dashboard. Must be unique among active sessions within the project. Can be
+	// changed later via PATCH /browsers/{id_or_name}.
+	Name param.Opt[string] `json:"name,omitzero"`
+	// Optional proxy to associate to the browser session. Must reference a proxy in
+	// the same project as the browser session. Deprecated in favor of proxy.
+	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Optional URL to open when the browser session is created. Navigation is
+	// best-effort, so navigation failures do not prevent the session from being
+	// created.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
+	// If true, launches the browser in stealth mode and enables the CAPTCHA solver.
+	// Defaults to false. When proxy is omitted, stealth browsers use Kernel's default
+	// stealth proxy and non-stealth browsers use direct egress. An explicit proxy
+	// configuration changes only egress; it does not enable or disable stealth or the
+	// CAPTCHA solver.
+	Stealth param.Opt[bool] `json:"stealth,omitzero"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	// Activity includes CDP connections and live view connections. Defaults to 60
+	// seconds. Minimum allowed is 10 seconds. Maximum allowed is 259200 (72 hours). We
+	// check for inactivity every 5 seconds, so the actual timeout behavior you will
+	// see is +/- 5 seconds around the specified value.
+	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
+	// Telemetry configuration for the browser session. Set enabled to true to start
+	// capture using VM defaults, or provide browser category settings. If omitted,
+	// null, set to an empty object ({}), set to enabled: false without browser
+	// category settings, or all four categories are explicitly disabled, capture is
+	// not started.
+	Telemetry BrowserNewParamsTelemetry `json:"telemetry,omitzero"`
+	// Custom Chrome enterprise policy overrides applied to this browser session. Keys
+	// are Chrome enterprise policy names; values must match their expected types.
+	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
+	// https://chromeenterprise.google/policies/
+	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
+	// List of browser extensions to load into the session. Provide each by id or name.
+	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Memory for a headful, non-GPU browser session. Defaults to 8GiB.
+	//
+	// Any of "8GiB", "16GiB".
+	Memory BrowserMemoryRequest `json:"memory,omitzero"`
+	// Network configuration for the browser session. Cannot be changed after creation.
+	Network BrowserNetworkConfigParam `json:"network,omitzero"`
+	// Profile selection for the browser session. Provide either id or name. If
+	// specified, the matching profile will be loaded into the browser session.
+	// Profiles must be created beforehand.
+	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// Proxy configuration for the browser session. Cannot be combined with proxy_id.
+	// Omit to use the browser default: stealth browsers use Kernel's default stealth
+	// proxy, while non-stealth browsers use direct egress. Set mode to direct to force
+	// direct egress regardless of stealth. Set mode to default to explicitly use the
+	// browser default: Kernel's default stealth proxy when stealth=true, or direct
+	// egress when stealth=false. Select id or name to use that proxy regardless of
+	// stealth. Proxy selection does not change stealth or CAPTCHA solver behavior.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
+	// Geographic region for the browser session. It is fixed once the session is
+	// created. Region selection requires a Start-Up or Enterprise plan, defaults to
+	// us-east when omitted on create.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region BrowserNewParamsRegion `json:"region,omitzero"`
+	// Optional user-defined key-value tags for the browser session, used to find and
+	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
+	// to 50 pairs.
+	Tags Tags `json:"tags,omitzero"`
+	// Project-scoped vaults to link to the browser session. Links are immutable after
+	// creation.
+	Vaults []VaultReferenceParam `json:"vaults,omitzero"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60. For
+	// GPU images, recommended presets use one of these resolutions with refresh rates
+	// 60, 30, 25, or 10: 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800,
+	// 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250,
+	// 768x1024, 800x1600. Viewports outside this list may exhibit unstable live view
+	// or recording behavior. If refresh_rate is not provided, it will be automatically
+	// determined based on the resolution (higher resolutions use lower refresh rates
+	// to keep bandwidth reasonable).
+	Viewport shared.BrowserViewportParam `json:"viewport,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Geographic region for the browser session. It is fixed once the session is
+// created. Region selection requires a Start-Up or Enterprise plan, defaults to
+// us-east when omitted on create.
+type BrowserNewParamsRegion string
+
+const (
+	BrowserNewParamsRegionUsEast      BrowserNewParamsRegion = "us-east"
+	BrowserNewParamsRegionEuWest      BrowserNewParamsRegion = "eu-west"
+	BrowserNewParamsRegionApSoutheast BrowserNewParamsRegion = "ap-southeast"
+)
+
+// Telemetry configuration for the browser session. Set enabled to true to start
+// capture using VM defaults, or provide browser category settings. If omitted,
+// null, set to an empty object ({}), set to enabled: false without browser
+// category settings, or all four categories are explicitly disabled, capture is
+// not started.
+type BrowserNewParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export BrowserNewParamsTelemetryExport `json:"export,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParamsTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type BrowserNewParamsTelemetryExport struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp BrowserNewParamsTelemetryExportOtlp `json:"otlp,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParamsTelemetryExport) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParamsTelemetryExport
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParamsTelemetryExport) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type BrowserNewParamsTelemetryExportOtlp struct {
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination BrowserNewParamsTelemetryExportOtlpDestination `json:"destination,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParamsTelemetryExportOtlp) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParamsTelemetryExportOtlp
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParamsTelemetryExportOtlp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type BrowserNewParamsTelemetryExportOtlpDestination struct {
+	// OTLP destination ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// OTLP destination name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParamsTelemetryExportOtlpDestination) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParamsTelemetryExportOtlpDestination
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserGetParams struct {
+	// When true, includes soft-deleted browser sessions in the lookup.
+	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BrowserGetParams]'s query parameters as `url.Values`.
+func (r BrowserGetParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+type BrowserUpdateParams struct {
+	// Human-readable name for the browser session. Omit to leave unchanged, set to an
+	// empty string to clear the name. When set, must be unique among active sessions
+	// within the project.
+	Name param.Opt[string] `json:"name,omitzero"`
+	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
+	// proxy. Deprecated in favor of proxy.
+	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// If true, stealth browsers connect directly instead of using the default stealth
+	// proxy. Deprecated in favor of proxy.mode.
+	DisableDefaultProxy param.Opt[bool] `json:"disable_default_proxy,omitzero"`
+	// Optional URL to navigate the browser to after applying this update. When a
+	// profile is loaded in the same update, this overrides the profile's restored
+	// tabs. Navigation is best-effort, so failures do not fail the update. Omit or set
+	// to an empty string to leave the current page unchanged.
+	StartURL param.Opt[string] `json:"start_url,omitzero"`
+	// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
+	// leave the existing configuration unchanged. Set enabled to true to enable
+	// capture using VM defaults. Set enabled to false to stop capture. Provide browser
+	// category settings for per-category updates. Explicitly disabling all four
+	// categories also stops capture.
+	Telemetry BrowserUpdateParamsTelemetry `json:"telemetry,omitzero"`
+	// Profile to load into the browser session. Only allowed if the session does not
+	// already have a profile loaded.
+	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
+	// Proxy configuration to apply. Omit to leave the current configuration unchanged.
+	// Cannot be combined with proxy_id or disable_default_proxy. Set mode to direct to
+	// switch to direct egress regardless of stealth. Set mode to default to restore
+	// the browser default after using a selected proxy: Kernel's default stealth proxy
+	// for a stealth browser, or direct egress for a non-stealth browser. Updating
+	// proxy does not change stealth or CAPTCHA solver behavior.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
+	// User-defined key-value tags for the browser session. Omit to leave unchanged.
+	// Provide a map to replace the entire tag set (full replace, not a merge). Set to
+	// an empty object ({}) to clear all tags. Up to 50 pairs.
+	Tags Tags `json:"tags,omitzero"`
+	// Viewport configuration to apply to the browser session.
+	Viewport BrowserUpdateParamsViewport `json:"viewport,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Telemetry configuration. Omit, set to null, or set to an empty object ({}) to
+// leave the existing configuration unchanged. Set enabled to true to enable
+// capture using VM defaults. Set enabled to false to stop capture. Provide browser
+// category settings for per-category updates. Explicitly disabling all four
+// categories also stops capture.
+type BrowserUpdateParamsTelemetry struct {
+	// Request shortcut for browser telemetry capture. True enables capture; with no
+	// browser category settings it captures the default set (control, connection,
+	// system, captcha), and any browser category settings are layered onto that
+	// default set. On update, enabled=true resolves the config fresh from the default
+	// set plus any provided categories, replacing the session's current selection
+	// rather than merging onto it; omit enabled to merge categories onto the current
+	// selection instead. False stops capture on update and starts no capture on
+	// create. enabled=false cannot be combined with browser category settings.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// Per-category capture flags. The operational categories (control, connection,
+	// system, captcha) are captured whenever telemetry is enabled; set one to
+	// enabled=false to opt out. The CDP categories (console, network, page,
+	// interaction), screenshot and platform are off by default; set enabled=true to
+	// opt in. On create, provided categories layer onto the default set. On update,
+	// provided categories merge onto the session's current config; when no telemetry
+	// is active this falls back to the default set (matching create). If browser is
+	// omitted or empty, the default set is used. A browser config that disables every
+	// category stops capture on update and starts no capture on create.
+	Browser BrowserTelemetryCategoriesConfigParam `json:"browser,omitzero"`
+	// Where to export this session's captured telemetry. Omit to capture without
+	// exporting.
+	Export BrowserUpdateParamsTelemetryExport `json:"export,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParamsTelemetry) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParamsTelemetry
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParamsTelemetry) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where to export this session's captured telemetry. Omit to capture without
+// exporting.
+type BrowserUpdateParamsTelemetryExport struct {
+	// Export captured telemetry over OTLP to one of the org's configured destinations.
+	Otlp BrowserUpdateParamsTelemetryExportOtlp `json:"otlp,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParamsTelemetryExport) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParamsTelemetryExport
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParamsTelemetryExport) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Export captured telemetry over OTLP to one of the org's configured destinations.
+type BrowserUpdateParamsTelemetryExportOtlp struct {
+	// Whether to export captured telemetry over OTLP. Setting destination implies
+	// enabled=true, so this only needs to be set explicitly to disable export
+	// (enabled=false with a destination is rejected).
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	// OTLP destination to export this session's captured telemetry to. Provide either
+	// id or name. Requires telemetry capture to be enabled.
+	Destination BrowserUpdateParamsTelemetryExportOtlpDestination `json:"destination,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParamsTelemetryExportOtlp) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParamsTelemetryExportOtlp
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParamsTelemetryExportOtlp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OTLP destination to export this session's captured telemetry to. Provide either
+// id or name. Requires telemetry capture to be enabled.
+type BrowserUpdateParamsTelemetryExportOtlpDestination struct {
+	// OTLP destination ID
+	ID param.Opt[string] `json:"id,omitzero"`
+	// OTLP destination name
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParamsTelemetryExportOtlpDestination) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParamsTelemetryExportOtlpDestination
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Viewport configuration to apply to the browser session.
+type BrowserUpdateParamsViewport struct {
+	// If true, allow the viewport change even when a live view or recording/replay is
+	// active. Active recordings will be gracefully stopped and restarted at the new
+	// resolution as separate segments. If false (default), the resize is refused when
+	// a live view or recording is active.
+	Force param.Opt[bool] `json:"force,omitzero"`
+	shared.BrowserViewportParam
+}
+
+func (r BrowserUpdateParamsViewport) MarshalJSON() (data []byte, err error) {
+	type shadow struct {
+		*BrowserUpdateParamsViewport
+		MarshalJSON bool `json:"-"` // Prevent inheriting [json.Marshaler] from the embedded field
+	}
+	return param.MarshalObject(r, shadow{&r, false})
+}
+
+type BrowserListParams struct {
+	// Deprecated: Use status=all instead. When true, includes soft-deleted browser
+	// sessions in the results alongside active sessions.
+	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
+	// Maximum number of results to return. Defaults to 20, maximum 100.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Number of results to skip. Defaults to 0.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search browsers by name, session ID, profile name or ID, proxy ID, or pool name.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Filter sessions by geographic region. Omit to list sessions in all regions.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region BrowserListParamsRegion `query:"region,omitzero" json:"-"`
+	// Filter sessions by status. "active" returns only active sessions (default),
+	// "deleted" returns only soft-deleted sessions, "all" returns both.
+	//
+	// Any of "active", "deleted", "all".
+	Status BrowserListParamsStatus `query:"status,omitzero" json:"-"`
+	// Filter sessions by tag key-value pairs using deepObject style, e.g.
+	// ?tags[team]=backend&tags[env]=staging. Multiple pairs are ANDed: a session must
+	// match every supplied pair exactly.
+	Tags map[string]string `query:"tags,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BrowserListParams]'s query parameters as `url.Values`.
+func (r BrowserListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+// Filter sessions by geographic region. Omit to list sessions in all regions.
+type BrowserListParamsRegion string
+
+const (
+	BrowserListParamsRegionUsEast      BrowserListParamsRegion = "us-east"
+	BrowserListParamsRegionEuWest      BrowserListParamsRegion = "eu-west"
+	BrowserListParamsRegionApSoutheast BrowserListParamsRegion = "ap-southeast"
+)
+
+// Filter sessions by status. "active" returns only active sessions (default),
+// "deleted" returns only soft-deleted sessions, "all" returns both.
+type BrowserListParamsStatus string
+
+const (
+	BrowserListParamsStatusActive  BrowserListParamsStatus = "active"
+	BrowserListParamsStatusDeleted BrowserListParamsStatus = "deleted"
+	BrowserListParamsStatusAll     BrowserListParamsStatus = "all"
+)
+
+type BrowserCurlParams struct {
+	// Target URL (must be http or https).
+	URL string `json:"url" api:"required"`
+	// Request body (for POST/PUT/PATCH).
+	Body param.Opt[string] `json:"body,omitzero"`
+	// Request timeout in milliseconds.
+	TimeoutMs param.Opt[int64] `json:"timeout_ms,omitzero"`
+	// Custom headers merged with browser defaults.
+	Headers map[string]string `json:"headers,omitzero"`
+	// HTTP method.
+	//
+	// Any of "GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS".
+	Method BrowserCurlParamsMethod `json:"method,omitzero"`
+	// Encoding for the response body. Use base64 for binary content.
+	//
+	// Any of "utf8", "base64".
+	ResponseEncoding BrowserCurlParamsResponseEncoding `json:"response_encoding,omitzero"`
+	paramObj
+}
+
+func (r BrowserCurlParams) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserCurlParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserCurlParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// HTTP method.
+type BrowserCurlParamsMethod string
+
+const (
+	BrowserCurlParamsMethodGet     BrowserCurlParamsMethod = "GET"
+	BrowserCurlParamsMethodHead    BrowserCurlParamsMethod = "HEAD"
+	BrowserCurlParamsMethodPost    BrowserCurlParamsMethod = "POST"
+	BrowserCurlParamsMethodPut     BrowserCurlParamsMethod = "PUT"
+	BrowserCurlParamsMethodPatch   BrowserCurlParamsMethod = "PATCH"
+	BrowserCurlParamsMethodDelete  BrowserCurlParamsMethod = "DELETE"
+	BrowserCurlParamsMethodOptions BrowserCurlParamsMethod = "OPTIONS"
+)
+
+// Encoding for the response body. Use base64 for binary content.
+type BrowserCurlParamsResponseEncoding string
+
+const (
+	BrowserCurlParamsResponseEncodingUtf8   BrowserCurlParamsResponseEncoding = "utf8"
+	BrowserCurlParamsResponseEncodingBase64 BrowserCurlParamsResponseEncoding = "base64"
+)
+
+type BrowserLoadExtensionsParams struct {
+	// List of extensions to upload and activate
+	Extensions []BrowserLoadExtensionsParamsExtension `json:"extensions,omitzero" api:"required"`
+	paramObj
+}
+
+func (r BrowserLoadExtensionsParams) MarshalMultipart() (data []byte, contentType string, err error) {
+	buf := bytes.NewBuffer(nil)
+	writer := multipart.NewWriter(buf)
+	err = apiform.MarshalRoot(r, writer)
+	if err == nil {
+		err = apiform.WriteExtras(writer, r.ExtraFields())
+	}
+	if err != nil {
+		writer.Close()
+		return nil, "", err
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, "", err
+	}
+	return buf.Bytes(), writer.FormDataContentType(), nil
+}
+
+// The properties Name, ZipFile are required.
+type BrowserLoadExtensionsParamsExtension struct {
+	// Folder name to place the extension under /home/kernel/extensions/<name>
+	Name string `json:"name" api:"required"`
+	// Zip archive containing an unpacked Chromium extension (must include
+	// manifest.json)
+	ZipFile io.Reader `json:"zip_file,omitzero" api:"required" format:"binary"`
+	paramObj
+}
+
+func (r BrowserLoadExtensionsParamsExtension) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserLoadExtensionsParamsExtension
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserLoadExtensionsParamsExtension) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserReplParams struct {
+	// Request to execute code in the persistent Browser REPL.
+	BrowserReplRequest BrowserReplRequestParam
+	paramObj
+}
+
+func (r BrowserReplParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.BrowserReplRequest)
+}
+func (r *BrowserReplParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}

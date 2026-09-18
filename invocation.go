@@ -1,0 +1,809 @@
+// File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
+
+package kernel
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/url"
+	"slices"
+	"time"
+
+	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
+	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
+	"github.com/kernel/kernel-go-sdk/option"
+	"github.com/kernel/kernel-go-sdk/packages/pagination"
+	"github.com/kernel/kernel-go-sdk/packages/param"
+	"github.com/kernel/kernel-go-sdk/packages/respjson"
+	"github.com/kernel/kernel-go-sdk/packages/ssestream"
+	"github.com/kernel/kernel-go-sdk/shared"
+	"github.com/kernel/kernel-go-sdk/shared/constant"
+)
+
+// Invoke actions and stream or query invocation status and events.
+//
+// InvocationService contains methods and other services that help with interacting
+// with the kernel API.
+//
+// Note, unlike clients, this service does not read variables from the environment
+// automatically. You should not instantiate this service directly, and instead use
+// the [NewInvocationService] method instead.
+type InvocationService struct {
+	Options []option.RequestOption
+}
+
+// NewInvocationService generates a new service that applies the given options to
+// each request. These options are applied after the parent client's options (if
+// there is one), and before any request-specific options.
+func NewInvocationService(opts ...option.RequestOption) (r InvocationService) {
+	r = InvocationService{}
+	r.Options = opts
+	return
+}
+
+// Invoke an action.
+func (r *InvocationService) New(ctx context.Context, body InvocationNewParams, opts ...option.RequestOption) (res *InvocationNewResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "invocations"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Get details about an invocation's status and output.
+func (r *InvocationService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *InvocationGetResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("invocations/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// Update an invocation's status or output. This can be used to cancel an
+// invocation by setting the status to "failed".
+func (r *InvocationService) Update(ctx context.Context, id string, body InvocationUpdateParams, opts ...option.RequestOption) (res *InvocationUpdateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("invocations/%s", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
+	return res, err
+}
+
+// List invocations. Optionally filter by application name, action name, status,
+// deployment ID, or start time.
+func (r *InvocationService) List(ctx context.Context, query InvocationListParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[InvocationListResponse], err error) {
+	var raw *http.Response
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
+	path := "invocations"
+	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
+	if err != nil {
+		return nil, err
+	}
+	err = cfg.Execute()
+	if err != nil {
+		return nil, err
+	}
+	res.SetPageConfig(cfg, raw)
+	return res, nil
+}
+
+// List invocations. Optionally filter by application name, action name, status,
+// deployment ID, or start time.
+func (r *InvocationService) ListAutoPaging(ctx context.Context, query InvocationListParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[InvocationListResponse] {
+	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
+}
+
+// Delete all browser sessions created within the specified invocation.
+func (r *InvocationService) DeleteBrowsers(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return err
+	}
+	path := fmt.Sprintf("invocations/%s/browsers", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return err
+}
+
+// Establishes a Server-Sent Events (SSE) stream that delivers real-time logs and
+// status updates for an invocation. The stream terminates automatically once the
+// invocation reaches a terminal state.
+func (r *InvocationService) FollowStreaming(ctx context.Context, id string, query InvocationFollowParams, opts ...option.RequestOption) (stream *ssestream.Stream[InvocationFollowResponseUnion]) {
+	var (
+		raw *http.Response
+		err error
+	)
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "text/event-stream")}, opts...)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return ssestream.NewStream[InvocationFollowResponseUnion](nil, err)
+	}
+	path := fmt.Sprintf("invocations/%s/events", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &raw, opts...)
+	return ssestream.NewStream[InvocationFollowResponseUnion](ssestream.NewDecoder(raw), err)
+}
+
+// Returns all active browser sessions created within the specified invocation.
+func (r *InvocationService) ListBrowsers(ctx context.Context, id string, opts ...option.RequestOption) (res *InvocationListBrowsersResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("invocations/%s/browsers", id)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// An event representing the current state of an invocation.
+type InvocationStateEvent struct {
+	// Event type identifier (always "invocation_state").
+	Event      constant.InvocationState       `json:"event" default:"invocation_state"`
+	Invocation InvocationStateEventInvocation `json:"invocation" api:"required"`
+	// Time the state was reported.
+	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Event       respjson.Field
+		Invocation  respjson.Field
+		Timestamp   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationStateEvent) RawJSON() string { return r.JSON.raw }
+func (r *InvocationStateEvent) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationStateEventInvocation struct {
+	// ID of the invocation
+	ID string `json:"id" api:"required"`
+	// Name of the action invoked
+	ActionName string `json:"action_name" api:"required"`
+	// Name of the application
+	AppName string `json:"app_name" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation started
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
+	// Status of the invocation
+	//
+	// Any of "queued", "running", "succeeded", "failed".
+	Status string `json:"status" api:"required"`
+	// Version label for the application
+	Version string `json:"version" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
+	// running)
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
+	// The action result or detailed failure output. Often a JSON-encoded value, but
+	// failures may contain plain text. May contain sensitive application data.
+	Output string `json:"output"`
+	// Payload provided to the invocation. This is a string that can be parsed as JSON.
+	Payload string `json:"payload"`
+	// A nonempty, customer-safe summary of the recorded failure output, always present
+	// when status is failed and omitted otherwise, including in the first failed
+	// invocation_state event. Recognized messages receive a specific summary; other
+	// failures receive a generic summary. Message matching does not establish whether
+	// the failure originated in the platform or action code. Does not include raw
+	// action output or internal error details. Available for historical invocations as
+	// well. Human-readable text, not a stable identifier for retry logic.
+	StatusReason string `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		ActionName   respjson.Field
+		AppName      respjson.Field
+		StartedAt    respjson.Field
+		Status       respjson.Field
+		Version      respjson.Field
+		FinishedAt   respjson.Field
+		Output       respjson.Field
+		Payload      respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationStateEventInvocation) RawJSON() string { return r.JSON.raw }
+func (r *InvocationStateEventInvocation) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationNewResponse struct {
+	// ID of the invocation
+	ID string `json:"id" api:"required"`
+	// Name of the action invoked
+	ActionName string `json:"action_name" api:"required"`
+	// Status of the invocation
+	//
+	// Any of "queued", "running", "succeeded", "failed".
+	Status InvocationNewResponseStatus `json:"status" api:"required"`
+	// The action result or detailed failure output. Often a JSON-encoded value, but
+	// failures may contain plain text. May contain sensitive application data.
+	Output string `json:"output"`
+	// A nonempty, customer-safe summary of the recorded failure output, always present
+	// when status is failed and omitted otherwise. Recognized messages receive a
+	// specific summary; other failures receive a generic summary. Message matching
+	// does not establish whether the failure originated in the platform or action
+	// code. Does not include raw action output or internal error details.
+	// Human-readable text, not a stable identifier for retry logic.
+	StatusReason string `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		ActionName   respjson.Field
+		Status       respjson.Field
+		Output       respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationNewResponse) RawJSON() string { return r.JSON.raw }
+func (r *InvocationNewResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Status of the invocation
+type InvocationNewResponseStatus string
+
+const (
+	InvocationNewResponseStatusQueued    InvocationNewResponseStatus = "queued"
+	InvocationNewResponseStatusRunning   InvocationNewResponseStatus = "running"
+	InvocationNewResponseStatusSucceeded InvocationNewResponseStatus = "succeeded"
+	InvocationNewResponseStatusFailed    InvocationNewResponseStatus = "failed"
+)
+
+type InvocationGetResponse struct {
+	// ID of the invocation
+	ID string `json:"id" api:"required"`
+	// Name of the action invoked
+	ActionName string `json:"action_name" api:"required"`
+	// Name of the application
+	AppName string `json:"app_name" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation started
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
+	// Status of the invocation
+	//
+	// Any of "queued", "running", "succeeded", "failed".
+	Status InvocationGetResponseStatus `json:"status" api:"required"`
+	// Version label for the application
+	Version string `json:"version" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
+	// running)
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
+	// The action result or detailed failure output. Often a JSON-encoded value, but
+	// failures may contain plain text. May contain sensitive application data.
+	Output string `json:"output"`
+	// Payload provided to the invocation. This is a string that can be parsed as JSON.
+	Payload string `json:"payload"`
+	// A nonempty, customer-safe summary of the recorded failure output, always present
+	// when status is failed and omitted otherwise, including in the first failed
+	// invocation_state event. Recognized messages receive a specific summary; other
+	// failures receive a generic summary. Message matching does not establish whether
+	// the failure originated in the platform or action code. Does not include raw
+	// action output or internal error details. Available for historical invocations as
+	// well. Human-readable text, not a stable identifier for retry logic.
+	StatusReason string `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		ActionName   respjson.Field
+		AppName      respjson.Field
+		StartedAt    respjson.Field
+		Status       respjson.Field
+		Version      respjson.Field
+		FinishedAt   respjson.Field
+		Output       respjson.Field
+		Payload      respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationGetResponse) RawJSON() string { return r.JSON.raw }
+func (r *InvocationGetResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Status of the invocation
+type InvocationGetResponseStatus string
+
+const (
+	InvocationGetResponseStatusQueued    InvocationGetResponseStatus = "queued"
+	InvocationGetResponseStatusRunning   InvocationGetResponseStatus = "running"
+	InvocationGetResponseStatusSucceeded InvocationGetResponseStatus = "succeeded"
+	InvocationGetResponseStatusFailed    InvocationGetResponseStatus = "failed"
+)
+
+type InvocationUpdateResponse struct {
+	// ID of the invocation
+	ID string `json:"id" api:"required"`
+	// Name of the action invoked
+	ActionName string `json:"action_name" api:"required"`
+	// Name of the application
+	AppName string `json:"app_name" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation started
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
+	// Status of the invocation
+	//
+	// Any of "queued", "running", "succeeded", "failed".
+	Status InvocationUpdateResponseStatus `json:"status" api:"required"`
+	// Version label for the application
+	Version string `json:"version" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
+	// running)
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
+	// The action result or detailed failure output. Often a JSON-encoded value, but
+	// failures may contain plain text. May contain sensitive application data.
+	Output string `json:"output"`
+	// Payload provided to the invocation. This is a string that can be parsed as JSON.
+	Payload string `json:"payload"`
+	// A nonempty, customer-safe summary of the recorded failure output, always present
+	// when status is failed and omitted otherwise, including in the first failed
+	// invocation_state event. Recognized messages receive a specific summary; other
+	// failures receive a generic summary. Message matching does not establish whether
+	// the failure originated in the platform or action code. Does not include raw
+	// action output or internal error details. Available for historical invocations as
+	// well. Human-readable text, not a stable identifier for retry logic.
+	StatusReason string `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		ActionName   respjson.Field
+		AppName      respjson.Field
+		StartedAt    respjson.Field
+		Status       respjson.Field
+		Version      respjson.Field
+		FinishedAt   respjson.Field
+		Output       respjson.Field
+		Payload      respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *InvocationUpdateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Status of the invocation
+type InvocationUpdateResponseStatus string
+
+const (
+	InvocationUpdateResponseStatusQueued    InvocationUpdateResponseStatus = "queued"
+	InvocationUpdateResponseStatusRunning   InvocationUpdateResponseStatus = "running"
+	InvocationUpdateResponseStatusSucceeded InvocationUpdateResponseStatus = "succeeded"
+	InvocationUpdateResponseStatusFailed    InvocationUpdateResponseStatus = "failed"
+)
+
+type InvocationListResponse struct {
+	// ID of the invocation
+	ID string `json:"id" api:"required"`
+	// Name of the action invoked
+	ActionName string `json:"action_name" api:"required"`
+	// Name of the application
+	AppName string `json:"app_name" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation started
+	StartedAt time.Time `json:"started_at" api:"required" format:"date-time"`
+	// Status of the invocation
+	//
+	// Any of "queued", "running", "succeeded", "failed".
+	Status InvocationListResponseStatus `json:"status" api:"required"`
+	// Version label for the application
+	Version string `json:"version" api:"required"`
+	// RFC 3339 Nanoseconds timestamp when the invocation finished (null if still
+	// running)
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
+	// The action result or detailed failure output. Often a JSON-encoded value, but
+	// failures may contain plain text. May contain sensitive application data.
+	Output string `json:"output"`
+	// Payload provided to the invocation. This is a string that can be parsed as JSON.
+	Payload string `json:"payload"`
+	// A nonempty, customer-safe summary of the recorded failure output, always present
+	// when status is failed and omitted otherwise, including in the first failed
+	// invocation_state event. Recognized messages receive a specific summary; other
+	// failures receive a generic summary. Message matching does not establish whether
+	// the failure originated in the platform or action code. Does not include raw
+	// action output or internal error details. Available for historical invocations as
+	// well. Human-readable text, not a stable identifier for retry logic.
+	StatusReason string `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		ActionName   respjson.Field
+		AppName      respjson.Field
+		StartedAt    respjson.Field
+		Status       respjson.Field
+		Version      respjson.Field
+		FinishedAt   respjson.Field
+		Output       respjson.Field
+		Payload      respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationListResponse) RawJSON() string { return r.JSON.raw }
+func (r *InvocationListResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Status of the invocation
+type InvocationListResponseStatus string
+
+const (
+	InvocationListResponseStatusQueued    InvocationListResponseStatus = "queued"
+	InvocationListResponseStatusRunning   InvocationListResponseStatus = "running"
+	InvocationListResponseStatusSucceeded InvocationListResponseStatus = "succeeded"
+	InvocationListResponseStatusFailed    InvocationListResponseStatus = "failed"
+)
+
+// InvocationFollowResponseUnion contains all possible properties and values from
+// [shared.LogEvent], [InvocationStateEvent], [shared.ErrorEvent],
+// [shared.HeartbeatEvent].
+//
+// Use the [InvocationFollowResponseUnion.AsAny] method to switch on the variant.
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type InvocationFollowResponseUnion struct {
+	// Any of "log", "invocation_state", "error", "sse_heartbeat".
+	Event string `json:"event"`
+	// This field is from variant [shared.LogEvent].
+	Message   string    `json:"message"`
+	Timestamp time.Time `json:"timestamp"`
+	// This field is from variant [InvocationStateEvent].
+	Invocation InvocationStateEventInvocation `json:"invocation"`
+	// This field is from variant [shared.ErrorEvent].
+	Error shared.ErrorModel `json:"error"`
+	JSON  struct {
+		Event      respjson.Field
+		Message    respjson.Field
+		Timestamp  respjson.Field
+		Invocation respjson.Field
+		Error      respjson.Field
+		raw        string
+	} `json:"-"`
+}
+
+// anyInvocationFollowResponse is implemented by each variant of
+// [InvocationFollowResponseUnion] to add type safety for the return type of
+// [InvocationFollowResponseUnion.AsAny]
+type anyInvocationFollowResponse interface {
+	ImplInvocationFollowResponseUnion()
+}
+
+func (InvocationStateEvent) ImplInvocationFollowResponseUnion() {}
+
+// Use the following switch statement to find the correct variant
+//
+//	switch variant := InvocationFollowResponseUnion.AsAny().(type) {
+//	case shared.LogEvent:
+//	case kernel.InvocationStateEvent:
+//	case shared.ErrorEvent:
+//	case shared.HeartbeatEvent:
+//	default:
+//	  fmt.Errorf("no variant present")
+//	}
+func (u InvocationFollowResponseUnion) AsAny() anyInvocationFollowResponse {
+	switch u.Event {
+	case "log":
+		return u.AsLog()
+	case "invocation_state":
+		return u.AsInvocationState()
+	case "error":
+		return u.AsError()
+	case "sse_heartbeat":
+		return u.AsSseHeartbeat()
+	}
+	return nil
+}
+
+func (u InvocationFollowResponseUnion) AsLog() (v shared.LogEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u InvocationFollowResponseUnion) AsInvocationState() (v InvocationStateEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u InvocationFollowResponseUnion) AsError() (v shared.ErrorEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u InvocationFollowResponseUnion) AsSseHeartbeat() (v shared.HeartbeatEvent) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u InvocationFollowResponseUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *InvocationFollowResponseUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationListBrowsersResponse struct {
+	Browsers []InvocationListBrowsersResponseBrowser `json:"browsers" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Browsers    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationListBrowsersResponse) RawJSON() string { return r.JSON.raw }
+func (r *InvocationListBrowsersResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationListBrowsersResponseBrowser struct {
+	// Websocket URL for Chrome DevTools Protocol connections to the browser session
+	CdpWsURL string `json:"cdp_ws_url" api:"required"`
+	// When the browser session was created.
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Whether the browser session is running in headless mode.
+	Headless bool `json:"headless" api:"required"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory" api:"required"`
+	// Geographic region of the browser session. Fixed once the session is created.
+	//
+	// Any of "us-east", "eu-west", "ap-southeast".
+	Region string `json:"region" api:"required"`
+	// Unique identifier for the browser session
+	SessionID string `json:"session_id" api:"required"`
+	// Whether the browser session is running in stealth mode.
+	Stealth bool `json:"stealth" api:"required"`
+	// The number of seconds of inactivity before the browser session is terminated.
+	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
+	// Websocket URL for WebDriver BiDi connections to the browser session
+	WebdriverWsURL string `json:"webdriver_ws_url" api:"required"`
+	// Metro-API HTTP base URL for this browser session.
+	BaseURL string `json:"base_url"`
+	// Remote URL for live viewing the browser session. Only available for non-headless
+	// browsers.
+	BrowserLiveViewURL string `json:"browser_live_view_url"`
+	// Custom Chrome enterprise policy overrides that were applied to this browser
+	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
+	// names.
+	ChromePolicy map[string]any `json:"chrome_policy"`
+	// When the browser session was soft-deleted. Only present for deleted sessions.
+	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Whether GPU acceleration is enabled for the browser session (only supported for
+	// headful sessions).
+	GPU bool `json:"gpu"`
+	// Whether the browser session is running in kiosk mode.
+	KioskMode bool `json:"kiosk_mode"`
+	// Human-readable name of the browser session, if one was set at creation.
+	Name string `json:"name"`
+	// Network configuration the session was created with, if any. Omitted when the
+	// session has no network configuration.
+	Network BrowserNetworkConfig `json:"network"`
+	// Browser pool this session was acquired from, if any.
+	Pool BrowserPoolRef `json:"pool"`
+	// Browser profile metadata.
+	Profile Profile `json:"profile"`
+	// Whether changes made during this browser session are saved back to its profile
+	// when the session ends. Omitted when no profile is attached.
+	ProfileSaveChanges bool `json:"profile_save_changes"`
+	// Resolved proxy configuration for this browser session.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with this browser session, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
+	ProxyID string `json:"proxy_id"`
+	// URL the session was most recently asked to navigate to, if any. Recorded for
+	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
+	// without waiting for it to load, and any errors (DNS failure, bad status,
+	// timeout) are silently dropped. Captures what was requested, not what the browser
+	// actually loaded.
+	StartURL string `json:"start_url"`
+	// User-defined key-value tags that were set on this browser session, if any.
+	// Echoed back when present.
+	Tags Tags `json:"tags"`
+	// Active telemetry configuration for the session, if any.
+	Telemetry BrowserTelemetryConfig `json:"telemetry" api:"nullable"`
+	// Session usage metrics.
+	Usage BrowserUsage `json:"usage"`
+	// Whether final usage billing is still pending or complete. Only present for
+	// deleted sessions.
+	//
+	// Any of "pending", "ready".
+	UsageStatus string `json:"usage_status"`
+	// Vaults linked when the browser session was created.
+	Vaults []VaultReference `json:"vaults"`
+	// Initial browser window size in pixels with optional refresh rate. If omitted,
+	// image defaults apply (1920x1080@25). For GPU images, the default is
+	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
+	// Known-good presets include: 2560x1440@10, 1920x1080@25, 1920x1200@25,
+	// 1440x900@25, 1280x800@60, 1024x768@60, 1200x800@60, 768x1024@60, 390x844@60. For
+	// GPU images, recommended presets use one of these resolutions with refresh rates
+	// 60, 30, 25, or 10: 800x600, 960x720, 1024x576, 1024x768, 1152x648, 1200x800,
+	// 1280x720, 1368x768, 1440x900, 1600x900, 1920x1080, 1920x1200, 390x844, 360x250,
+	// 768x1024, 800x1600. Viewports outside this list may exhibit unstable live view
+	// or recording behavior. If refresh_rate is not provided, it will be automatically
+	// determined based on the resolution (higher resolutions use lower refresh rates
+	// to keep bandwidth reasonable).
+	Viewport shared.BrowserViewport `json:"viewport"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CdpWsURL           respjson.Field
+		CreatedAt          respjson.Field
+		Headless           respjson.Field
+		Memory             respjson.Field
+		Region             respjson.Field
+		SessionID          respjson.Field
+		Stealth            respjson.Field
+		TimeoutSeconds     respjson.Field
+		WebdriverWsURL     respjson.Field
+		BaseURL            respjson.Field
+		BrowserLiveViewURL respjson.Field
+		ChromePolicy       respjson.Field
+		DeletedAt          respjson.Field
+		GPU                respjson.Field
+		KioskMode          respjson.Field
+		Name               respjson.Field
+		Network            respjson.Field
+		Pool               respjson.Field
+		Profile            respjson.Field
+		ProfileSaveChanges respjson.Field
+		Proxy              respjson.Field
+		ProxyID            respjson.Field
+		StartURL           respjson.Field
+		Tags               respjson.Field
+		Telemetry          respjson.Field
+		Usage              respjson.Field
+		UsageStatus        respjson.Field
+		Vaults             respjson.Field
+		Viewport           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationListBrowsersResponseBrowser) RawJSON() string { return r.JSON.raw }
+func (r *InvocationListBrowsersResponseBrowser) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationNewParams struct {
+	// Name of the action to invoke
+	ActionName string `json:"action_name" api:"required"`
+	// Name of the application
+	AppName string `json:"app_name" api:"required"`
+	// Version of the application
+	Version string `json:"version" api:"required"`
+	// If true, invoke asynchronously. When set, the API responds 202 Accepted with
+	// status "queued".
+	Async param.Opt[bool] `json:"async,omitzero"`
+	// Timeout in seconds for async invocations (min 10, max 3600). Only applies when
+	// async is true.
+	AsyncTimeoutSeconds param.Opt[int64] `json:"async_timeout_seconds,omitzero"`
+	// Input data for the action, sent as a JSON string.
+	Payload param.Opt[string] `json:"payload,omitzero"`
+	paramObj
+}
+
+func (r InvocationNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow InvocationNewParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InvocationNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type InvocationUpdateParams struct {
+	// New status for the invocation.
+	//
+	// Any of "succeeded", "failed".
+	Status InvocationUpdateParamsStatus `json:"status,omitzero" api:"required"`
+	// Updated output of the invocation rendered as JSON string.
+	Output param.Opt[string] `json:"output,omitzero"`
+	paramObj
+}
+
+func (r InvocationUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow InvocationUpdateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *InvocationUpdateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// New status for the invocation.
+type InvocationUpdateParamsStatus string
+
+const (
+	InvocationUpdateParamsStatusSucceeded InvocationUpdateParamsStatus = "succeeded"
+	InvocationUpdateParamsStatusFailed    InvocationUpdateParamsStatus = "failed"
+)
+
+type InvocationListParams struct {
+	// Filter results by action name.
+	ActionName param.Opt[string] `query:"action_name,omitzero" json:"-"`
+	// Filter results by application name.
+	AppName param.Opt[string] `query:"app_name,omitzero" json:"-"`
+	// Filter results by deployment ID.
+	DeploymentID param.Opt[string] `query:"deployment_id,omitzero" json:"-"`
+	// Limit the number of invocations to return.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Offset the number of invocations to return.
+	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Search invocations by ID, app name, or action name.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Show invocations that have started since the given time (RFC timestamps or
+	// durations like 5m).
+	Since param.Opt[string] `query:"since,omitzero" json:"-"`
+	// Filter results by application version.
+	Version param.Opt[string] `query:"version,omitzero" json:"-"`
+	// Filter results by invocation status.
+	//
+	// Any of "queued", "running", "succeeded", "failed".
+	Status InvocationListParamsStatus `query:"status,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [InvocationListParams]'s query parameters as `url.Values`.
+func (r InvocationListParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+// Filter results by invocation status.
+type InvocationListParamsStatus string
+
+const (
+	InvocationListParamsStatusQueued    InvocationListParamsStatus = "queued"
+	InvocationListParamsStatusRunning   InvocationListParamsStatus = "running"
+	InvocationListParamsStatusSucceeded InvocationListParamsStatus = "succeeded"
+	InvocationListParamsStatusFailed    InvocationListParamsStatus = "failed"
+)
+
+type InvocationFollowParams struct {
+	// Show logs since the given time (RFC timestamps or durations like 5m).
+	Since param.Opt[string] `query:"since,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [InvocationFollowParams]'s query parameters as `url.Values`.
+func (r InvocationFollowParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
