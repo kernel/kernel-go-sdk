@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.110.0](https://github.com/kernel/kernel-go-sdk/compare/v0.109.0...v0.110.0) (2026-09-18)
+
+
+### Features
+
+* Add credential field labels to the API ([c4dc2a2](https://github.com/kernel/kernel-go-sdk/commit/c4dc2a28cd2b9fabed18fee5ea0ac8ba0dbdeeff))
+
 ## [0.109.0](https://github.com/kernel/kernel-go-sdk/compare/v0.108.0...v0.109.0) (2026-09-17)
 
 
