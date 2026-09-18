@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.111.0](https://github.com/kernel/kernel-go-sdk/compare/v0.110.0...v0.111.0) (2026-09-18)
+
+
+### Features
+
+* Publish restricted_route_unavailable and unknown proxy_error codes ([6e379e6](https://github.com/kernel/kernel-go-sdk/commit/6e379e6df7b9727b412e028352c25023439fefd8))
+
 ## [0.110.0](https://github.com/kernel/kernel-go-sdk/compare/v0.109.0...v0.110.0) (2026-09-18)
 
 
