@@ -1261,12 +1261,18 @@ type CredentialVaultFieldDefinition struct {
 	//
 	// Any of "text", "email", "password", "totp".
 	Type CredentialVaultFieldType `json:"type" api:"required"`
+	// Optional human-readable display label. It is returned as non-secret metadata and
+	// never affects value keys, updates, or browser fills. Use single-line, trimmed
+	// display text without control or formatting characters. The server enforces a
+	// 128-byte UTF-8 limit.
+	Label string `json:"label"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Name        respjson.Field
 		Required    respjson.Field
 		Sensitive   respjson.Field
 		Type        respjson.Field
+		Label       respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1292,8 +1298,13 @@ type CredentialVaultFieldInputParam struct {
 	// unsupported.
 	//
 	// Any of "text", "email", "password", "totp".
-	Type     CredentialVaultFieldType `json:"type,omitzero" api:"required"`
-	Required param.Opt[bool]          `json:"required,omitzero"`
+	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
+	// Optional human-readable display label. It is returned as non-secret metadata and
+	// never affects value keys, updates, or browser fills. Use single-line, trimmed
+	// display text without control or formatting characters. The server enforces a
+	// 128-byte UTF-8 limit.
+	Label    param.Opt[string] `json:"label,omitzero"`
+	Required param.Opt[bool]   `json:"required,omitzero"`
 	// Set false explicitly for ordinary usernames, email addresses, and other
 	// non-secret identifiers. Reserve true for secrets such as passwords, API tokens,
 	// and TOTP seeds. Password and totp fields must be true. Omission defaults to true
