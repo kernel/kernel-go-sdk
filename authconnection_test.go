@@ -511,6 +511,7 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 				Name: kernel.String("name"),
 			},
 			RecordSession: kernel.Bool(true),
+			SkillMode:     kernel.AuthConnectionLoginParamsSkillModeEnabled,
 		},
 	)
 	if err != nil {

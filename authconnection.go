@@ -2338,6 +2338,12 @@ type AuthConnectionLoginParams struct {
 	Browser ManagedAuthBrowserConfigParam `json:"browser,omitzero"`
 	// Deprecated. Use browser.proxy. Retained during migration for existing clients.
 	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`
+	// Controls whether this login reads and writes learned domain skills. Automatic
+	// reauths inherit the selected mode until a later accepted login sets enabled or
+	// omits this field. Defaults to enabled when omitted.
+	//
+	// Any of "enabled", "disabled".
+	SkillMode AuthConnectionLoginParamsSkillMode `json:"skill_mode,omitzero"`
 	paramObj
 }
 
@@ -2459,6 +2465,16 @@ func (r AuthConnectionLoginParamsProxy) MarshalJSON() (data []byte, err error) {
 func (r *AuthConnectionLoginParamsProxy) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Controls whether this login reads and writes learned domain skills. Automatic
+// reauths inherit the selected mode until a later accepted login sets enabled or
+// omits this field. Defaults to enabled when omitted.
+type AuthConnectionLoginParamsSkillMode string
+
+const (
+	AuthConnectionLoginParamsSkillModeEnabled  AuthConnectionLoginParamsSkillMode = "enabled"
+	AuthConnectionLoginParamsSkillModeDisabled AuthConnectionLoginParamsSkillMode = "disabled"
+)
 
 type AuthConnectionSubmitParams struct {
 	// Request to submit field values, click an SSO button, select an MFA method, or
