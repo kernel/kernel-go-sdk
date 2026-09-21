@@ -295,15 +295,17 @@ const (
 )
 
 // One-use processor-bound checkout preparation. Keep the approval page open
-// through token handoff. The amount is display-only and does not constrain the
-// merchant's eventual charge.
+// through device handoff, including Adyen encryption. The amount is declared by
+// the caller and does not constrain the merchant's eventual charge. Adyen device
+// approval and browser Authorised responses are not capture or fulfillment
+// evidence.
 type AgentcardCheckoutPreparation struct {
 	BrowserID string    `json:"browser_id" api:"required"`
 	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
 	// Any of "production", "sandbox", "shared".
 	Environment    AgentcardCheckoutPreparationEnvironment `json:"environment" api:"required"`
 	MerchantOrigin string                                  `json:"merchant_origin" api:"required"`
-	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago".
+	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago", "adyen".
 	Psp AgentcardPreparedProcessor `json:"psp" api:"required"`
 	// Preparation consumed means egress claimed the preparation and it cannot be
 	// reused. It does not mean the attempt settled. Use the enclosing item's status as
@@ -373,6 +375,7 @@ const (
 	AgentcardPreparedProcessorWorldpay    AgentcardPreparedProcessor = "worldpay"
 	AgentcardPreparedProcessorBambora     AgentcardPreparedProcessor = "bambora"
 	AgentcardPreparedProcessorMercadoPago AgentcardPreparedProcessor = "mercado_pago"
+	AgentcardPreparedProcessorAdyen       AgentcardPreparedProcessor = "adyen"
 )
 
 // Authorize a Link card using its existing purchase specification. Use only after
@@ -1109,8 +1112,10 @@ type CardVaultItemStateAgentcard struct {
 	Authorization AgentcardCheckoutAuthorization   `json:"authorization"`
 	Masks         CardVaultItemStateAgentcardMasks `json:"masks"`
 	// One-use processor-bound checkout preparation. Keep the approval page open
-	// through token handoff. The amount is display-only and does not constrain the
-	// merchant's eventual charge.
+	// through device handoff, including Adyen encryption. The amount is declared by
+	// the caller and does not constrain the merchant's eventual charge. Adyen device
+	// approval and browser Authorised responses are not capture or fulfillment
+	// evidence.
 	Preparation  AgentcardCheckoutPreparation `json:"preparation"`
 	StatusReason string                       `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1782,8 +1787,8 @@ const (
 	FillVaultItemOperationResultTypeFill FillVaultItemOperationResultType = "fill"
 )
 
-// Prepare an unused AgentCard card for a supported tokenization checkout. Deliver
-// the returned approval URL and keep the approval page open. Poll the item until
+// Prepare an unused AgentCard card for a supported checkout. Deliver the returned
+// approval URL and keep the approval page open. Poll the item until
 // ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
 // lasts at most 30 seconds. Unused preparations expire automatically. Preparations
 // are single-use even after failure or expiry; do not automatically retry and
@@ -1791,7 +1796,7 @@ const (
 //
 // The properties Checkout, Type are required.
 type PrepareCheckoutVaultItemOperationRequestParam struct {
-	// Required when preparing an unused AgentCard card for a supported tokenization
+	// Required when preparing an unused AgentCard card for a supported checkout
 	// processor. Consent is bound to this browser and declared merchant origin, not a
 	// tab. Wait for the item's ready_to_submit status before native Pay and submit
 	// within its readiness deadline. Unused preparations expire automatically; every
@@ -1838,7 +1843,7 @@ func (r *VaultCardAliases) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Required when preparing an unused AgentCard card for a supported tokenization
+// Required when preparing an unused AgentCard card for a supported checkout
 // processor. Consent is bound to this browser and declared merchant origin, not a
 // tab. Wait for the item's ready_to_submit status before native Pay and submit
 // within its readiness deadline. Unused preparations expire automatically; every
@@ -1848,8 +1853,8 @@ func (r *VaultCardAliases) UnmarshalJSON(data []byte) error {
 type VaultCheckoutContextParam struct {
 	// Active browser session with this vault bound to it.
 	BrowserID string `json:"browser_id" api:"required"`
-	// Use production or sandbox for Square, Braintree and Worldpay; shared for Bambora
-	// and Mercado Pago. Shared endpoints do not establish test mode. Merchant
+	// Use production or sandbox for Square, Braintree, Worldpay and Adyen; shared for
+	// Bambora and Mercado Pago. Shared endpoints do not establish test mode. Merchant
 	// credentials/configuration determine processor test mode, independently of the
 	// AgentCard credential mode.
 	//
@@ -1858,10 +1863,13 @@ type VaultCheckoutContextParam struct {
 	// Canonical HTTPS origin of the top-level merchant document, not a processor
 	// iframe. HTTP localhost is accepted for tests.
 	MerchantOrigin string `json:"merchant_origin" api:"required"`
-	// Tokenization processor. Omit for Square compatibility. Non-Square processors
-	// require multi-processor preparation enablement.
+	// Checkout processor. Omit for Square compatibility. Adyen supports fresh-card
+	// Sessions requests on Adyen hosts only. Use public dummy card fields, not vault
+	// aliases. The unique armed preparation is associated with the subsequent eligible
+	// request from this browser and declared merchant origin; competing preparations
+	// are rejected.
 	//
-	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago".
+	// Any of "square", "braintree", "worldpay", "bambora", "mercado_pago", "adyen".
 	Psp AgentcardPreparedProcessor `json:"psp,omitzero"`
 	paramObj
 }
@@ -1874,8 +1882,8 @@ func (r *VaultCheckoutContextParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Use production or sandbox for Square, Braintree and Worldpay; shared for Bambora
-// and Mercado Pago. Shared endpoints do not establish test mode. Merchant
+// Use production or sandbox for Square, Braintree, Worldpay and Adyen; shared for
+// Bambora and Mercado Pago. Shared endpoints do not establish test mode. Merchant
 // credentials/configuration determine processor test mode, independently of the
 // AgentCard credential mode.
 type VaultCheckoutContextEnvironment string
@@ -3853,12 +3861,12 @@ type VaultItemPerformOperationParams struct {
 	// parameter waits for readiness, not edits.
 	OfCollect *CollectVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Prepare
-	// an unused AgentCard card for a supported tokenization checkout. Deliver the
-	// returned approval URL and keep the approval page open. Poll the item until
-	// ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
-	// lasts at most 30 seconds. Unused preparations expire automatically. Preparations
-	// are single-use even after failure or expiry; do not automatically retry and
-	// reconcile uncertain outcomes with the merchant.
+	// an unused AgentCard card for a supported checkout. Deliver the returned approval
+	// URL and keep the approval page open. Poll the item until ready_to_submit, then
+	// submit native Pay before preparation.expires_at. Readiness lasts at most 30
+	// seconds. Unused preparations expire automatically. Preparations are single-use
+	// even after failure or expiry; do not automatically retry and reconcile uncertain
+	// outcomes with the merchant.
 	OfPrepareCheckout *PrepareCheckoutVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Fill
 	// selected fields from one ready credential or ready, unexpired Link card into a
