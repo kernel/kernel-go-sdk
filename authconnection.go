@@ -1486,6 +1486,10 @@ type ManagedAuthTimelineEvent struct {
 	Type ManagedAuthTimelineEventType `json:"type" api:"required"`
 	// Browser session that produced the event, if one was created.
 	BrowserSessionID string `json:"browser_session_id"`
+	// When the login/reauth attempt first reached a terminal status. Stable across
+	// retries and subsequent cleanup writes. Absent for in-progress attempts, health
+	// checks, and historical attempts without a recorded completion time.
+	CompletedAt time.Time `json:"completed_at" format:"date-time"`
 	// Machine-readable error code. Present when a login/reauth event failed.
 	ErrorCode string `json:"error_code"`
 	// Human-readable error message. Present when a login/reauth event failed.
@@ -1518,6 +1522,7 @@ type ManagedAuthTimelineEvent struct {
 		Timestamp         respjson.Field
 		Type              respjson.Field
 		BrowserSessionID  respjson.Field
+		CompletedAt       respjson.Field
 		ErrorCode         respjson.Field
 		ErrorMessage      respjson.Field
 		PreviousStatus    respjson.Field
