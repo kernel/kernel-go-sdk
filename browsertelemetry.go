@@ -3572,7 +3572,8 @@ type BrowserEventContext struct {
 	TargetID string `json:"target_id"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType BrowserEventContextTargetType `json:"target_type"`
 	// URL relevant to this event — page URL for navigation and page events, request
 	// URL for network events.
@@ -3602,6 +3603,8 @@ type BrowserEventContextTargetType string
 
 const (
 	BrowserEventContextTargetTypePage           BrowserEventContextTargetType = "page"
+	BrowserEventContextTargetTypeIframe         BrowserEventContextTargetType = "iframe"
+	BrowserEventContextTargetTypeWorker         BrowserEventContextTargetType = "worker"
 	BrowserEventContextTargetTypeBackgroundPage BrowserEventContextTargetType = "background_page"
 	BrowserEventContextTargetTypeServiceWorker  BrowserEventContextTargetType = "service_worker"
 	BrowserEventContextTargetTypeSharedWorker   BrowserEventContextTargetType = "shared_worker"
@@ -4488,7 +4491,8 @@ type BrowserPageCrashedEventData struct {
 	TargetID string `json:"target_id" api:"required"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType string `json:"target_type" api:"required"`
 	// URL the page was on when its renderer process crashed.
 	URL string `json:"url" api:"required"`
@@ -4880,7 +4884,8 @@ type BrowserPageNavigationEventData struct {
 	TargetID string `json:"target_id"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType string `json:"target_type"`
 	// URL navigated to.
 	URL string `json:"url"`
@@ -4980,7 +4985,8 @@ type BrowserPageTabOpenedEventData struct {
 	TargetID string `json:"target_id"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType string `json:"target_type"`
 	// Initial page title of the new tab.
 	Title string `json:"title"`
