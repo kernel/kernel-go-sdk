@@ -302,13 +302,15 @@ type ManagedAuth struct {
 	//
 	// Deprecated: deprecated
 	BrowserTelemetry ManagedAuthBrowserTelemetry `json:"browser_telemetry" api:"nullable"`
-	// Whether Kernel can automatically re-authenticate this connection when the
-	// session expires. Requires a prior successful login plus either a Kernel
-	// credential or an external credential reference. See `can_reauth_reason` for the
-	// specific outcome.
+	// Whether this connection's stored requirements are eligible for unattended
+	// re-authentication. A true value can represent either fully satisfiable
+	// requirements or a best-effort attempt. It does not account for whether automatic
+	// re-authentication is enabled or parent workflow state such as an active flow or
+	// circuit-breaker cooldown, so it does not guarantee an attempt on the next health
+	// check. See `can_reauth_reason` for the specific outcome.
 	CanReauth bool `json:"can_reauth"`
 	// Machine-readable reason for the current value of `can_reauth`. Affirmative
-	// values (re-auth is possible):
+	// values (requirements are eligible for unattended re-authentication):
 	//
 	// - `external_credential` — an external credential provider is attached
 	// - `cua_has_credential` — CUA flow with a stored credential
@@ -317,8 +319,12 @@ type ManagedAuth struct {
 	// - `viable_plans_found` — at least one stored login plan can be replayed
 	// - `no_requirements_recorded` — no recorded credential requirements to fail
 	//   against
-	// - `totp_reauth_allowed` — TOTP is the only recorded requirement and is safe to
-	//   attempt automatically
+	// - `totp_reauth_allowed` — TOTP is the only recorded requirement and a stored
+	//   secret can generate the code
+	// - `optimistic_totp_attempt` — TOTP was previously required but no reusable
+	//   secret is stored; the connection remains eligible for a
+	//   circuit-breaker-bounded attempt because the site may not challenge returning
+	//   sessions
 	// - `requirements_satisfiable` — recorded requirements contain no recognized
 	//   blocker
 	//
@@ -343,10 +349,11 @@ type ManagedAuth struct {
 	//
 	// Any of "external_credential", "cua_has_credential", "has_credential",
 	// "viable_plans_found", "no_requirements_recorded", "totp_reauth_allowed",
-	// "requirements_satisfiable", "no_prior_successful_login", "no_credential",
-	// "no_viable_plans", "viable_plans_require_external_action",
-	// "requires_external_action", "requires_totp_without_secret", "requires_sms_code",
-	// "requires_email_code", "requires_customer_input".
+	// "optimistic_totp_attempt", "requirements_satisfiable",
+	// "no_prior_successful_login", "no_credential", "no_viable_plans",
+	// "viable_plans_require_external_action", "requires_external_action",
+	// "requires_totp_without_secret", "requires_sms_code", "requires_email_code",
+	// "requires_customer_input".
 	CanReauthReason ManagedAuthCanReauthReason `json:"can_reauth_reason"`
 	// Canonical choices awaiting selection. Prefer this over pending_sso_buttons,
 	// mfa_options, and sign_in_options when present.
@@ -613,7 +620,7 @@ func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []
 }
 
 // Machine-readable reason for the current value of `can_reauth`. Affirmative
-// values (re-auth is possible):
+// values (requirements are eligible for unattended re-authentication):
 //
 //   - `external_credential` — an external credential provider is attached
 //   - `cua_has_credential` — CUA flow with a stored credential
@@ -622,8 +629,12 @@ func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []
 //   - `viable_plans_found` — at least one stored login plan can be replayed
 //   - `no_requirements_recorded` — no recorded credential requirements to fail
 //     against
-//   - `totp_reauth_allowed` — TOTP is the only recorded requirement and is safe to
-//     attempt automatically
+//   - `totp_reauth_allowed` — TOTP is the only recorded requirement and a stored
+//     secret can generate the code
+//   - `optimistic_totp_attempt` — TOTP was previously required but no reusable
+//     secret is stored; the connection remains eligible for a
+//     circuit-breaker-bounded attempt because the site may not challenge returning
+//     sessions
 //   - `requirements_satisfiable` — recorded requirements contain no recognized
 //     blocker
 //
@@ -654,6 +665,7 @@ const (
 	ManagedAuthCanReauthReasonViablePlansFound                 ManagedAuthCanReauthReason = "viable_plans_found"
 	ManagedAuthCanReauthReasonNoRequirementsRecorded           ManagedAuthCanReauthReason = "no_requirements_recorded"
 	ManagedAuthCanReauthReasonTotpReauthAllowed                ManagedAuthCanReauthReason = "totp_reauth_allowed"
+	ManagedAuthCanReauthReasonOptimisticTotpAttempt            ManagedAuthCanReauthReason = "optimistic_totp_attempt"
 	ManagedAuthCanReauthReasonRequirementsSatisfiable          ManagedAuthCanReauthReason = "requirements_satisfiable"
 	ManagedAuthCanReauthReasonNoPriorSuccessfulLogin           ManagedAuthCanReauthReason = "no_prior_successful_login"
 	ManagedAuthCanReauthReasonNoCredential                     ManagedAuthCanReauthReason = "no_credential"
@@ -1474,6 +1486,10 @@ type ManagedAuthTimelineEvent struct {
 	Type ManagedAuthTimelineEventType `json:"type" api:"required"`
 	// Browser session that produced the event, if one was created.
 	BrowserSessionID string `json:"browser_session_id"`
+	// When the login/reauth attempt first reached a terminal status. Stable across
+	// retries and subsequent cleanup writes. Absent for in-progress attempts, health
+	// checks, and historical attempts without a recorded completion time.
+	CompletedAt time.Time `json:"completed_at" format:"date-time"`
 	// Machine-readable error code. Present when a login/reauth event failed.
 	ErrorCode string `json:"error_code"`
 	// Human-readable error message. Present when a login/reauth event failed.
@@ -1506,6 +1522,7 @@ type ManagedAuthTimelineEvent struct {
 		Timestamp         respjson.Field
 		Type              respjson.Field
 		BrowserSessionID  respjson.Field
+		CompletedAt       respjson.Field
 		ErrorCode         respjson.Field
 		ErrorMessage      respjson.Field
 		PreviousStatus    respjson.Field
@@ -2321,6 +2338,12 @@ type AuthConnectionLoginParams struct {
 	Browser ManagedAuthBrowserConfigParam `json:"browser,omitzero"`
 	// Deprecated. Use browser.proxy. Retained during migration for existing clients.
 	Proxy AuthConnectionLoginParamsProxy `json:"proxy,omitzero"`
+	// Controls whether this login reads and writes learned domain skills. Automatic
+	// reauths inherit the selected mode until a later accepted login sets enabled or
+	// omits this field. Defaults to enabled when omitted.
+	//
+	// Any of "enabled", "disabled".
+	SkillMode AuthConnectionLoginParamsSkillMode `json:"skill_mode,omitzero"`
 	paramObj
 }
 
@@ -2442,6 +2465,16 @@ func (r AuthConnectionLoginParamsProxy) MarshalJSON() (data []byte, err error) {
 func (r *AuthConnectionLoginParamsProxy) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Controls whether this login reads and writes learned domain skills. Automatic
+// reauths inherit the selected mode until a later accepted login sets enabled or
+// omits this field. Defaults to enabled when omitted.
+type AuthConnectionLoginParamsSkillMode string
+
+const (
+	AuthConnectionLoginParamsSkillModeEnabled  AuthConnectionLoginParamsSkillMode = "enabled"
+	AuthConnectionLoginParamsSkillModeDisabled AuthConnectionLoginParamsSkillMode = "disabled"
+)
 
 type AuthConnectionSubmitParams struct {
 	// Request to submit field values, click an SSO button, select an MFA method, or

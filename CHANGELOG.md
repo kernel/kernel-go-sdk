@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.111.0](https://github.com/kernel/kernel-go-sdk/compare/v0.110.0...v0.111.0) (2026-09-22)
+
+
+### Features
+
+* Allow managed auth logins to disable learned skills ([aee0b02](https://github.com/kernel/kernel-go-sdk/commit/aee0b02b9b0bdb2f84172ee9b568696dcd8fa482))
+* Distinguish optimistic managed auth reauth ([68c5100](https://github.com/kernel/kernel-go-sdk/commit/68c51002947ba672c74f15f50420184c5b5ecbe7))
+* Implement Search API v1 providers ([0554699](https://github.com/kernel/kernel-go-sdk/commit/05546992051b109e2a59e1b4a7f6f4455b1470db))
+* Persist stable managed auth completion timestamps ([ca8d465](https://github.com/kernel/kernel-go-sdk/commit/ca8d4655a0dc47369135fb4a938eeb5cf5326582))
+* Publish restricted_route_unavailable and unknown proxy_error codes ([6e379e6](https://github.com/kernel/kernel-go-sdk/commit/6e379e6df7b9727b412e028352c25023439fefd8))
+* Support native prepared Adyen Sessions checkout ([dd9a4a4](https://github.com/kernel/kernel-go-sdk/commit/dd9a4a4e3d3ae56a41429901b1cc7eb580febae7))
+
 ## [0.110.0](https://github.com/kernel/kernel-go-sdk/compare/v0.109.0...v0.110.0) (2026-09-18)
 
 
