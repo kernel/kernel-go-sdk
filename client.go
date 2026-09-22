@@ -55,6 +55,8 @@ type Client struct {
 	APIKeys APIKeyService
 	// Configure external credential providers like 1Password.
 	CredentialProviders CredentialProviderService
+	// Search the web and retrieve content for selected results.
+	Search SearchService
 }
 
 // DefaultClientOptions read from the environment (KERNEL_API_KEY,
@@ -111,6 +113,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.AuditLogs = NewAuditLogService(opts...)
 	r.APIKeys = NewAPIKeyService(opts...)
 	r.CredentialProviders = NewCredentialProviderService(opts...)
+	r.Search = NewSearchService(opts...)
 
 	return
 }

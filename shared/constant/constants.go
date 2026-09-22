@@ -21,8 +21,10 @@ func ValueOf[T Constant[T]]() T {
 type Agentcard string                       // Always "agentcard"
 type APICall string                         // Always "api_call"
 type AppVersionSummary string               // Always "app_version_summary"
+type Auto string                            // Always "auto"
 type AutofillTrigger string                 // Always "Autofill.trigger"
 type AwsUsEast1a string                     // Always "aws.us-east-1a"
+type Brave string                           // Always "brave"
 type BrowserCancelDownload string           // Always "Browser.cancelDownload"
 type BrowserClose string                    // Always "Browser.close"
 type BrowserSetContentsSize string          // Always "Browser.setContentsSize"
@@ -41,6 +43,7 @@ type Connection string                      // Always "connection"
 type Console string                         // Always "console"
 type ConsoleError string                    // Always "console_error"
 type ConsoleLog string                      // Always "console_log"
+type Context string                         // Always "context"
 type Control string                         // Always "control"
 type CustomerManaged string                 // Always "customer_managed"
 type DeploymentState string                 // Always "deployment_state"
@@ -50,6 +53,8 @@ type DomScrollIntoViewIfNeeded string       // Always "DOM.scrollIntoViewIfNeede
 type DomSetFileInputFiles string            // Always "DOM.setFileInputFiles"
 type EmbeddedCeremony string                // Always "embedded_ceremony"
 type Error string                           // Always "error"
+type Exa string                             // Always "exa"
+type Fallback string                        // Always "fallback"
 type InputCancelDragging string             // Always "Input.cancelDragging"
 type InputDispatchDragEvent string          // Always "Input.dispatchDragEvent"
 type InputDispatchKeyEvent string           // Always "Input.dispatchKeyEvent"
@@ -87,6 +92,7 @@ type NetworkLoadingFailed string            // Always "network_loading_failed"
 type NetworkRequest string                  // Always "network_request"
 type NetworkResponse string                 // Always "network_response"
 type NoRecommendation string                // Always "no_recommendation"
+type Octen string                           // Always "octen"
 type Page string                            // Always "page"
 type PageCrashed string                     // Always "page_crashed"
 type PageDomContentLoaded string            // Always "page_dom_content_loaded"
@@ -110,12 +116,16 @@ type PageSetWebLifecycleState string        // Always "Page.setWebLifecycleState
 type PageStartScreencast string             // Always "Page.startScreencast"
 type PageStopLoading string                 // Always "Page.stopLoading"
 type PageStopScreencast string              // Always "Page.stopScreencast"
+type Parallel string                        // Always "parallel"
+type Perplexity string                      // Always "perplexity"
+type Pinned string                          // Always "pinned"
 type Platform string                        // Always "platform"
 type PlatformAPICall string                 // Always "platform_api_call"
 type ProxyError string                      // Always "proxy_error"
 type PushApproval string                    // Always "push_approval"
 type Recommendation string                  // Always "recommendation"
 type Screenshot string                      // Always "screenshot"
+type Serpapi string                         // Always "serpapi"
 type ServiceCrashed string                  // Always "service_crashed"
 type SpendApproval string                   // Always "spend_approval"
 type SseHeartbeat string                    // Always "sse_heartbeat"
@@ -127,13 +137,18 @@ type TargetCreateBrowserContext string      // Always "Target.createBrowserConte
 type TargetCreateTarget string              // Always "Target.createTarget"
 type TargetDisposeBrowserContext string     // Always "Target.disposeBrowserContext"
 type TargetOpenDevTools string              // Always "Target.openDevTools"
+type Tavily string                          // Always "tavily"
+type Valyu string                           // Always "valyu"
 type Wallet string                          // Always "wallet"
+type You string                             // Always "you"
 
 func (c Agentcard) Default() Agentcard                           { return "agentcard" }
 func (c APICall) Default() APICall                               { return "api_call" }
 func (c AppVersionSummary) Default() AppVersionSummary           { return "app_version_summary" }
+func (c Auto) Default() Auto                                     { return "auto" }
 func (c AutofillTrigger) Default() AutofillTrigger               { return "Autofill.trigger" }
 func (c AwsUsEast1a) Default() AwsUsEast1a                       { return "aws.us-east-1a" }
+func (c Brave) Default() Brave                                   { return "brave" }
 func (c BrowserCancelDownload) Default() BrowserCancelDownload   { return "Browser.cancelDownload" }
 func (c BrowserClose) Default() BrowserClose                     { return "Browser.close" }
 func (c BrowserSetContentsSize) Default() BrowserSetContentsSize { return "Browser.setContentsSize" }
@@ -152,6 +167,7 @@ func (c Connection) Default() Connection                         { return "conne
 func (c Console) Default() Console                               { return "console" }
 func (c ConsoleError) Default() ConsoleError                     { return "console_error" }
 func (c ConsoleLog) Default() ConsoleLog                         { return "console_log" }
+func (c Context) Default() Context                               { return "context" }
 func (c Control) Default() Control                               { return "control" }
 func (c CustomerManaged) Default() CustomerManaged               { return "customer_managed" }
 func (c DeploymentState) Default() DeploymentState               { return "deployment_state" }
@@ -163,6 +179,8 @@ func (c DomScrollIntoViewIfNeeded) Default() DomScrollIntoViewIfNeeded {
 func (c DomSetFileInputFiles) Default() DomSetFileInputFiles       { return "DOM.setFileInputFiles" }
 func (c EmbeddedCeremony) Default() EmbeddedCeremony               { return "embedded_ceremony" }
 func (c Error) Default() Error                                     { return "error" }
+func (c Exa) Default() Exa                                         { return "exa" }
+func (c Fallback) Default() Fallback                               { return "fallback" }
 func (c InputCancelDragging) Default() InputCancelDragging         { return "Input.cancelDragging" }
 func (c InputDispatchDragEvent) Default() InputDispatchDragEvent   { return "Input.dispatchDragEvent" }
 func (c InputDispatchKeyEvent) Default() InputDispatchKeyEvent     { return "Input.dispatchKeyEvent" }
@@ -210,6 +228,7 @@ func (c NetworkLoadingFailed) Default() NetworkLoadingFailed     { return "netwo
 func (c NetworkRequest) Default() NetworkRequest                 { return "network_request" }
 func (c NetworkResponse) Default() NetworkResponse               { return "network_response" }
 func (c NoRecommendation) Default() NoRecommendation             { return "no_recommendation" }
+func (c Octen) Default() Octen                                   { return "octen" }
 func (c Page) Default() Page                                     { return "page" }
 func (c PageCrashed) Default() PageCrashed                       { return "page_crashed" }
 func (c PageDomContentLoaded) Default() PageDomContentLoaded     { return "page_dom_content_loaded" }
@@ -239,12 +258,16 @@ func (c PageSetWebLifecycleState) Default() PageSetWebLifecycleState {
 func (c PageStartScreencast) Default() PageStartScreencast   { return "Page.startScreencast" }
 func (c PageStopLoading) Default() PageStopLoading           { return "Page.stopLoading" }
 func (c PageStopScreencast) Default() PageStopScreencast     { return "Page.stopScreencast" }
+func (c Parallel) Default() Parallel                         { return "parallel" }
+func (c Perplexity) Default() Perplexity                     { return "perplexity" }
+func (c Pinned) Default() Pinned                             { return "pinned" }
 func (c Platform) Default() Platform                         { return "platform" }
 func (c PlatformAPICall) Default() PlatformAPICall           { return "platform_api_call" }
 func (c ProxyError) Default() ProxyError                     { return "proxy_error" }
 func (c PushApproval) Default() PushApproval                 { return "push_approval" }
 func (c Recommendation) Default() Recommendation             { return "recommendation" }
 func (c Screenshot) Default() Screenshot                     { return "screenshot" }
+func (c Serpapi) Default() Serpapi                           { return "serpapi" }
 func (c ServiceCrashed) Default() ServiceCrashed             { return "service_crashed" }
 func (c SpendApproval) Default() SpendApproval               { return "spend_approval" }
 func (c SseHeartbeat) Default() SseHeartbeat                 { return "sse_heartbeat" }
@@ -260,13 +283,18 @@ func (c TargetDisposeBrowserContext) Default() TargetDisposeBrowserContext {
 	return "Target.disposeBrowserContext"
 }
 func (c TargetOpenDevTools) Default() TargetOpenDevTools { return "Target.openDevTools" }
+func (c Tavily) Default() Tavily                         { return "tavily" }
+func (c Valyu) Default() Valyu                           { return "valyu" }
 func (c Wallet) Default() Wallet                         { return "wallet" }
+func (c You) Default() You                               { return "you" }
 
 func (c Agentcard) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c APICall) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c AppVersionSummary) MarshalJSON() ([]byte, error)               { return marshalString(c) }
+func (c Auto) MarshalJSON() ([]byte, error)                            { return marshalString(c) }
 func (c AutofillTrigger) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c AwsUsEast1a) MarshalJSON() ([]byte, error)                     { return marshalString(c) }
+func (c Brave) MarshalJSON() ([]byte, error)                           { return marshalString(c) }
 func (c BrowserCancelDownload) MarshalJSON() ([]byte, error)           { return marshalString(c) }
 func (c BrowserClose) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c BrowserSetContentsSize) MarshalJSON() ([]byte, error)          { return marshalString(c) }
@@ -285,6 +313,7 @@ func (c Connection) MarshalJSON() ([]byte, error)                      { return 
 func (c Console) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ConsoleError) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c ConsoleLog) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
+func (c Context) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c Control) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c CustomerManaged) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c DeploymentState) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
@@ -294,6 +323,8 @@ func (c DomScrollIntoViewIfNeeded) MarshalJSON() ([]byte, error)       { return 
 func (c DomSetFileInputFiles) MarshalJSON() ([]byte, error)            { return marshalString(c) }
 func (c EmbeddedCeremony) MarshalJSON() ([]byte, error)                { return marshalString(c) }
 func (c Error) MarshalJSON() ([]byte, error)                           { return marshalString(c) }
+func (c Exa) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
+func (c Fallback) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
 func (c InputCancelDragging) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c InputDispatchDragEvent) MarshalJSON() ([]byte, error)          { return marshalString(c) }
 func (c InputDispatchKeyEvent) MarshalJSON() ([]byte, error)           { return marshalString(c) }
@@ -331,6 +362,7 @@ func (c NetworkLoadingFailed) MarshalJSON() ([]byte, error)            { return 
 func (c NetworkRequest) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c NetworkResponse) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c NoRecommendation) MarshalJSON() ([]byte, error)                { return marshalString(c) }
+func (c Octen) MarshalJSON() ([]byte, error)                           { return marshalString(c) }
 func (c Page) MarshalJSON() ([]byte, error)                            { return marshalString(c) }
 func (c PageCrashed) MarshalJSON() ([]byte, error)                     { return marshalString(c) }
 func (c PageDomContentLoaded) MarshalJSON() ([]byte, error)            { return marshalString(c) }
@@ -354,12 +386,16 @@ func (c PageSetWebLifecycleState) MarshalJSON() ([]byte, error)        { return 
 func (c PageStartScreencast) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c PageStopLoading) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c PageStopScreencast) MarshalJSON() ([]byte, error)              { return marshalString(c) }
+func (c Parallel) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
+func (c Perplexity) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
+func (c Pinned) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c Platform) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
 func (c PlatformAPICall) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c ProxyError) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c PushApproval) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c Recommendation) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c Screenshot) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
+func (c Serpapi) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ServiceCrashed) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c SpendApproval) MarshalJSON() ([]byte, error)                   { return marshalString(c) }
 func (c SseHeartbeat) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
@@ -371,7 +407,10 @@ func (c TargetCreateBrowserContext) MarshalJSON() ([]byte, error)      { return 
 func (c TargetCreateTarget) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c TargetDisposeBrowserContext) MarshalJSON() ([]byte, error)     { return marshalString(c) }
 func (c TargetOpenDevTools) MarshalJSON() ([]byte, error)              { return marshalString(c) }
+func (c Tavily) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
+func (c Valyu) MarshalJSON() ([]byte, error)                           { return marshalString(c) }
 func (c Wallet) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
+func (c You) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
 
 type constant[T any] interface {
 	Constant[T]
