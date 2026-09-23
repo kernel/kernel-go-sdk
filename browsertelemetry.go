@@ -46,8 +46,9 @@ func NewBrowserTelemetryService(opts ...option.RequestOption) (r BrowserTelemetr
 
 // Reads a page of telemetry events for the browser session. To page through
 // results, pass the X-Next-Offset value from the previous response as offset and
-// repeat while X-Has-More is true. Returns an empty list when telemetry data is
-// unavailable.
+// repeat while X-Has-More is true. The category and type filters apply within each
+// page, so a filtered page may be empty while X-Has-More is true. Returns an empty
+// list when telemetry data is unavailable.
 func (r *BrowserTelemetryService) Events(ctx context.Context, idOrName string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserTelemetryEventsResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -71,8 +72,9 @@ func (r *BrowserTelemetryService) Events(ctx context.Context, idOrName string, q
 
 // Reads a page of telemetry events for the browser session. To page through
 // results, pass the X-Next-Offset value from the previous response as offset and
-// repeat while X-Has-More is true. Returns an empty list when telemetry data is
-// unavailable.
+// repeat while X-Has-More is true. The category and type filters apply within each
+// page, so a filtered page may be empty while X-Has-More is true. Returns an empty
+// list when telemetry data is unavailable.
 func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, idOrName string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserTelemetryEventsResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.Events(ctx, idOrName, query, opts...))
 }
@@ -6821,9 +6823,7 @@ type BrowserTelemetryEventsParams struct {
 	// Read direction. asc (default) reads oldest first, starting from since or the
 	// offset cursor. desc reads newest first: each request returns one page of up to
 	// limit records ending at the offset cursor (or until, or the newest archived
-	// event); combining desc with since is rejected with a 400. In either direction
-	// the category filter applies within the page, so a filtered page may be empty
-	// while X-Has-More is true.
+	// event); combining desc with since is rejected with a 400.
 	Order param.Opt[string] `query:"order,omitzero" json:"-"`
 	// Start of the window: an RFC-3339 timestamp, or a duration like 5m meaning that
 	// long ago. Defaults to 5m. Ignored when offset is set.
@@ -6837,6 +6837,10 @@ type BrowserTelemetryEventsParams struct {
 	// Any of "console", "network", "page", "interaction", "control", "platform",
 	// "connection", "system", "screenshot", "captcha", "monitor".
 	Category []string `query:"category,omitzero" json:"-"`
+	// Restrict results to these event types, such as page_crashed or
+	// captcha_challenge_result. Repeat the parameter for multiple values. Combines
+	// with category: when both are set an event must match both.
+	Type []string `query:"type,omitzero" json:"-"`
 	paramObj
 }
 
