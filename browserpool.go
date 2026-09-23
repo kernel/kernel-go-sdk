@@ -994,6 +994,10 @@ type BrowserPoolAcquireParams struct {
 	// is reset to the pool's baseline, so the override does not carry over to the next
 	// lease.
 	Telemetry BrowserPoolAcquireParamsTelemetry `json:"telemetry,omitzero"`
+	// Profile selection for the browser session. Provide either id or name. If
+	// specified, the matching profile will be loaded into the browser session.
+	// Profiles must be created beforehand.
+	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Optional user-defined key-value tags for the acquired browser session, used to
 	// find and group sessions later. Applies to this lease only and are cleared when
 	// the browser is released back to the pool. Up to 50 pairs.
@@ -1112,7 +1116,8 @@ type BrowserPoolReleaseParams struct {
 	// Defaults to true. A reused browser keeps the configuration it was created with,
 	// so it does not pick up pool configuration changes made while it was in use.
 	// Release with `reuse: false`, or flush the pool afterward, to rebuild it with the
-	// current configuration.
+	// current configuration. Browsers loaded with an acquire-time profile are always
+	// destroyed and replaced, even when reuse is true.
 	Reuse param.Opt[bool] `json:"reuse,omitzero"`
 	paramObj
 }
