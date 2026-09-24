@@ -5121,17 +5121,18 @@ func (r *BrowserProxyErrorEvent) UnmarshalJSON(data []byte) error {
 type BrowserProxyErrorEventData struct {
 	// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a
 	// branded 5xx error page served by the metro egress host-proxy. Values mirror what
-	// the proxy emits: destination_blocked, provider_blacklisted,
-	// provider_unreachable, provider_rejected, origin_tls_timeout,
-	// origin_response_incomplete, proxy_unavailable, restricted_route_unavailable,
-	// upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value
-	// the browser image does not recognize is reported as unknown, with the header
-	// value in raw_code.
+	// the proxy emits: destination_blocked, destination_route_unavailable,
+	// provider_blacklisted, provider_unreachable, provider_rejected,
+	// origin_tls_timeout, origin_response_incomplete, proxy_unavailable,
+	// restricted_route_unavailable, upstream_timeout, upstream_dns_failure,
+	// upstream_connect_failed. A header value the browser image does not recognize is
+	// reported as unknown, with the header value in raw_code.
 	//
-	// Any of "destination_blocked", "provider_blacklisted", "provider_unreachable",
-	// "provider_rejected", "origin_tls_timeout", "origin_response_incomplete",
-	// "proxy_unavailable", "restricted_route_unavailable", "upstream_timeout",
-	// "upstream_dns_failure", "upstream_connect_failed", "unknown".
+	// Any of "destination_blocked", "destination_route_unavailable",
+	// "provider_blacklisted", "provider_unreachable", "provider_rejected",
+	// "origin_tls_timeout", "origin_response_incomplete", "proxy_unavailable",
+	// "restricted_route_unavailable", "upstream_timeout", "upstream_dns_failure",
+	// "upstream_connect_failed", "unknown".
 	Code string `json:"code" api:"required"`
 	// CDP request identifier matching the originating request.
 	RequestID string `json:"request_id" api:"required"`

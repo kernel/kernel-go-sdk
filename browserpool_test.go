@@ -42,6 +42,13 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		Name:              kernel.String("my-pool"),
 		Network: kernel.BrowserNetworkConfigParam{
 			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+			ProxyRoutes: []kernel.BrowserNetworkConfigProxyRouteParam{{
+				Hosts: []string{"string"},
+				Proxy: kernel.BrowserNetworkConfigProxyRouteProxyParam{
+					ID:   kernel.String("x"),
+					Name: kernel.String("x"),
+				},
+			}},
 		},
 		Profile: kernel.BrowserPoolNewParamsProfile{
 			ID:   kernel.String("id"),
@@ -169,6 +176,13 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Name:              kernel.String("my-pool"),
 			Network: kernel.BrowserNetworkConfigParam{
 				PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+				ProxyRoutes: []kernel.BrowserNetworkConfigProxyRouteParam{{
+					Hosts: []string{"string"},
+					Proxy: kernel.BrowserNetworkConfigProxyRouteProxyParam{
+						ID:   kernel.String("x"),
+						Name: kernel.String("x"),
+					},
+				}},
 			},
 			Profile: kernel.BrowserPoolUpdateParamsProfile{
 				ID:   kernel.String("id"),
