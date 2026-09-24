@@ -7,9 +7,11 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"slices"
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
+	"github.com/kernel/kernel-go-sdk/internal/apiquery"
 	shimjson "github.com/kernel/kernel-go-sdk/internal/encoding/json"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
@@ -27,6 +29,8 @@ import (
 // the [NewBrowserWebmcpService] method instead.
 type BrowserWebmcpService struct {
 	Options []option.RequestOption
+	// Discover and invoke native page tools across the browser instance.
+	CustomTools BrowserWebmcpCustomToolService
 }
 
 // NewBrowserWebmcpService generates a new service that applies the given options
@@ -35,6 +39,7 @@ type BrowserWebmcpService struct {
 func NewBrowserWebmcpService(opts ...option.RequestOption) (r BrowserWebmcpService) {
 	r = BrowserWebmcpService{}
 	r.Options = opts
+	r.CustomTools = NewBrowserWebmcpCustomToolService(opts...)
 	return
 }
 
@@ -45,7 +50,8 @@ func NewBrowserWebmcpService(opts ...option.RequestOption) (r BrowserWebmcpServi
 // then submit through Playwright or computer interaction without invoking the tool
 // again. If the tab or embedded frame disappears, or the request times out after
 // invocation begins, the response reports outcome_unknown and the tool is not
-// retried.
+// retried. CDP-backed custom tool outputs above 240 KiB return an error rather
+// than a truncated result.
 func (r *BrowserWebmcpService) InvokeTool(ctx context.Context, idOrName string, body BrowserWebmcpInvokeToolParams, opts ...option.RequestOption) (res *InvocationResult, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
@@ -57,19 +63,39 @@ func (r *BrowserWebmcpService) InvokeTool(ctx context.Context, idOrName string, 
 	return res, err
 }
 
-// Returns a snapshot of native WebMCP tools available across every open tab and
-// embedded frame in the browser. Each tool includes an opaque tool_ref for
-// invoking that exact live registration. Tools disappear when their document
-// closes or navigates away.
-func (r *BrowserWebmcpService) ListTools(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *ToolsResponse, err error) {
+// Returns a snapshot of native and custom WebMCP tools available across every open
+// tab and embedded frame in the browser. Each tool includes an opaque tool_ref for
+// invoking that exact live registration, nested tool metadata, and source
+// information. Custom tools include their generated ID, namespace, and CDP
+// target_id in source. Tools disappear when their document closes or navigates
+// away. Use exclude_custom to return only page-provided tools.
+func (r *BrowserWebmcpService) ListTools(ctx context.Context, idOrName string, query BrowserWebmcpListToolsParams, opts ...option.RequestOption) (res *ToolsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
 		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
 	path := fmt.Sprintf("browsers/%s/webmcp/tools", idOrName)
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
+}
+
+type CustomToolSource struct {
+	ID        string `json:"id" api:"required"`
+	Namespace string `json:"namespace" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Namespace   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r CustomToolSource) RawJSON() string { return r.JSON.raw }
+func (r *CustomToolSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type InvocationResult struct {
@@ -133,24 +159,21 @@ func (r *InvokeRequestParam) UnmarshalJSON(data []byte) error {
 }
 
 type Tool struct {
-	Description string         `json:"description" api:"required"`
-	InputSchema map[string]any `json:"input_schema" api:"required"`
-	Name        string         `json:"name" api:"required"`
-	Source      ToolSource     `json:"source" api:"required"`
+	Source ToolSource `json:"source" api:"required"`
+	// Tool metadata follows the
+	// [MCP Tool definition](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool)
+	// and the
+	// [WebMCP RegisteredTool definition](https://webmachinelearning.github.io/webmcp/#dictdef-registeredtool).
+	// outputSchema is optional for page and custom tools.
+	Tool ToolMetadata `json:"tool" api:"required"`
 	// Opaque reference for invoking this exact live registration. It becomes invalid
 	// when its document or browser process is replaced.
 	ToolRef string `json:"tool_ref" api:"required"`
-	// Page-provided behavioral hints. These values are untrusted and are not enforced
-	// by Kernel.
-	Annotations ToolAnnotations `json:"annotations"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Description respjson.Field
-		InputSchema respjson.Field
-		Name        respjson.Field
 		Source      respjson.Field
+		Tool        respjson.Field
 		ToolRef     respjson.Field
-		Annotations respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -162,21 +185,30 @@ func (r *Tool) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Page-provided behavioral hints. These values are untrusted and are not enforced
-// by Kernel.
+// Tool-provided behavioral hints from the
+// [MCP tool specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool)
+// and the
+// [WebMCP ToolAnnotations definition](https://webmachinelearning.github.io/webmcp/#dictdef-toolannotations).
+// These hints are untrusted and are not enforced by Kernel.
 type ToolAnnotations struct {
-	Autosubmit       bool `json:"autosubmit" api:"required"`
-	Consequential    bool `json:"consequential" api:"required"`
-	ReadOnly         bool `json:"read_only" api:"required"`
-	UntrustedContent bool `json:"untrusted_content" api:"required"`
+	Autosubmit           bool `json:"autosubmit"`
+	ConsequentialHint    bool `json:"consequentialHint"`
+	DestructiveHint      bool `json:"destructiveHint"`
+	IdempotentHint       bool `json:"idempotentHint"`
+	OpenWorldHint        bool `json:"openWorldHint"`
+	ReadOnlyHint         bool `json:"readOnlyHint"`
+	UntrustedContentHint bool `json:"untrustedContentHint"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Autosubmit       respjson.Field
-		Consequential    respjson.Field
-		ReadOnly         respjson.Field
-		UntrustedContent respjson.Field
-		ExtraFields      map[string]respjson.Field
-		raw              string
+		Autosubmit           respjson.Field
+		ConsequentialHint    respjson.Field
+		DestructiveHint      respjson.Field
+		IdempotentHint       respjson.Field
+		OpenWorldHint        respjson.Field
+		ReadOnlyHint         respjson.Field
+		UntrustedContentHint respjson.Field
+		ExtraFields          map[string]respjson.Field
+		raw                  string
 	} `json:"-"`
 }
 
@@ -207,6 +239,42 @@ func (r *ToolFrame) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Tool metadata follows the
+// [MCP Tool definition](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool)
+// and the
+// [WebMCP RegisteredTool definition](https://webmachinelearning.github.io/webmcp/#dictdef-registeredtool).
+// outputSchema is optional for page and custom tools.
+type ToolMetadata struct {
+	Description string         `json:"description" api:"required"`
+	InputSchema map[string]any `json:"inputSchema" api:"required"`
+	Name        string         `json:"name" api:"required"`
+	// Tool-provided behavioral hints from the
+	// [MCP tool specification](https://modelcontextprotocol.io/specification/2025-11-25/server/tools#tool)
+	// and the
+	// [WebMCP ToolAnnotations definition](https://webmachinelearning.github.io/webmcp/#dictdef-toolannotations).
+	// These hints are untrusted and are not enforced by Kernel.
+	Annotations  ToolAnnotations `json:"annotations"`
+	OutputSchema map[string]any  `json:"outputSchema"`
+	Title        string          `json:"title"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description  respjson.Field
+		InputSchema  respjson.Field
+		Name         respjson.Field
+		Annotations  respjson.Field
+		OutputSchema respjson.Field
+		Title        respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ToolMetadata) RawJSON() string { return r.JSON.raw }
+func (r *ToolMetadata) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type ToolSource struct {
 	// Embedded frame that registered the tool, or null when the top-level page
 	// registered it.
@@ -220,7 +288,11 @@ type ToolSource struct {
 	TabID int64 `json:"tab_id" api:"required"`
 	// Monotonically increasing identifier for the browser window during the current
 	// browser process.
-	WindowID int64 `json:"window_id" api:"required"`
+	WindowID int64            `json:"window_id" api:"required"`
+	Custom   CustomToolSource `json:"custom"`
+	// CDP target ID for a custom tool's registration tab; omitted for page-provided
+	// tools.
+	TargetID string `json:"target_id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Frame       respjson.Field
@@ -228,6 +300,8 @@ type ToolSource struct {
 		PageURL     respjson.Field
 		TabID       respjson.Field
 		WindowID    respjson.Field
+		Custom      respjson.Field
+		TargetID    respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -265,4 +339,19 @@ func (r BrowserWebmcpInvokeToolParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *BrowserWebmcpInvokeToolParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserWebmcpListToolsParams struct {
+	// Exclude custom tools when true.
+	ExcludeCustom param.Opt[bool] `query:"exclude_custom,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [BrowserWebmcpListToolsParams]'s query parameters as
+// `url.Values`.
+func (r BrowserWebmcpListToolsParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

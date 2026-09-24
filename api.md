@@ -333,17 +333,37 @@ Params Types:
 
 Response Types:
 
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CustomToolSource">CustomToolSource</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationResult">InvocationResult</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Tool">Tool</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolAnnotations">ToolAnnotations</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolFrame">ToolFrame</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolMetadata">ToolMetadata</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolSource">ToolSource</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolsResponse">ToolsResponse</a>
 
 Methods:
 
 - <code title="post /browsers/{id_or_name}/webmcp/invoke">client.Browsers.Webmcp.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpService.InvokeTool">InvokeTool</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpInvokeToolParams">BrowserWebmcpInvokeToolParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#InvocationResult">InvocationResult</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
-- <code title="get /browsers/{id_or_name}/webmcp/tools">client.Browsers.Webmcp.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpService.ListTools">ListTools</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolsResponse">ToolsResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /browsers/{id_or_name}/webmcp/tools">client.Browsers.Webmcp.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpService.ListTools">ListTools</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpListToolsParams">BrowserWebmcpListToolsParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ToolsResponse">ToolsResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+### CustomTools
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AddRequestParam">AddRequestParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CustomToolsResponse">CustomToolsResponse</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Definition">Definition</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Match">Match</a>
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/webmcp/custom-tools">client.Browsers.Webmcp.CustomTools.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpCustomToolService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CustomToolsResponse">CustomToolsResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /browsers/{id_or_name}/webmcp/custom-tools">client.Browsers.Webmcp.CustomTools.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpCustomToolService.Add">Add</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpCustomToolAddParams">BrowserWebmcpCustomToolAddParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CustomToolsResponse">CustomToolsResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /browsers/{id_or_name}/webmcp/custom-tools/{id}">client.Browsers.Webmcp.CustomTools.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpCustomToolService.Remove">Remove</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserWebmcpCustomToolRemoveParams">BrowserWebmcpCustomToolRemoveParams</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 
 # Profiles
 

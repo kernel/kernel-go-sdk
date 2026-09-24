@@ -35,6 +35,7 @@ func TestBrowserTelemetryEventsWithOptionalParams(t *testing.T) {
 			Offset:   kernel.Int(0),
 			Order:    kernel.String("order"),
 			Since:    kernel.String("since"),
+			Type:     []string{"string"},
 			Until:    kernel.String("until"),
 		},
 	)

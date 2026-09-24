@@ -46,8 +46,9 @@ func NewBrowserTelemetryService(opts ...option.RequestOption) (r BrowserTelemetr
 
 // Reads a page of telemetry events for the browser session. To page through
 // results, pass the X-Next-Offset value from the previous response as offset and
-// repeat while X-Has-More is true. Returns an empty list when telemetry data is
-// unavailable.
+// repeat while X-Has-More is true. The category and type filters apply within each
+// page, so a filtered page may be empty while X-Has-More is true. Returns an empty
+// list when telemetry data is unavailable.
 func (r *BrowserTelemetryService) Events(ctx context.Context, idOrName string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) (res *pagination.OffsetPagination[BrowserTelemetryEventsResponse], err error) {
 	var raw *http.Response
 	opts = slices.Concat(r.Options, opts)
@@ -71,8 +72,9 @@ func (r *BrowserTelemetryService) Events(ctx context.Context, idOrName string, q
 
 // Reads a page of telemetry events for the browser session. To page through
 // results, pass the X-Next-Offset value from the previous response as offset and
-// repeat while X-Has-More is true. Returns an empty list when telemetry data is
-// unavailable.
+// repeat while X-Has-More is true. The category and type filters apply within each
+// page, so a filtered page may be empty while X-Has-More is true. Returns an empty
+// list when telemetry data is unavailable.
 func (r *BrowserTelemetryService) EventsAutoPaging(ctx context.Context, idOrName string, query BrowserTelemetryEventsParams, opts ...option.RequestOption) *pagination.OffsetPaginationAutoPager[BrowserTelemetryEventsResponse] {
 	return pagination.NewOffsetPaginationAutoPager(r.Events(ctx, idOrName, query, opts...))
 }
@@ -3572,7 +3574,8 @@ type BrowserEventContext struct {
 	TargetID string `json:"target_id"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType BrowserEventContextTargetType `json:"target_type"`
 	// URL relevant to this event — page URL for navigation and page events, request
 	// URL for network events.
@@ -3602,6 +3605,8 @@ type BrowserEventContextTargetType string
 
 const (
 	BrowserEventContextTargetTypePage           BrowserEventContextTargetType = "page"
+	BrowserEventContextTargetTypeIframe         BrowserEventContextTargetType = "iframe"
+	BrowserEventContextTargetTypeWorker         BrowserEventContextTargetType = "worker"
 	BrowserEventContextTargetTypeBackgroundPage BrowserEventContextTargetType = "background_page"
 	BrowserEventContextTargetTypeServiceWorker  BrowserEventContextTargetType = "service_worker"
 	BrowserEventContextTargetTypeSharedWorker   BrowserEventContextTargetType = "shared_worker"
@@ -3945,8 +3950,12 @@ func (r *BrowserLiveViewDisconnectEventData) UnmarshalJSON(data []byte) error {
 }
 
 // The CDP connection to Chrome was lost. Telemetry events may be dropped until
-// monitor_reconnected arrives. Treat any in-progress computed state (network_idle,
-// page_layout_settled) as unreliable until then.
+// monitor_reconnected arrives. In-progress computed state is discarded rather than
+// paused, so computed events still pending for the current navigation
+// (network_idle, page_layout_settled, page_navigation_settled) never fire.
+// monitor_reconnected does not restore them. After reattachment a fresh state
+// machine starts, so computed events can resume before the next navigation and
+// carry empty navigation context until one occurs.
 type BrowserMonitorDisconnectedEvent struct {
 	Category constant.Monitor `json:"category" default:"monitor"`
 	// Provenance metadata identifying which producer emitted the event.
@@ -4488,7 +4497,8 @@ type BrowserPageCrashedEventData struct {
 	TargetID string `json:"target_id" api:"required"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType string `json:"target_type" api:"required"`
 	// URL the page was on when its renderer process crashed.
 	URL string `json:"url" api:"required"`
@@ -4880,7 +4890,8 @@ type BrowserPageNavigationEventData struct {
 	TargetID string `json:"target_id"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType string `json:"target_type"`
 	// URL navigated to.
 	URL string `json:"url"`
@@ -4980,7 +4991,8 @@ type BrowserPageTabOpenedEventData struct {
 	TargetID string `json:"target_id"`
 	// CDP target type of the page that produced the event.
 	//
-	// Any of "page", "background_page", "service_worker", "shared_worker", "other".
+	// Any of "page", "iframe", "worker", "background_page", "service_worker",
+	// "shared_worker", "other".
 	TargetType string `json:"target_type"`
 	// Initial page title of the new tab.
 	Title string `json:"title"`
@@ -5109,17 +5121,18 @@ func (r *BrowserProxyErrorEvent) UnmarshalJSON(data []byte) error {
 type BrowserProxyErrorEventData struct {
 	// Proxy-layer error code: the X-Kernel-Proxy-Error response header value from a
 	// branded 5xx error page served by the metro egress host-proxy. Values mirror what
-	// the proxy emits: destination_blocked, provider_blacklisted,
-	// provider_unreachable, provider_rejected, origin_tls_timeout,
-	// origin_response_incomplete, proxy_unavailable, restricted_route_unavailable,
-	// upstream_timeout, upstream_dns_failure, upstream_connect_failed. A header value
-	// the browser image does not recognize is reported as unknown, with the header
-	// value in raw_code.
+	// the proxy emits: destination_blocked, destination_route_unavailable,
+	// provider_blacklisted, provider_unreachable, provider_rejected,
+	// origin_tls_timeout, origin_response_incomplete, proxy_unavailable,
+	// restricted_route_unavailable, upstream_timeout, upstream_dns_failure,
+	// upstream_connect_failed. A header value the browser image does not recognize is
+	// reported as unknown, with the header value in raw_code.
 	//
-	// Any of "destination_blocked", "provider_blacklisted", "provider_unreachable",
-	// "provider_rejected", "origin_tls_timeout", "origin_response_incomplete",
-	// "proxy_unavailable", "restricted_route_unavailable", "upstream_timeout",
-	// "upstream_dns_failure", "upstream_connect_failed", "unknown".
+	// Any of "destination_blocked", "destination_route_unavailable",
+	// "provider_blacklisted", "provider_unreachable", "provider_rejected",
+	// "origin_tls_timeout", "origin_response_incomplete", "proxy_unavailable",
+	// "restricted_route_unavailable", "upstream_timeout", "upstream_dns_failure",
+	// "upstream_connect_failed", "unknown".
 	Code string `json:"code" api:"required"`
 	// CDP request identifier matching the originating request.
 	RequestID string `json:"request_id" api:"required"`
@@ -6811,9 +6824,7 @@ type BrowserTelemetryEventsParams struct {
 	// Read direction. asc (default) reads oldest first, starting from since or the
 	// offset cursor. desc reads newest first: each request returns one page of up to
 	// limit records ending at the offset cursor (or until, or the newest archived
-	// event); combining desc with since is rejected with a 400. In either direction
-	// the category filter applies within the page, so a filtered page may be empty
-	// while X-Has-More is true.
+	// event); combining desc with since is rejected with a 400.
 	Order param.Opt[string] `query:"order,omitzero" json:"-"`
 	// Start of the window: an RFC-3339 timestamp, or a duration like 5m meaning that
 	// long ago. Defaults to 5m. Ignored when offset is set.
@@ -6827,6 +6838,10 @@ type BrowserTelemetryEventsParams struct {
 	// Any of "console", "network", "page", "interaction", "control", "platform",
 	// "connection", "system", "screenshot", "captcha", "monitor".
 	Category []string `query:"category,omitzero" json:"-"`
+	// Restrict results to these event types, such as page_crashed or
+	// captcha_challenge_result. Repeat the parameter for multiple values. Combines
+	// with category: when both are set an event must match both.
+	Type []string `query:"type,omitzero" json:"-"`
 	paramObj
 }
 

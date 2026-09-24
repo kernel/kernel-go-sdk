@@ -237,9 +237,25 @@ type BrowserNetworkConfig struct {
 	// destinations. Not related to a proxy's bypass_hosts, which selects between
 	// upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
 	PrivateHosts []string `json:"private_hosts"`
+	// Per-destination proxy routes for a browser session. After setup, a destination
+	// hostname is matched against every route's hosts, regardless of port; route order
+	// does not matter. An exact hostname beats a wildcard, and a longer wildcard
+	// suffix beats a shorter one (for a.b.example.com: "a.b.example.com" >
+	// "_.b.example.com" > "_.example.com"). A host pattern may appear in only one
+	// route. "\*.example.com" matches subdomains only, not example.com. A matched
+	// request selects the route's proxy instead of the session's top-level proxy
+	// (including mode: direct); the route proxy's own bypass_hosts still apply. If the
+	// route proxy becomes unavailable, matched requests fail closed without falling
+	// back. Requests that match no route use the session's default egress from the
+	// top-level proxy field (or the browser default when proxy is omitted: stealth
+	// proxy or direct egress). Routes take effect once the session is created;
+	// start_url and other traffic during browser setup use the top-level proxy.
+	// Setting routes requires proxy v3. Not supported on browser pools.
+	ProxyRoutes []BrowserNetworkConfigProxyRoute `json:"proxy_routes"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		PrivateHosts respjson.Field
+		ProxyRoutes  respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -258,6 +274,48 @@ func (r *BrowserNetworkConfig) UnmarshalJSON(data []byte) error {
 // BrowserNetworkConfigParam.Overrides()
 func (r BrowserNetworkConfig) ToParam() BrowserNetworkConfigParam {
 	return param.Override[BrowserNetworkConfigParam](json.RawMessage(r.RawJSON()))
+}
+
+type BrowserNetworkConfigProxyRoute struct {
+	// Exact hostnames or leading \*. wildcard patterns (subdomains only); patterns
+	// cannot include ports, and matching ignores the destination port. Hosts not
+	// matched by any route use the session's top-level proxy (or the browser default
+	// when proxy is omitted).
+	Hosts []string `json:"hosts" api:"required"`
+	// Select an active non-direct proxy by ID or name. Responses always use ID.
+	Proxy BrowserNetworkConfigProxyRouteProxy `json:"proxy" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Hosts       respjson.Field
+		Proxy       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserNetworkConfigProxyRoute) RawJSON() string { return r.JSON.raw }
+func (r *BrowserNetworkConfigProxyRoute) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Select an active non-direct proxy by ID or name. Responses always use ID.
+type BrowserNetworkConfigProxyRouteProxy struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserNetworkConfigProxyRouteProxy) RawJSON() string { return r.JSON.raw }
+func (r *BrowserNetworkConfigProxyRouteProxy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 // Network configuration for a browser session or browser pool.
@@ -285,6 +343,21 @@ type BrowserNetworkConfigParam struct {
 	// destinations. Not related to a proxy's bypass_hosts, which selects between
 	// upstream-proxy and Kernel-managed direct egress and cannot reach into a VPN.
 	PrivateHosts []string `json:"private_hosts,omitzero"`
+	// Per-destination proxy routes for a browser session. After setup, a destination
+	// hostname is matched against every route's hosts, regardless of port; route order
+	// does not matter. An exact hostname beats a wildcard, and a longer wildcard
+	// suffix beats a shorter one (for a.b.example.com: "a.b.example.com" >
+	// "_.b.example.com" > "_.example.com"). A host pattern may appear in only one
+	// route. "\*.example.com" matches subdomains only, not example.com. A matched
+	// request selects the route's proxy instead of the session's top-level proxy
+	// (including mode: direct); the route proxy's own bypass_hosts still apply. If the
+	// route proxy becomes unavailable, matched requests fail closed without falling
+	// back. Requests that match no route use the session's default egress from the
+	// top-level proxy field (or the browser default when proxy is omitted: stealth
+	// proxy or direct egress). Routes take effect once the session is created;
+	// start_url and other traffic during browser setup use the top-level proxy.
+	// Setting routes requires proxy v3. Not supported on browser pools.
+	ProxyRoutes []BrowserNetworkConfigProxyRouteParam `json:"proxy_routes,omitzero"`
 	paramObj
 }
 
@@ -293,6 +366,41 @@ func (r BrowserNetworkConfigParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserNetworkConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Hosts, Proxy are required.
+type BrowserNetworkConfigProxyRouteParam struct {
+	// Exact hostnames or leading \*. wildcard patterns (subdomains only); patterns
+	// cannot include ports, and matching ignores the destination port. Hosts not
+	// matched by any route use the session's top-level proxy (or the browser default
+	// when proxy is omitted).
+	Hosts []string `json:"hosts,omitzero" api:"required"`
+	// Select an active non-direct proxy by ID or name. Responses always use ID.
+	Proxy BrowserNetworkConfigProxyRouteProxyParam `json:"proxy,omitzero" api:"required"`
+	paramObj
+}
+
+func (r BrowserNetworkConfigProxyRouteParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNetworkConfigProxyRouteParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNetworkConfigProxyRouteParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Select an active non-direct proxy by ID or name. Responses always use ID.
+type BrowserNetworkConfigProxyRouteProxyParam struct {
+	ID   param.Opt[string] `json:"id,omitzero"`
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r BrowserNetworkConfigProxyRouteProxyParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNetworkConfigProxyRouteProxyParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNetworkConfigProxyRouteProxyParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
