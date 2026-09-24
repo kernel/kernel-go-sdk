@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.112.0](https://github.com/kernel/kernel-go-sdk/compare/v0.111.0...v0.112.0) (2026-09-24)
+
+
+### Features
+
+* Add profiles to browser pool acquire ([b50814f](https://github.com/kernel/kernel-go-sdk/commit/b50814fd0cd8cff8a37e56b48142eef0b3653b7c))
+* Correct monitor_disconnected description on computed state ([0584ea1](https://github.com/kernel/kernel-go-sdk/commit/0584ea1d2238bfb06f1995ef4cab305917941efa))
+* Expose Search rollout access in org entitlements ([8e055e1](https://github.com/kernel/kernel-go-sdk/commit/8e055e16e1db7872b2bb298901c760aba435030d))
+* Filter archived telemetry events by type ([a9ee57c](https://github.com/kernel/kernel-go-sdk/commit/a9ee57caab330fac08e26e24896274baf2e64b43))
+* Proxy custom WebMCP tools in the control plane ([47c1310](https://github.com/kernel/kernel-go-sdk/commit/47c13103242727ad8633062d359aee2ad7d6cb32))
+* Publish iframe and worker browser target types ([1ef7b7c](https://github.com/kernel/kernel-go-sdk/commit/1ef7b7c34dc3b987d6c515c82ea399c424f0c6e6))
+* Route browser destinations through selected proxies ([ffc38db](https://github.com/kernel/kernel-go-sdk/commit/ffc38db98feff227e904bd3c84e11cc715c010a8))
+
 ## [0.111.0](https://github.com/kernel/kernel-go-sdk/compare/v0.110.0...v0.111.0) (2026-09-22)
 
 
