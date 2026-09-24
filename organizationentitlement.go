@@ -82,6 +82,9 @@ type OrgEntitlementsFeatures struct {
 	ManagedProxies      OrgEntitlementsFeaturesManagedProxies      `json:"managed_proxies" api:"required"`
 	Profiles            OrgEntitlementsFeaturesProfiles            `json:"profiles" api:"required"`
 	ProxyBypassHosts    OrgEntitlementsFeaturesProxyBypassHosts    `json:"proxy_bypass_hosts" api:"required"`
+	// Whether the Search API is enabled for the organization by its rollout feature
+	// flag.
+	Search OrgEntitlementsFeaturesSearch `json:"search" api:"required"`
 	// Whether the organization can access vaults, using the same access check as vault
 	// API routes.
 	Vaults OrgEntitlementsFeaturesVaults `json:"vaults" api:"required"`
@@ -99,6 +102,7 @@ type OrgEntitlementsFeatures struct {
 		ManagedProxies      respjson.Field
 		Profiles            respjson.Field
 		ProxyBypassHosts    respjson.Field
+		Search              respjson.Field
 		Vaults              respjson.Field
 		ExtraFields         map[string]respjson.Field
 		raw                 string
@@ -333,6 +337,25 @@ type OrgEntitlementsFeaturesProxyBypassHosts struct {
 // Returns the unmodified JSON received from the API
 func (r OrgEntitlementsFeaturesProxyBypassHosts) RawJSON() string { return r.JSON.raw }
 func (r *OrgEntitlementsFeaturesProxyBypassHosts) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether the Search API is enabled for the organization by its rollout feature
+// flag.
+type OrgEntitlementsFeaturesSearch struct {
+	// Whether the organization is entitled to use this feature.
+	Enabled bool `json:"enabled" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OrgEntitlementsFeaturesSearch) RawJSON() string { return r.JSON.raw }
+func (r *OrgEntitlementsFeaturesSearch) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
