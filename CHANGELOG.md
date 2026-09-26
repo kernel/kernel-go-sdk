@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.113.0](https://github.com/kernel/kernel-go-sdk/compare/v0.112.0...v0.113.0) (2026-09-26)
+
+
+### Features
+
+* Randomize automatic search provider routing ([140c57d](https://github.com/kernel/kernel-go-sdk/commit/140c57d4e9906743e96c814f8785ac35d65d46c5))
+
 ## [0.112.0](https://github.com/kernel/kernel-go-sdk/compare/v0.111.0...v0.112.0) (2026-09-24)
 
 
