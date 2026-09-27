@@ -231,6 +231,10 @@ type BrowserPoolBrowserPoolConfig struct {
 	// If true, launches the browser in kiosk mode to hide address bar and tabs in live
 	// view.
 	KioskMode bool `json:"kiosk_mode"`
+	// Memory allocated to the browser session.
+	//
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	Memory BrowserMemory `json:"memory"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name string `json:"name"`
 	// Network configuration applied to browsers in this pool, if any. Omitted when the
@@ -285,6 +289,7 @@ type BrowserPoolBrowserPoolConfig struct {
 		FillRatePerMinute      respjson.Field
 		Headless               respjson.Field
 		KioskMode              respjson.Field
+		Memory                 respjson.Field
 		Name                   respjson.Field
 		Network                respjson.Field
 		Profile                respjson.Field
@@ -542,6 +547,10 @@ type BrowserPoolNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Memory requested for headful browsers in this pool.
+	//
+	// Any of "8GiB", "16GiB".
+	Memory BrowserMemoryRequest `json:"memory,omitzero"`
 	// Network configuration applied to browsers in this pool.
 	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile configuration for browsers in a pool. Provide either id or name.
@@ -766,6 +775,12 @@ type BrowserPoolUpdateParams struct {
 	// If provided, replaces the extension list. Empty array clears all
 	// previously-selected extensions. Omit this field to leave extensions unchanged.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Memory requested for newly-warmed headful browsers in this pool. Existing
+	// browsers retain their original allocation. Use discard_all_idle to replace idle
+	// browsers.
+	//
+	// Any of "8GiB", "16GiB".
+	Memory BrowserPoolUpdateParamsMemory `json:"memory,omitzero"`
 	// If provided, replaces the pool's network configuration. Omit to leave the
 	// existing configuration unchanged; an empty object ({}) removes it, while
 	// network: {private_hosts: []} sets an explicit empty list. Only applied to
@@ -801,6 +816,16 @@ func (r BrowserPoolUpdateParams) MarshalJSON() (data []byte, err error) {
 func (r *BrowserPoolUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Memory requested for newly-warmed headful browsers in this pool. Existing
+// browsers retain their original allocation. Use discard_all_idle to replace idle
+// browsers.
+type BrowserPoolUpdateParamsMemory string
+
+const (
+	BrowserPoolUpdateParamsMemory8GiB  BrowserPoolUpdateParamsMemory = "8GiB"
+	BrowserPoolUpdateParamsMemory16GiB BrowserPoolUpdateParamsMemory = "16GiB"
+)
 
 // Profile configuration for browsers in a pool. Provide either id or name.
 // Profiles must be created beforehand. Unlike single browser sessions, pools load
