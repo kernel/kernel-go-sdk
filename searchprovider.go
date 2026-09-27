@@ -310,7 +310,8 @@ func (r *ProviderProviderOptions) UnmarshalJSON(data []byte) error {
 }
 
 type SearchProviderListParams struct {
-	// Optional concrete provider slug filter. Omit to list every provider.
+	// Optional concrete provider slug filter. Omit to list every provider. A slug that
+	// is not listed returns an empty array.
 	//
 	// Any of "brave", "exa", "perplexity", "context", "parallel", "valyu", "octen",
 	// "you", "tavily", "serpapi".
@@ -327,7 +328,8 @@ func (r SearchProviderListParams) URLQuery() (v url.Values, err error) {
 	})
 }
 
-// Optional concrete provider slug filter. Omit to list every provider.
+// Optional concrete provider slug filter. Omit to list every provider. A slug that
+// is not listed returns an empty array.
 type SearchProviderListParamsSlug string
 
 const (

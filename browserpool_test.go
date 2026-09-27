@@ -39,6 +39,7 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		FillRatePerMinute: kernel.Int(0),
 		Headless:          kernel.Bool(false),
 		KioskMode:         kernel.Bool(true),
+		Memory:            kernel.BrowserMemoryRequest8GiB,
 		Name:              kernel.String("my-pool"),
 		Network: kernel.BrowserNetworkConfigParam{
 			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
@@ -173,6 +174,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			FillRatePerMinute: kernel.Int(0),
 			Headless:          kernel.Bool(false),
 			KioskMode:         kernel.Bool(true),
+			Memory:            kernel.BrowserPoolUpdateParamsMemory8GiB,
 			Name:              kernel.String("my-pool"),
 			Network: kernel.BrowserNetworkConfigParam{
 				PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
