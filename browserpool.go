@@ -721,7 +721,8 @@ func (r *BrowserPoolNewParamsTelemetryExportOtlpDestination) UnmarshalJSON(data 
 // Whether to persist this session's captured telemetry to Kernel storage.
 type BrowserPoolNewParamsTelemetryStorage struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
@@ -967,7 +968,8 @@ func (r *BrowserPoolUpdateParamsTelemetryExportOtlpDestination) UnmarshalJSON(da
 // Whether to persist this session's captured telemetry to Kernel storage.
 type BrowserPoolUpdateParamsTelemetryStorage struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
@@ -1175,7 +1177,8 @@ func (r *BrowserPoolAcquireParamsTelemetryExportOtlpDestination) UnmarshalJSON(d
 // Whether to persist this session's captured telemetry to Kernel storage.
 type BrowserPoolAcquireParamsTelemetryStorage struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }

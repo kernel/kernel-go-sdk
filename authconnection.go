@@ -625,7 +625,8 @@ func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []
 // Whether to persist this session's captured telemetry to Kernel storage.
 type ManagedAuthBrowserTelemetryStorage struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled bool `json:"enabled"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1151,7 +1152,8 @@ func (r *ManagedAuthBrowserConfigTelemetryExportOtlpDestination) UnmarshalJSON(d
 // Whether to persist this session's captured telemetry to Kernel storage.
 type ManagedAuthBrowserConfigTelemetryStorage struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled bool `json:"enabled"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1291,7 +1293,8 @@ func (r *ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam) UnmarshalJ
 // Whether to persist this session's captured telemetry to Kernel storage.
 type ManagedAuthBrowserConfigTelemetryStorageParam struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
@@ -1488,7 +1491,8 @@ func (r *ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam) Unm
 // Whether to persist this session's captured telemetry to Kernel storage.
 type ManagedAuthCreateRequestBrowserTelemetryStorageParam struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
@@ -1824,7 +1828,8 @@ func (r *ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam) Unm
 // Whether to persist this session's captured telemetry to Kernel storage.
 type ManagedAuthUpdateRequestBrowserTelemetryStorageParam struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
@@ -2550,7 +2555,8 @@ func (r *AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination) Unmarsh
 // Whether to persist this session's captured telemetry to Kernel storage.
 type AuthConnectionLoginParamsBrowserTelemetryStorage struct {
 	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
-	// Setting false is not supported yet and is rejected.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
 	Enabled param.Opt[bool] `json:"enabled,omitzero"`
 	paramObj
 }
