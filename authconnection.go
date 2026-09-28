@@ -258,7 +258,8 @@ type ManagedAuth struct {
 	// Whether credentials are saved after every successful login. One-time codes
 	// (TOTP, SMS, etc.) are not saved.
 	SaveCredentials bool `json:"save_credentials" api:"required"`
-	// Current authentication status of the managed profile
+	// Last known authentication status of the managed profile. An inconclusive health
+	// check preserves this status and does not verify the current session.
 	//
 	// Any of "AUTHENTICATED", "NEEDS_AUTH".
 	Status ManagedAuthStatus `json:"status" api:"required"`
@@ -402,6 +403,12 @@ type ManagedAuth struct {
 	// (5 minutes), Startup: 1200 (20 minutes), Hobbyist: 3600 (1 hour), Free: 21600 (6
 	// hours).
 	HealthCheckInterval int64 `json:"health_check_interval" api:"nullable"`
+	// Why health checks cannot verify this connection. Present when health checks are
+	// enabled but no auth check URL is available; a recent last_auth_check_at is not
+	// evidence of a valid session.
+	//
+	// Any of "no_auth_check_url".
+	HealthCheckUnavailableReason ManagedAuthHealthCheckUnavailableReason `json:"health_check_unavailable_reason"`
 	// Whether periodic health checks are enabled for this connection. When false, the
 	// system will not automatically verify authentication status, and `auto_reauth`
 	// has no effect on the automatic flow (since re-auth is only triggered by a failed
@@ -453,47 +460,48 @@ type ManagedAuth struct {
 	WebsiteError string `json:"website_error" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID                    respjson.Field
-		Domain                respjson.Field
-		ProfileName           respjson.Field
-		RecordSession         respjson.Field
-		SaveCredentials       respjson.Field
-		Status                respjson.Field
-		AllowedDomains        respjson.Field
-		AutoReauth            respjson.Field
-		Browser               respjson.Field
-		BrowserSessionID      respjson.Field
-		BrowserTelemetry      respjson.Field
-		CanReauth             respjson.Field
-		CanReauthReason       respjson.Field
-		Choices               respjson.Field
-		Credential            respjson.Field
-		DiscoveredFields      respjson.Field
-		ErrorCode             respjson.Field
-		ErrorMessage          respjson.Field
-		ExternalActionMessage respjson.Field
-		Fields                respjson.Field
-		FlowExpiresAt         respjson.Field
-		FlowStatus            respjson.Field
-		FlowStep              respjson.Field
-		FlowType              respjson.Field
-		HealthCheckInterval   respjson.Field
-		HealthChecks          respjson.Field
-		HostedURL             respjson.Field
-		InteractionID         respjson.Field
-		LastAuthAt            respjson.Field
-		LastAuthCheckAt       respjson.Field
-		LiveViewURL           respjson.Field
-		LoginURL              respjson.Field
-		MfaOptions            respjson.Field
-		PendingSSOButtons     respjson.Field
-		PostLoginURL          respjson.Field
-		ProxyID               respjson.Field
-		SignInOptions         respjson.Field
-		SSOProvider           respjson.Field
-		WebsiteError          respjson.Field
-		ExtraFields           map[string]respjson.Field
-		raw                   string
+		ID                           respjson.Field
+		Domain                       respjson.Field
+		ProfileName                  respjson.Field
+		RecordSession                respjson.Field
+		SaveCredentials              respjson.Field
+		Status                       respjson.Field
+		AllowedDomains               respjson.Field
+		AutoReauth                   respjson.Field
+		Browser                      respjson.Field
+		BrowserSessionID             respjson.Field
+		BrowserTelemetry             respjson.Field
+		CanReauth                    respjson.Field
+		CanReauthReason              respjson.Field
+		Choices                      respjson.Field
+		Credential                   respjson.Field
+		DiscoveredFields             respjson.Field
+		ErrorCode                    respjson.Field
+		ErrorMessage                 respjson.Field
+		ExternalActionMessage        respjson.Field
+		Fields                       respjson.Field
+		FlowExpiresAt                respjson.Field
+		FlowStatus                   respjson.Field
+		FlowStep                     respjson.Field
+		FlowType                     respjson.Field
+		HealthCheckInterval          respjson.Field
+		HealthCheckUnavailableReason respjson.Field
+		HealthChecks                 respjson.Field
+		HostedURL                    respjson.Field
+		InteractionID                respjson.Field
+		LastAuthAt                   respjson.Field
+		LastAuthCheckAt              respjson.Field
+		LiveViewURL                  respjson.Field
+		LoginURL                     respjson.Field
+		MfaOptions                   respjson.Field
+		PendingSSOButtons            respjson.Field
+		PostLoginURL                 respjson.Field
+		ProxyID                      respjson.Field
+		SignInOptions                respjson.Field
+		SSOProvider                  respjson.Field
+		WebsiteError                 respjson.Field
+		ExtraFields                  map[string]respjson.Field
+		raw                          string
 	} `json:"-"`
 }
 
@@ -503,7 +511,8 @@ func (r *ManagedAuth) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Current authentication status of the managed profile
+// Last known authentication status of the managed profile. An inconclusive health
+// check preserves this status and does not verify the current session.
 type ManagedAuthStatus string
 
 const (
@@ -902,6 +911,15 @@ type ManagedAuthFlowType string
 const (
 	ManagedAuthFlowTypeLogin  ManagedAuthFlowType = "LOGIN"
 	ManagedAuthFlowTypeReauth ManagedAuthFlowType = "REAUTH"
+)
+
+// Why health checks cannot verify this connection. Present when health checks are
+// enabled but no auth check URL is available; a recent last_auth_check_at is not
+// evidence of a valid session.
+type ManagedAuthHealthCheckUnavailableReason string
+
+const (
+	ManagedAuthHealthCheckUnavailableReasonNoAuthCheckURL ManagedAuthHealthCheckUnavailableReason = "no_auth_check_url"
 )
 
 // An MFA method option for verification
