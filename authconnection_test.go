@@ -86,6 +86,9 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 							Enabled: kernel.Bool(true),
 						},
 					},
+					Storage: kernel.ManagedAuthBrowserConfigTelemetryStorageParam{
+						Enabled: kernel.Bool(true),
+					},
 				},
 			},
 			BrowserTelemetry: kernel.ManagedAuthCreateRequestBrowserTelemetryParam{
@@ -133,6 +136,9 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 						},
 						Enabled: kernel.Bool(true),
 					},
+				},
+				Storage: kernel.ManagedAuthCreateRequestBrowserTelemetryStorageParam{
+					Enabled: kernel.Bool(true),
 				},
 			},
 			Credential: kernel.ManagedAuthCreateRequestCredentialParam{
@@ -258,6 +264,9 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 								Enabled: kernel.Bool(true),
 							},
 						},
+						Storage: kernel.ManagedAuthBrowserConfigTelemetryStorageParam{
+							Enabled: kernel.Bool(true),
+						},
 					},
 				},
 				BrowserTelemetry: kernel.ManagedAuthUpdateRequestBrowserTelemetryParam{
@@ -305,6 +314,9 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 							},
 							Enabled: kernel.Bool(true),
 						},
+					},
+					Storage: kernel.ManagedAuthUpdateRequestBrowserTelemetryStorageParam{
+						Enabled: kernel.Bool(true),
 					},
 				},
 				Credential: kernel.ManagedAuthUpdateRequestCredentialParam{
@@ -457,6 +469,9 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 							Enabled: kernel.Bool(true),
 						},
 					},
+					Storage: kernel.ManagedAuthBrowserConfigTelemetryStorageParam{
+						Enabled: kernel.Bool(true),
+					},
 				},
 			},
 			BrowserTelemetry: kernel.AuthConnectionLoginParamsBrowserTelemetry{
@@ -504,6 +519,9 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 						},
 						Enabled: kernel.Bool(true),
 					},
+				},
+				Storage: kernel.AuthConnectionLoginParamsBrowserTelemetryStorage{
+					Enabled: kernel.Bool(true),
 				},
 			},
 			Proxy: kernel.AuthConnectionLoginParamsProxy{

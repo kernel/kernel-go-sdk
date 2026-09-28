@@ -5570,10 +5570,14 @@ type BrowserTelemetryConfig struct {
 	// Where the session's captured telemetry is being exported. Omitted when the
 	// export state is unknown.
 	Export BrowserTelemetryExportConfig `json:"export"`
+	// Whether the session's captured telemetry is persisted to Kernel storage. Omitted
+	// for browsers created before this setting existed, which persist it.
+	Storage BrowserTelemetryStorageConfig `json:"storage"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browser     respjson.Field
 		Export      respjson.Field
+		Storage     respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -6746,6 +6750,26 @@ type BrowserTelemetryOtlpExportConfig struct {
 // Returns the unmodified JSON received from the API
 func (r BrowserTelemetryOtlpExportConfig) RawJSON() string { return r.JSON.raw }
 func (r *BrowserTelemetryOtlpExportConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Kernel storage state for a session's captured telemetry.
+type BrowserTelemetryStorageConfig struct {
+	// Whether captured telemetry is persisted to Kernel storage. When off, the
+	// session's events are only available on the live stream and through any
+	// configured export.
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserTelemetryStorageConfig) RawJSON() string { return r.JSON.raw }
+func (r *BrowserTelemetryStorageConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

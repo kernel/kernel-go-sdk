@@ -117,6 +117,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 					Enabled: kernel.Bool(true),
 				},
 			},
+			Storage: kernel.BrowserNewParamsTelemetryStorage{
+				Enabled: kernel.Bool(true),
+			},
 		},
 		TimeoutSeconds: kernel.Int(10),
 		Vaults: []kernel.VaultReferenceParam{{
@@ -247,6 +250,9 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 						},
 						Enabled: kernel.Bool(true),
 					},
+				},
+				Storage: kernel.BrowserUpdateParamsTelemetryStorage{
+					Enabled: kernel.Bool(true),
 				},
 			},
 			Viewport: kernel.BrowserUpdateParamsViewport{

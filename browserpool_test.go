@@ -106,6 +106,9 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 					Enabled: kernel.Bool(true),
 				},
 			},
+			Storage: kernel.BrowserPoolNewParamsTelemetryStorage{
+				Enabled: kernel.Bool(true),
+			},
 		},
 		TimeoutSeconds: kernel.Int(10),
 		Viewport: shared.BrowserViewportParam{
@@ -240,6 +243,9 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 						},
 						Enabled: kernel.Bool(true),
 					},
+				},
+				Storage: kernel.BrowserPoolUpdateParamsTelemetryStorage{
+					Enabled: kernel.Bool(true),
 				},
 			},
 			TimeoutSeconds: kernel.Int(10),
@@ -391,6 +397,9 @@ func TestBrowserPoolAcquireWithOptionalParams(t *testing.T) {
 						},
 						Enabled: kernel.Bool(true),
 					},
+				},
+				Storage: kernel.BrowserPoolAcquireParamsTelemetryStorage{
+					Enabled: kernel.Bool(true),
 				},
 			},
 		},

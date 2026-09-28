@@ -538,11 +538,14 @@ type ManagedAuthBrowserTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export ManagedAuthBrowserTelemetryExport `json:"export"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage ManagedAuthBrowserTelemetryStorage `json:"storage"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browser     respjson.Field
 		Enabled     respjson.Field
 		Export      respjson.Field
+		Storage     respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -616,6 +619,25 @@ type ManagedAuthBrowserTelemetryExportOtlpDestination struct {
 // Returns the unmodified JSON received from the API
 func (r ManagedAuthBrowserTelemetryExportOtlpDestination) RawJSON() string { return r.JSON.raw }
 func (r *ManagedAuthBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type ManagedAuthBrowserTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false is not supported yet and is rejected.
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserTelemetryStorage) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1042,11 +1064,14 @@ type ManagedAuthBrowserConfigTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export ManagedAuthBrowserConfigTelemetryExport `json:"export"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage ManagedAuthBrowserConfigTelemetryStorage `json:"storage"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Browser     respjson.Field
 		Enabled     respjson.Field
 		Export      respjson.Field
+		Storage     respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1123,6 +1148,25 @@ func (r *ManagedAuthBrowserConfigTelemetryExportOtlpDestination) UnmarshalJSON(d
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Whether to persist this session's captured telemetry to Kernel storage.
+type ManagedAuthBrowserConfigTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false is not supported yet and is rejected.
+	Enabled bool `json:"enabled"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserConfigTelemetryStorage) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserConfigTelemetryStorage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Browser configuration applied to browser sessions created for a managed auth
 // connection. Managed auth controls the profile, headless mode, timeout, start
 // URL, kiosk mode, and viewport.
@@ -1177,6 +1221,8 @@ type ManagedAuthBrowserConfigTelemetryParam struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export ManagedAuthBrowserConfigTelemetryExportParam `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage ManagedAuthBrowserConfigTelemetryStorageParam `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -1239,6 +1285,22 @@ func (r ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam) MarshalJSON
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthBrowserConfigTelemetryExportOtlpDestinationParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type ManagedAuthBrowserConfigTelemetryStorageParam struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false is not supported yet and is rejected.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserConfigTelemetryStorageParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserConfigTelemetryStorageParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserConfigTelemetryStorageParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1356,6 +1418,8 @@ type ManagedAuthCreateRequestBrowserTelemetryParam struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export ManagedAuthCreateRequestBrowserTelemetryExportParam `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage ManagedAuthCreateRequestBrowserTelemetryStorageParam `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -1418,6 +1482,22 @@ func (r ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam) Mars
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthCreateRequestBrowserTelemetryExportOtlpDestinationParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type ManagedAuthCreateRequestBrowserTelemetryStorageParam struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false is not supported yet and is rejected.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthCreateRequestBrowserTelemetryStorageParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthCreateRequestBrowserTelemetryStorageParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthCreateRequestBrowserTelemetryStorageParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1674,6 +1754,8 @@ type ManagedAuthUpdateRequestBrowserTelemetryParam struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export ManagedAuthUpdateRequestBrowserTelemetryExportParam `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage ManagedAuthUpdateRequestBrowserTelemetryStorageParam `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -1736,6 +1818,22 @@ func (r ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam) Mars
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthUpdateRequestBrowserTelemetryExportOtlpDestinationParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type ManagedAuthUpdateRequestBrowserTelemetryStorageParam struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false is not supported yet and is rejected.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthUpdateRequestBrowserTelemetryStorageParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthUpdateRequestBrowserTelemetryStorageParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthUpdateRequestBrowserTelemetryStorageParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2382,6 +2480,8 @@ type AuthConnectionLoginParamsBrowserTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export AuthConnectionLoginParamsBrowserTelemetryExport `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage AuthConnectionLoginParamsBrowserTelemetryStorage `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -2444,6 +2544,22 @@ func (r AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination) MarshalJ
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *AuthConnectionLoginParamsBrowserTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type AuthConnectionLoginParamsBrowserTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false is not supported yet and is rejected.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r AuthConnectionLoginParamsBrowserTelemetryStorage) MarshalJSON() (data []byte, err error) {
+	type shadow AuthConnectionLoginParamsBrowserTelemetryStorage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AuthConnectionLoginParamsBrowserTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
