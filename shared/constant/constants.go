@@ -18,6 +18,9 @@ func ValueOf[T Constant[T]]() T {
 	return t.Default()
 }
 
+type String1passwordAccessApproval string   // Always "1password_access_approval"
+type String1pwAccessRequestStatus string    // Always "1pw_access_request_status"
+type String1pwUpdateAccessToken string      // Always "1pw_update_access_token"
 type Agentcard string                       // Always "agentcard"
 type APICall string                         // Always "api_call"
 type AppVersionSummary string               // Always "app_version_summary"
@@ -142,6 +145,15 @@ type Valyu string                           // Always "valyu"
 type Wallet string                          // Always "wallet"
 type You string                             // Always "you"
 
+func (c String1passwordAccessApproval) Default() String1passwordAccessApproval {
+	return "1password_access_approval"
+}
+func (c String1pwAccessRequestStatus) Default() String1pwAccessRequestStatus {
+	return "1pw_access_request_status"
+}
+func (c String1pwUpdateAccessToken) Default() String1pwUpdateAccessToken {
+	return "1pw_update_access_token"
+}
 func (c Agentcard) Default() Agentcard                           { return "agentcard" }
 func (c APICall) Default() APICall                               { return "api_call" }
 func (c AppVersionSummary) Default() AppVersionSummary           { return "app_version_summary" }
@@ -288,6 +300,9 @@ func (c Valyu) Default() Valyu                           { return "valyu" }
 func (c Wallet) Default() Wallet                         { return "wallet" }
 func (c You) Default() You                               { return "you" }
 
+func (c String1passwordAccessApproval) MarshalJSON() ([]byte, error)   { return marshalString(c) }
+func (c String1pwAccessRequestStatus) MarshalJSON() ([]byte, error)    { return marshalString(c) }
+func (c String1pwUpdateAccessToken) MarshalJSON() ([]byte, error)      { return marshalString(c) }
 func (c Agentcard) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c APICall) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c AppVersionSummary) MarshalJSON() ([]byte, error)               { return marshalString(c) }
