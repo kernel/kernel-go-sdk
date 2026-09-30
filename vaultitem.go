@@ -436,7 +436,9 @@ type CardVaultItemSpecUnion struct {
 	Merchant string `json:"merchant"`
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	CardID string `json:"card_id"`
-	JSON   struct {
+	// This field is from variant [CardVaultItemSpecAgentcard].
+	CheckoutOrigin string `json:"checkout_origin"`
+	JSON           struct {
 		Amount          respjson.Field
 		Context         respjson.Field
 		Currency        respjson.Field
@@ -451,6 +453,7 @@ type CardVaultItemSpecUnion struct {
 		Totals          respjson.Field
 		Merchant        respjson.Field
 		CardID          respjson.Field
+		CheckoutOrigin  respjson.Field
 		raw             string
 	} `json:"-"`
 }
@@ -629,8 +632,9 @@ func (r *CardVaultItemSpecLinkTotal) UnmarshalJSON(data []byte) error {
 }
 
 // AgentCard reusable live payment card. Test-mode card creation is not supported.
-// Each checkout creates an approval-gated authorization for spec.merchant /
-// spec.amount. The card stays ready after each authorization.
+// Each checkout creates an authorization for spec.merchant / spec.amount that the
+// cardholder approves, unless AgentCard runs it under one of the cardholder's
+// autopilot rules. The card stays ready after each authorization.
 type CardVaultItemSpecAgentcard struct {
 	// Integer amount in minor currency units.
 	Amount   int64  `json:"amount" api:"required"`
@@ -644,16 +648,26 @@ type CardVaultItemSpecAgentcard struct {
 	// through unchanged without assuming a prefix or format. Omitted, the cardholder
 	// picks on the approval screen.
 	CardID string `json:"card_id"`
+	// Origin of the top-level checkout page, such as https://shop.example.com: https,
+	// a lowercase host, a port only when it is not 443, and no path. http is accepted
+	// only for localhost test pages. Checkouts without a preparation send it to
+	// AgentCard, which uses it to match the cardholder's autopilot rules; prepared
+	// checkouts send the preparation's merchant_origin instead. Kernel sends the
+	// declared value and does not compare it with the page the browser has open.
+	// Omitted, those checkouts ask the cardholder to approve. Card updates replace the
+	// whole spec, so an update that omits it removes it.
+	CheckoutOrigin string `json:"checkout_origin"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Amount      respjson.Field
-		Currency    respjson.Field
-		Merchant    respjson.Field
-		Provider    respjson.Field
-		Wallet      respjson.Field
-		CardID      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Amount         respjson.Field
+		Currency       respjson.Field
+		Merchant       respjson.Field
+		Provider       respjson.Field
+		Wallet         respjson.Field
+		CardID         respjson.Field
+		CheckoutOrigin respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -764,6 +778,14 @@ func (u CardVaultItemSpecUnionParam) GetMerchant() *string {
 func (u CardVaultItemSpecUnionParam) GetCardID() *string {
 	if vt := u.OfAgentcard; vt != nil && vt.CardID.Valid() {
 		return &vt.CardID.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetCheckoutOrigin() *string {
+	if vt := u.OfAgentcard; vt != nil && vt.CheckoutOrigin.Valid() {
+		return &vt.CheckoutOrigin.Value
 	}
 	return nil
 }
@@ -909,8 +931,9 @@ func (r *CardVaultItemSpecLinkTotalParam) UnmarshalJSON(data []byte) error {
 }
 
 // AgentCard reusable live payment card. Test-mode card creation is not supported.
-// Each checkout creates an approval-gated authorization for spec.merchant /
-// spec.amount. The card stays ready after each authorization.
+// Each checkout creates an authorization for spec.merchant / spec.amount that the
+// cardholder approves, unless AgentCard runs it under one of the cardholder's
+// autopilot rules. The card stays ready after each authorization.
 //
 // The properties Amount, Currency, Merchant, Provider, Wallet are required.
 type CardVaultItemSpecAgentcardParam struct {
@@ -925,6 +948,15 @@ type CardVaultItemSpecAgentcardParam struct {
 	// through unchanged without assuming a prefix or format. Omitted, the cardholder
 	// picks on the approval screen.
 	CardID param.Opt[string] `json:"card_id,omitzero"`
+	// Origin of the top-level checkout page, such as https://shop.example.com: https,
+	// a lowercase host, a port only when it is not 443, and no path. http is accepted
+	// only for localhost test pages. Checkouts without a preparation send it to
+	// AgentCard, which uses it to match the cardholder's autopilot rules; prepared
+	// checkouts send the preparation's merchant_origin instead. Kernel sends the
+	// declared value and does not compare it with the page the browser has open.
+	// Omitted, those checkouts ask the cardholder to approve. Card updates replace the
+	// whole spec, so an update that omits it removes it.
+	CheckoutOrigin param.Opt[string] `json:"checkout_origin,omitzero"`
 	// This field can be elided, and will marshal its zero value as "agentcard".
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
 	paramObj
@@ -3465,6 +3497,8 @@ type VaultItemUnionSpec struct {
 	Merchant string `json:"merchant"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields []CredentialVaultFieldDefinition `json:"fields"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
@@ -3493,6 +3527,7 @@ type VaultItemUnionSpec struct {
 		Totals               respjson.Field
 		Merchant             respjson.Field
 		CardID               respjson.Field
+		CheckoutOrigin       respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -4320,6 +4355,8 @@ type VaultItemOperationResponseUnionSpec struct {
 	Merchant string `json:"merchant"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields []CredentialVaultFieldDefinition `json:"fields"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
@@ -4348,6 +4385,7 @@ type VaultItemOperationResponseUnionSpec struct {
 		Totals               respjson.Field
 		Merchant             respjson.Field
 		CardID               respjson.Field
+		CheckoutOrigin       respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
