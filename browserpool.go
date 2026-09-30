@@ -651,6 +651,8 @@ type BrowserPoolNewParamsTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export BrowserPoolNewParamsTelemetryExport `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage BrowserPoolNewParamsTelemetryStorage `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -713,6 +715,23 @@ func (r BrowserPoolNewParamsTelemetryExportOtlpDestination) MarshalJSON() (data 
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserPoolNewParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type BrowserPoolNewParamsTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r BrowserPoolNewParamsTelemetryStorage) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPoolNewParamsTelemetryStorage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPoolNewParamsTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -879,6 +898,8 @@ type BrowserPoolUpdateParamsTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export BrowserPoolUpdateParamsTelemetryExport `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage BrowserPoolUpdateParamsTelemetryStorage `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -941,6 +962,23 @@ func (r BrowserPoolUpdateParamsTelemetryExportOtlpDestination) MarshalJSON() (da
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserPoolUpdateParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type BrowserPoolUpdateParamsTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r BrowserPoolUpdateParamsTelemetryStorage) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPoolUpdateParamsTelemetryStorage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPoolUpdateParamsTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1069,6 +1107,8 @@ type BrowserPoolAcquireParamsTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export BrowserPoolAcquireParamsTelemetryExport `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage BrowserPoolAcquireParamsTelemetryStorage `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -1131,6 +1171,23 @@ func (r BrowserPoolAcquireParamsTelemetryExportOtlpDestination) MarshalJSON() (d
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserPoolAcquireParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type BrowserPoolAcquireParamsTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r BrowserPoolAcquireParamsTelemetryStorage) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPoolAcquireParamsTelemetryStorage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPoolAcquireParamsTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
-func TestVaultProviderConfigNew(t *testing.T) {
+func TestVaultProviderConfigNewWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -29,8 +29,9 @@ func TestVaultProviderConfigNew(t *testing.T) {
 	_, err := client.VaultProviderConfigs.New(context.TODO(), kernel.VaultProviderConfigNewParams{
 		OfLink: &kernel.VaultProviderConfigNewParamsBodyLink{
 			Credentials: kernel.VaultProviderConfigNewParamsBodyLinkCredentials{
-				ClientID:     "example-client-id",
-				ClientSecret: "example-client-secret",
+				ClientID:       "example-client-id",
+				ClientSecret:   "example-client-secret",
+				PublishableKey: kernel.String("pk_live_example"),
 			},
 			Name: "my-link-client",
 		},
@@ -85,7 +86,8 @@ func TestVaultProviderConfigUpdateWithOptionalParams(t *testing.T) {
 		"id_or_name",
 		kernel.VaultProviderConfigUpdateParams{
 			Credentials: kernel.VaultProviderConfigUpdateParamsCredentials{
-				ClientSecret: kernel.String("x"),
+				ClientSecret:   kernel.String("x"),
+				PublishableKey: kernel.String("pk_test_lK9w2kI5J1"),
 			},
 			Name: kernel.String("renamed-link-client"),
 		},

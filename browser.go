@@ -1624,6 +1624,8 @@ type BrowserNewParamsTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export BrowserNewParamsTelemetryExport `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage BrowserNewParamsTelemetryStorage `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -1686,6 +1688,23 @@ func (r BrowserNewParamsTelemetryExportOtlpDestination) MarshalJSON() (data []by
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserNewParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type BrowserNewParamsTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r BrowserNewParamsTelemetryStorage) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNewParamsTelemetryStorage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNewParamsTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1780,6 +1799,8 @@ type BrowserUpdateParamsTelemetry struct {
 	// Where to export this session's captured telemetry. Omit to capture without
 	// exporting.
 	Export BrowserUpdateParamsTelemetryExport `json:"export,omitzero"`
+	// Whether to persist this session's captured telemetry to Kernel storage.
+	Storage BrowserUpdateParamsTelemetryStorage `json:"storage,omitzero"`
 	paramObj
 }
 
@@ -1842,6 +1863,23 @@ func (r BrowserUpdateParamsTelemetryExportOtlpDestination) MarshalJSON() (data [
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserUpdateParamsTelemetryExportOtlpDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether to persist this session's captured telemetry to Kernel storage.
+type BrowserUpdateParamsTelemetryStorage struct {
+	// Whether captured telemetry is persisted to Kernel storage. Defaults to true.
+	// Setting false requires an OTLP destination and cannot be changed after the
+	// browser is created.
+	Enabled param.Opt[bool] `json:"enabled,omitzero"`
+	paramObj
+}
+
+func (r BrowserUpdateParamsTelemetryStorage) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserUpdateParamsTelemetryStorage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserUpdateParamsTelemetryStorage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

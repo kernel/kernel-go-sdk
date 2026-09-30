@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.114.0](https://github.com/kernel/kernel-go-sdk/compare/v0.113.0...v0.114.0) (2026-09-30)
+
+
+### Features
+
+* Accept telemetry.storage and settle it at browser create ([233b087](https://github.com/kernel/kernel-go-sdk/commit/233b08772b836be24a9851d88122c39b1ed2c365))
+* Allow export-only network and console telemetry for BAA orgs ([a1d4c5b](https://github.com/kernel/kernel-go-sdk/commit/a1d4c5be424cb7211be912fb1a9a4cf9ec9f06fc))
+* Expose missing managed auth check URL as verification unavailable ([35a0285](https://github.com/kernel/kernel-go-sdk/commit/35a02850ff6eac17ed5279dbdf54642e61d315b9))
+* Let Vaults fill credentials from 1Password ([6923472](https://github.com/kernel/kernel-go-sdk/commit/6923472efed1a4e7f9d6f26124c3cbd381122812))
+* Send Stripe publishable key when refreshing customer-owned Link grants ([c823c6c](https://github.com/kernel/kernel-go-sdk/commit/c823c6c04c73498e266e0955790a81d187986b4f))
+
 ## [0.113.0](https://github.com/kernel/kernel-go-sdk/compare/v0.112.0...v0.113.0) (2026-09-27)
 
 
