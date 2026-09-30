@@ -768,9 +768,13 @@ Params Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#FetchRequestParam">FetchRequestParam</a>
 
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Response">Response</a>
+
 Methods:
 
-- <code title="post /search/{id}/contents">client.Search.Contents.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SearchContentService.Fetch">Fetch</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SearchContentFetchParams">SearchContentFetchParams</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+- <code title="post /search/{id}/contents">client.Search.Contents.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SearchContentService.Fetch">Fetch</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#SearchContentFetchParams">SearchContentFetchParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Response">Response</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 ## Providers
 
