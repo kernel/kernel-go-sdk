@@ -26,7 +26,7 @@ func TestSearchContentFetchWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Search.Contents.Fetch(
+	_, err := client.Search.Contents.Fetch(
 		context.TODO(),
 		"srch_abc123",
 		kernel.SearchContentFetchParams{
