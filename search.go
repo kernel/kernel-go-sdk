@@ -2146,30 +2146,31 @@ const (
 )
 
 type RequestContentSearchContentOptionsParam struct {
-	// Maximum acceptable age of cached page content, measured from origin retrieval. 0
-	// forces a live fetch. Governs the Kernel content cache, which is scoped to the
-	// caller organization and project and separated by retrieval context; fetches
-	// through a caller-supplied browser_id bypass that cache. Mapped to the provider
-	// freshness control when source is provider and the provider supports one;
-	// otherwise provider content age is reported as unknown via fetched_at.
+	// For source=auto, maximum acceptable age of retained provider content, measured
+	// from when the search received it from the provider. A value of 0 disables reuse
+	// of retained content, so every result is fetched through a browser.
+	// source=provider reuses retained provider content without freshness validation.
+	// source=browser always fetches through a browser and does not use this age limit.
 	MaxAgeHours param.Opt[int64] `json:"max_age_hours,omitzero"`
-	// Per-result Unicode character limit after extraction.
+	// Per-result Unicode character limit after extraction. Retained provider content
+	// cannot exceed what was stored at search time; such results report truncated when
+	// the stored text was already truncated.
 	MaxChars param.Opt[int64] `json:"max_chars,omitzero"`
 	// Per-result deadline including capacity acquisition, retrieval, and extraction.
 	// Also bounded by the overall request deadline.
 	TimeoutMs param.Opt[int64] `json:"timeout_ms,omitzero"`
-	// Invalid with source=provider. Supplying browser_id requires source=browser so
-	// the chosen identity is not bypassed.
+	// Requires source=auto or source=browser in deferred retrieval.
 	Browser RequestContentSearchContentOptionsBrowserParam `json:"browser,omitzero"`
 	// Any of "markdown", "text".
 	Format string `json:"format,omitzero"`
-	// provider uses the search provider's native content retrieval; browser fetches
-	// each URL through a Kernel browser; auto prefers Kernel browser retrieval and
-	// falls back to provider-native content when browser retrieval is unavailable or
-	// unsuitable. Defaults to auto for both inline and deferred retrieval. Deferred
-	// provider retrieval requires post_hoc capability; an explicit provider source
-	// without it is a 400. Missing documents produce per-result unavailable outcomes,
-	// not request failures.
+	// auto uses retained provider content within max_age_hours; for deferred retrieval
+	// it falls back to a Kernel browser (caller-supplied or temporary) for results
+	// without it. Inline retrieval never uses a browser. provider reuses retained
+	// provider content when available, without freshness validation, and never
+	// provisions a browser. browser fetches each URL through a Kernel browser, either
+	// caller-supplied or temporary. No option makes a new provider request. Defaults
+	// to auto for both inline and deferred retrieval. Missing documents produce
+	// per-result unavailable outcomes, not request failures.
 	//
 	// Any of "auto", "provider", "browser".
 	Source string `json:"source,omitzero"`
@@ -2193,15 +2194,20 @@ func init() {
 	)
 }
 
-// Invalid with source=provider. Supplying browser_id requires source=browser so
-// the chosen identity is not bypassed.
+// Requires source=auto or source=browser in deferred retrieval.
 type RequestContentSearchContentOptionsBrowserParam struct {
 	// Existing browser session ID authorized for the caller and selected project.
-	// Reuses its cookies, proxy, and browser configuration. Kernel does not delete a
-	// caller-supplied browser. Render mode uses a temporary tab; website activity may
-	// still change shared cookies and storage. When omitted, Kernel obtains isolated
-	// browser capacity in the caller's account and releases it after retrieval. That
-	// capacity is not retained for later interaction. Existing browser quotas apply.
+	// Reuses its cookies, proxy, and browser configuration; requests follow that
+	// browser's existing network access behavior, with no additional destination
+	// allowlist in this endpoint. Kernel does not delete a caller-supplied browser.
+	// Render mode uses a temporary tab; website activity may still change shared
+	// cookies and storage. When omitted and any result needs browser retrieval, Kernel
+	// creates one temporary browser for the request using the dashboard launch
+	// defaults (headful, stealth, default proxy), tags it with search_id, and deletes
+	// it when the request finishes. It is billed and counts toward browser concurrency
+	// like any other browser. A concurrency rejection returns 429 for source=browser;
+	// for source=auto, results with retained content are still returned and the rest
+	// report the rejection.
 	BrowserID param.Opt[string] `json:"browser_id,omitzero"`
 	// Curl uses the browser HTTP stack without navigation or JavaScript execution.
 	// Render navigates a temporary page and extracts from its DOM. The selected mode
@@ -2311,7 +2317,9 @@ type ResultContent struct {
 	// Any of "ok", "unavailable", "blocked", "timeout", "unsupported_type",
 	// "extraction_failed", "error".
 	Status string `json:"status" api:"required"`
-	// Kernel cache outcome. Provider-internal cache behavior may be unknown.
+	// Kernel content cache outcome. Kernel has no content cache yet: responses report
+	// bypass or unknown, and hit and miss are reserved. Provider-internal cache
+	// behavior may be unknown.
 	//
 	// Any of "hit", "miss", "bypass", "unknown".
 	CacheStatus string `json:"cache_status"`
@@ -2323,7 +2331,7 @@ type ResultContent struct {
 	Error        ResultContentError `json:"error"`
 	// Extraction version when Kernel transformed the input.
 	ExtractorVersion string `json:"extractor_version"`
-	// Origin retrieval time when known, not cache read time.
+	// When Kernel received the content from the provider.
 	FetchedAt time.Time `json:"fetched_at" api:"nullable" format:"date-time"`
 	// Final retrieval URL when known.
 	FinalURL string `json:"final_url" format:"uri"`
@@ -2331,7 +2339,7 @@ type ResultContent struct {
 	Format string `json:"format"`
 	// Final target HTTP status when known.
 	HTTPStatus int64 `json:"http_status"`
-	// Original retrieval method, including on cache hits.
+	// Original retrieval method.
 	//
 	// Any of "provider", "browser_curl", "browser_render".
 	Method string `json:"method"`
@@ -2627,8 +2635,8 @@ func (r *StrategyFallbackParam) UnmarshalJSON(data []byte) error {
 }
 
 type Usage struct {
-	// Number of result URLs for which a Kernel browser retrieval was attempted,
-	// excluding cache-only hits.
+	// Number of result URLs for which a Kernel browser retrieval received a response
+	// from the target, excluding cache-only hits.
 	ContentFetches int64 `json:"content_fetches" api:"required"`
 	// Number of result entries returned, including failed entries on the contents
 	// endpoint.
