@@ -134,17 +134,20 @@ type VaultProviderConfigUnion struct {
 	// Any of "link", "agentcard".
 	Provider  string    `json:"provider"`
 	UpdatedAt time.Time `json:"updated_at"`
+	// This field is from variant [VaultProviderConfigLink].
+	PublishableKey string `json:"publishable_key"`
 	// This field is from variant [VaultProviderConfigAgentcard].
 	TestMode bool `json:"test_mode"`
 	JSON     struct {
-		ID        respjson.Field
-		ClientID  respjson.Field
-		CreatedAt respjson.Field
-		Name      respjson.Field
-		Provider  respjson.Field
-		UpdatedAt respjson.Field
-		TestMode  respjson.Field
-		raw       string
+		ID             respjson.Field
+		ClientID       respjson.Field
+		CreatedAt      respjson.Field
+		Name           respjson.Field
+		Provider       respjson.Field
+		UpdatedAt      respjson.Field
+		PublishableKey respjson.Field
+		TestMode       respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -205,16 +208,20 @@ type VaultProviderConfigLink struct {
 	Name      string        `json:"name" api:"required"`
 	Provider  constant.Link `json:"provider" default:"link"`
 	UpdatedAt time.Time     `json:"updated_at" api:"required" format:"date-time"`
+	// Stripe publishable key sent to Link when refreshing and revoking wallet grants.
+	// Omitted when not configured.
+	PublishableKey string `json:"publishable_key"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		ClientID    respjson.Field
-		CreatedAt   respjson.Field
-		Name        respjson.Field
-		Provider    respjson.Field
-		UpdatedAt   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID             respjson.Field
+		ClientID       respjson.Field
+		CreatedAt      respjson.Field
+		Name           respjson.Field
+		Provider       respjson.Field
+		UpdatedAt      respjson.Field
+		PublishableKey respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -310,6 +317,11 @@ func (r *VaultProviderConfigNewParamsBodyLink) UnmarshalJSON(data []byte) error 
 type VaultProviderConfigNewParamsBodyLinkCredentials struct {
 	ClientID     string `json:"client_id" api:"required"`
 	ClientSecret string `json:"client_secret" api:"required"`
+	// Stripe publishable key for the account that owns the Link OAuth client. Link
+	// requires it as the bearer credential when Kernel refreshes or revokes imported
+	// wallet grants; without it, those wallets stop working when the imported access
+	// token expires.
+	PublishableKey param.Opt[string] `json:"publishable_key,omitzero"`
 	paramObj
 }
 
@@ -378,6 +390,9 @@ func (r *VaultProviderConfigUpdateParams) UnmarshalJSON(data []byte) error {
 // leaves existing credentials unchanged.
 type VaultProviderConfigUpdateParamsCredentials struct {
 	ClientSecret param.Opt[string] `json:"client_secret,omitzero"`
+	// Link configurations only. Stripe publishable key sent to Link when refreshing
+	// and revoking wallet grants.
+	PublishableKey param.Opt[string] `json:"publishable_key,omitzero"`
 	paramObj
 }
 
