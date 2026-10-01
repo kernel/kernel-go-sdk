@@ -34,8 +34,11 @@ func TestCredentialNewWithOptionalParams(t *testing.T) {
 				"username": "user@example.com",
 				"password": "mysecretpassword",
 			},
-			SSOProvider: kernel.String("google"),
-			TotpSecret:  kernel.String("JBSWY3DPEHPK3PXP"),
+			SSOProvider:   kernel.String("google"),
+			TotpAlgorithm: kernel.CreateCredentialRequestTotpAlgorithmSha1,
+			TotpDigits:    kernel.Int(6),
+			TotpPeriod:    kernel.Int(30),
+			TotpSecret:    kernel.String("JBSWY3DPEHPK3PXP"),
 		},
 	})
 	if err != nil {
@@ -91,6 +94,9 @@ func TestCredentialUpdateWithOptionalParams(t *testing.T) {
 				Name:            kernel.String("my-updated-login"),
 				RemoveValueKeys: []string{"old_field"},
 				SSOProvider:     kernel.String("google"),
+				TotpAlgorithm:   kernel.UpdateCredentialRequestTotpAlgorithmSha1,
+				TotpDigits:      kernel.Int(6),
+				TotpPeriod:      kernel.Int(30),
 				TotpSecret:      kernel.String("JBSWY3DPEHPK3PXP"),
 				Values: map[string]string{
 					"username": "user@example.com",
