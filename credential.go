@@ -140,9 +140,23 @@ type CreateCredentialRequestParam struct {
 	// button, it will be clicked first before filling credential values on the
 	// identity provider's login page.
 	SSOProvider param.Opt[string] `json:"sso_provider,omitzero"`
-	// Base32-encoded TOTP secret for generating one-time passwords. Used for automatic
-	// 2FA during login.
+	// Number of digits in generated TOTP codes. Defaults to 6 and is ignored when an
+	// `otpauth://` URI supplies the digit count.
+	TotpDigits param.Opt[int64] `json:"totp_digits,omitzero"`
+	// TOTP rotation period in seconds. Defaults to 30 and is ignored when an
+	// `otpauth://` URI supplies the period.
+	TotpPeriod param.Opt[int64] `json:"totp_period,omitzero"`
+	// Accepts a 16-128 character base32-encoded TOTP secret or an `otpauth://totp/...`
+	// URI. The range accepts existing shorter seeds and longer seeds regardless of
+	// HMAC algorithm; RFC 6238 recommends unpadded base32 lengths of 32/52/103 for
+	// SHA1/SHA256/SHA512. Only URI parameters present override the corresponding
+	// explicit TOTP fields. Used for automatic 2FA during login.
 	TotpSecret param.Opt[string] `json:"totp_secret,omitzero"`
+	// HMAC algorithm used to generate TOTP codes. Defaults to SHA1 and is ignored when
+	// an `otpauth://` URI supplies the algorithm.
+	//
+	// Any of "SHA1", "SHA256", "SHA512".
+	TotpAlgorithm CreateCredentialRequestTotpAlgorithm `json:"totp_algorithm,omitzero"`
 	paramObj
 }
 
@@ -153,6 +167,16 @@ func (r CreateCredentialRequestParam) MarshalJSON() (data []byte, err error) {
 func (r *CreateCredentialRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// HMAC algorithm used to generate TOTP codes. Defaults to SHA1 and is ignored when
+// an `otpauth://` URI supplies the algorithm.
+type CreateCredentialRequestTotpAlgorithm string
+
+const (
+	CreateCredentialRequestTotpAlgorithmSha1   CreateCredentialRequestTotpAlgorithm = "SHA1"
+	CreateCredentialRequestTotpAlgorithmSha256 CreateCredentialRequestTotpAlgorithm = "SHA256"
+	CreateCredentialRequestTotpAlgorithmSha512 CreateCredentialRequestTotpAlgorithm = "SHA512"
+)
 
 // A stored credential for automatic re-authentication
 type Credential struct {
@@ -175,11 +199,22 @@ type Credential struct {
 	// button, it will be clicked first before filling credential values on the
 	// identity provider's login page.
 	SSOProvider string `json:"sso_provider" api:"nullable"`
-	// Current 6-digit TOTP code. Only included in create/update responses when
-	// totp_secret was just set.
+	// HMAC algorithm used to generate TOTP codes. Defaults to SHA1 for credentials
+	// created before this metadata was stored.
+	//
+	// Any of "SHA1", "SHA256", "SHA512".
+	TotpAlgorithm CredentialTotpAlgorithm `json:"totp_algorithm"`
+	// Current TOTP code. Only included in create/update responses when totp_secret was
+	// just set.
 	TotpCode string `json:"totp_code"`
 	// When the totp_code expires. Only included when totp_code is present.
 	TotpCodeExpiresAt time.Time `json:"totp_code_expires_at" format:"date-time"`
+	// Number of digits in generated TOTP codes. Defaults to 6 for credentials created
+	// before this metadata was stored.
+	TotpDigits int64 `json:"totp_digits"`
+	// TOTP rotation period in seconds. Defaults to 30 for credentials created before
+	// this metadata was stored.
+	TotpPeriod int64 `json:"totp_period"`
 	// The field names stored in this credential's values (e.g., username, password).
 	// Values themselves are never returned. Included on single-credential responses
 	// (create, get by id or name, update); omitted from list responses.
@@ -194,8 +229,11 @@ type Credential struct {
 		HasTotpSecret     respjson.Field
 		HasValues         respjson.Field
 		SSOProvider       respjson.Field
+		TotpAlgorithm     respjson.Field
 		TotpCode          respjson.Field
 		TotpCodeExpiresAt respjson.Field
+		TotpDigits        respjson.Field
+		TotpPeriod        respjson.Field
 		ValueKeys         respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
@@ -208,6 +246,16 @@ func (r *Credential) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// HMAC algorithm used to generate TOTP codes. Defaults to SHA1 for credentials
+// created before this metadata was stored.
+type CredentialTotpAlgorithm string
+
+const (
+	CredentialTotpAlgorithmSha1   CredentialTotpAlgorithm = "SHA1"
+	CredentialTotpAlgorithmSha256 CredentialTotpAlgorithm = "SHA256"
+	CredentialTotpAlgorithmSha512 CredentialTotpAlgorithm = "SHA512"
+)
+
 // Request to update an existing credential
 type UpdateCredentialRequestParam struct {
 	// If set, indicates this credential should be used with the specified SSO
@@ -215,12 +263,26 @@ type UpdateCredentialRequestParam struct {
 	SSOProvider param.Opt[string] `json:"sso_provider,omitzero"`
 	// New name for the credential
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Base32-encoded TOTP secret for generating one-time passwords. Spaces and
-	// formatting are automatically normalized. Set to empty string to remove.
+	// Number of digits in generated TOTP codes. Requires totp_secret and is ignored
+	// when an `otpauth://` URI supplies the digit count.
+	TotpDigits param.Opt[int64] `json:"totp_digits,omitzero"`
+	// TOTP rotation period in seconds. Requires totp_secret and is ignored when an
+	// `otpauth://` URI supplies the period.
+	TotpPeriod param.Opt[int64] `json:"totp_period,omitzero"`
+	// Accepts a 16-128 character base32-encoded TOTP secret or an `otpauth://totp/...`
+	// URI. Only URI parameters present override the corresponding explicit TOTP
+	// fields. When rotating a raw secret, omitted fields preserve their existing
+	// values; a new URI defaults unspecified fields to SHA1/6/30. Set to empty string
+	// to remove the secret and its metadata.
 	TotpSecret param.Opt[string] `json:"totp_secret,omitzero"`
 	// Field names to remove from the credential's stored values. Removals are applied
 	// before `values` are merged, so a key present in both is kept with its new value.
 	RemoveValueKeys []string `json:"remove_value_keys,omitzero"`
+	// HMAC algorithm used to generate TOTP codes. Requires totp_secret and is ignored
+	// when an `otpauth://` URI supplies the algorithm.
+	//
+	// Any of "SHA1", "SHA256", "SHA512".
+	TotpAlgorithm UpdateCredentialRequestTotpAlgorithm `json:"totp_algorithm,omitzero"`
 	// Field name to value mapping. Values are merged with existing values (new keys
 	// added, existing keys overwritten).
 	Values map[string]string `json:"values,omitzero"`
@@ -234,6 +296,16 @@ func (r UpdateCredentialRequestParam) MarshalJSON() (data []byte, err error) {
 func (r *UpdateCredentialRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// HMAC algorithm used to generate TOTP codes. Requires totp_secret and is ignored
+// when an `otpauth://` URI supplies the algorithm.
+type UpdateCredentialRequestTotpAlgorithm string
+
+const (
+	UpdateCredentialRequestTotpAlgorithmSha1   UpdateCredentialRequestTotpAlgorithm = "SHA1"
+	UpdateCredentialRequestTotpAlgorithmSha256 UpdateCredentialRequestTotpAlgorithm = "SHA256"
+	UpdateCredentialRequestTotpAlgorithmSha512 UpdateCredentialRequestTotpAlgorithm = "SHA512"
+)
 
 type CredentialTotpCodeResponse struct {
 	// Current 6-digit TOTP code
