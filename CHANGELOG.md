@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.118.0](https://github.com/kernel/kernel-go-sdk/compare/v0.117.0...v0.118.0) (2026-10-02)
+
+
+### Features
+
+* Add a query filter to the vault list endpoint ([0aa2b3c](https://github.com/kernel/kernel-go-sdk/commit/0aa2b3c772eb7eff991947d84a8f0bbb3a879abe))
+* Add Kernel wallets backed by VGS agentic network tokens, with hosted card capture ([a137823](https://github.com/kernel/kernel-go-sdk/commit/a1378239c479aeeb6d360e0719426ff0c9821da6))
+
 ## [0.117.0](https://github.com/kernel/kernel-go-sdk/compare/v0.116.0...v0.117.0) (2026-10-02)
 
 

@@ -52,6 +52,7 @@ func TestVaultListWithOptionalParams(t *testing.T) {
 	_, err := client.Vaults.List(context.TODO(), kernel.VaultListParams{
 		Limit:  kernel.Int(1),
 		Offset: kernel.Int(0),
+		Query:  kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error

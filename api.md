@@ -533,7 +533,9 @@ Params Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialVaultItemSpecUpdateParam">CredentialVaultItemSpecUpdateParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialVaultItemUpdateRequestParam">CredentialVaultItemUpdateRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#FillVaultItemOperationRequestParam">FillVaultItemOperationRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelCardVaultItemSpecParam">KernelCardVaultItemSpecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelCredentialVaultItemSpecInputParam">KernelCredentialVaultItemSpecInputParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelWalletVaultItemSpecParam">KernelWalletVaultItemSpecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialAccountSpecParam">OnePasswordCredentialAccountSpecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialVaultItemSpecInputParam">OnePasswordCredentialVaultItemSpecInputParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordFillVaultItemOperationRequestParam">OnePasswordFillVaultItemOperationRequestParam</a>
@@ -561,8 +563,12 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialVaultItemSpecUnion">CredentialVaultItemSpecUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CredentialVaultItemStateUnion">CredentialVaultItemStateUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#FillVaultItemOperationResult">FillVaultItemOperationResult</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelCardState">KernelCardState</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelCardVaultItemSpec">KernelCardVaultItemSpec</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelCredentialVaultItemSpec">KernelCredentialVaultItemSpec</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelCredentialVaultItemState">KernelCredentialVaultItemState</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelWalletState">KernelWalletState</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelWalletVaultItemSpec">KernelWalletVaultItemSpec</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialAccountSpec">OnePasswordCredentialAccountSpec</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialAccountState">OnePasswordCredentialAccountState</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialVaultItemSpec">OnePasswordCredentialVaultItemSpec</a>
