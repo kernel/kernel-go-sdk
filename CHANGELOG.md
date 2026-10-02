@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.117.0](https://github.com/kernel/kernel-go-sdk/compare/v0.116.0...v0.117.0) (2026-10-02)
+
+
+### Features
+
+* Invoke WebMCP tools with vault item fields ([615cfaf](https://github.com/kernel/kernel-go-sdk/commit/615cfaf0c5a80549cba3cd643c00b58c517f5475))
+
 ## [0.116.0](https://github.com/kernel/kernel-go-sdk/compare/v0.115.0...v0.116.0) (2026-10-01)
 
 
