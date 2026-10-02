@@ -1291,7 +1291,7 @@ type CredentialAccountVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "collect", "prepare_checkout", "fill",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1632,7 +1632,7 @@ type CredentialVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "collect", "prepare_checkout", "fill",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -3753,7 +3753,7 @@ type VaultItemWalletAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "collect", "prepare_checkout", "fill",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -3854,7 +3854,7 @@ type VaultItemCardAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "collect", "prepare_checkout", "fill",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4137,7 +4137,8 @@ func (r *VaultItemEvent) UnmarshalJSON(data []byte) error {
 // [VaultItemOperationResponseWalletVaultItem],
 // [VaultItemOperationResponseCardVaultItem], [CredentialAccountVaultItem],
 // [CredentialVaultItem], [FillVaultItemOperationResult],
-// [OnePasswordFillVaultItemOperationResult].
+// [OnePasswordFillVaultItemOperationResult],
+// [WebmcpInvokeVaultItemOperationResult].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type VaultItemOperationResponseUnion struct {
@@ -4177,7 +4178,13 @@ type VaultItemOperationResponseUnion struct {
 	Status string                 `json:"status"`
 	// This field is from variant [OnePasswordFillVaultItemOperationResult].
 	ErrorCode OnePasswordFillVaultItemOperationResultErrorCode `json:"error_code"`
-	JSON      struct {
+	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
+	ErrorText string `json:"error_text"`
+	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
+	InvocationID string `json:"invocation_id"`
+	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
+	Output any `json:"output"`
+	JSON   struct {
 		ID                  respjson.Field
 		AvailableExpansions respjson.Field
 		AvailableOperations respjson.Field
@@ -4194,6 +4201,9 @@ type VaultItemOperationResponseUnion struct {
 		Fields              respjson.Field
 		Status              respjson.Field
 		ErrorCode           respjson.Field
+		ErrorText           respjson.Field
+		InvocationID        respjson.Field
+		Output              respjson.Field
 		raw                 string
 	} `json:"-"`
 }
@@ -4224,6 +4234,11 @@ func (u VaultItemOperationResponseUnion) AsFillVaultItemOperationResult() (v Fil
 }
 
 func (u VaultItemOperationResponseUnion) AsOnePasswordFillVaultItemOperationResult() (v OnePasswordFillVaultItemOperationResult) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsWebmcpInvokeVaultItemOperationResult() (v WebmcpInvokeVaultItemOperationResult) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -4616,7 +4631,7 @@ type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "collect", "prepare_checkout", "fill",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4722,7 +4737,7 @@ type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "collect", "prepare_checkout", "fill",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4824,6 +4839,29 @@ type VaultPaymentMethodDisplay struct {
 // Returns the unmodified JSON received from the API
 func (r VaultPaymentMethodDisplay) RawJSON() string { return r.JSON.raw }
 func (r *VaultPaymentMethodDisplay) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Field, InputPath are required.
+type VaultWebmcpBindingParam struct {
+	// A declared, populated credential field or supported card field. A TOTP field
+	// supplies a fresh code, never its seed.
+	Field string `json:"field" api:"required"`
+	// RFC 6901 JSON Pointer to an existing null value in input. Object keys are exact;
+	// array indices must be canonical and in range. No root or array-append paths.
+	// Each path and each field may occur only once.
+	InputPath string `json:"input_path" api:"required"`
+	// Required for card expiration (MM/YY or MM/YYYY), forbidden for other fields.
+	// Invalid formats are rejected before invocation.
+	Format param.Opt[string] `json:"format,omitzero"`
+	paramObj
+}
+
+func (r VaultWebmcpBindingParam) MarshalJSON() (data []byte, err error) {
+	type shadow VaultWebmcpBindingParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultWebmcpBindingParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5224,6 +5262,108 @@ func (r *WalletVaultItemStateAgentcard) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Invoke a WebMCP tool using values from a vaulted item. The browser must be
+// attached to the item's vault. Discover the tool_ref, inputSchema, and source
+// with GET /browsers/{id_or_name}/webmcp/tools or webmcp.listTools() in the
+// Browser REPL (POST /browsers/{id_or_name}/repl) before invoking it. Input paths
+// replace existing null slots in input. Tool output is returned without redaction
+// and may include the supplied values. The tool may submit or perform other side
+// effects. Any item destination restrictions apply to the tool's top-level page
+// and registering frame (if any).
+//
+// The properties Bindings, BrowserID, Input, PageURL, ToolRef, Type are required.
+type WebmcpInvokeVaultItemOperationRequestParam struct {
+	Bindings []VaultWebmcpBindingParam `json:"bindings,omitzero" api:"required"`
+	// Browser session ID, not a reusable browser name.
+	BrowserID string `json:"browser_id" api:"required"`
+	// Public tool arguments with an existing null slot at each binding path. At most
+	// 64 KiB after JSON serialization, including substituted values. Never include
+	// vault values here.
+	Input map[string]any `json:"input,omitzero" api:"required"`
+	// Exact top-level URL from the discovered tool source (fragment omitted). This
+	// pins the target page; it does not authorize a destination.
+	PageURL string `json:"page_url" api:"required" format:"uri"`
+	// Opaque reference to the exact live WebMCP registration.
+	ToolRef string `json:"tool_ref" api:"required"`
+	// Any of "webmcp_invoke".
+	Type WebmcpInvokeVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Tool invocation timeout in seconds; preflight and response handling have an
+	// additional bounded allowance. An indeterminate outcome is not retried.
+	TimeoutSec param.Opt[int64] `json:"timeout_sec,omitzero"`
+	paramObj
+}
+
+func (r WebmcpInvokeVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow WebmcpInvokeVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *WebmcpInvokeVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type WebmcpInvokeVaultItemOperationRequestType string
+
+const (
+	WebmcpInvokeVaultItemOperationRequestTypeWebmcpInvoke WebmcpInvokeVaultItemOperationRequestType = "webmcp_invoke"
+)
+
+// Returns the same tool result fields as the browser WebMCP invoke API, plus the
+// vault operation discriminator. Output and error text are untrusted page-provided
+// data, returned without redaction; tools may include supplied vault values.
+// Inspect the browser page to determine whether the intended site action
+// succeeded.
+type WebmcpInvokeVaultItemOperationResult struct {
+	// Unknown means invocation may have run; do not retry automatically. No status
+	// confirms that the website accepted the action.
+	//
+	// Any of "completed", "canceled", "error", "awaiting_submission", "unknown".
+	Status WebmcpInvokeVaultItemOperationResultStatus `json:"status" api:"required"`
+	// Any of "webmcp_invoke".
+	Type WebmcpInvokeVaultItemOperationResultType `json:"type" api:"required"`
+	// Untrusted page-provided error text, returned without redaction. May contain
+	// supplied vault values.
+	ErrorText string `json:"error_text"`
+	// Present when the browser reported one.
+	InvocationID string `json:"invocation_id"`
+	// Untrusted page-provided output, returned without redaction. May contain supplied
+	// vault values.
+	Output any `json:"output"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Status       respjson.Field
+		Type         respjson.Field
+		ErrorText    respjson.Field
+		InvocationID respjson.Field
+		Output       respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r WebmcpInvokeVaultItemOperationResult) RawJSON() string { return r.JSON.raw }
+func (r *WebmcpInvokeVaultItemOperationResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Unknown means invocation may have run; do not retry automatically. No status
+// confirms that the website accepted the action.
+type WebmcpInvokeVaultItemOperationResultStatus string
+
+const (
+	WebmcpInvokeVaultItemOperationResultStatusCompleted          WebmcpInvokeVaultItemOperationResultStatus = "completed"
+	WebmcpInvokeVaultItemOperationResultStatusCanceled           WebmcpInvokeVaultItemOperationResultStatus = "canceled"
+	WebmcpInvokeVaultItemOperationResultStatusError              WebmcpInvokeVaultItemOperationResultStatus = "error"
+	WebmcpInvokeVaultItemOperationResultStatusAwaitingSubmission WebmcpInvokeVaultItemOperationResultStatus = "awaiting_submission"
+	WebmcpInvokeVaultItemOperationResultStatusUnknown            WebmcpInvokeVaultItemOperationResultStatus = "unknown"
+)
+
+type WebmcpInvokeVaultItemOperationResultType string
+
+const (
+	WebmcpInvokeVaultItemOperationResultTypeWebmcpInvoke WebmcpInvokeVaultItemOperationResultType = "webmcp_invoke"
+)
+
 type VaultItemGetParams struct {
 	IDOrName string `path:"id_or_name" api:"required" json:"-"`
 	// Hold for up to this many seconds while the item is pending authorization,
@@ -5417,6 +5557,16 @@ type VaultItemPerformOperationParams struct {
 	// integration key, request and approved references. Does not invoke 1Password or
 	// retry a pending/uncertain operation.
 	Of1pwUpdateAccessToken *VaultItemPerformOperationParamsBody1pwUpdateAccessToken `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Invoke
+	// a WebMCP tool using values from a vaulted item. The browser must be attached to
+	// the item's vault. Discover the tool_ref, inputSchema, and source with GET
+	// /browsers/{id_or_name}/webmcp/tools or webmcp.listTools() in the Browser REPL
+	// (POST /browsers/{id_or_name}/repl) before invoking it. Input paths replace
+	// existing null slots in input. Tool output is returned without redaction and may
+	// include the supplied values. The tool may submit or perform other side effects.
+	// Any item destination restrictions apply to the tool's top-level page and
+	// registering frame (if any).
+	OfWebmcpInvoke *WebmcpInvokeVaultItemOperationRequestParam `json:",inline"`
 
 	paramObj
 }
@@ -5430,7 +5580,8 @@ func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 		u.Of1pwAccessRequestStatus,
 		u.Of1pwFill,
 		u.Of1pwRecover,
-		u.Of1pwUpdateAccessToken)
+		u.Of1pwUpdateAccessToken,
+		u.OfWebmcpInvoke)
 }
 func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
