@@ -5,7 +5,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([73817c0](https://github.com/kernel/kernel-go-sdk/commit/73817c0b9c4e93502daf9ecaa0bcf27e11e827bb))
+* Add managed auth provider to vault credential items ([73817c0](https://github.com/kernel/kernel-go-sdk/commit/73817c0b9c4e93502daf9ecaa0bcf27e11e827bb))
 
 ## [0.118.0](https://github.com/kernel/kernel-go-sdk/compare/v0.117.0...v0.118.0) (2026-10-02)
 
