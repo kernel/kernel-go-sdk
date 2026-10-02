@@ -127,6 +127,8 @@ func (r *Vault) UnmarshalJSON(data []byte) error {
 type VaultListParams struct {
 	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Case-insensitive substring match against vault name. IDs match by exact value.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
 
