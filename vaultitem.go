@@ -112,7 +112,8 @@ func (r *VaultItemService) List(ctx context.Context, idOrName string, opts ...op
 // recovery_required whose checkout create response returned no authorization ID
 // may be explicitly abandoned by deleting that card directly; deleting its wallet
 // or vault remains blocked. Deleting or recreating an item is not proof that a
-// payment did not occur.
+// payment did not occur. Deleting a managed auth credential item leaves the
+// connection and its saved credential unchanged.
 func (r *VaultItemService) Delete(ctx context.Context, key string, body VaultItemDeleteParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -1583,7 +1584,8 @@ type CredentialVaultItem struct {
 	// Kernel credentials advertise collect and fill when eligible. 1Password
 	// credentials advertise 1pw_create_access_request until a request is made,
 	// 1pw_access_request_status while its approval is pending, and 1pw_fill after
-	// access is granted.
+	// access is granted. Managed auth credentials advertise fill while ready and
+	// nothing otherwise.
 	AvailableOperations []CredentialVaultItemAvailableOperation `json:"available_operations" api:"required"`
 	CreatedAt           time.Time                               `json:"created_at" api:"required" format:"date-time"`
 	// Immutable item key assigned when the item is created.
@@ -1596,7 +1598,8 @@ type CredentialVaultItem struct {
 	Type      CredentialVaultItemType `json:"type" api:"required"`
 	UpdatedAt time.Time               `json:"updated_at" api:"required" format:"date-time"`
 	// Starts at 1 and increments on PATCH and successful hosted submission, but not
-	// collection-link renewal.
+	// collection-link renewal. Managed auth credentials stay at 1; changes to the
+	// underlying credential are read at fill time and do not change the version.
 	Version int64 `json:"version" api:"required"`
 	// One schema-derived form for the item, available in ready or pending_collection
 	// state. Render every form-supported field as editable; omit totp fields and
@@ -1800,7 +1803,9 @@ func (r *CredentialVaultItemAction1passwordAccessApproval) UnmarshalJSON(data []
 // declare fields and may enter pending_collection. 1Password credentials either
 // reference a connected credential_account or store a supplied access token and
 // integration key encrypted on the item. They store no login values or selectors.
-// Repeating the original creation request returns the current item without
+// Managed auth credentials reference a managed auth connection in the same project
+// that already has a saved credential, and read it at fill time; they store no
+// values. Repeating the original creation request returns the current item without
 // overwriting later state. A different request at the same key returns 409.
 //
 // The properties Spec, Type are required.
@@ -1831,7 +1836,8 @@ const (
 )
 
 // CredentialVaultItemSpecUnion contains all possible properties and values from
-// [KernelCredentialVaultItemSpec], [OnePasswordCredentialVaultItemSpec].
+// [KernelCredentialVaultItemSpec], [OnePasswordCredentialVaultItemSpec],
+// [ManagedAuthCredentialVaultItemSpec].
 //
 // Use the [CredentialVaultItemSpecUnion.AsAny] method to switch on the variant.
 //
@@ -1839,9 +1845,8 @@ const (
 type CredentialVaultItemSpecUnion struct {
 	// This field is from variant [KernelCredentialVaultItemSpec].
 	Fields []CredentialVaultFieldDefinition `json:"fields"`
-	// Any of "kernel", "1password".
-	Provider string `json:"provider"`
-	// This field is from variant [KernelCredentialVaultItemSpec].
+	// Any of "kernel", "1password", "managed_auth".
+	Provider    string `json:"provider"`
 	Description string `json:"description"`
 	// This field is from variant [OnePasswordCredentialVaultItemSpec].
 	Requests OnePasswordCredentialVaultItemSpecRequests `json:"requests"`
@@ -1849,13 +1854,16 @@ type CredentialVaultItemSpecUnion struct {
 	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
 	// This field is from variant [OnePasswordCredentialVaultItemSpec].
 	Account string `json:"account"`
-	JSON    struct {
+	// This field is from variant [ManagedAuthCredentialVaultItemSpec].
+	ConnectionID string `json:"connection_id"`
+	JSON         struct {
 		Fields               respjson.Field
 		Provider             respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
 		AccessTokenExpiresAt respjson.Field
 		Account              respjson.Field
+		ConnectionID         respjson.Field
 		raw                  string
 	} `json:"-"`
 }
@@ -1869,12 +1877,14 @@ type anyCredentialVaultItemSpec interface {
 
 func (KernelCredentialVaultItemSpec) implCredentialVaultItemSpecUnion()      {}
 func (OnePasswordCredentialVaultItemSpec) implCredentialVaultItemSpecUnion() {}
+func (ManagedAuthCredentialVaultItemSpec) implCredentialVaultItemSpecUnion() {}
 
 // Use the following switch statement to find the correct variant
 //
 //	switch variant := CredentialVaultItemSpecUnion.AsAny().(type) {
 //	case kernel.KernelCredentialVaultItemSpec:
 //	case kernel.OnePasswordCredentialVaultItemSpec:
+//	case kernel.ManagedAuthCredentialVaultItemSpec:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -1884,6 +1894,8 @@ func (u CredentialVaultItemSpecUnion) AsAny() anyCredentialVaultItemSpec {
 		return u.AsKernel()
 	case "1password":
 		return u.As1password()
+	case "managed_auth":
+		return u.AsManagedAuth()
 	}
 	return nil
 }
@@ -1894,6 +1906,11 @@ func (u CredentialVaultItemSpecUnion) AsKernel() (v KernelCredentialVaultItemSpe
 }
 
 func (u CredentialVaultItemSpecUnion) As1password() (v OnePasswordCredentialVaultItemSpec) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u CredentialVaultItemSpecUnion) AsManagedAuth() (v ManagedAuthCredentialVaultItemSpec) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -1917,17 +1934,24 @@ func CredentialVaultItemSpecInputParamOf1password(provider OnePasswordCredential
 	return CredentialVaultItemSpecInputUnionParam{Of1password: &number_1password}
 }
 
+func CredentialVaultItemSpecInputParamOfManagedAuth(connectionID string) CredentialVaultItemSpecInputUnionParam {
+	var managedAuth ManagedAuthCredentialVaultItemSpecInputParam
+	managedAuth.ConnectionID = connectionID
+	return CredentialVaultItemSpecInputUnionParam{OfManagedAuth: &managedAuth}
+}
+
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
 type CredentialVaultItemSpecInputUnionParam struct {
-	OfKernel    *KernelCredentialVaultItemSpecInputParam      `json:",omitzero,inline"`
-	Of1password *OnePasswordCredentialVaultItemSpecInputParam `json:",omitzero,inline"`
+	OfKernel      *KernelCredentialVaultItemSpecInputParam      `json:",omitzero,inline"`
+	Of1password   *OnePasswordCredentialVaultItemSpecInputParam `json:",omitzero,inline"`
+	OfManagedAuth *ManagedAuthCredentialVaultItemSpecInputParam `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u CredentialVaultItemSpecInputUnionParam) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfKernel, u.Of1password)
+	return param.MarshalUnion(u, u.OfKernel, u.Of1password, u.OfManagedAuth)
 }
 func (u *CredentialVaultItemSpecInputUnionParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -1938,6 +1962,8 @@ func (u *CredentialVaultItemSpecInputUnionParam) asAny() any {
 		return u.OfKernel
 	} else if !param.IsOmitted(u.Of1password) {
 		return u.Of1password
+	} else if !param.IsOmitted(u.OfManagedAuth) {
+		return u.OfManagedAuth
 	}
 	return nil
 }
@@ -1946,14 +1972,6 @@ func (u *CredentialVaultItemSpecInputUnionParam) asAny() any {
 func (u CredentialVaultItemSpecInputUnionParam) GetFields() []CredentialVaultFieldInputParam {
 	if vt := u.OfKernel; vt != nil {
 		return vt.Fields
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u CredentialVaultItemSpecInputUnionParam) GetDescription() *string {
-	if vt := u.OfKernel; vt != nil && vt.Description.Valid() {
-		return &vt.Description.Value
 	}
 	return nil
 }
@@ -2007,11 +2025,31 @@ func (u CredentialVaultItemSpecInputUnionParam) GetWebsite() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u CredentialVaultItemSpecInputUnionParam) GetConnectionID() *string {
+	if vt := u.OfManagedAuth; vt != nil {
+		return &vt.ConnectionID
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u CredentialVaultItemSpecInputUnionParam) GetProvider() *string {
 	if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Provider)
 	} else if vt := u.Of1password; vt != nil {
 		return (*string)(&vt.Provider)
+	} else if vt := u.OfManagedAuth; vt != nil {
+		return (*string)(&vt.Provider)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CredentialVaultItemSpecInputUnionParam) GetDescription() *string {
+	if vt := u.OfKernel; vt != nil && vt.Description.Valid() {
+		return &vt.Description.Value
+	} else if vt := u.OfManagedAuth; vt != nil && vt.Description.Valid() {
+		return &vt.Description.Value
 	}
 	return nil
 }
@@ -2021,6 +2059,7 @@ func init() {
 		"provider",
 		apijson.Discriminator[KernelCredentialVaultItemSpecInputParam]("kernel"),
 		apijson.Discriminator[OnePasswordCredentialVaultItemSpecInputParam]("1password"),
+		apijson.Discriminator[ManagedAuthCredentialVaultItemSpecInputParam]("managed_auth"),
 	)
 }
 
@@ -2042,24 +2081,25 @@ func (r *CredentialVaultItemSpecUpdateParam) UnmarshalJSON(data []byte) error {
 }
 
 // CredentialVaultItemStateUnion contains all possible properties and values from
-// [KernelCredentialVaultItemState], [OnePasswordCredentialVaultItemState].
+// [KernelCredentialVaultItemState], [OnePasswordCredentialVaultItemState],
+// [ManagedAuthCredentialVaultItemState].
 //
 // Use the [CredentialVaultItemStateUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type CredentialVaultItemStateUnion struct {
-	// This field is from variant [KernelCredentialVaultItemState].
-	Fields map[string]CredentialVaultFieldState `json:"fields"`
-	// Any of "kernel", "1password".
+	// This field is a union of [map[string]CredentialVaultFieldState],
+	// [map[string]ManagedAuthCredentialVaultField]
+	Fields CredentialVaultItemStateUnionFields `json:"fields"`
+	// Any of "kernel", "1password", "managed_auth".
 	Provider string `json:"provider"`
 	Status   string `json:"status"`
 	// This field is from variant [OnePasswordCredentialVaultItemState].
 	AccessRequest OnePasswordCredentialVaultItemStateAccessRequest `json:"access_request"`
 	// This field is from variant [OnePasswordCredentialVaultItemState].
 	AccessRequestID string `json:"access_request_id"`
-	// This field is from variant [OnePasswordCredentialVaultItemState].
-	StatusReason string `json:"status_reason"`
-	JSON         struct {
+	StatusReason    string `json:"status_reason"`
+	JSON            struct {
 		Fields          respjson.Field
 		Provider        respjson.Field
 		Status          respjson.Field
@@ -2079,12 +2119,14 @@ type anyCredentialVaultItemState interface {
 
 func (KernelCredentialVaultItemState) implCredentialVaultItemStateUnion()      {}
 func (OnePasswordCredentialVaultItemState) implCredentialVaultItemStateUnion() {}
+func (ManagedAuthCredentialVaultItemState) implCredentialVaultItemStateUnion() {}
 
 // Use the following switch statement to find the correct variant
 //
 //	switch variant := CredentialVaultItemStateUnion.AsAny().(type) {
 //	case kernel.KernelCredentialVaultItemState:
 //	case kernel.OnePasswordCredentialVaultItemState:
+//	case kernel.ManagedAuthCredentialVaultItemState:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -2094,6 +2136,8 @@ func (u CredentialVaultItemStateUnion) AsAny() anyCredentialVaultItemState {
 		return u.AsKernel()
 	case "1password":
 		return u.As1password()
+	case "managed_auth":
+		return u.AsManagedAuth()
 	}
 	return nil
 }
@@ -2108,10 +2152,40 @@ func (u CredentialVaultItemStateUnion) As1password() (v OnePasswordCredentialVau
 	return
 }
 
+func (u CredentialVaultItemStateUnion) AsManagedAuth() (v ManagedAuthCredentialVaultItemState) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u CredentialVaultItemStateUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *CredentialVaultItemStateUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// CredentialVaultItemStateUnionFields is an implicit subunion of
+// [CredentialVaultItemStateUnion]. CredentialVaultItemStateUnionFields provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [CredentialVaultItemStateUnion].
+type CredentialVaultItemStateUnionFields struct {
+	// This field is from variant [map[string]CredentialVaultFieldState].
+	HasValue bool `json:"has_value"`
+	// This field is from variant [map[string]CredentialVaultFieldState].
+	Value string `json:"value"`
+	// This field is from variant [map[string]ManagedAuthCredentialVaultField].
+	Type CredentialVaultFieldType `json:"type"`
+	JSON struct {
+		HasValue respjson.Field
+		Value    respjson.Field
+		Type     respjson.Field
+		raw      string
+	} `json:"-"`
+}
+
+func (r *CredentialVaultItemStateUnionFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2122,7 +2196,8 @@ func (r *CredentialVaultItemStateUnion) UnmarshalJSON(data []byte) error {
 // invalidates outstanding Kernel-hosted collection sessions. If required values
 // remain missing, return pending_collection and a fresh collection action.
 // Otherwise return ready without an action; collect can open the form again
-// without clearing values. Customer URLs have no Kernel-managed expiry.
+// without clearing values. Customer URLs have no Kernel-managed expiry. 1Password
+// and managed auth credentials return 409.
 //
 // The properties Spec, Type, Version are required.
 type CredentialVaultItemUpdateRequestParam struct {
@@ -2657,6 +2732,171 @@ func (r KernelWalletVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
 func (r *KernelWalletVaultItemSpecParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type ManagedAuthCredentialVaultField struct {
+	// Text, email, and password have form inputs; totp does not and is omitted from
+	// both Kernel-hosted and customer React forms. Password and totp must be
+	// sensitive. A totp value is an RFC 4648 Base32 generator seed (case-insensitive,
+	// optional trailing padding), not an otpauth URI or current code. Reject invalid
+	// or empty decoded seeds. Browser fill generates an RFC 6238 code at execution
+	// time using HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros;
+	// never fill the seed. Custom algorithms, digits, periods, and form enrollment are
+	// unsupported.
+	//
+	// Any of "text", "email", "password", "totp".
+	Type CredentialVaultFieldType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthCredentialVaultField) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthCredentialVaultField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ManagedAuthCredentialVaultItemSpec struct {
+	// ID of the managed auth connection whose saved credential this item reads. List
+	// connections with `GET /auth/connections`.
+	ConnectionID string `json:"connection_id" api:"required"`
+	// Any of "managed_auth".
+	Provider ManagedAuthCredentialVaultItemSpecProvider `json:"provider" api:"required"`
+	// Display text supplied when the item was created. Omitted when none was given.
+	Description string `json:"description"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ConnectionID respjson.Field
+		Provider     respjson.Field
+		Description  respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthCredentialVaultItemSpec) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthCredentialVaultItemSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ManagedAuthCredentialVaultItemSpecProvider string
+
+const (
+	ManagedAuthCredentialVaultItemSpecProviderManagedAuth ManagedAuthCredentialVaultItemSpecProvider = "managed_auth"
+)
+
+// A credential backed by a managed auth connection. The item stores no values: it
+// reads the connection's saved credential at fill time, so updates made through
+// managed auth apply immediately. The connection must be in the vault's project
+// and hold a saved Kernel credential. The check is the saved credential, not
+// connection status: a connection that needs re-authentication qualifies, and an
+// authenticated one without a saved credential does not. Returns 404 for an
+// unknown connection, and 409 when the connection is in another project, has no
+// saved credential yet, or uses an external credential provider such as 1Password.
+// No collection form is offered; managed auth collects the login.
+//
+// The properties ConnectionID, Provider are required.
+type ManagedAuthCredentialVaultItemSpecInputParam struct {
+	// ID of the managed auth connection whose saved credential this item reads. List
+	// connections with `GET /auth/connections`.
+	ConnectionID string `json:"connection_id" api:"required"`
+	// Any of "managed_auth".
+	Provider ManagedAuthCredentialVaultItemSpecInputProvider `json:"provider,omitzero" api:"required"`
+	// Optional display text for the item, such as the site or service name. Set at
+	// creation and cannot be changed later; repeating the request with a different
+	// description returns 409. At most 16 KiB in UTF-8 bytes.
+	Description param.Opt[string] `json:"description,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthCredentialVaultItemSpecInputParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthCredentialVaultItemSpecInputParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthCredentialVaultItemSpecInputParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ManagedAuthCredentialVaultItemSpecInputProvider string
+
+const (
+	ManagedAuthCredentialVaultItemSpecInputProviderManagedAuth ManagedAuthCredentialVaultItemSpecInputProvider = "managed_auth"
+)
+
+type ManagedAuthCredentialVaultItemState struct {
+	// Any of "managed_auth".
+	Provider ManagedAuthCredentialVaultItemStateProvider `json:"provider" api:"required"`
+	// Items are created ready, which means the connection has a saved Kernel
+	// credential that stores values or a TOTP seed (what has_values or has_totp_secret
+	// report on credentials), not that a login succeeded. Unavailable means it no
+	// longer does; such items advertise no operations.
+	//
+	// Any of "ready", "unavailable".
+	Status ManagedAuthCredentialVaultItemStateStatus `json:"status" api:"required"`
+	// One entry per non-empty value on the connection's saved credential, keyed by the
+	// field name to use in fill bindings. Included on single-item responses (create
+	// and get) and omitted from list responses, like `value_keys` on credentials.
+	// Empty when unavailable or when every stored value is empty. A stored value named
+	// totp_secret is never listed or filled. Values are never returned. A totp entry
+	// is present when the credential has a TOTP seed; fill writes a generated code for
+	// it. Entries follow the connection's credential.
+	Fields map[string]ManagedAuthCredentialVaultField `json:"fields"`
+	// Present when status is unavailable. connection_not_found means the connection
+	// was deleted. no_credential means the connection's credential was deleted or
+	// emptied after the item was created. external_credential means the connection was
+	// moved to an external credential provider.
+	//
+	// Any of "connection_not_found", "no_credential", "external_credential".
+	StatusReason ManagedAuthCredentialVaultItemStateStatusReason `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider     respjson.Field
+		Status       respjson.Field
+		Fields       respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthCredentialVaultItemState) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthCredentialVaultItemState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ManagedAuthCredentialVaultItemStateProvider string
+
+const (
+	ManagedAuthCredentialVaultItemStateProviderManagedAuth ManagedAuthCredentialVaultItemStateProvider = "managed_auth"
+)
+
+// Items are created ready, which means the connection has a saved Kernel
+// credential that stores values or a TOTP seed (what has_values or has_totp_secret
+// report on credentials), not that a login succeeded. Unavailable means it no
+// longer does; such items advertise no operations.
+type ManagedAuthCredentialVaultItemStateStatus string
+
+const (
+	ManagedAuthCredentialVaultItemStateStatusReady       ManagedAuthCredentialVaultItemStateStatus = "ready"
+	ManagedAuthCredentialVaultItemStateStatusUnavailable ManagedAuthCredentialVaultItemStateStatus = "unavailable"
+)
+
+// Present when status is unavailable. connection_not_found means the connection
+// was deleted. no_credential means the connection's credential was deleted or
+// emptied after the item was created. external_credential means the connection was
+// moved to an external credential provider.
+type ManagedAuthCredentialVaultItemStateStatusReason string
+
+const (
+	ManagedAuthCredentialVaultItemStateStatusReasonConnectionNotFound ManagedAuthCredentialVaultItemStateStatusReason = "connection_not_found"
+	ManagedAuthCredentialVaultItemStateStatusReasonNoCredential       ManagedAuthCredentialVaultItemStateStatusReason = "no_credential"
+	ManagedAuthCredentialVaultItemStateStatusReasonExternalCredential ManagedAuthCredentialVaultItemStateStatusReason = "external_credential"
+)
 
 type OnePasswordCredentialAccountSpec struct {
 	Authorization OnePasswordCredentialAccountSpecAuthorization `json:"authorization" api:"required"`
@@ -3515,8 +3755,9 @@ const (
 
 // The properties Field, Selector are required.
 type VaultFillFieldParam struct {
-	// A declared credential field name or a supported card field. Unset credential
-	// fields cannot be filled.
+	// A credential field name from the item's declared fields (Kernel) or state.fields
+	// from a single-item read (managed auth), or a supported card field. Unset
+	// credential fields cannot be filled.
 	Field    string `json:"field" api:"required"`
 	Selector string `json:"selector" api:"required"`
 	// Required only for a card's combined expiration field. Forbidden for other card
@@ -3832,16 +4073,17 @@ type VaultItemUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
-	Fields []CredentialVaultFieldDefinition `json:"fields"`
-	// This field is from variant [CredentialVaultItemSpecUnion].
-	Description string `json:"description"`
+	Fields      []CredentialVaultFieldDefinition `json:"fields"`
+	Description string                           `json:"description"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Requests OnePasswordCredentialVaultItemSpecRequests `json:"requests"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Account string `json:"account"`
-	JSON    struct {
+	// This field is from variant [CredentialVaultItemSpecUnion].
+	ConnectionID string `json:"connection_id"`
+	JSON         struct {
 		Authorization        respjson.Field
 		Provider             respjson.Field
 		ProviderConfig       respjson.Field
@@ -3865,6 +4107,7 @@ type VaultItemUnionSpec struct {
 		Requests             respjson.Field
 		AccessTokenExpiresAt respjson.Field
 		Account              respjson.Field
+		ConnectionID         respjson.Field
 		raw                  string
 	} `json:"-"`
 }
@@ -3938,8 +4181,9 @@ type VaultItemUnionState struct {
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
-	// This field is from variant [CredentialVaultItemStateUnion].
-	Fields map[string]CredentialVaultFieldState `json:"fields"`
+	// This field is a union of [map[string]CredentialVaultFieldState],
+	// [map[string]ManagedAuthCredentialVaultField]
+	Fields VaultItemUnionStateFields `json:"fields"`
 	// This field is from variant [CredentialVaultItemStateUnion].
 	AccessRequest OnePasswordCredentialVaultItemStateAccessRequest `json:"access_request"`
 	// This field is from variant [CredentialVaultItemStateUnion].
@@ -3984,6 +4228,31 @@ type VaultItemUnionStateMasks struct {
 }
 
 func (r *VaultItemUnionStateMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemUnionStateFields is an implicit subunion of [VaultItemUnion].
+// VaultItemUnionStateFields provides convenient access to the sub-properties of
+// the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemUnion].
+type VaultItemUnionStateFields struct {
+	// This field is from variant [map[string]CredentialVaultFieldState].
+	HasValue bool `json:"has_value"`
+	// This field is from variant [map[string]CredentialVaultFieldState].
+	Value string `json:"value"`
+	// This field is from variant [map[string]ManagedAuthCredentialVaultField].
+	Type CredentialVaultFieldType `json:"type"`
+	JSON struct {
+		HasValue respjson.Field
+		Value    respjson.Field
+		Type     respjson.Field
+		raw      string
+	} `json:"-"`
+}
+
+func (r *VaultItemUnionStateFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -4704,16 +4973,17 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
-	Fields []CredentialVaultFieldDefinition `json:"fields"`
-	// This field is from variant [CredentialVaultItemSpecUnion].
-	Description string `json:"description"`
+	Fields      []CredentialVaultFieldDefinition `json:"fields"`
+	Description string                           `json:"description"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Requests OnePasswordCredentialVaultItemSpecRequests `json:"requests"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	AccessTokenExpiresAt time.Time `json:"access_token_expires_at"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Account string `json:"account"`
-	JSON    struct {
+	// This field is from variant [CredentialVaultItemSpecUnion].
+	ConnectionID string `json:"connection_id"`
+	JSON         struct {
 		Authorization        respjson.Field
 		Provider             respjson.Field
 		ProviderConfig       respjson.Field
@@ -4737,6 +5007,7 @@ type VaultItemOperationResponseUnionSpec struct {
 		Requests             respjson.Field
 		AccessTokenExpiresAt respjson.Field
 		Account              respjson.Field
+		ConnectionID         respjson.Field
 		raw                  string
 	} `json:"-"`
 }
@@ -4812,8 +5083,9 @@ type VaultItemOperationResponseUnionState struct {
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
-	// This field is from variant [CredentialVaultItemStateUnion].
-	Fields map[string]CredentialVaultFieldState `json:"fields"`
+	// This field is a union of [map[string]CredentialVaultFieldState],
+	// [map[string]ManagedAuthCredentialVaultField]
+	Fields VaultItemOperationResponseUnionStateFields `json:"fields"`
 	// This field is from variant [CredentialVaultItemStateUnion].
 	AccessRequest OnePasswordCredentialVaultItemStateAccessRequest `json:"access_request"`
 	// This field is from variant [CredentialVaultItemStateUnion].
@@ -4858,6 +5130,31 @@ type VaultItemOperationResponseUnionStateMasks struct {
 }
 
 func (r *VaultItemOperationResponseUnionStateMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionStateFields is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionStateFields
+// provides convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+type VaultItemOperationResponseUnionStateFields struct {
+	// This field is from variant [map[string]CredentialVaultFieldState].
+	HasValue bool `json:"has_value"`
+	// This field is from variant [map[string]CredentialVaultFieldState].
+	Value string `json:"value"`
+	// This field is from variant [map[string]ManagedAuthCredentialVaultField].
+	Type CredentialVaultFieldType `json:"type"`
+	JSON struct {
+		HasValue respjson.Field
+		Value    respjson.Field
+		Type     respjson.Field
+		raw      string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionStateFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5722,6 +6019,7 @@ type VaultItemGetParams struct {
 	// approval, or credential collection. Return the current item when ready or when
 	// the wait elapses. This does not wait for edits to an already-ready credential;
 	// poll GET without wait and compare version to observe changes after collect.
+	// Managed auth credentials are created ready, so wait returns immediately.
 	Wait param.Opt[int64] `query:"wait,omitzero" json:"-"`
 	// Live fields advertised by `available_expansions` to include in `expanded`.
 	//
@@ -5755,7 +6053,8 @@ type VaultItemUpdateParams struct {
 	// invalidates outstanding Kernel-hosted collection sessions. If required values
 	// remain missing, return pending_collection and a fresh collection action.
 	// Otherwise return ready without an action; collect can open the form again
-	// without clearing values. Customer URLs have no Kernel-managed expiry.
+	// without clearing values. Customer URLs have no Kernel-managed expiry. 1Password
+	// and managed auth credentials return 409.
 	OfCredentialVaultItemUpdateRequest *CredentialVaultItemUpdateRequestParam `json:",inline"`
 
 	paramObj
@@ -6010,7 +6309,9 @@ type VaultItemUpsertParams struct {
 	// declare fields and may enter pending_collection. 1Password credentials either
 	// reference a connected credential_account or store a supplied access token and
 	// integration key encrypted on the item. They store no login values or selectors.
-	// Repeating the original creation request returns the current item without
+	// Managed auth credentials reference a managed auth connection in the same project
+	// that already has a saved credential, and read it at fill time; they store no
+	// values. Repeating the original creation request returns the current item without
 	// overwriting later state. A different request at the same key returns 409.
 	OfCredential *CredentialVaultItemRequestParam `json:",inline"`
 

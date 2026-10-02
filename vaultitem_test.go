@@ -244,42 +244,15 @@ func TestVaultItemUpsertWithOptionalParams(t *testing.T) {
 		"x",
 		kernel.VaultItemUpsertParams{
 			IDOrName: "id_or_name",
-			OfCard: &kernel.VaultItemUpsertParamsBodyCard{
-				Spec: kernel.CardVaultItemSpecUnionParam{
-					OfLink: &kernel.CardVaultItemSpecLinkParam{
-						Amount:          2599,
-						Context:         "Purchase one notebook for USD 25.99 including shipping and taxes. This is a new order at Example Store, not a retry of an earlier payment.",
-						Currency:        "usd",
-						MerchantName:    "Example Store",
-						MerchantURL:     "https://store.example.com",
-						PaymentMethodID: "pm_example",
-						Wallet:          "link-wallet",
-						ExpiresAt:       kernel.Int(0),
-						LineItems: []kernel.CardVaultItemSpecLinkLineItemParam{{
-							Name:        "name",
-							Description: kernel.String("description"),
-							ImageURL:    kernel.String("image_url"),
-							ProductURL:  kernel.String("product_url"),
-							Quantity:    kernel.Int(1),
-							SKU:         kernel.String("sku"),
-							Totals: []kernel.CardVaultItemSpecLinkLineItemTotalParam{{
-								Amount:      0,
-								DisplayText: "display_text",
-								Type:        "type",
-							}},
-							UnitAmount: kernel.Int(0),
-							URL:        kernel.String("url"),
-						}},
-						Metadata: map[string]string{
-							"foo": "string",
-						},
-						Totals: []kernel.CardVaultItemSpecLinkTotalParam{{
-							Amount:      0,
-							DisplayText: "display_text",
-							Type:        "type",
-						}},
+			OfCredential: &kernel.CredentialVaultItemRequestParam{
+				Spec: kernel.CredentialVaultItemSpecInputUnionParam{
+					OfManagedAuth: &kernel.ManagedAuthCredentialVaultItemSpecInputParam{
+						ConnectionID: "ma_abc123xyz",
+						Provider:     kernel.ManagedAuthCredentialVaultItemSpecInputProviderManagedAuth,
+						Description:  kernel.String("Amazon"),
 					},
 				},
+				Type: kernel.CredentialVaultItemRequestTypeCredential,
 			},
 		},
 	)
