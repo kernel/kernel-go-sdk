@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.120.0](https://github.com/kernel/kernel-go-sdk/compare/v0.119.0...v0.120.0) (2026-10-06)
+
+
+### Features
+
+* Accept network.allowed_hosts on browser create behind an org flag ([be15dab](https://github.com/kernel/kernel-go-sdk/commit/be15dab89b9b8e2a23c27f8977255a69388ba8a4))
+* Add us-west placement region support ([218107b](https://github.com/kernel/kernel-go-sdk/commit/218107bfe6a52574986b3747eedf28753fe52abe))
+* Add Visa passkey approval for VGS purchases ([418cdfe](https://github.com/kernel/kernel-go-sdk/commit/418cdfed18c8cf129147945463ebeccc22c2fb27))
+* Connect Kernel wallets once the card is stored, with best-effort network tokens ([f96f868](https://github.com/kernel/kernel-go-sdk/commit/f96f8682ead8a515498bb3363da9c68818dcde23))
+* Enable Exa highlights and default Perplexity to medium context ([acf8805](https://github.com/kernel/kernel-go-sdk/commit/acf8805822d0adbfe0be88647246ad0c53448fb2))
+* Expose named Playwright executors on the browser API ([0f34ffb](https://github.com/kernel/kernel-go-sdk/commit/0f34ffb9d53a87043f20e0e8605c057183849299))
+
 ## [0.119.0](https://github.com/kernel/kernel-go-sdk/compare/v0.118.0...v0.119.0) (2026-10-02)
 
 
