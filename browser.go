@@ -905,7 +905,7 @@ type BrowserNewResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserNewResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1030,6 +1030,7 @@ type BrowserNewResponseRegion string
 
 const (
 	BrowserNewResponseRegionUsEast      BrowserNewResponseRegion = "us-east"
+	BrowserNewResponseRegionUsWest      BrowserNewResponseRegion = "us-west"
 	BrowserNewResponseRegionEuWest      BrowserNewResponseRegion = "eu-west"
 	BrowserNewResponseRegionApSoutheast BrowserNewResponseRegion = "ap-southeast"
 )
@@ -1056,7 +1057,7 @@ type BrowserGetResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserGetResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1181,6 +1182,7 @@ type BrowserGetResponseRegion string
 
 const (
 	BrowserGetResponseRegionUsEast      BrowserGetResponseRegion = "us-east"
+	BrowserGetResponseRegionUsWest      BrowserGetResponseRegion = "us-west"
 	BrowserGetResponseRegionEuWest      BrowserGetResponseRegion = "eu-west"
 	BrowserGetResponseRegionApSoutheast BrowserGetResponseRegion = "ap-southeast"
 )
@@ -1207,7 +1209,7 @@ type BrowserUpdateResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserUpdateResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1332,6 +1334,7 @@ type BrowserUpdateResponseRegion string
 
 const (
 	BrowserUpdateResponseRegionUsEast      BrowserUpdateResponseRegion = "us-east"
+	BrowserUpdateResponseRegionUsWest      BrowserUpdateResponseRegion = "us-west"
 	BrowserUpdateResponseRegionEuWest      BrowserUpdateResponseRegion = "eu-west"
 	BrowserUpdateResponseRegionApSoutheast BrowserUpdateResponseRegion = "ap-southeast"
 )
@@ -1358,7 +1361,7 @@ type BrowserListResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserListResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1483,6 +1486,7 @@ type BrowserListResponseRegion string
 
 const (
 	BrowserListResponseRegionUsEast      BrowserListResponseRegion = "us-east"
+	BrowserListResponseRegionUsWest      BrowserListResponseRegion = "us-west"
 	BrowserListResponseRegionEuWest      BrowserListResponseRegion = "eu-west"
 	BrowserListResponseRegionApSoutheast BrowserListResponseRegion = "ap-southeast"
 )
@@ -1593,7 +1597,7 @@ type BrowserNewParams struct {
 	// created. Region selection requires a Start-Up or Enterprise plan, defaults to
 	// us-east when omitted on create.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserNewParamsRegion `json:"region,omitzero"`
 	// Optional user-defined key-value tags for the browser session, used to find and
 	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
@@ -1633,6 +1637,7 @@ type BrowserNewParamsRegion string
 
 const (
 	BrowserNewParamsRegionUsEast      BrowserNewParamsRegion = "us-east"
+	BrowserNewParamsRegionUsWest      BrowserNewParamsRegion = "us-west"
 	BrowserNewParamsRegionEuWest      BrowserNewParamsRegion = "eu-west"
 	BrowserNewParamsRegionApSoutheast BrowserNewParamsRegion = "ap-southeast"
 )
@@ -1954,7 +1959,7 @@ type BrowserListParams struct {
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter sessions by geographic region. Omit to list sessions in all regions.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserListParamsRegion `query:"region,omitzero" json:"-"`
 	// Filter sessions by status. "active" returns only active sessions (default),
 	// "deleted" returns only soft-deleted sessions, "all" returns both.
@@ -1981,6 +1986,7 @@ type BrowserListParamsRegion string
 
 const (
 	BrowserListParamsRegionUsEast      BrowserListParamsRegion = "us-east"
+	BrowserListParamsRegionUsWest      BrowserListParamsRegion = "us-west"
 	BrowserListParamsRegionEuWest      BrowserListParamsRegion = "eu-west"
 	BrowserListParamsRegionApSoutheast BrowserListParamsRegion = "ap-southeast"
 )

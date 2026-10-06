@@ -1014,7 +1014,7 @@ type ManagedAuthBrowserConfig struct {
 	// region, or on login to inherit it. Login overrides apply only to that login.
 	// Non-default regions require an eligible plan and organization access.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region ManagedAuthBrowserConfigRegion `json:"region"`
 	// Whether managed auth browser sessions use stealth mode. Defaults to true when
 	// omitted.
@@ -1055,6 +1055,7 @@ type ManagedAuthBrowserConfigRegion string
 
 const (
 	ManagedAuthBrowserConfigRegionUsEast      ManagedAuthBrowserConfigRegion = "us-east"
+	ManagedAuthBrowserConfigRegionUsWest      ManagedAuthBrowserConfigRegion = "us-west"
 	ManagedAuthBrowserConfigRegionEuWest      ManagedAuthBrowserConfigRegion = "eu-west"
 	ManagedAuthBrowserConfigRegionApSoutheast ManagedAuthBrowserConfigRegion = "ap-southeast"
 )
@@ -1204,7 +1205,7 @@ type ManagedAuthBrowserConfigParam struct {
 	// region, or on login to inherit it. Login overrides apply only to that login.
 	// Non-default regions require an eligible plan and organization access.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region ManagedAuthBrowserConfigRegion `json:"region,omitzero"`
 	paramObj
 }
