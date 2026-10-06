@@ -48,7 +48,8 @@ type BrowserService struct {
 	Logs BrowserLogService
 	// Control mouse, keyboard, and screen on the browser instance.
 	Computer BrowserComputerService
-	// Execute Playwright code against the browser instance.
+	// Execute Playwright code against the browser instance and manage the executors it
+	// runs in.
 	Playwright BrowserPlaywrightService
 	// Discover and invoke native page tools across the browser instance.
 	Webmcp BrowserWebmcpService
