@@ -178,7 +178,7 @@ type BrowserPool struct {
 	ExtensionIDs []string `json:"extension_ids" api:"required"`
 	// Geographic region of the browser pool. Fixed once the pool is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserPoolRegion `json:"region" api:"required"`
 	// Browser pool name, if set
 	Name string `json:"name"`
@@ -342,6 +342,7 @@ type BrowserPoolRegion string
 
 const (
 	BrowserPoolRegionUsEast      BrowserPoolRegion = "us-east"
+	BrowserPoolRegionUsWest      BrowserPoolRegion = "us-west"
 	BrowserPoolRegionEuWest      BrowserPoolRegion = "eu-west"
 	BrowserPoolRegionApSoutheast BrowserPoolRegion = "ap-southeast"
 )
@@ -359,7 +360,7 @@ type BrowserPoolAcquireResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserPoolAcquireResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -484,6 +485,7 @@ type BrowserPoolAcquireResponseRegion string
 
 const (
 	BrowserPoolAcquireResponseRegionUsEast      BrowserPoolAcquireResponseRegion = "us-east"
+	BrowserPoolAcquireResponseRegionUsWest      BrowserPoolAcquireResponseRegion = "us-west"
 	BrowserPoolAcquireResponseRegionEuWest      BrowserPoolAcquireResponseRegion = "eu-west"
 	BrowserPoolAcquireResponseRegionApSoutheast BrowserPoolAcquireResponseRegion = "ap-southeast"
 )
@@ -563,7 +565,7 @@ type BrowserPoolNewParams struct {
 	// Region selection requires a Start-Up or Enterprise plan, defaults to us-east
 	// when omitted on create.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserPoolNewParamsRegion `json:"region,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -618,6 +620,7 @@ type BrowserPoolNewParamsRegion string
 
 const (
 	BrowserPoolNewParamsRegionUsEast      BrowserPoolNewParamsRegion = "us-east"
+	BrowserPoolNewParamsRegionUsWest      BrowserPoolNewParamsRegion = "us-west"
 	BrowserPoolNewParamsRegionEuWest      BrowserPoolNewParamsRegion = "eu-west"
 	BrowserPoolNewParamsRegionApSoutheast BrowserPoolNewParamsRegion = "ap-southeast"
 )
@@ -997,7 +1000,7 @@ type BrowserPoolListParams struct {
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter pools by geographic region. Omit to list pools in all regions.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserPoolListParamsRegion `query:"region,omitzero" json:"-"`
 	paramObj
 }
@@ -1015,6 +1018,7 @@ type BrowserPoolListParamsRegion string
 
 const (
 	BrowserPoolListParamsRegionUsEast      BrowserPoolListParamsRegion = "us-east"
+	BrowserPoolListParamsRegionUsWest      BrowserPoolListParamsRegion = "us-west"
 	BrowserPoolListParamsRegionEuWest      BrowserPoolListParamsRegion = "eu-west"
 	BrowserPoolListParamsRegionApSoutheast BrowserPoolListParamsRegion = "ap-southeast"
 )

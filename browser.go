@@ -48,7 +48,8 @@ type BrowserService struct {
 	Logs BrowserLogService
 	// Control mouse, keyboard, and screen on the browser instance.
 	Computer BrowserComputerService
-	// Execute Playwright code against the browser instance.
+	// Execute Playwright code against the browser instance and manage the executors it
+	// runs in.
 	Playwright BrowserPlaywrightService
 	// Discover and invoke native page tools across the browser instance.
 	Webmcp BrowserWebmcpService
@@ -214,6 +215,26 @@ const (
 
 // Network configuration for a browser session or browser pool.
 type BrowserNetworkConfig struct {
+	// Egress allowlist for a browser session: the only destinations the browser may
+	// reach through Kernel-managed egress. Any other destination is refused with a 403
+	// whose X-Kernel-Proxy-Error header is network_policy_denied, so pages cannot load
+	// or send data to unlisted hosts, including with fetch() and WebSockets. Omit the
+	// field for unfiltered egress; an empty list is invalid. The allowlist applies
+	// from the browser's first request, and start_url must be allowed by it. Entries
+	// are exact hostnames ("example.com"), one leading "_." wildcard that matches
+	// subdomains at any depth but not the domain itself ("_.example.com" matches
+	// api.example.com, not example.com), public IPv4 addresses ("8.8.8.8"), bracketed
+	// public IPv6 addresses ("[2001:4860:4860::8888]"), or public CIDR ranges in
+	// canonical form ("8.8.4.0/24", "2001:4860::/32"). IP and CIDR entries only match
+	// destinations written as an IP address, never hostnames that resolve into the
+	// range. Entries cannot include ports, paths, or schemes, and match every port on
+	// their host. Wildcards over a public suffix ("_.com", "_.github.io") and private
+	// or reserved IP ranges are rejected, as are entries that overlap private_hosts.
+	// Enforced at Kernel's egress proxy only: destinations in private_hosts, and
+	// processes in the browser VM that do not use the browser's proxy, are not
+	// filtered, and Kernel's own control traffic is always allowed. Requires proxy v3.
+	// Not supported on browser pools.
+	AllowedHosts []string `json:"allowed_hosts"`
 	// Destinations the browser reaches directly through the session's own network
 	// instead of through Kernel-managed egress — for private hosts reachable over a
 	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
@@ -254,6 +275,7 @@ type BrowserNetworkConfig struct {
 	ProxyRoutes []BrowserNetworkConfigProxyRoute `json:"proxy_routes"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		AllowedHosts respjson.Field
 		PrivateHosts respjson.Field
 		ProxyRoutes  respjson.Field
 		ExtraFields  map[string]respjson.Field
@@ -320,6 +342,26 @@ func (r *BrowserNetworkConfigProxyRouteProxy) UnmarshalJSON(data []byte) error {
 
 // Network configuration for a browser session or browser pool.
 type BrowserNetworkConfigParam struct {
+	// Egress allowlist for a browser session: the only destinations the browser may
+	// reach through Kernel-managed egress. Any other destination is refused with a 403
+	// whose X-Kernel-Proxy-Error header is network_policy_denied, so pages cannot load
+	// or send data to unlisted hosts, including with fetch() and WebSockets. Omit the
+	// field for unfiltered egress; an empty list is invalid. The allowlist applies
+	// from the browser's first request, and start_url must be allowed by it. Entries
+	// are exact hostnames ("example.com"), one leading "_." wildcard that matches
+	// subdomains at any depth but not the domain itself ("_.example.com" matches
+	// api.example.com, not example.com), public IPv4 addresses ("8.8.8.8"), bracketed
+	// public IPv6 addresses ("[2001:4860:4860::8888]"), or public CIDR ranges in
+	// canonical form ("8.8.4.0/24", "2001:4860::/32"). IP and CIDR entries only match
+	// destinations written as an IP address, never hostnames that resolve into the
+	// range. Entries cannot include ports, paths, or schemes, and match every port on
+	// their host. Wildcards over a public suffix ("_.com", "_.github.io") and private
+	// or reserved IP ranges are rejected, as are entries that overlap private_hosts.
+	// Enforced at Kernel's egress proxy only: destinations in private_hosts, and
+	// processes in the browser VM that do not use the browser's proxy, are not
+	// filtered, and Kernel's own control traffic is always allowed. Requires proxy v3.
+	// Not supported on browser pools.
+	AllowedHosts []string `json:"allowed_hosts,omitzero"`
 	// Destinations the browser reaches directly through the session's own network
 	// instead of through Kernel-managed egress — for private hosts reachable over a
 	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
@@ -864,7 +906,7 @@ type BrowserNewResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserNewResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -989,6 +1031,7 @@ type BrowserNewResponseRegion string
 
 const (
 	BrowserNewResponseRegionUsEast      BrowserNewResponseRegion = "us-east"
+	BrowserNewResponseRegionUsWest      BrowserNewResponseRegion = "us-west"
 	BrowserNewResponseRegionEuWest      BrowserNewResponseRegion = "eu-west"
 	BrowserNewResponseRegionApSoutheast BrowserNewResponseRegion = "ap-southeast"
 )
@@ -1015,7 +1058,7 @@ type BrowserGetResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserGetResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1140,6 +1183,7 @@ type BrowserGetResponseRegion string
 
 const (
 	BrowserGetResponseRegionUsEast      BrowserGetResponseRegion = "us-east"
+	BrowserGetResponseRegionUsWest      BrowserGetResponseRegion = "us-west"
 	BrowserGetResponseRegionEuWest      BrowserGetResponseRegion = "eu-west"
 	BrowserGetResponseRegionApSoutheast BrowserGetResponseRegion = "ap-southeast"
 )
@@ -1166,7 +1210,7 @@ type BrowserUpdateResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserUpdateResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1291,6 +1335,7 @@ type BrowserUpdateResponseRegion string
 
 const (
 	BrowserUpdateResponseRegionUsEast      BrowserUpdateResponseRegion = "us-east"
+	BrowserUpdateResponseRegionUsWest      BrowserUpdateResponseRegion = "us-west"
 	BrowserUpdateResponseRegionEuWest      BrowserUpdateResponseRegion = "eu-west"
 	BrowserUpdateResponseRegionApSoutheast BrowserUpdateResponseRegion = "ap-southeast"
 )
@@ -1317,7 +1362,7 @@ type BrowserListResponse struct {
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserListResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
@@ -1442,6 +1487,7 @@ type BrowserListResponseRegion string
 
 const (
 	BrowserListResponseRegionUsEast      BrowserListResponseRegion = "us-east"
+	BrowserListResponseRegionUsWest      BrowserListResponseRegion = "us-west"
 	BrowserListResponseRegionEuWest      BrowserListResponseRegion = "eu-west"
 	BrowserListResponseRegionApSoutheast BrowserListResponseRegion = "ap-southeast"
 )
@@ -1552,7 +1598,7 @@ type BrowserNewParams struct {
 	// created. Region selection requires a Start-Up or Enterprise plan, defaults to
 	// us-east when omitted on create.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserNewParamsRegion `json:"region,omitzero"`
 	// Optional user-defined key-value tags for the browser session, used to find and
 	// group sessions later. Can be changed later via PATCH /browsers/{id_or_name}. Up
@@ -1592,6 +1638,7 @@ type BrowserNewParamsRegion string
 
 const (
 	BrowserNewParamsRegionUsEast      BrowserNewParamsRegion = "us-east"
+	BrowserNewParamsRegionUsWest      BrowserNewParamsRegion = "us-west"
 	BrowserNewParamsRegionEuWest      BrowserNewParamsRegion = "eu-west"
 	BrowserNewParamsRegionApSoutheast BrowserNewParamsRegion = "ap-southeast"
 )
@@ -1913,7 +1960,7 @@ type BrowserListParams struct {
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter sessions by geographic region. Omit to list sessions in all regions.
 	//
-	// Any of "us-east", "eu-west", "ap-southeast".
+	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region BrowserListParamsRegion `query:"region,omitzero" json:"-"`
 	// Filter sessions by status. "active" returns only active sessions (default),
 	// "deleted" returns only soft-deleted sessions, "all" returns both.
@@ -1940,6 +1987,7 @@ type BrowserListParamsRegion string
 
 const (
 	BrowserListParamsRegionUsEast      BrowserListParamsRegion = "us-east"
+	BrowserListParamsRegionUsWest      BrowserListParamsRegion = "us-west"
 	BrowserListParamsRegionEuWest      BrowserListParamsRegion = "eu-west"
 	BrowserListParamsRegionApSoutheast BrowserListParamsRegion = "ap-southeast"
 )

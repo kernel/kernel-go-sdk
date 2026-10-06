@@ -44,6 +44,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		Memory:       kernel.BrowserMemoryRequest8GiB,
 		Name:         kernel.String("checkout-flow-1"),
 		Network: kernel.BrowserNetworkConfigParam{
+			AllowedHosts: []string{"example.com", "*.example.com"},
 			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
 			ProxyRoutes: []kernel.BrowserNetworkConfigProxyRouteParam{{
 				Hosts: []string{"string"},

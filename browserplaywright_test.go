@@ -31,6 +31,7 @@ func TestBrowserPlaywrightExecuteWithOptionalParams(t *testing.T) {
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserPlaywrightExecuteParams{
 			Code:       "code",
+			Executor:   kernel.String("checkout"),
 			TimeoutSec: kernel.Int(1),
 		},
 	)

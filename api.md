@@ -320,11 +320,24 @@ Methods:
 
 Response Types:
 
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Tab">Tab</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightExecuteResponse">BrowserPlaywrightExecuteResponse</a>
 
 Methods:
 
 - <code title="post /browsers/{id_or_name}/playwright/execute">client.Browsers.Playwright.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightService.Execute">Execute</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightExecuteParams">BrowserPlaywrightExecuteParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightExecuteResponse">BrowserPlaywrightExecuteResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+### Executors
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Executor">Executor</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ExecutorList">ExecutorList</a>
+
+Methods:
+
+- <code title="get /browsers/{id_or_name}/playwright/executors">client.Browsers.Playwright.Executors.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightExecutorService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ExecutorList">ExecutorList</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /browsers/{id_or_name}/playwright/executors/{name}">client.Browsers.Playwright.Executors.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightExecutorService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, name <a href="https://pkg.go.dev/builtin#string">string</a>, params <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlaywrightExecutorDeleteParams">BrowserPlaywrightExecutorDeleteParams</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 
 ## Webmcp
 

@@ -1269,7 +1269,8 @@ func init() {
 // Provider-native content retrieval. Available without requesting Kernel browser
 // retrieval; may incur provider retrieval charges.
 type ProviderTargetExaOptionsContentsParam struct {
-	// Return query-relevant provider excerpts.
+	// Return query-relevant provider excerpts. Defaults to true for Exa search
+	// requests; set false to disable.
 	Highlights param.Opt[bool] `json:"highlights,omitzero"`
 	// Return provider page text.
 	Text param.Opt[bool] `json:"text,omitzero"`
@@ -1315,7 +1316,8 @@ type ProviderTargetPerplexityOptionsParam struct {
 	// providers receive the top-level query. Each query may incur a separate provider
 	// charge.
 	Query []string `json:"query,omitzero"`
-	// Provider context size supported by the selected model.
+	// Amount of page content Perplexity extracts per result. Defaults to medium unless
+	// max_tokens or max_tokens_per_page is set.
 	//
 	// Any of "low", "medium", "high".
 	SearchContextSize string `json:"search_context_size,omitzero"`
