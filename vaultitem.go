@@ -441,7 +441,9 @@ type CardVaultItemSpecUnion struct {
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	CheckoutOrigin string `json:"checkout_origin"`
-	JSON           struct {
+	// This field is from variant [KernelCardVaultItemSpec].
+	MerchantCountry string `json:"merchant_country"`
+	JSON            struct {
 		Amount          respjson.Field
 		Context         respjson.Field
 		Currency        respjson.Field
@@ -457,6 +459,7 @@ type CardVaultItemSpecUnion struct {
 		Merchant        respjson.Field
 		CardID          respjson.Field
 		CheckoutOrigin  respjson.Field
+		MerchantCountry respjson.Field
 		raw             string
 	} `json:"-"`
 }
@@ -785,6 +788,14 @@ func (u CardVaultItemSpecUnionParam) GetCardID() *string {
 func (u CardVaultItemSpecUnionParam) GetCheckoutOrigin() *string {
 	if vt := u.OfAgentcard; vt != nil && vt.CheckoutOrigin.Valid() {
 		return &vt.CheckoutOrigin.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetMerchantCountry() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCountry.Valid() {
+		return &vt.MerchantCountry.Value
 	}
 	return nil
 }
@@ -2338,20 +2349,22 @@ const (
 
 // A ready Kernel card retains its encrypted network token and one-time code for
 // the fill operation until the item's expires_at. Fill and submit checkout before
-// then. Visa cards can be enrolled, but Visa purchases are not yet supported and
-// authorize returns 400; supported Mastercard purchases need no cardholder
-// approval. masks.last4 is the enrolled card's last four digits; masks.token_last4
-// is the network token's last four digits shown to the merchant. Kernel cards do
-// not expose aliases or support egress substitution. Kernel does not observe
-// whether the merchant charged the card.
+// then. Visa purchases require a spend_approval action before the code is issued;
+// Mastercard purchases need no hosted approval. masks.last4 is the enrolled card's
+// last four digits; masks.token_last4 is the network token's last four digits
+// shown to the merchant. Kernel cards do not expose aliases or support egress
+// substitution. Kernel does not observe whether the merchant charged the card.
 type KernelCardState struct {
 	// Any of "kernel".
 	Provider KernelCardStateProvider `json:"provider" api:"required"`
-	// recovery_required means issuing the one-time code has an unresolved outcome.
-	// Kernel never issues another code for the item automatically, and the item cannot
-	// be deleted or replaced until the original attempt is reconciled with support.
-	// When status_reason says the provider refused retrieval before acceptance, no
-	// code was issued and a later read retries.
+	// pending_authorization on a Visa purchase waits for the cardholder to approve it
+	// through the spend_approval action; an unused link expires after 30 minutes.
+	// recovery_required means approving the purchase or issuing the one-time code has
+	// an unresolved outcome. Kernel never approves again or issues another code for
+	// the item automatically, and the item cannot be deleted or replaced until the
+	// original attempt is reconciled with support. When status_reason says the
+	// provider refused retrieval before acceptance, no code was issued and a later
+	// read retries. declined means the card network refused to issue a code.
 	//
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
@@ -2384,11 +2397,14 @@ const (
 	KernelCardStateProviderKernel KernelCardStateProvider = "kernel"
 )
 
-// recovery_required means issuing the one-time code has an unresolved outcome.
-// Kernel never issues another code for the item automatically, and the item cannot
-// be deleted or replaced until the original attempt is reconciled with support.
-// When status_reason says the provider refused retrieval before acceptance, no
-// code was issued and a later read retries.
+// pending_authorization on a Visa purchase waits for the cardholder to approve it
+// through the spend_approval action; an unused link expires after 30 minutes.
+// recovery_required means approving the purchase or issuing the one-time code has
+// an unresolved outcome. Kernel never approves again or issues another code for
+// the item automatically, and the item cannot be deleted or replaced until the
+// original attempt is reconciled with support. When status_reason says the
+// provider refused retrieval before acceptance, no code was issued and a later
+// read retries. declined means the card network refused to issue a code.
 type KernelCardStateStatus string
 
 const (
@@ -2427,10 +2443,12 @@ func (r *KernelCardStateMasks) UnmarshalJSON(data []byte) error {
 // network token number, expiry and one-time 3-digit code. They are stored
 // encrypted for the fill operation, which types them only on merchant_url's
 // origin; the merchant's own checkout submits the payment. The one-time code is
-// valid until the item's expires_at; fill and submit checkout before then. Visa
-// cards can be enrolled, but Visa purchases are not yet supported: authorize
-// returns 400. Supported Mastercard purchases need no cardholder approval. Card
-// updates are not supported; delete and create a new item instead.
+// valid until the item's expires_at; fill and submit checkout before then.
+// Mastercard purchases need no cardholder approval. A Visa purchase returns a
+// spend_approval action: the cardholder approves it with a Visa passkey, and
+// Kernel registers a Visa intent for one transaction up to the amount before
+// issuing the code. Card updates are not supported; delete and create a new item
+// instead.
 type KernelCardVaultItemSpec struct {
 	// Integer amount in minor currency units (at most 50000), bound to the one-time
 	// code.
@@ -2445,16 +2463,20 @@ type KernelCardVaultItemSpec struct {
 	Provider KernelCardVaultItemSpecProvider `json:"provider" api:"required"`
 	// Key of the Kernel wallet item whose enrolled card pays.
 	Wallet string `json:"wallet" api:"required"`
+	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
+	// one-time code is issued for the merchant's country.
+	MerchantCountry string `json:"merchant_country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Amount       respjson.Field
-		Currency     respjson.Field
-		MerchantName respjson.Field
-		MerchantURL  respjson.Field
-		Provider     respjson.Field
-		Wallet       respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		Amount          respjson.Field
+		Currency        respjson.Field
+		MerchantName    respjson.Field
+		MerchantURL     respjson.Field
+		Provider        respjson.Field
+		Wallet          respjson.Field
+		MerchantCountry respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -2483,10 +2505,12 @@ const (
 // network token number, expiry and one-time 3-digit code. They are stored
 // encrypted for the fill operation, which types them only on merchant_url's
 // origin; the merchant's own checkout submits the payment. The one-time code is
-// valid until the item's expires_at; fill and submit checkout before then. Visa
-// cards can be enrolled, but Visa purchases are not yet supported: authorize
-// returns 400. Supported Mastercard purchases need no cardholder approval. Card
-// updates are not supported; delete and create a new item instead.
+// valid until the item's expires_at; fill and submit checkout before then.
+// Mastercard purchases need no cardholder approval. A Visa purchase returns a
+// spend_approval action: the cardholder approves it with a Visa passkey, and
+// Kernel registers a Visa intent for one transaction up to the amount before
+// issuing the code. Card updates are not supported; delete and create a new item
+// instead.
 //
 // The properties Amount, Currency, MerchantName, MerchantURL, Provider, Wallet are
 // required.
@@ -2504,6 +2528,9 @@ type KernelCardVaultItemSpecParam struct {
 	Provider KernelCardVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
 	// Key of the Kernel wallet item whose enrolled card pays.
 	Wallet string `json:"wallet" api:"required"`
+	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
+	// one-time code is issued for the merchant's country.
+	MerchantCountry param.Opt[string] `json:"merchant_country,omitzero"`
 	paramObj
 }
 
@@ -2679,8 +2706,9 @@ const (
 // number never reaches Kernel. The connected wallet's payment_methods expansion
 // lists the card; capabilities.single_use_card.eligible is false, with a
 // network_token*\* reason, until the card has a network token, and authorize
-// returns 400 for such a card. Visa cards can be enrolled, but Visa purchases are
-// not yet supported: authorize returns 400.
+// returns 400 for such a card. Visa purchases require the cardholder to complete a
+// spend_approval action before Kernel issues a one-time code; Mastercard purchases
+// need no hosted approval.
 type KernelWalletVaultItemSpec struct {
 	// Any of "kernel".
 	Provider KernelWalletVaultItemSpecProvider `json:"provider" api:"required"`
@@ -2721,8 +2749,9 @@ const (
 // number never reaches Kernel. The connected wallet's payment_methods expansion
 // lists the card; capabilities.single_use_card.eligible is false, with a
 // network_token*\* reason, until the card has a network token, and authorize
-// returns 400 for such a card. Visa cards can be enrolled, but Visa purchases are
-// not yet supported: authorize returns 400.
+// returns 400 for such a card. Visa purchases require the cardholder to complete a
+// spend_approval action before Kernel issues a one-time code; Mastercard purchases
+// need no hosted approval.
 //
 // The property Provider is required.
 type KernelWalletVaultItemSpecParam struct {
@@ -4078,6 +4107,8 @@ type VaultItemUnionSpec struct {
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantCountry string `json:"merchant_country"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -4108,6 +4139,7 @@ type VaultItemUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		MerchantCountry      respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -4978,6 +5010,8 @@ type VaultItemOperationResponseUnionSpec struct {
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantCountry string `json:"merchant_country"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -5008,6 +5042,7 @@ type VaultItemOperationResponseUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		MerchantCountry      respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
