@@ -117,11 +117,11 @@ func (r *ProxyService) Delete(ctx context.Context, id string, opts ...option.Req
 }
 
 // Run a health check on the proxy to verify it's working. Optionally specify a URL
-// to test reachability against a specific target. For ISP and datacenter proxies,
-// this reliably tests whether the target site is reachable from the proxy's stable
-// exit IP. For residential and mobile proxies, the exit node varies between
-// requests, so this validates proxy configuration and connectivity rather than
-// guaranteeing site-specific reachability.
+// to test reachability against a specific target. For ISP proxies, this reliably
+// tests whether the target site is reachable from the proxy's stable exit IP. For
+// residential and mobile proxies, the exit node varies between requests, so this
+// validates proxy configuration and connectivity rather than guaranteeing
+// site-specific reachability.
 func (r *ProxyService) Check(ctx context.Context, id string, body ProxyCheckParams, opts ...option.RequestOption) (res *ProxyCheckResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -135,15 +135,12 @@ func (r *ProxyService) Check(ctx context.Context, id string, body ProxyCheckPara
 
 // Configuration for routing traffic through a proxy.
 type ProxyNewResponse struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type ProxyNewResponseType `json:"type" api:"required"`
 	ID   string               `json:"id"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyNewResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
 	IPAddress string `json:"ip_address"`
@@ -181,12 +178,9 @@ func (r *ProxyNewResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-// worst: `mobile` > `residential` > `isp` > `datacenter`.
 type ProxyNewResponseType string
 
 const (
-	ProxyNewResponseTypeDatacenter  ProxyNewResponseType = "datacenter"
 	ProxyNewResponseTypeIsp         ProxyNewResponseType = "isp"
 	ProxyNewResponseTypeResidential ProxyNewResponseType = "residential"
 	ProxyNewResponseTypeMobile      ProxyNewResponseType = "mobile"
@@ -194,9 +188,8 @@ const (
 )
 
 // ProxyNewResponseConfigUnion contains all possible properties and values from
-// [ProxyNewResponseConfigDatacenter], [ProxyNewResponseConfigIsp],
-// [ProxyNewResponseConfigResidential], [ProxyNewResponseConfigMobile],
-// [ProxyNewResponseConfigCustom].
+// [ProxyNewResponseConfigIsp], [ProxyNewResponseConfigResidential],
+// [ProxyNewResponseConfigMobile], [ProxyNewResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyNewResponseConfigUnion struct {
@@ -235,11 +228,6 @@ type ProxyNewResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyNewResponseConfigUnion) AsDatacenter() (v ProxyNewResponseConfigDatacenter) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
 func (u ProxyNewResponseConfigUnion) AsIsp() (v ProxyNewResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
@@ -264,24 +252,6 @@ func (u ProxyNewResponseConfigUnion) AsCustom() (v ProxyNewResponseConfigCustom)
 func (u ProxyNewResponseConfigUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *ProxyNewResponseConfigUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Configuration for a datacenter proxy.
-type ProxyNewResponseConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country string `json:"country"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Country     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ProxyNewResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
-func (r *ProxyNewResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -416,15 +386,12 @@ const (
 
 // Configuration for routing traffic through a proxy.
 type ProxyGetResponse struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type ProxyGetResponseType `json:"type" api:"required"`
 	ID   string               `json:"id"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyGetResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
 	IPAddress string `json:"ip_address"`
@@ -462,12 +429,9 @@ func (r *ProxyGetResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-// worst: `mobile` > `residential` > `isp` > `datacenter`.
 type ProxyGetResponseType string
 
 const (
-	ProxyGetResponseTypeDatacenter  ProxyGetResponseType = "datacenter"
 	ProxyGetResponseTypeIsp         ProxyGetResponseType = "isp"
 	ProxyGetResponseTypeResidential ProxyGetResponseType = "residential"
 	ProxyGetResponseTypeMobile      ProxyGetResponseType = "mobile"
@@ -475,9 +439,8 @@ const (
 )
 
 // ProxyGetResponseConfigUnion contains all possible properties and values from
-// [ProxyGetResponseConfigDatacenter], [ProxyGetResponseConfigIsp],
-// [ProxyGetResponseConfigResidential], [ProxyGetResponseConfigMobile],
-// [ProxyGetResponseConfigCustom].
+// [ProxyGetResponseConfigIsp], [ProxyGetResponseConfigResidential],
+// [ProxyGetResponseConfigMobile], [ProxyGetResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyGetResponseConfigUnion struct {
@@ -516,11 +479,6 @@ type ProxyGetResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyGetResponseConfigUnion) AsDatacenter() (v ProxyGetResponseConfigDatacenter) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
 func (u ProxyGetResponseConfigUnion) AsIsp() (v ProxyGetResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
@@ -545,24 +503,6 @@ func (u ProxyGetResponseConfigUnion) AsCustom() (v ProxyGetResponseConfigCustom)
 func (u ProxyGetResponseConfigUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *ProxyGetResponseConfigUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Configuration for a datacenter proxy.
-type ProxyGetResponseConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country string `json:"country"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Country     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ProxyGetResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
-func (r *ProxyGetResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -697,15 +637,12 @@ const (
 
 // Configuration for routing traffic through a proxy.
 type ProxyUpdateResponse struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type ProxyUpdateResponseType `json:"type" api:"required"`
 	ID   string                  `json:"id"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyUpdateResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
 	IPAddress string `json:"ip_address"`
@@ -743,12 +680,9 @@ func (r *ProxyUpdateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-// worst: `mobile` > `residential` > `isp` > `datacenter`.
 type ProxyUpdateResponseType string
 
 const (
-	ProxyUpdateResponseTypeDatacenter  ProxyUpdateResponseType = "datacenter"
 	ProxyUpdateResponseTypeIsp         ProxyUpdateResponseType = "isp"
 	ProxyUpdateResponseTypeResidential ProxyUpdateResponseType = "residential"
 	ProxyUpdateResponseTypeMobile      ProxyUpdateResponseType = "mobile"
@@ -756,9 +690,8 @@ const (
 )
 
 // ProxyUpdateResponseConfigUnion contains all possible properties and values from
-// [ProxyUpdateResponseConfigDatacenter], [ProxyUpdateResponseConfigIsp],
-// [ProxyUpdateResponseConfigResidential], [ProxyUpdateResponseConfigMobile],
-// [ProxyUpdateResponseConfigCustom].
+// [ProxyUpdateResponseConfigIsp], [ProxyUpdateResponseConfigResidential],
+// [ProxyUpdateResponseConfigMobile], [ProxyUpdateResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyUpdateResponseConfigUnion struct {
@@ -797,11 +730,6 @@ type ProxyUpdateResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyUpdateResponseConfigUnion) AsDatacenter() (v ProxyUpdateResponseConfigDatacenter) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
 func (u ProxyUpdateResponseConfigUnion) AsIsp() (v ProxyUpdateResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
@@ -826,24 +754,6 @@ func (u ProxyUpdateResponseConfigUnion) AsCustom() (v ProxyUpdateResponseConfigC
 func (u ProxyUpdateResponseConfigUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *ProxyUpdateResponseConfigUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Configuration for a datacenter proxy.
-type ProxyUpdateResponseConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country string `json:"country"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Country     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ProxyUpdateResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
-func (r *ProxyUpdateResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -978,15 +888,12 @@ const (
 
 // Configuration for routing traffic through a proxy.
 type ProxyListResponse struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type ProxyListResponseType `json:"type" api:"required"`
 	ID   string                `json:"id"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyListResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
 	IPAddress string `json:"ip_address"`
@@ -1024,12 +931,9 @@ func (r *ProxyListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-// worst: `mobile` > `residential` > `isp` > `datacenter`.
 type ProxyListResponseType string
 
 const (
-	ProxyListResponseTypeDatacenter  ProxyListResponseType = "datacenter"
 	ProxyListResponseTypeIsp         ProxyListResponseType = "isp"
 	ProxyListResponseTypeResidential ProxyListResponseType = "residential"
 	ProxyListResponseTypeMobile      ProxyListResponseType = "mobile"
@@ -1037,9 +941,8 @@ const (
 )
 
 // ProxyListResponseConfigUnion contains all possible properties and values from
-// [ProxyListResponseConfigDatacenter], [ProxyListResponseConfigIsp],
-// [ProxyListResponseConfigResidential], [ProxyListResponseConfigMobile],
-// [ProxyListResponseConfigCustom].
+// [ProxyListResponseConfigIsp], [ProxyListResponseConfigResidential],
+// [ProxyListResponseConfigMobile], [ProxyListResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyListResponseConfigUnion struct {
@@ -1078,11 +981,6 @@ type ProxyListResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyListResponseConfigUnion) AsDatacenter() (v ProxyListResponseConfigDatacenter) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
 func (u ProxyListResponseConfigUnion) AsIsp() (v ProxyListResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
@@ -1107,24 +1005,6 @@ func (u ProxyListResponseConfigUnion) AsCustom() (v ProxyListResponseConfigCusto
 func (u ProxyListResponseConfigUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *ProxyListResponseConfigUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Configuration for a datacenter proxy.
-type ProxyListResponseConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country string `json:"country"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Country     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ProxyListResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
-func (r *ProxyListResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1259,15 +1139,12 @@ const (
 
 // Configuration for routing traffic through a proxy.
 type ProxyCheckResponse struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type ProxyCheckResponseType `json:"type" api:"required"`
 	ID   string                 `json:"id"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyCheckResponseConfigUnion `json:"config"`
 	// IP address that the proxy uses when making requests.
 	IPAddress string `json:"ip_address"`
@@ -1305,12 +1182,9 @@ func (r *ProxyCheckResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-// worst: `mobile` > `residential` > `isp` > `datacenter`.
 type ProxyCheckResponseType string
 
 const (
-	ProxyCheckResponseTypeDatacenter  ProxyCheckResponseType = "datacenter"
 	ProxyCheckResponseTypeIsp         ProxyCheckResponseType = "isp"
 	ProxyCheckResponseTypeResidential ProxyCheckResponseType = "residential"
 	ProxyCheckResponseTypeMobile      ProxyCheckResponseType = "mobile"
@@ -1318,9 +1192,8 @@ const (
 )
 
 // ProxyCheckResponseConfigUnion contains all possible properties and values from
-// [ProxyCheckResponseConfigDatacenter], [ProxyCheckResponseConfigIsp],
-// [ProxyCheckResponseConfigResidential], [ProxyCheckResponseConfigMobile],
-// [ProxyCheckResponseConfigCustom].
+// [ProxyCheckResponseConfigIsp], [ProxyCheckResponseConfigResidential],
+// [ProxyCheckResponseConfigMobile], [ProxyCheckResponseConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyCheckResponseConfigUnion struct {
@@ -1359,11 +1232,6 @@ type ProxyCheckResponseConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyCheckResponseConfigUnion) AsDatacenter() (v ProxyCheckResponseConfigDatacenter) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
 func (u ProxyCheckResponseConfigUnion) AsIsp() (v ProxyCheckResponseConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
@@ -1388,24 +1256,6 @@ func (u ProxyCheckResponseConfigUnion) AsCustom() (v ProxyCheckResponseConfigCus
 func (u ProxyCheckResponseConfigUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *ProxyCheckResponseConfigUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Configuration for a datacenter proxy.
-type ProxyCheckResponseConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country string `json:"country"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Country     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ProxyCheckResponseConfigDatacenter) RawJSON() string { return r.JSON.raw }
-func (r *ProxyCheckResponseConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1539,16 +1389,13 @@ const (
 )
 
 type ProxyNewParams struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type ProxyNewParamsType `json:"type,omitzero" api:"required"`
 	// Readable name of the proxy.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts,omitzero"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyNewParamsConfigUnion `json:"config,omitzero"`
 	// Protocol to use for the proxy connection.
 	//
@@ -1565,12 +1412,9 @@ func (r *ProxyNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-// worst: `mobile` > `residential` > `isp` > `datacenter`.
 type ProxyNewParamsType string
 
 const (
-	ProxyNewParamsTypeDatacenter  ProxyNewParamsType = "datacenter"
 	ProxyNewParamsTypeIsp         ProxyNewParamsType = "isp"
 	ProxyNewParamsTypeResidential ProxyNewParamsType = "residential"
 	ProxyNewParamsTypeMobile      ProxyNewParamsType = "mobile"
@@ -1581,7 +1425,6 @@ const (
 //
 // Use [param.IsOmitted] to confirm if a field is set.
 type ProxyNewParamsConfigUnion struct {
-	OfDatacenter  *ProxyNewParamsConfigDatacenter  `json:",omitzero,inline"`
 	OfIsp         *ProxyNewParamsConfigIsp         `json:",omitzero,inline"`
 	OfResidential *ProxyNewParamsConfigResidential `json:",omitzero,inline"`
 	OfMobile      *ProxyNewParamsConfigMobile      `json:",omitzero,inline"`
@@ -1590,20 +1433,14 @@ type ProxyNewParamsConfigUnion struct {
 }
 
 func (u ProxyNewParamsConfigUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfDatacenter,
-		u.OfIsp,
-		u.OfResidential,
-		u.OfMobile,
-		u.OfCustom)
+	return param.MarshalUnion(u, u.OfIsp, u.OfResidential, u.OfMobile, u.OfCustom)
 }
 func (u *ProxyNewParamsConfigUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 func (u *ProxyNewParamsConfigUnion) asAny() any {
-	if !param.IsOmitted(u.OfDatacenter) {
-		return u.OfDatacenter
-	} else if !param.IsOmitted(u.OfIsp) {
+	if !param.IsOmitted(u.OfIsp) {
 		return u.OfIsp
 	} else if !param.IsOmitted(u.OfResidential) {
 		return u.OfResidential
@@ -1681,9 +1518,7 @@ func (u ProxyNewParamsConfigUnion) GetUsername() *string {
 
 // Returns a pointer to the underlying variant's property, if present.
 func (u ProxyNewParamsConfigUnion) GetCountry() *string {
-	if vt := u.OfDatacenter; vt != nil && vt.Country.Valid() {
-		return &vt.Country.Value
-	} else if vt := u.OfIsp; vt != nil && vt.Country.Valid() {
+	if vt := u.OfIsp; vt != nil && vt.Country.Valid() {
 		return &vt.Country.Value
 	} else if vt := u.OfResidential; vt != nil && vt.Country.Valid() {
 		return &vt.Country.Value
@@ -1711,21 +1546,6 @@ func (u ProxyNewParamsConfigUnion) GetState() *string {
 		return &vt.State.Value
 	}
 	return nil
-}
-
-// Configuration for a datacenter proxy.
-type ProxyNewParamsConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country param.Opt[string] `json:"country,omitzero"`
-	paramObj
-}
-
-func (r ProxyNewParamsConfigDatacenter) MarshalJSON() (data []byte, err error) {
-	type shadow ProxyNewParamsConfigDatacenter
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ProxyNewParamsConfigDatacenter) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
 }
 
 // Configuration for an ISP proxy.
@@ -1878,15 +1698,15 @@ type ProxyCheckParams struct {
 	// An optional URL to test reachability against. If provided, the proxy check will
 	// test connectivity to this URL instead of the default test URLs. Only HTTP and
 	// HTTPS schemes are allowed, and the URL must resolve to a public IP address. For
-	// ISP and datacenter proxies, the exit IP is stable, so a successful check
-	// reliably indicates that subsequent browser sessions will reach the target site
-	// with the same IP. For residential and mobile proxies, the exit node changes
-	// between requests, so a successful check validates proxy configuration but does
-	// not guarantee that a subsequent browser session will use the same exit IP or
-	// reach the same site — it is useful for verifying credentials and connectivity,
-	// not for predicting site-specific behavior. When provided, the check result does
-	// not update the proxy's health status, since a failure may indicate a problem
-	// with the target site rather than the proxy itself.
+	// ISP proxies, the exit IP is stable, so a successful check reliably indicates
+	// that subsequent browser sessions will reach the target site with the same IP.
+	// For residential and mobile proxies, the exit node changes between requests, so a
+	// successful check validates proxy configuration but does not guarantee that a
+	// subsequent browser session will use the same exit IP or reach the same site — it
+	// is useful for verifying credentials and connectivity, not for predicting
+	// site-specific behavior. When provided, the check result does not update the
+	// proxy's health status, since a failure may indicate a problem with the target
+	// site rather than the proxy itself.
 	URL param.Opt[string] `json:"url,omitzero"`
 	paramObj
 }
