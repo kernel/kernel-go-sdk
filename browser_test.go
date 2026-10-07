@@ -190,6 +190,9 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 		kernel.BrowserUpdateParams{
 			DisableDefaultProxy: kernel.Bool(true),
 			Name:                kernel.String("checkout-flow-1"),
+			Network: kernel.BrowserNetworkUpdateParam{
+				AllowedHosts: []string{"example.com", "*.example.com"},
+			},
 			Profile: shared.BrowserProfileParam{
 				ID:          kernel.String("id"),
 				Name:        kernel.String("name"),

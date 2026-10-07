@@ -3650,15 +3650,12 @@ const (
 )
 
 // Request access to login entries in the end-user's own, non-shared 1Password
-// vault through the browser extension, auto-loaded into the browser. The end-user
-// approves access in the 1Password app. Shared-vault items and passkeys are not
-// supported. Per-entry reason and keywords overrides are only supported for a
-// single login entry.
+// vault. No browser is needed; the end-user approves access in the 1Password app.
+// Shared-vault items and passkeys are not supported. Per-entry reason and keywords
+// overrides are only supported for a single login entry.
 //
-// The properties BrowserID, Type are required.
+// The property Type is required.
 type OnePasswordRequestAccessVaultItemOperationRequestParam struct {
-	// Kernel browser session used to invoke the extension.
-	BrowserID string `json:"browser_id" api:"required"`
 	// Any of "1pw_create_access_request".
 	Type     OnePasswordRequestAccessVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
 	Goal     param.Opt[string]                                     `json:"goal,omitzero"`
@@ -6220,11 +6217,10 @@ type VaultItemPerformOperationParams struct {
 	// surfaces.
 	OfFill *FillVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Request
-	// access to login entries in the end-user's own, non-shared 1Password vault
-	// through the browser extension, auto-loaded into the browser. The end-user
-	// approves access in the 1Password app. Shared-vault items and passkeys are not
-	// supported. Per-entry reason and keywords overrides are only supported for a
-	// single login entry.
+	// access to login entries in the end-user's own, non-shared 1Password vault. No
+	// browser is needed; the end-user approves access in the 1Password app.
+	// Shared-vault items and passkeys are not supported. Per-entry reason and keywords
+	// overrides are only supported for a single login entry.
 	Of1pwCreateAccessRequest *OnePasswordRequestAccessVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	// Retrieve the status of a 1Password access request after presenting the approval
@@ -6286,9 +6282,8 @@ func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 // uncertain dispatched request. The response remains non-secret; approved
 // references are retained only for fill.
 //
-// The properties BrowserID, Type are required.
+// The property Type is required.
 type VaultItemPerformOperationParamsBody1pwAccessRequestStatus struct {
-	BrowserID      string           `json:"browser_id" api:"required"`
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	// This field can be elided, and will marshal its zero value as
 	// "1pw_access_request_status".

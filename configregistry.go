@@ -470,14 +470,11 @@ func (r *ProxyManaged) UnmarshalJSON(data []byte) error {
 
 // Configuration for routing traffic through a proxy.
 type ProxyManagedCreate struct {
-	// Proxy type to use. In terms of quality for avoiding bot-detection, from best to
-	// worst: `mobile` > `residential` > `isp` > `datacenter`.
-	//
-	// Any of "datacenter", "isp", "residential", "mobile", "custom".
+	// Any of "isp", "residential", "mobile", "custom".
 	Type string `json:"type" api:"required"`
 	// Hostnames that should bypass the parent proxy and connect directly.
 	BypassHosts []string `json:"bypass_hosts"`
-	// Configuration specific to the selected proxy `type`.
+	// Configuration for an ISP proxy.
 	Config ProxyManagedCreateConfigUnion `json:"config"`
 	// Readable name of the proxy.
 	Name string `json:"name"`
@@ -504,9 +501,8 @@ func (r *ProxyManagedCreate) UnmarshalJSON(data []byte) error {
 }
 
 // ProxyManagedCreateConfigUnion contains all possible properties and values from
-// [ProxyManagedCreateConfigDatacenter], [ProxyManagedCreateConfigIsp],
-// [ProxyManagedCreateConfigResidential], [ProxyManagedCreateConfigMobile],
-// [ProxyManagedCreateConfigCustom].
+// [ProxyManagedCreateConfigIsp], [ProxyManagedCreateConfigResidential],
+// [ProxyManagedCreateConfigMobile], [ProxyManagedCreateConfigCustom].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyManagedCreateConfigUnion struct {
@@ -545,11 +541,6 @@ type ProxyManagedCreateConfigUnion struct {
 	} `json:"-"`
 }
 
-func (u ProxyManagedCreateConfigUnion) AsDatacenter() (v ProxyManagedCreateConfigDatacenter) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
 func (u ProxyManagedCreateConfigUnion) AsIsp() (v ProxyManagedCreateConfigIsp) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
@@ -574,24 +565,6 @@ func (u ProxyManagedCreateConfigUnion) AsCustom() (v ProxyManagedCreateConfigCus
 func (u ProxyManagedCreateConfigUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *ProxyManagedCreateConfigUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Configuration for a datacenter proxy.
-type ProxyManagedCreateConfigDatacenter struct {
-	// ISO 3166 country code. Defaults to US if not provided.
-	Country string `json:"country"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Country     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ProxyManagedCreateConfigDatacenter) RawJSON() string { return r.JSON.raw }
-func (r *ProxyManagedCreateConfigDatacenter) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

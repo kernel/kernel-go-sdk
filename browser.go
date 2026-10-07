@@ -232,8 +232,9 @@ type BrowserNetworkConfig struct {
 	// or reserved IP ranges are rejected, as are entries that overlap private_hosts.
 	// Enforced at Kernel's egress proxy only: destinations in private_hosts, and
 	// processes in the browser VM that do not use the browser's proxy, are not
-	// filtered, and Kernel's own control traffic is always allowed. Requires proxy v3.
-	// Not supported on browser pools.
+	// filtered, and Kernel's own control traffic is always allowed. Can be replaced or
+	// removed while the session runs with PATCH /browsers/{id_or_name}. Requires proxy
+	// v3. Not supported on browser pools.
 	AllowedHosts []string `json:"allowed_hosts"`
 	// Destinations the browser reaches directly through the session's own network
 	// instead of through Kernel-managed egress — for private hosts reachable over a
@@ -359,8 +360,9 @@ type BrowserNetworkConfigParam struct {
 	// or reserved IP ranges are rejected, as are entries that overlap private_hosts.
 	// Enforced at Kernel's egress proxy only: destinations in private_hosts, and
 	// processes in the browser VM that do not use the browser's proxy, are not
-	// filtered, and Kernel's own control traffic is always allowed. Requires proxy v3.
-	// Not supported on browser pools.
+	// filtered, and Kernel's own control traffic is always allowed. Can be replaced or
+	// removed while the session runs with PATCH /browsers/{id_or_name}. Requires proxy
+	// v3. Not supported on browser pools.
 	AllowedHosts []string `json:"allowed_hosts,omitzero"`
 	// Destinations the browser reaches directly through the session's own network
 	// instead of through Kernel-managed egress — for private hosts reachable over a
@@ -443,6 +445,32 @@ func (r BrowserNetworkConfigProxyRouteProxyParam) MarshalJSON() (data []byte, er
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *BrowserNetworkConfigProxyRouteProxyParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Network configuration changes for a running browser session. Other network
+// settings can only be set at creation.
+type BrowserNetworkUpdateParam struct {
+	// Replaces the session's egress allowlist, using the same entry rules as
+	// network.allowed_hosts on create. Omit to leave the allowlist unchanged, or set
+	// to null to remove it and return to unfiltered egress; an empty list is invalid.
+	// The new list applies without restarting the browser: new requests to
+	// destinations it no longer allows are refused within a few seconds, and open
+	// connections to them are closed within about 30 seconds, or up to 10 minutes
+	// during a Kernel deploy. Connections to destinations it still allows, such as
+	// WebSockets, stay open. A start_url in the same request must be allowed by the
+	// updated list, and is loaded only after the list takes effect. Requires a browser
+	// created with proxy v3, and not supported on pooled browsers. If the request
+	// fails, retry it: the new list may already apply to some requests.
+	AllowedHosts []string `json:"allowed_hosts,omitzero"`
+	paramObj
+}
+
+func (r BrowserNetworkUpdateParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserNetworkUpdateParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserNetworkUpdateParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1580,7 +1608,8 @@ type BrowserNewParams struct {
 	//
 	// Any of "8GiB", "16GiB".
 	Memory BrowserMemoryRequest `json:"memory,omitzero"`
-	// Network configuration for the browser session. Cannot be changed after creation.
+	// Network configuration for the browser session. Only allowed_hosts can be changed
+	// after creation, with PATCH /browsers/{id_or_name}.
 	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If
 	// specified, the matching profile will be loaded into the browser session.
@@ -1791,6 +1820,8 @@ type BrowserUpdateParams struct {
 	// category settings for per-category updates. Explicitly disabling all four
 	// categories also stops capture.
 	Telemetry BrowserUpdateParamsTelemetry `json:"telemetry,omitzero"`
+	// Network configuration changes to apply to the running browser session.
+	Network BrowserNetworkUpdateParam `json:"network,omitzero"`
 	// Profile to load into the browser session. Only allowed if the session does not
 	// already have a profile loaded.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`

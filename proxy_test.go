@@ -27,10 +27,10 @@ func TestProxyNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Proxies.New(context.TODO(), kernel.ProxyNewParams{
-		Type:        kernel.ProxyNewParamsTypeDatacenter,
+		Type:        kernel.ProxyNewParamsTypeIsp,
 		BypassHosts: []string{"string"},
 		Config: kernel.ProxyNewParamsConfigUnion{
-			OfDatacenter: &kernel.ProxyNewParamsConfigDatacenter{
+			OfIsp: &kernel.ProxyNewParamsConfigIsp{
 				Country: kernel.String("US"),
 			},
 		},

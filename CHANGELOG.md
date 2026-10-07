@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.121.0](https://github.com/kernel/kernel-go-sdk/compare/v0.120.0...v0.121.0) (2026-10-07)
+
+
+### Features
+
+* Create and poll 1Password access requests over the 1Password API ([aa4c131](https://github.com/kernel/kernel-go-sdk/commit/aa4c1318242d1818636f2eb503a2d4bd7b816ed0))
+* Deprecate datacenter proxies in the API ([b71ecfc](https://github.com/kernel/kernel-go-sdk/commit/b71ecfcbaeecb29db2b273575df0e7d96e9533f6))
+
 ## [0.120.0](https://github.com/kernel/kernel-go-sdk/compare/v0.119.0...v0.120.0) (2026-10-06)
 
 
