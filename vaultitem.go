@@ -164,8 +164,8 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // return 400 (invalid request or targets), 403 (access or destination denied), 404
 // (resource not found), or 409 (item or browser not ready). Once writing starts,
 // known partial failures and indeterminate field outcomes return 200 with status
-// `failed` or `unknown`, not an automatic-retry signal. A transport error may
-// leave the outcome unknown; do not automatically retry.
+// `failed` or `unknown`. Fill never submits the page, so it is safe to retry after
+// a failure, an `unknown` outcome, or a transport error.
 func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemOperationResponseUnion, err error) {
 	opts = slices.Concat(r.Options, []option.RequestOption{option.WithMaxRetries(0)}, opts)
 	if params.IDOrName == "" {
@@ -2261,8 +2261,10 @@ const (
 // atomic: previously filled fields are not rolled back. Never submit the form or
 // click buttons, though input/change events may trigger site behavior. Link and
 // Kernel cards use fill for browser checkout and do not expose aliases or support
-// egress substitution. Do not automatically retry a failed or indeterminate
-// operation.
+// egress substitution. Fill does not consume the item, so a failed or
+// indeterminate fill is safe to retry; a retry rewrites the same fields. A retry
+// right after an indeterminate fill may wait up to 15 seconds for the earlier
+// attempt's browser lock to expire.
 //
 // Secret values are never returned or included in operation logs, traces, audit
 // events, or error details. This does not prevent an agent with unrestricted
@@ -6208,8 +6210,10 @@ type VaultItemPerformOperationParams struct {
 	// atomic: previously filled fields are not rolled back. Never submit the form or
 	// click buttons, though input/change events may trigger site behavior. Link and
 	// Kernel cards use fill for browser checkout and do not expose aliases or support
-	// egress substitution. Do not automatically retry a failed or indeterminate
-	// operation.
+	// egress substitution. Fill does not consume the item, so a failed or
+	// indeterminate fill is safe to retry; a retry rewrites the same fields. A retry
+	// right after an indeterminate fill may wait up to 15 seconds for the earlier
+	// attempt's browser lock to expire.
 	//
 	// Secret values are never returned or included in operation logs, traces, audit
 	// events, or error details. This does not prevent an agent with unrestricted
