@@ -262,12 +262,12 @@ func (r *BrowserCaptchaChallengeResultEvent) UnmarshalJSON(data []byte) error {
 // its overall outcome; captcha_solve_started and captcha_solve_result describe
 // individual tasks and may occur multiple times within the challenge.
 type BrowserCaptchaChallengeResultEventData struct {
-	// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version
-	// bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use
-	// press_and_hold, and unlisted kinds use other.
+	// Deprecated: use captcha_provider.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
 	// "press_and_hold", "other".
+	//
+	// Deprecated: deprecated
 	CaptchaType string `json:"captcha_type" api:"required"`
 	// Opaque identifier shared by events for one visible challenge. An image-grid
 	// captcha may create multiple task_id values for one challenge_id. The same value
@@ -291,20 +291,30 @@ type BrowserCaptchaChallengeResultEventData struct {
 	//
 	// Any of "solved", "failure", "timeout", "abandoned".
 	Status string `json:"status" api:"required"`
+	// Captcha product the challenge belongs to, not the service that solved it.
+	// Enterprise reCAPTCHA variants are grouped into their version bucket
+	// (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold
+	// challenges served by HUMAN (formerly PerimeterX) use human, and unlisted
+	// products use other.
+	//
+	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
+	// "arkose", "human", "other".
+	CaptchaProvider string `json:"captcha_provider"`
 	// Host of the page where the challenge appeared.
 	WebsiteHost string `json:"website_host"`
 	// Path of the page where the challenge appeared. Query string excluded.
 	WebsitePath string `json:"website_path"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		CaptchaType respjson.Field
-		ChallengeID respjson.Field
-		DurationMs  respjson.Field
-		Status      respjson.Field
-		WebsiteHost respjson.Field
-		WebsitePath respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		CaptchaType     respjson.Field
+		ChallengeID     respjson.Field
+		DurationMs      respjson.Field
+		Status          respjson.Field
+		CaptchaProvider respjson.Field
+		WebsiteHost     respjson.Field
+		WebsitePath     respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -345,12 +355,12 @@ func (r *BrowserCaptchaSolveResultEvent) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserCaptchaSolveResultEventData struct {
-	// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version
-	// bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use
-	// press_and_hold, and unlisted kinds use other.
+	// Deprecated: use captcha_provider and task_kind.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
 	// "press_and_hold", "other".
+	//
+	// Deprecated: deprecated
 	CaptchaType string `json:"captcha_type" api:"required"`
 	// Wall-clock duration from solve start to terminal outcome. Authoritative solve
 	// timing; do not derive it from the gap to a captcha_solve_started event, whose
@@ -363,6 +373,15 @@ type BrowserCaptchaSolveResultEventData struct {
 	//
 	// Any of "success", "failure", "timeout", "abandoned".
 	Status string `json:"status" api:"required"`
+	// Captcha product the challenge belongs to, not the service that solved it.
+	// Enterprise reCAPTCHA variants are grouped into their version bucket
+	// (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold
+	// challenges served by HUMAN (formerly PerimeterX) use human, and unlisted
+	// products use other.
+	//
+	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
+	// "arkose", "human", "other".
+	CaptchaProvider string `json:"captcha_provider"`
 	// Opaque identifier shared by events for one visible challenge. An image-grid
 	// captcha may create multiple task_id values for one challenge_id. The same value
 	// may continue across a page reload when the challenge episode continues. It does
@@ -373,22 +392,28 @@ type BrowserCaptchaSolveResultEventData struct {
 	ErrorCode string `json:"error_code"`
 	// Opaque identifier shared with the matching captcha_solve_started.
 	TaskID string `json:"task_id"`
+	// What the solver task produces. Absent when the producer cannot tell.
+	//
+	// Any of "token", "image_challenge", "press_and_hold".
+	TaskKind string `json:"task_kind"`
 	// Host of the page where the captcha was solved.
 	WebsiteHost string `json:"website_host"`
 	// Path of the page where the captcha was solved. Query string excluded.
 	WebsitePath string `json:"website_path"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		CaptchaType respjson.Field
-		DurationMs  respjson.Field
-		Status      respjson.Field
-		ChallengeID respjson.Field
-		ErrorCode   respjson.Field
-		TaskID      respjson.Field
-		WebsiteHost respjson.Field
-		WebsitePath respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		CaptchaType     respjson.Field
+		DurationMs      respjson.Field
+		Status          respjson.Field
+		CaptchaProvider respjson.Field
+		ChallengeID     respjson.Field
+		ErrorCode       respjson.Field
+		TaskID          respjson.Field
+		TaskKind        respjson.Field
+		WebsiteHost     respjson.Field
+		WebsitePath     respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -437,13 +462,22 @@ func (r *BrowserCaptchaSolveStartedEvent) UnmarshalJSON(data []byte) error {
 // groups tasks from the same challenge. Events may arrive out of order or be
 // absent, so their arrival does not indicate current solve state.
 type BrowserCaptchaSolveStartedEventData struct {
-	// Captcha kind. Enterprise reCAPTCHA variants are grouped into their version
-	// bucket (recaptcha_v2 or recaptcha_v3), press-and-hold challenges use
-	// press_and_hold, and unlisted kinds use other.
+	// Deprecated: use captcha_provider and task_kind.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
 	// "press_and_hold", "other".
+	//
+	// Deprecated: deprecated
 	CaptchaType string `json:"captcha_type" api:"required"`
+	// Captcha product the challenge belongs to, not the service that solved it.
+	// Enterprise reCAPTCHA variants are grouped into their version bucket
+	// (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold
+	// challenges served by HUMAN (formerly PerimeterX) use human, and unlisted
+	// products use other.
+	//
+	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
+	// "arkose", "human", "other".
+	CaptchaProvider string `json:"captcha_provider"`
 	// Opaque identifier shared by events for one visible challenge. An image-grid
 	// captcha may create multiple task_id values for one challenge_id. The same value
 	// may continue across a page reload when the challenge episode continues. It does
@@ -451,6 +485,10 @@ type BrowserCaptchaSolveStartedEventData struct {
 	ChallengeID string `json:"challenge_id"`
 	// Opaque identifier shared with the matching captcha_solve_result.
 	TaskID string `json:"task_id"`
+	// What the solver task produces. Absent when the producer cannot tell.
+	//
+	// Any of "token", "image_challenge", "press_and_hold".
+	TaskKind string `json:"task_kind"`
 	// Host of the page where the captcha is being solved. May be empty for solver
 	// tasks that carry no page URL.
 	WebsiteHost string `json:"website_host"`
@@ -458,13 +496,15 @@ type BrowserCaptchaSolveStartedEventData struct {
 	WebsitePath string `json:"website_path"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		CaptchaType respjson.Field
-		ChallengeID respjson.Field
-		TaskID      respjson.Field
-		WebsiteHost respjson.Field
-		WebsitePath respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		CaptchaType     respjson.Field
+		CaptchaProvider respjson.Field
+		ChallengeID     respjson.Field
+		TaskID          respjson.Field
+		TaskKind        respjson.Field
+		WebsiteHost     respjson.Field
+		WebsitePath     respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -6387,8 +6427,10 @@ type BrowserTelemetryEventUnionData struct {
 	// This field is from variant [BrowserCdpDisconnectEventData].
 	TelemetryExcluded int64  `json:"telemetry_excluded"`
 	CaptchaType       string `json:"captcha_type"`
+	CaptchaProvider   string `json:"captcha_provider"`
 	ChallengeID       string `json:"challenge_id"`
 	TaskID            string `json:"task_id"`
+	TaskKind          string `json:"task_kind"`
 	WebsiteHost       string `json:"website_host"`
 	WebsitePath       string `json:"website_path"`
 	// This field is from variant [BrowserCaptchaSolveResultEventData].
@@ -6591,8 +6633,10 @@ type BrowserTelemetryEventUnionData struct {
 		TelemetryDropped                  respjson.Field
 		TelemetryExcluded                 respjson.Field
 		CaptchaType                       respjson.Field
+		CaptchaProvider                   respjson.Field
 		ChallengeID                       respjson.Field
 		TaskID                            respjson.Field
+		TaskKind                          respjson.Field
 		WebsiteHost                       respjson.Field
 		WebsitePath                       respjson.Field
 		ErrorCode                         respjson.Field
