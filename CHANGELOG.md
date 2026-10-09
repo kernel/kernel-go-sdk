@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.123.0](https://github.com/kernel/kernel-go-sdk/compare/v0.122.0...v0.123.0) (2026-10-09)
+
+
+### Features
+
+* Add video_memory to request the 4GiB VRAM GPU browser tier ([6f3ae15](https://github.com/kernel/kernel-go-sdk/commit/6f3ae15351013fd71e5d554b69d7e532e1e592db))
+* Filter the telemetry SSE stream by event type ([6d9c618](https://github.com/kernel/kernel-go-sdk/commit/6d9c6187b9e9ddbe1a1546a48b1544dacbb62417))
+* Fix 1Password fill classification for repeat fills and unconfirmed submits ([f737b63](https://github.com/kernel/kernel-go-sdk/commit/f737b63ffd168cc67bf0158b961ca3275c94bd1c))
+* Support egress allowlists on browser pools ([3c8b90c](https://github.com/kernel/kernel-go-sdk/commit/3c8b90c8bea096937d6cee06eabd6076e1801376))
+
 ## [0.122.0](https://github.com/kernel/kernel-go-sdk/compare/v0.121.0...v0.122.0) (2026-10-09)
 
 
