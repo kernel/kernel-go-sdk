@@ -1504,6 +1504,19 @@ type CredentialVaultFieldInputParam struct {
 	//
 	// Any of "text", "email", "password", "totp".
 	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
+	// Alternative to value for custom credential collection web apps. Use this only if
+	// you run your own credential collection web app and want values encrypted in the
+	// browser, sent to your backend still encrypted, and forwarded to Kernel's API
+	// still encrypted. In every other case, including server-side code that already
+	// holds the plaintext, use value. The field's value encrypted client-side as a
+	// compact JWE with alg ECDH-ES and enc A256GCM to the key from GET
+	// /vaults/{id_or_name}/encryption_key, with that key's kid in the protected
+	// header. Compression is not supported. The decrypted value follows the same rules
+	// as value, including that an empty string clears the field on update. A kid that
+	// is not this vault's key returns 400 encryption_key_mismatch; fetch the key again
+	// and re-encrypt. Other malformed or undecryptable values return 400
+	// invalid_request. The whole request body is limited to 128 KiB.
+	EncryptedValue param.Opt[string] `json:"encrypted_value,omitzero"`
 	// Optional human-readable display label. It is returned as non-secret metadata and
 	// never affects value keys, updates, or browser fills. Use single-line, trimmed
 	// display text without control or formatting characters. The server enforces a
@@ -1518,7 +1531,9 @@ type CredentialVaultFieldInputParam struct {
 	Sensitive param.Opt[bool] `json:"sensitive,omitzero"`
 	// Optional initial value satisfying the declared type, at most 16 KiB in UTF-8
 	// bytes. Omit to leave unset; null and empty strings are rejected on creation.
-	// Sensitive values are encrypted and never copied into the returned spec.
+	// Sensitive values are encrypted and never copied into the returned spec. Use this
+	// unless your own credential collection web app encrypts values in the browser;
+	// mutually exclusive with encrypted_value.
 	Value param.Opt[string] `json:"value,omitzero"`
 	paramObj
 }
@@ -1569,7 +1584,9 @@ const (
 	CredentialVaultFieldTypeTotp     CredentialVaultFieldType = "totp"
 )
 
-// The property Value is required.
+// Set exactly one of value or encrypted_value. Use value unless the update comes
+// from your own credential collection web app that encrypts values in the browser;
+// see encrypted_value.
 type CredentialVaultFieldUpdateParam struct {
 	// Replacement value (at most 16 KiB in UTF-8 bytes), or null or an empty string to
 	// immediately clear the stored value. Clearing a required form-supported field
@@ -1577,7 +1594,20 @@ type CredentialVaultFieldUpdateParam struct {
 	// Values must satisfy the declared field type. For totp, value is the generator
 	// seed, never a current code. Clearing a required totp field returns 400 because
 	// it cannot be collected in a form.
-	Value param.Opt[string] `json:"value,omitzero" api:"required"`
+	Value param.Opt[string] `json:"value,omitzero"`
+	// Alternative to value for custom credential collection web apps. Use this only if
+	// you run your own credential collection web app and want values encrypted in the
+	// browser, sent to your backend still encrypted, and forwarded to Kernel's API
+	// still encrypted. In every other case, including server-side code that already
+	// holds the plaintext, use value. The field's value encrypted client-side as a
+	// compact JWE with alg ECDH-ES and enc A256GCM to the key from GET
+	// /vaults/{id_or_name}/encryption_key, with that key's kid in the protected
+	// header. Compression is not supported. The decrypted value follows the same rules
+	// as value, including that an empty string clears the field on update. A kid that
+	// is not this vault's key returns 400 encryption_key_mismatch; fetch the key again
+	// and re-encrypt. Other malformed or undecryptable values return 400
+	// invalid_request. The whole request body is limited to 128 KiB.
+	EncryptedValue param.Opt[string] `json:"encrypted_value,omitzero"`
 	paramObj
 }
 
