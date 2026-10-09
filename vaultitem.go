@@ -1839,14 +1839,15 @@ func (r *CredentialVaultItemAction1passwordAccessApproval) UnmarshalJSON(data []
 // they choose 1Password, connect their account and request access to a login in
 // their own non-shared vault; passkeys are not supported. If they decline or that
 // path fails, collect a Kernel-hosted credential item instead. Never automatically
-// retry an uncertain 1Password request or fill. Do not use credential items for
-// credit card data. Use wallet and card item types instead. Kernel credentials
-// declare fields and may enter pending_collection. 1Password credentials either
-// reference a connected credential_account or store a supplied access token and
-// integration key encrypted on the item. They store no login values or selectors.
-// Managed auth credentials reference a managed auth connection in the same project
-// that already has a saved credential, and read it at fill time; they store no
-// values. Repeating the original creation request returns the current item without
+// retry an uncertain 1Password request. After an uncertain fill, inspect the page
+// to see the result of the fill. Do not use credential items for credit card data.
+// Use wallet and card item types instead. Kernel credentials declare fields and
+// may enter pending_collection. 1Password credentials either reference a connected
+// credential_account or store a supplied access token and integration key
+// encrypted on the item. They store no login values or selectors. Managed auth
+// credentials reference a managed auth connection in the same project that already
+// has a saved credential, and read it at fill time; they store no values.
+// Repeating the original creation request returns the current item without
 // overwriting later state. A different request at the same key returns 409.
 //
 // The properties Spec, Type are required.
@@ -3570,16 +3571,18 @@ const (
 type OnePasswordFillVaultItemOperationResult struct {
 	// Kernel's outcome of the extension call. fill_submitted means the extension
 	// reported submission, not website authentication. fill_failed means the extension
-	// returned a known failure and may include error_code. fill_unknown means
-	// submission may have happened without a conclusive response; it has no error_code
-	// and must not be retried in the same browser.
+	// returned a known failure and includes error_code. fill_unknown means the form
+	// may have been filled or submitted without a conclusive result; inspect the page
+	// to see the result of the fill.
 	//
 	// Any of "fill_submitted", "fill_failed", "fill_unknown".
 	Status OnePasswordFillVaultItemOperationResultStatus `json:"status" api:"required"`
 	// Any of "1pw_fill".
 	Type OnePasswordFillVaultItemOperationResultType `json:"type" api:"required"`
-	// Present only for a conclusive fill_failed response. These are allowlisted
-	// 1Password extension codes, never raw errors, secrets, or page content.
+	// Present for fill_failed, and for fill_unknown when the extension reported
+	// autosubmitFailed (it filled and submitted the form but could not confirm the
+	// fill finished). These are allowlisted 1Password extension codes, never raw
+	// errors, secrets, or page content.
 	//
 	// Any of "fillFailed", "autosubmitFailed", "noExistingCredentials",
 	// "authenticationFailed".
@@ -3602,9 +3605,9 @@ func (r *OnePasswordFillVaultItemOperationResult) UnmarshalJSON(data []byte) err
 
 // Kernel's outcome of the extension call. fill_submitted means the extension
 // reported submission, not website authentication. fill_failed means the extension
-// returned a known failure and may include error_code. fill_unknown means
-// submission may have happened without a conclusive response; it has no error_code
-// and must not be retried in the same browser.
+// returned a known failure and includes error_code. fill_unknown means the form
+// may have been filled or submitted without a conclusive result; inspect the page
+// to see the result of the fill.
 type OnePasswordFillVaultItemOperationResultStatus string
 
 const (
@@ -3619,8 +3622,10 @@ const (
 	OnePasswordFillVaultItemOperationResultType1pwFill OnePasswordFillVaultItemOperationResultType = "1pw_fill"
 )
 
-// Present only for a conclusive fill_failed response. These are allowlisted
-// 1Password extension codes, never raw errors, secrets, or page content.
+// Present for fill_failed, and for fill_unknown when the extension reported
+// autosubmitFailed (it filled and submitted the form but could not confirm the
+// fill finished). These are allowlisted 1Password extension codes, never raw
+// errors, secrets, or page content.
 type OnePasswordFillVaultItemOperationResultErrorCode string
 
 const (
@@ -6374,14 +6379,15 @@ type VaultItemUpsertParams struct {
 	// 1Password, connect their account and request access to a login in their own
 	// non-shared vault; passkeys are not supported. If they decline or that path
 	// fails, collect a Kernel-hosted credential item instead. Never automatically
-	// retry an uncertain 1Password request or fill. Do not use credential items for
-	// credit card data. Use wallet and card item types instead. Kernel credentials
-	// declare fields and may enter pending_collection. 1Password credentials either
-	// reference a connected credential_account or store a supplied access token and
-	// integration key encrypted on the item. They store no login values or selectors.
-	// Managed auth credentials reference a managed auth connection in the same project
-	// that already has a saved credential, and read it at fill time; they store no
-	// values. Repeating the original creation request returns the current item without
+	// retry an uncertain 1Password request. After an uncertain fill, inspect the page
+	// to see the result of the fill. Do not use credential items for credit card data.
+	// Use wallet and card item types instead. Kernel credentials declare fields and
+	// may enter pending_collection. 1Password credentials either reference a connected
+	// credential_account or store a supplied access token and integration key
+	// encrypted on the item. They store no login values or selectors. Managed auth
+	// credentials reference a managed auth connection in the same project that already
+	// has a saved credential, and read it at fill time; they store no values.
+	// Repeating the original creation request returns the current item without
 	// overwriting later state. A different request at the same key returns 409.
 	OfCredential *CredentialVaultItemRequestParam `json:",inline"`
 
