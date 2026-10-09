@@ -233,7 +233,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name string `json:"name"`
@@ -356,7 +356,7 @@ type BrowserPoolAcquireResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -425,6 +425,10 @@ type BrowserPoolAcquireResponse struct {
 	UsageStatus BrowserPoolAcquireResponseUsageStatus `json:"usage_status"`
 	// Vaults linked when the browser session was created.
 	Vaults []VaultReference `json:"vaults"`
+	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
+	//
+	// Any of "2GiB", "4GiB".
+	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -468,6 +472,7 @@ type BrowserPoolAcquireResponse struct {
 		Usage              respjson.Field
 		UsageStatus        respjson.Field
 		Vaults             respjson.Field
+		VideoMemory        respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string

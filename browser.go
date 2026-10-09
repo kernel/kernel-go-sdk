@@ -202,6 +202,7 @@ const (
 	BrowserMemory2GiB  BrowserMemory = "2GiB"
 	BrowserMemory6GiB  BrowserMemory = "6GiB"
 	BrowserMemory8GiB  BrowserMemory = "8GiB"
+	BrowserMemory12GiB BrowserMemory = "12GiB"
 	BrowserMemory16GiB BrowserMemory = "16GiB"
 )
 
@@ -850,6 +851,15 @@ func (r *BrowserUsage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Video memory (VRAM) of a GPU browser session. 2GiB sessions have 4 vCPU and 6GiB
+// memory. 4GiB sessions have 8 vCPU and 12GiB memory.
+type BrowserVideoMemory string
+
+const (
+	BrowserVideoMemory2GiB BrowserVideoMemory = "2GiB"
+	BrowserVideoMemory4GiB BrowserVideoMemory = "4GiB"
+)
+
 // Browser profile metadata.
 type Profile struct {
 	// Unique identifier for the profile
@@ -934,7 +944,7 @@ type BrowserNewResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1003,6 +1013,10 @@ type BrowserNewResponse struct {
 	UsageStatus BrowserNewResponseUsageStatus `json:"usage_status"`
 	// Vaults linked when the browser session was created.
 	Vaults []VaultReference `json:"vaults"`
+	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
+	//
+	// Any of "2GiB", "4GiB".
+	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -1046,6 +1060,7 @@ type BrowserNewResponse struct {
 		Usage              respjson.Field
 		UsageStatus        respjson.Field
 		Vaults             respjson.Field
+		VideoMemory        respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -1086,7 +1101,7 @@ type BrowserGetResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1155,6 +1170,10 @@ type BrowserGetResponse struct {
 	UsageStatus BrowserGetResponseUsageStatus `json:"usage_status"`
 	// Vaults linked when the browser session was created.
 	Vaults []VaultReference `json:"vaults"`
+	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
+	//
+	// Any of "2GiB", "4GiB".
+	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -1198,6 +1217,7 @@ type BrowserGetResponse struct {
 		Usage              respjson.Field
 		UsageStatus        respjson.Field
 		Vaults             respjson.Field
+		VideoMemory        respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -1238,7 +1258,7 @@ type BrowserUpdateResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1307,6 +1327,10 @@ type BrowserUpdateResponse struct {
 	UsageStatus BrowserUpdateResponseUsageStatus `json:"usage_status"`
 	// Vaults linked when the browser session was created.
 	Vaults []VaultReference `json:"vaults"`
+	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
+	//
+	// Any of "2GiB", "4GiB".
+	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -1350,6 +1374,7 @@ type BrowserUpdateResponse struct {
 		Usage              respjson.Field
 		UsageStatus        respjson.Field
 		Vaults             respjson.Field
+		VideoMemory        respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -1390,7 +1415,7 @@ type BrowserListResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1459,6 +1484,10 @@ type BrowserListResponse struct {
 	UsageStatus BrowserListResponseUsageStatus `json:"usage_status"`
 	// Vaults linked when the browser session was created.
 	Vaults []VaultReference `json:"vaults"`
+	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
+	//
+	// Any of "2GiB", "4GiB".
+	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.
@@ -1502,6 +1531,7 @@ type BrowserListResponse struct {
 		Usage              respjson.Field
 		UsageStatus        respjson.Field
 		Vaults             respjson.Field
+		VideoMemory        respjson.Field
 		Viewport           respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
@@ -1640,6 +1670,12 @@ type BrowserNewParams struct {
 	// Project-scoped vaults to link to the browser session. Links are immutable after
 	// creation.
 	Vaults []VaultReferenceParam `json:"vaults,omitzero"`
+	// Video memory (VRAM) for a GPU browser session. Requires gpu=true. Defaults to
+	// 2GiB, which comes with 4 vCPU and 6GiB memory. 4GiB comes with 8 vCPU and 12GiB
+	// memory.
+	//
+	// Any of "2GiB", "4GiB".
+	VideoMemory BrowserVideoMemory `json:"video_memory,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.

@@ -127,6 +127,7 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			ID:   kernel.String("id"),
 			Name: kernel.String("x"),
 		}},
+		VideoMemory: kernel.BrowserVideoMemory2GiB,
 		Viewport: shared.BrowserViewportParam{
 			Height:      800,
 			Width:       1280,
