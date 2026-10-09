@@ -93,6 +93,25 @@ func (r *VaultService) Delete(ctx context.Context, idOrName string, opts ...opti
 	return err
 }
 
+// Returns the public key that custom credential collection web apps use to encrypt
+// values in the browser. Use this only if you run your own credential collection
+// web app and want values encrypted in the browser, sent to your backend still
+// encrypted, and forwarded to Kernel's API still encrypted. In every other case,
+// including server-side code that already holds the plaintext, use value. The page
+// encrypts each value to this key, your backend forwards the ciphertext unchanged
+// as encrypted_value when creating or updating a credential item in this vault,
+// and Kernel decrypts it.
+func (r *VaultService) GetEncryptionKey(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *VaultEncryptionKey, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("vaults/%s/encryption_key", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Free organizations can store up to 3 non-deleted vaults across all projects.
 // Paid plans and active trials have no vault cap. Retrieving an existing vault by
 // name succeeds even at the limit.
@@ -123,6 +142,84 @@ type Vault struct {
 // Returns the unmodified JSON received from the API
 func (r Vault) RawJSON() string { return r.JSON.raw }
 func (r *Vault) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Public key for encrypted_value on credential fields. Use this only if you run
+// your own credential collection web app and want values encrypted in the browser,
+// sent to your backend still encrypted, and forwarded to Kernel's API still
+// encrypted. In every other case, including server-side code that already holds
+// the plaintext, use value. Each vault has its own key; a value encrypted for one
+// vault is rejected by every other vault. The key is created on first request and
+// stays the same for the vault's lifetime, so it may be cached.
+type VaultEncryptionKey struct {
+	// JWE key management algorithm.
+	//
+	// Any of "ECDH-ES".
+	Alg VaultEncryptionKeyAlg `json:"alg" api:"required"`
+	// JWE content encryption algorithm.
+	//
+	// Any of "A256GCM".
+	Enc VaultEncryptionKeyEnc `json:"enc" api:"required"`
+	// P-256 public key in JWK form.
+	Jwk VaultEncryptionKeyJwk `json:"jwk" api:"required"`
+	// Key ID. Set it as the kid protected header of every encrypted_value.
+	Kid string `json:"kid" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Alg         respjson.Field
+		Enc         respjson.Field
+		Jwk         respjson.Field
+		Kid         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultEncryptionKey) RawJSON() string { return r.JSON.raw }
+func (r *VaultEncryptionKey) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// JWE key management algorithm.
+type VaultEncryptionKeyAlg string
+
+const (
+	VaultEncryptionKeyAlgEcdhEs VaultEncryptionKeyAlg = "ECDH-ES"
+)
+
+// JWE content encryption algorithm.
+type VaultEncryptionKeyEnc string
+
+const (
+	VaultEncryptionKeyEncA256Gcm VaultEncryptionKeyEnc = "A256GCM"
+)
+
+// P-256 public key in JWK form.
+type VaultEncryptionKeyJwk struct {
+	// Any of "P-256".
+	Crv string `json:"crv" api:"required"`
+	// Any of "EC".
+	Kty string `json:"kty" api:"required"`
+	// Base64url-encoded x coordinate.
+	X string `json:"x" api:"required"`
+	// Base64url-encoded y coordinate.
+	Y string `json:"y" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Crv         respjson.Field
+		Kty         respjson.Field
+		X           respjson.Field
+		Y           respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultEncryptionKeyJwk) RawJSON() string { return r.JSON.raw }
+func (r *VaultEncryptionKeyJwk) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

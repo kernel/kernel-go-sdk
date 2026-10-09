@@ -553,7 +553,9 @@ type BrowserPoolNewParams struct {
 	//
 	// Any of "8GiB", "16GiB".
 	Memory BrowserMemoryRequest `json:"memory,omitzero"`
-	// Network configuration applied to browsers in this pool.
+	// Network configuration applied to browsers in this pool. Proxy routes require
+	// proxy-v3; the pool will not provision browsers through Envoy if proxy-v3 is
+	// unavailable.
 	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile configuration for browsers in a pool. Provide either id or name.
 	// Profiles must be created beforehand. Unlike single browser sessions, pools load
@@ -805,9 +807,11 @@ type BrowserPoolUpdateParams struct {
 	Memory BrowserPoolUpdateParamsMemory `json:"memory,omitzero"`
 	// If provided, replaces the pool's network configuration. Omit to leave the
 	// existing configuration unchanged; an empty object ({}) removes it, while
-	// network: {private_hosts: []} sets an explicit empty list. Only applied to
-	// browsers created in the pool after the update; browsers already in the pool keep
-	// their configuration until discarded (see discard_all_idle).
+	// network: {private_hosts: []} or network: {proxy_routes: []} sets an explicit
+	// empty list. Proxy routes require proxy-v3; the pool will not provision browsers
+	// through Envoy if proxy-v3 is unavailable. Only applied to browsers created in
+	// the pool after the update; browsers already in the pool keep their configuration
+	// until discarded (see discard_all_idle).
 	Network BrowserNetworkConfigParam `json:"network,omitzero"`
 	// Profile configuration for browsers in a pool. Provide either id or name.
 	// Profiles must be created beforehand. Unlike single browser sessions, pools load

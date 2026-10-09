@@ -164,8 +164,8 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // return 400 (invalid request or targets), 403 (access or destination denied), 404
 // (resource not found), or 409 (item or browser not ready). Once writing starts,
 // known partial failures and indeterminate field outcomes return 200 with status
-// `failed` or `unknown`, not an automatic-retry signal. A transport error may
-// leave the outcome unknown; do not automatically retry.
+// `failed` or `unknown`. Fill never submits the page, so it is safe to retry after
+// a failure, an `unknown` outcome, or a transport error.
 func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemOperationResponseUnion, err error) {
 	opts = slices.Concat(r.Options, []option.RequestOption{option.WithMaxRetries(0)}, opts)
 	if params.IDOrName == "" {
@@ -1504,6 +1504,19 @@ type CredentialVaultFieldInputParam struct {
 	//
 	// Any of "text", "email", "password", "totp".
 	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
+	// Alternative to value for custom credential collection web apps. Use this only if
+	// you run your own credential collection web app and want values encrypted in the
+	// browser, sent to your backend still encrypted, and forwarded to Kernel's API
+	// still encrypted. In every other case, including server-side code that already
+	// holds the plaintext, use value. The field's value encrypted client-side as a
+	// compact JWE with alg ECDH-ES and enc A256GCM to the key from GET
+	// /vaults/{id_or_name}/encryption_key, with that key's kid in the protected
+	// header. Compression is not supported. The decrypted value follows the same rules
+	// as value, including that an empty string clears the field on update. A kid that
+	// is not this vault's key returns 400 encryption_key_mismatch; fetch the key again
+	// and re-encrypt. Other malformed or undecryptable values return 400
+	// invalid_request. The whole request body is limited to 128 KiB.
+	EncryptedValue param.Opt[string] `json:"encrypted_value,omitzero"`
 	// Optional human-readable display label. It is returned as non-secret metadata and
 	// never affects value keys, updates, or browser fills. Use single-line, trimmed
 	// display text without control or formatting characters. The server enforces a
@@ -1518,7 +1531,9 @@ type CredentialVaultFieldInputParam struct {
 	Sensitive param.Opt[bool] `json:"sensitive,omitzero"`
 	// Optional initial value satisfying the declared type, at most 16 KiB in UTF-8
 	// bytes. Omit to leave unset; null and empty strings are rejected on creation.
-	// Sensitive values are encrypted and never copied into the returned spec.
+	// Sensitive values are encrypted and never copied into the returned spec. Use this
+	// unless your own credential collection web app encrypts values in the browser;
+	// mutually exclusive with encrypted_value.
 	Value param.Opt[string] `json:"value,omitzero"`
 	paramObj
 }
@@ -1569,7 +1584,9 @@ const (
 	CredentialVaultFieldTypeTotp     CredentialVaultFieldType = "totp"
 )
 
-// The property Value is required.
+// Set exactly one of value or encrypted_value. Use value unless the update comes
+// from your own credential collection web app that encrypts values in the browser;
+// see encrypted_value.
 type CredentialVaultFieldUpdateParam struct {
 	// Replacement value (at most 16 KiB in UTF-8 bytes), or null or an empty string to
 	// immediately clear the stored value. Clearing a required form-supported field
@@ -1577,7 +1594,20 @@ type CredentialVaultFieldUpdateParam struct {
 	// Values must satisfy the declared field type. For totp, value is the generator
 	// seed, never a current code. Clearing a required totp field returns 400 because
 	// it cannot be collected in a form.
-	Value param.Opt[string] `json:"value,omitzero" api:"required"`
+	Value param.Opt[string] `json:"value,omitzero"`
+	// Alternative to value for custom credential collection web apps. Use this only if
+	// you run your own credential collection web app and want values encrypted in the
+	// browser, sent to your backend still encrypted, and forwarded to Kernel's API
+	// still encrypted. In every other case, including server-side code that already
+	// holds the plaintext, use value. The field's value encrypted client-side as a
+	// compact JWE with alg ECDH-ES and enc A256GCM to the key from GET
+	// /vaults/{id_or_name}/encryption_key, with that key's kid in the protected
+	// header. Compression is not supported. The decrypted value follows the same rules
+	// as value, including that an empty string clears the field on update. A kid that
+	// is not this vault's key returns 400 encryption_key_mismatch; fetch the key again
+	// and re-encrypt. Other malformed or undecryptable values return 400
+	// invalid_request. The whole request body is limited to 128 KiB.
+	EncryptedValue param.Opt[string] `json:"encrypted_value,omitzero"`
 	paramObj
 }
 
@@ -2261,8 +2291,10 @@ const (
 // atomic: previously filled fields are not rolled back. Never submit the form or
 // click buttons, though input/change events may trigger site behavior. Link and
 // Kernel cards use fill for browser checkout and do not expose aliases or support
-// egress substitution. Do not automatically retry a failed or indeterminate
-// operation.
+// egress substitution. Fill does not consume the item, so a failed or
+// indeterminate fill is safe to retry; a retry rewrites the same fields. A retry
+// right after an indeterminate fill may wait up to 15 seconds for the earlier
+// attempt's browser lock to expire.
 //
 // Secret values are never returned or included in operation logs, traces, audit
 // events, or error details. This does not prevent an agent with unrestricted
@@ -6208,8 +6240,10 @@ type VaultItemPerformOperationParams struct {
 	// atomic: previously filled fields are not rolled back. Never submit the form or
 	// click buttons, though input/change events may trigger site behavior. Link and
 	// Kernel cards use fill for browser checkout and do not expose aliases or support
-	// egress substitution. Do not automatically retry a failed or indeterminate
-	// operation.
+	// egress substitution. Fill does not consume the item, so a failed or
+	// indeterminate fill is safe to retry; a retry rewrites the same fields. A retry
+	// right after an indeterminate fill may wait up to 15 seconds for the earlier
+	// attempt's browser lock to expire.
 	//
 	// Secret values are never returned or included in operation logs, traces, audit
 	// events, or error details. This does not prevent an agent with unrestricted

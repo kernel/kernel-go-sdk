@@ -570,8 +570,8 @@ func (r *ProxyManagedCreateConfigUnion) UnmarshalJSON(data []byte) error {
 
 // Configuration for an ISP proxy.
 type ProxyManagedCreateConfigIsp struct {
-	// ISO 3166 country code. Supported countries are US, GB, FR, DE, and SG. Defaults
-	// to US if not provided.
+	// ISO 3166 country code. Supported countries are US, GB, FR, DE, SG, and KR.
+	// Defaults to US if not provided.
 	Country string `json:"country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {

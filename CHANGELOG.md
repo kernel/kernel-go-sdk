@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.122.0](https://github.com/kernel/kernel-go-sdk/compare/v0.121.0...v0.122.0) (2026-10-09)
+
+
+### Features
+
+* Accept client-encrypted credential values in vault items ([c203c7e](https://github.com/kernel/kernel-go-sdk/commit/c203c7e5a0c9781bcaf1056cb7665fd670867c4b))
+* Add feature-gated Korean ISP proxies ([168ca36](https://github.com/kernel/kernel-go-sdk/commit/168ca3675c63474198a074175fd1212b1c7f6731))
+* Describe vault fill as safe to retry ([207ed0d](https://github.com/kernel/kernel-go-sdk/commit/207ed0d79aba4410438fdb6def40838fca156504))
+* Infer a challenge result for unobserved captcha providers in the relay ([454206a](https://github.com/kernel/kernel-go-sdk/commit/454206ab83bc3c94fe8f8b1746a1c422b4681983))
+* Support proxy routes in browser pools ([08ae962](https://github.com/kernel/kernel-go-sdk/commit/08ae962810430cd22c2cb16f6403974b36871e3c))
+
 ## [0.121.0](https://github.com/kernel/kernel-go-sdk/compare/v0.120.0...v0.121.0) (2026-10-07)
 
 
