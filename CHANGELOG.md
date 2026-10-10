@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.124.0](https://github.com/kernel/kernel-go-sdk/compare/v0.123.0...v0.124.0) (2026-10-10)
+
+
+### Features
+
+* Complete Visa vault verification and transaction reporting ([9ac854e](https://github.com/kernel/kernel-go-sdk/commit/9ac854e2d73931cce7e4879b8505b1e11cf1e27c))
+
 ## [0.123.0](https://github.com/kernel/kernel-go-sdk/compare/v0.122.0...v0.123.0) (2026-10-09)
 
 
