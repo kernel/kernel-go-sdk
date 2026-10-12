@@ -1428,9 +1428,10 @@ func (r *CredentialAccountVaultItemAvailableExpansion) UnmarshalJSON(data []byte
 // invoking it through the item operations endpoint.
 type CredentialAccountVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "confirm_transaction", "collect", "prepare_checkout",
-	// "fill", "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1801,9 +1802,10 @@ func (r *CredentialVaultItemAvailableExpansion) UnmarshalJSON(data []byte) error
 // invoking it through the item operations endpoint.
 type CredentialVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "confirm_transaction", "collect", "prepare_checkout",
-	// "fill", "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2476,12 +2478,16 @@ type KernelCardState struct {
 	Provider KernelCardStateProvider `json:"provider" api:"required"`
 	// pending_authorization on a Visa purchase waits for the cardholder to approve it
 	// through the spend_approval action; an unused link expires after 30 minutes.
-	// recovery_required means approving the purchase or issuing the one-time code has
-	// an unresolved outcome. Kernel never approves again or issues another code for
-	// the item automatically, and the item cannot be deleted or replaced until the
-	// original attempt is reconciled with support. When status_reason says the
-	// provider refused retrieval before acceptance, no code was issued and a later
-	// read retries. declined means the card network refused to issue a code.
+	// recovery_required means verification, approving the purchase or issuing the
+	// one-time code has an unresolved outcome. A server-classified initial attestation
+	// failure before intent dispatch may advertise restart_verification to prepare a
+	// fresh local verification link; this does not approve spending or replay any
+	// provider request. Unclassified legacy recovery and uncertain intent creation
+	// cannot restart. Kernel never approves again or issues another code for the item
+	// automatically, and the item cannot be deleted or replaced until the original
+	// attempt is reconciled with support. When status_reason says the provider refused
+	// retrieval before acceptance, no code was issued and a later read retries.
+	// declined means the card network refused to issue a code.
 	//
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
@@ -2516,12 +2522,16 @@ const (
 
 // pending_authorization on a Visa purchase waits for the cardholder to approve it
 // through the spend_approval action; an unused link expires after 30 minutes.
-// recovery_required means approving the purchase or issuing the one-time code has
-// an unresolved outcome. Kernel never approves again or issues another code for
-// the item automatically, and the item cannot be deleted or replaced until the
-// original attempt is reconciled with support. When status_reason says the
-// provider refused retrieval before acceptance, no code was issued and a later
-// read retries. declined means the card network refused to issue a code.
+// recovery_required means verification, approving the purchase or issuing the
+// one-time code has an unresolved outcome. A server-classified initial attestation
+// failure before intent dispatch may advertise restart_verification to prepare a
+// fresh local verification link; this does not approve spending or replay any
+// provider request. Unclassified legacy recovery and uncertain intent creation
+// cannot restart. Kernel never approves again or issues another code for the item
+// automatically, and the item cannot be deleted or replaced until the original
+// attempt is reconciled with support. When status_reason says the provider refused
+// retrieval before acceptance, no code was issued and a later read retries.
+// declined means the card network refused to issue a code.
 type KernelCardStateStatus string
 
 const (
@@ -3845,6 +3855,37 @@ const (
 	PrepareCheckoutVaultItemOperationRequestTypePrepareCheckout PrepareCheckoutVaultItemOperationRequestType = "prepare_checkout"
 )
 
+// Explicitly prepare a fresh local verification session for the same Kernel Visa
+// purchase and connected wallet, only when restart_verification is advertised.
+// Kernel must have durable proof of an initial attestation failure before intent
+// dispatch. Replaces the spend_approval capability and discards session-bound
+// verification data without calling the provider or granting spend consent. The
+// cardholder must use the new link, verify again and explicitly approve the
+// purchase. Unknown intent creation, legacy unclassified recovery, enrollment
+// completion, issuance and confirmation cannot restart. Do not automatically retry
+// this operation.
+//
+// The property Type is required.
+type RestartVerificationVaultItemOperationRequestParam struct {
+	// Any of "restart_verification".
+	Type RestartVerificationVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r RestartVerificationVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow RestartVerificationVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *RestartVerificationVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type RestartVerificationVaultItemOperationRequestType string
+
+const (
+	RestartVerificationVaultItemOperationRequestTypeRestartVerification RestartVerificationVaultItemOperationRequestType = "restart_verification"
+)
+
 type VaultCardAliases struct {
 	Cvc      string `json:"cvc" api:"required"`
 	ExpMonth string `json:"exp_month" api:"required"`
@@ -4527,9 +4568,10 @@ func (r *VaultItemWalletAvailableExpansion) UnmarshalJSON(data []byte) error {
 // invoking it through the item operations endpoint.
 type VaultItemWalletAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "confirm_transaction", "collect", "prepare_checkout",
-	// "fill", "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4628,9 +4670,10 @@ func (r *VaultItemCardAvailableExpansion) UnmarshalJSON(data []byte) error {
 // invoking it through the item operations endpoint.
 type VaultItemCardAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "confirm_transaction", "collect", "prepare_checkout",
-	// "fill", "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5441,9 +5484,10 @@ func (r *VaultItemOperationResponseWalletVaultItemAvailableExpansion) UnmarshalJ
 // invoking it through the item operations endpoint.
 type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "confirm_transaction", "collect", "prepare_checkout",
-	// "fill", "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5547,9 +5591,10 @@ func (r *VaultItemOperationResponseCardVaultItemAvailableExpansion) UnmarshalJSO
 // invoking it through the item operations endpoint.
 type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "confirm_transaction", "collect", "prepare_checkout",
-	// "fill", "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6308,6 +6353,17 @@ type VaultItemPerformOperationParams struct {
 	// automatically retry provider failures or indeterminate outcomes. Checkout
 	// context is not accepted.
 	OfAuthorize *AuthorizeVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set.
+	// Explicitly prepare a fresh local verification session for the same Kernel Visa
+	// purchase and connected wallet, only when restart_verification is advertised.
+	// Kernel must have durable proof of an initial attestation failure before intent
+	// dispatch. Replaces the spend_approval capability and discards session-bound
+	// verification data without calling the provider or granting spend consent. The
+	// cardholder must use the new link, verify again and explicitly approve the
+	// purchase. Unknown intent creation, legacy unclassified recovery, enrollment
+	// completion, issuance and confirmation cannot restart. Do not automatically retry
+	// this operation.
+	OfRestartVerification *RestartVerificationVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Report
 	// a real merchant transaction outcome for an issued Kernel Visa credential. Never
 	// infer success from filling checkout or receiving a credential. Supply the
@@ -6416,6 +6472,7 @@ type VaultItemPerformOperationParams struct {
 
 func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfAuthorize,
+		u.OfRestartVerification,
 		u.OfConfirmTransaction,
 		u.OfCollect,
 		u.OfPrepareCheckout,
