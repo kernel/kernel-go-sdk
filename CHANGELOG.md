@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.124.0](https://github.com/kernel/kernel-go-sdk/compare/v0.123.0...v0.124.0) (2026-10-13)
+
+
+### Features
+
+* Accept intent creation without a fixed status ([8e8343f](https://github.com/kernel/kernel-go-sdk/commit/8e8343ff31318fb906816388a647c922c266d3cf))
+* Complete Visa vault verification and transaction reporting ([9ac854e](https://github.com/kernel/kernel-go-sdk/commit/9ac854e2d73931cce7e4879b8505b1e11cf1e27c))
+
+
+### Bug Fixes
+
+* seal browser pool acquire SDK results ([99b6c2b](https://github.com/kernel/kernel-go-sdk/commit/99b6c2b2751cf65675a01d172e79a0e58a321155))
+
 ## [0.123.0](https://github.com/kernel/kernel-go-sdk/compare/v0.122.0...v0.123.0) (2026-10-09)
 
 
