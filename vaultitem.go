@@ -442,25 +442,31 @@ type CardVaultItemSpecUnion struct {
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [KernelCardVaultItemSpec].
+	MerchantCategory string `json:"merchant_category"`
+	// This field is from variant [KernelCardVaultItemSpec].
+	MerchantCategoryCode string `json:"merchant_category_code"`
+	// This field is from variant [KernelCardVaultItemSpec].
 	MerchantCountry string `json:"merchant_country"`
 	JSON            struct {
-		Amount          respjson.Field
-		Context         respjson.Field
-		Currency        respjson.Field
-		MerchantName    respjson.Field
-		MerchantURL     respjson.Field
-		PaymentMethodID respjson.Field
-		Provider        respjson.Field
-		Wallet          respjson.Field
-		ExpiresAt       respjson.Field
-		LineItems       respjson.Field
-		Metadata        respjson.Field
-		Totals          respjson.Field
-		Merchant        respjson.Field
-		CardID          respjson.Field
-		CheckoutOrigin  respjson.Field
-		MerchantCountry respjson.Field
-		raw             string
+		Amount               respjson.Field
+		Context              respjson.Field
+		Currency             respjson.Field
+		MerchantName         respjson.Field
+		MerchantURL          respjson.Field
+		PaymentMethodID      respjson.Field
+		Provider             respjson.Field
+		Wallet               respjson.Field
+		ExpiresAt            respjson.Field
+		LineItems            respjson.Field
+		Metadata             respjson.Field
+		Totals               respjson.Field
+		Merchant             respjson.Field
+		CardID               respjson.Field
+		CheckoutOrigin       respjson.Field
+		MerchantCategory     respjson.Field
+		MerchantCategoryCode respjson.Field
+		MerchantCountry      respjson.Field
+		raw                  string
 	} `json:"-"`
 }
 
@@ -788,6 +794,22 @@ func (u CardVaultItemSpecUnionParam) GetCardID() *string {
 func (u CardVaultItemSpecUnionParam) GetCheckoutOrigin() *string {
 	if vt := u.OfAgentcard; vt != nil && vt.CheckoutOrigin.Valid() {
 		return &vt.CheckoutOrigin.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetMerchantCategory() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCategory.Valid() {
+		return &vt.MerchantCategory.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetMerchantCategoryCode() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCategoryCode.Valid() {
+		return &vt.MerchantCategoryCode.Value
 	}
 	return nil
 }
@@ -1278,6 +1300,68 @@ const (
 	CollectVaultItemOperationRequestTypeCollect CollectVaultItemOperationRequestType = "collect"
 )
 
+// Report a real merchant transaction outcome for an issued Kernel Visa credential.
+// Never infer success from filling checkout or receiving a credential. Supply the
+// observed status, transaction type, actual amount, currency and timestamp.
+// Unknown outcomes require manual reconciliation, not retry. Each purchase accepts
+// one report.
+//
+// The properties Amount, Currency, OccurredAt, Status, TransactionType, Type are
+// required.
+type ConfirmTransactionVaultItemOperationRequestParam struct {
+	// Actual transaction amount in minor units, no greater than the approved limit.
+	Amount int64 `json:"amount" api:"required"`
+	// Must match the approved purchase currency.
+	Currency string `json:"currency" api:"required"`
+	// Time the merchant outcome was observed.
+	OccurredAt time.Time `json:"occurred_at" api:"required" format:"date-time"`
+	// Any of "APPROVED", "DECLINED", "PENDING", "ERROR", "CANCELLED".
+	Status ConfirmTransactionVaultItemOperationRequestStatus `json:"status,omitzero" api:"required"`
+	// Any of "PURCHASE", "AUTHORIZATION", "CAPTURE", "REFUND", "REVERSAL",
+	// "VERIFICATION", "CHARGEBACK", "FRAUD".
+	TransactionType ConfirmTransactionVaultItemOperationRequestTransactionType `json:"transaction_type,omitzero" api:"required"`
+	// Any of "confirm_transaction".
+	Type ConfirmTransactionVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r ConfirmTransactionVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow ConfirmTransactionVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ConfirmTransactionVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ConfirmTransactionVaultItemOperationRequestStatus string
+
+const (
+	ConfirmTransactionVaultItemOperationRequestStatusApproved  ConfirmTransactionVaultItemOperationRequestStatus = "APPROVED"
+	ConfirmTransactionVaultItemOperationRequestStatusDeclined  ConfirmTransactionVaultItemOperationRequestStatus = "DECLINED"
+	ConfirmTransactionVaultItemOperationRequestStatusPending   ConfirmTransactionVaultItemOperationRequestStatus = "PENDING"
+	ConfirmTransactionVaultItemOperationRequestStatusError     ConfirmTransactionVaultItemOperationRequestStatus = "ERROR"
+	ConfirmTransactionVaultItemOperationRequestStatusCancelled ConfirmTransactionVaultItemOperationRequestStatus = "CANCELLED"
+)
+
+type ConfirmTransactionVaultItemOperationRequestTransactionType string
+
+const (
+	ConfirmTransactionVaultItemOperationRequestTransactionTypePurchase      ConfirmTransactionVaultItemOperationRequestTransactionType = "PURCHASE"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeAuthorization ConfirmTransactionVaultItemOperationRequestTransactionType = "AUTHORIZATION"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeCapture       ConfirmTransactionVaultItemOperationRequestTransactionType = "CAPTURE"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeRefund        ConfirmTransactionVaultItemOperationRequestTransactionType = "REFUND"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeReversal      ConfirmTransactionVaultItemOperationRequestTransactionType = "REVERSAL"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeVerification  ConfirmTransactionVaultItemOperationRequestTransactionType = "VERIFICATION"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeChargeback    ConfirmTransactionVaultItemOperationRequestTransactionType = "CHARGEBACK"
+	ConfirmTransactionVaultItemOperationRequestTransactionTypeFraud         ConfirmTransactionVaultItemOperationRequestTransactionType = "FRAUD"
+)
+
+type ConfirmTransactionVaultItemOperationRequestType string
+
+const (
+	ConfirmTransactionVaultItemOperationRequestTypeConfirmTransaction ConfirmTransactionVaultItemOperationRequestType = "confirm_transaction"
+)
+
 type CredentialAccountVaultItem struct {
 	ID                  string                                         `json:"id" api:"required"`
 	AvailableExpansions []CredentialAccountVaultItemAvailableExpansion `json:"available_expansions" api:"required"`
@@ -1344,9 +1428,10 @@ func (r *CredentialAccountVaultItemAvailableExpansion) UnmarshalJSON(data []byte
 // invoking it through the item operations endpoint.
 type CredentialAccountVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "collect", "prepare_checkout", "fill",
-	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1717,9 +1802,10 @@ func (r *CredentialVaultItemAvailableExpansion) UnmarshalJSON(data []byte) error
 // invoking it through the item operations endpoint.
 type CredentialVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "collect", "prepare_checkout", "fill",
-	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2392,12 +2478,16 @@ type KernelCardState struct {
 	Provider KernelCardStateProvider `json:"provider" api:"required"`
 	// pending_authorization on a Visa purchase waits for the cardholder to approve it
 	// through the spend_approval action; an unused link expires after 30 minutes.
-	// recovery_required means approving the purchase or issuing the one-time code has
-	// an unresolved outcome. Kernel never approves again or issues another code for
-	// the item automatically, and the item cannot be deleted or replaced until the
-	// original attempt is reconciled with support. When status_reason says the
-	// provider refused retrieval before acceptance, no code was issued and a later
-	// read retries. declined means the card network refused to issue a code.
+	// recovery_required means verification, approving the purchase or issuing the
+	// one-time code has an unresolved outcome. A server-classified initial attestation
+	// failure before intent dispatch may advertise restart_verification to prepare a
+	// fresh local verification link; this does not approve spending or replay any
+	// provider request. Unclassified legacy recovery and uncertain intent creation
+	// cannot restart. Kernel never approves again or issues another code for the item
+	// automatically, and the item cannot be deleted or replaced until the original
+	// attempt is reconciled with support. When status_reason says the provider refused
+	// retrieval before acceptance, no code was issued and a later read retries.
+	// declined means the card network refused to issue a code.
 	//
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
@@ -2432,12 +2522,16 @@ const (
 
 // pending_authorization on a Visa purchase waits for the cardholder to approve it
 // through the spend_approval action; an unused link expires after 30 minutes.
-// recovery_required means approving the purchase or issuing the one-time code has
-// an unresolved outcome. Kernel never approves again or issues another code for
-// the item automatically, and the item cannot be deleted or replaced until the
-// original attempt is reconciled with support. When status_reason says the
-// provider refused retrieval before acceptance, no code was issued and a later
-// read retries. declined means the card network refused to issue a code.
+// recovery_required means verification, approving the purchase or issuing the
+// one-time code has an unresolved outcome. A server-classified initial attestation
+// failure before intent dispatch may advertise restart_verification to prepare a
+// fresh local verification link; this does not approve spending or replay any
+// provider request. Unclassified legacy recovery and uncertain intent creation
+// cannot restart. Kernel never approves again or issues another code for the item
+// automatically, and the item cannot be deleted or replaced until the original
+// attempt is reconciled with support. When status_reason says the provider refused
+// retrieval before acceptance, no code was issued and a later read retries.
+// declined means the card network refused to issue a code.
 type KernelCardStateStatus string
 
 const (
@@ -2496,20 +2590,27 @@ type KernelCardVaultItemSpec struct {
 	Provider KernelCardVaultItemSpecProvider `json:"provider" api:"required"`
 	// Key of the Kernel wallet item whose enrolled card pays.
 	Wallet string `json:"wallet" api:"required"`
+	// Actual merchant category when known. Omit rather than invent a category.
+	MerchantCategory string `json:"merchant_category"`
+	// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not
+	// accepted.
+	MerchantCategoryCode string `json:"merchant_category_code"`
 	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
 	// one-time code is issued for the merchant's country.
 	MerchantCountry string `json:"merchant_country"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Amount          respjson.Field
-		Currency        respjson.Field
-		MerchantName    respjson.Field
-		MerchantURL     respjson.Field
-		Provider        respjson.Field
-		Wallet          respjson.Field
-		MerchantCountry respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
+		Amount               respjson.Field
+		Currency             respjson.Field
+		MerchantName         respjson.Field
+		MerchantURL          respjson.Field
+		Provider             respjson.Field
+		Wallet               respjson.Field
+		MerchantCategory     respjson.Field
+		MerchantCategoryCode respjson.Field
+		MerchantCountry      respjson.Field
+		ExtraFields          map[string]respjson.Field
+		raw                  string
 	} `json:"-"`
 }
 
@@ -2561,6 +2662,11 @@ type KernelCardVaultItemSpecParam struct {
 	Provider KernelCardVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
 	// Key of the Kernel wallet item whose enrolled card pays.
 	Wallet string `json:"wallet" api:"required"`
+	// Actual merchant category when known. Omit rather than invent a category.
+	MerchantCategory param.Opt[string] `json:"merchant_category,omitzero"`
+	// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not
+	// accepted.
+	MerchantCategoryCode param.Opt[string] `json:"merchant_category_code,omitzero"`
 	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
 	// one-time code is issued for the merchant's country.
 	MerchantCountry param.Opt[string] `json:"merchant_country,omitzero"`
@@ -3749,6 +3855,37 @@ const (
 	PrepareCheckoutVaultItemOperationRequestTypePrepareCheckout PrepareCheckoutVaultItemOperationRequestType = "prepare_checkout"
 )
 
+// Explicitly prepare a fresh local verification session for the same Kernel Visa
+// purchase and connected wallet, only when restart_verification is advertised.
+// Kernel must have durable proof of an initial attestation failure before intent
+// dispatch. Replaces the spend_approval capability and discards session-bound
+// verification data without calling the provider or granting spend consent. The
+// cardholder must use the new link, verify again and explicitly approve the
+// purchase. Unknown intent creation, legacy unclassified recovery, enrollment
+// completion, issuance and confirmation cannot restart. Do not automatically retry
+// this operation.
+//
+// The property Type is required.
+type RestartVerificationVaultItemOperationRequestParam struct {
+	// Any of "restart_verification".
+	Type RestartVerificationVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r RestartVerificationVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow RestartVerificationVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *RestartVerificationVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type RestartVerificationVaultItemOperationRequestType string
+
+const (
+	RestartVerificationVaultItemOperationRequestTypeRestartVerification RestartVerificationVaultItemOperationRequestType = "restart_verification"
+)
+
 type VaultCardAliases struct {
 	Cvc      string `json:"cvc" api:"required"`
 	ExpMonth string `json:"exp_month" api:"required"`
@@ -4142,6 +4279,10 @@ type VaultItemUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantCategory string `json:"merchant_category"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantCategoryCode string `json:"merchant_category_code"`
+	// This field is from variant [CardVaultItemSpecUnion].
 	MerchantCountry string `json:"merchant_country"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
@@ -4173,6 +4314,8 @@ type VaultItemUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		MerchantCategory     respjson.Field
+		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
@@ -4425,9 +4568,10 @@ func (r *VaultItemWalletAvailableExpansion) UnmarshalJSON(data []byte) error {
 // invoking it through the item operations endpoint.
 type VaultItemWalletAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "collect", "prepare_checkout", "fill",
-	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4526,9 +4670,10 @@ func (r *VaultItemCardAvailableExpansion) UnmarshalJSON(data []byte) error {
 // invoking it through the item operations endpoint.
 type VaultItemCardAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "collect", "prepare_checkout", "fill",
-	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5045,6 +5190,10 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantCategory string `json:"merchant_category"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	MerchantCategoryCode string `json:"merchant_category_code"`
+	// This field is from variant [CardVaultItemSpecUnion].
 	MerchantCountry string `json:"merchant_country"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
@@ -5076,6 +5225,8 @@ type VaultItemOperationResponseUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		MerchantCategory     respjson.Field
+		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
@@ -5333,9 +5484,10 @@ func (r *VaultItemOperationResponseWalletVaultItemAvailableExpansion) UnmarshalJ
 // invoking it through the item operations endpoint.
 type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "collect", "prepare_checkout", "fill",
-	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5439,9 +5591,10 @@ func (r *VaultItemOperationResponseCardVaultItemAvailableExpansion) UnmarshalJSO
 // invoking it through the item operations endpoint.
 type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
-	// Any of "authorize", "collect", "prepare_checkout", "fill",
-	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "1pw_create_access_request",
+	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
+	// "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6200,6 +6353,24 @@ type VaultItemPerformOperationParams struct {
 	// automatically retry provider failures or indeterminate outcomes. Checkout
 	// context is not accepted.
 	OfAuthorize *AuthorizeVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set.
+	// Explicitly prepare a fresh local verification session for the same Kernel Visa
+	// purchase and connected wallet, only when restart_verification is advertised.
+	// Kernel must have durable proof of an initial attestation failure before intent
+	// dispatch. Replaces the spend_approval capability and discards session-bound
+	// verification data without calling the provider or granting spend consent. The
+	// cardholder must use the new link, verify again and explicitly approve the
+	// purchase. Unknown intent creation, legacy unclassified recovery, enrollment
+	// completion, issuance and confirmation cannot restart. Do not automatically retry
+	// this operation.
+	OfRestartVerification *RestartVerificationVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Report
+	// a real merchant transaction outcome for an issued Kernel Visa credential. Never
+	// infer success from filling checkout or receiving a credential. Supply the
+	// observed status, transaction type, actual amount, currency and timestamp.
+	// Unknown outcomes require manual reconciliation, not retry. Each purchase accepts
+	// one report.
+	OfConfirmTransaction *ConfirmTransactionVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Return
 	// the credential item with its collection action. Supported for ready and
 	// pending_collection credential items. Always render the same form from every
@@ -6301,6 +6472,8 @@ type VaultItemPerformOperationParams struct {
 
 func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfAuthorize,
+		u.OfRestartVerification,
+		u.OfConfirmTransaction,
 		u.OfCollect,
 		u.OfPrepareCheckout,
 		u.OfFill,
