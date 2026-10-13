@@ -80,10 +80,6 @@ func NewBrowserPlaywrightService(opts ...option.RequestOption) (r BrowserPlaywri
 // delete one with DELETE /browsers/{id_or_name}/playwright/executors/{name}. Named
 // executors are not removed automatically while the browser runs; when it shuts
 // down, they are removed and their tabs closed.
-//
-// A named call to a browser whose image predates executors fails with 400 instead
-// of running on the active tab; calls without 'executor' keep working on every
-// image.
 func (r *BrowserPlaywrightService) Execute(ctx context.Context, idOrName string, body BrowserPlaywrightExecuteParams, opts ...option.RequestOption) (res *BrowserPlaywrightExecuteResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if idOrName == "" {
