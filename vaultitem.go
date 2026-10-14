@@ -1295,16 +1295,16 @@ func (r *CardVaultItemStateAgentcardMasks) UnmarshalJSON(data []byte) error {
 
 // Return the credential item with its collection action. Supported for ready and
 // pending_collection credential items. Always render the same form from every
-// form-supported field; totp fields have no form input and are omitted. No
-// caller-selected field subsets or form overrides are accepted. Reuse an active
-// Kernel-hosted session or renew an expired session atomically. Customer-hosted
-// forms use their own backend and ordinary item GET/PATCH. Opening the form does
-// not clear values or change readiness or item version. To observe edits on a
-// ready item, record its version and poll GET without wait until the version
-// changes, then reconcile the returned state. Version changes may also come from
-// PATCH; they do not identify a particular form submission. Customer-hosted apps
-// use their own submission callback, including for unchanged forms. The wait
-// parameter waits for readiness, not edits.
+// form-supported field; totp and passkey fields have no form input and are
+// omitted. No caller-selected field subsets or form overrides are accepted. Reuse
+// an active Kernel-hosted session or renew an expired session atomically.
+// Customer-hosted forms use their own backend and ordinary item GET/PATCH. Opening
+// the form does not clear values or change readiness or item version. To observe
+// edits on a ready item, record its version and poll GET without wait until the
+// version changes, then reconcile the returned state. Version changes may also
+// come from PATCH; they do not identify a particular form submission.
+// Customer-hosted apps use their own submission callback, including for unchanged
+// forms. The wait parameter waits for readiness, not edits.
 //
 // The property Type is required.
 type CollectVaultItemOperationRequestParam struct {
@@ -1504,30 +1504,31 @@ const (
 )
 
 // One schema-derived form for the item, available in ready or pending_collection
-// state. Render every form-supported field as editable; omit totp fields and
-// preserve their stored seeds. Prefill non-sensitive values, and allow existing
-// sensitive values to be preserved or replaced without ever revealing them. No
-// field subsets or per-request form configuration exist. Validate required fields
-// against the resulting values, including preserved secrets. Submit changed values
-// only, using the version used to render the form. Scoped hosted submission
-// rejects totp edits; seed writes require the ordinary authenticated item API.
-// Customer forms likewise omit totp from their payloads. Save edits atomically. A
-// successful hosted submission increments the version, marks ready, and consumes
-// the session; an empty edit may complete collection while preserving values. A
-// customer form uses PATCH for changed values and does not send an empty PATCH
-// when nothing changed. Kernel-hosted bearer sessions require no Kernel account
-// and are bound to the item version. Expired, superseded, consumed, or
-// deleted-item sessions cannot submit. Authenticated item GET renews expired
-// active sessions for ready or pending items; pending items always receive an
-// action. A ready item with no active session omits the action until collect is
-// invoked. Concurrent renewals return the same link. Renewal changes neither
-// values nor item version. An expired link cannot renew itself. The hosted form
-// handles its collection protocol; callers only open the returned URL and do not
-// extract or submit its token through the public API. For customer-hosted forms,
-// use @onkernel/vault-react and an authenticated customer backend calling the
-// ordinary item GET/PATCH API. Kernel does not store customer collection URLs or
-// authenticate the customer's end users. Treat URLs and submitted values as
-// secrets and exclude them from logs, traces, and errors.
+// state. Render every form-supported field as editable; omit totp and passkey
+// fields and preserve their stored values. Prefill non-sensitive values, and allow
+// existing sensitive values to be preserved or replaced without ever revealing
+// them. No field subsets or per-request form configuration exist. Validate
+// required fields against the resulting values, including preserved secrets.
+// Submit changed values only, using the version used to render the form. Scoped
+// hosted submission rejects totp and passkey edits; those writes require the
+// ordinary authenticated item API. Customer forms likewise omit them from their
+// payloads. Save edits atomically. A successful hosted submission increments the
+// version, marks ready, and consumes the session; an empty edit may complete
+// collection while preserving values. A customer form uses PATCH for changed
+// values and does not send an empty PATCH when nothing changed. Kernel-hosted
+// bearer sessions require no Kernel account and are bound to the item version.
+// Expired, superseded, consumed, or deleted-item sessions cannot submit.
+// Authenticated item GET renews expired active sessions for ready or pending
+// items; pending items always receive an action. A ready item with no active
+// session omits the action until collect is invoked. Concurrent renewals return
+// the same link. Renewal changes neither values nor item version. An expired link
+// cannot renew itself. The hosted form handles its collection protocol; callers
+// only open the returned URL and do not extract or submit its token through the
+// public API. For customer-hosted forms, use @onkernel/vault-react and an
+// authenticated customer backend calling the ordinary item GET/PATCH API. Kernel
+// does not store customer collection URLs or authenticate the customer's end
+// users. Treat URLs and submitted values as secrets and exclude them from logs,
+// traces, and errors.
 type CredentialCollectionAction struct {
 	// Expiry of the Kernel-hosted collection link (30 minutes after issuance).
 	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
@@ -1567,16 +1568,21 @@ type CredentialVaultFieldDefinition struct {
 	// such as passwords, API tokens, and TOTP seeds. Ordinary usernames and email
 	// addresses should be false so the form can display and prefill them.
 	Sensitive bool `json:"sensitive" api:"required"`
-	// Text, email, and password have form inputs; totp does not and is omitted from
-	// both Kernel-hosted and customer React forms. Password and totp must be
-	// sensitive. A totp value is an RFC 4648 Base32 generator seed (case-insensitive,
-	// optional trailing padding), not an otpauth URI or current code. Reject invalid
-	// or empty decoded seeds. Browser fill generates an RFC 6238 code at execution
-	// time using HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros;
-	// never fill the seed. Custom algorithms, digits, periods, and form enrollment are
-	// unsupported.
+	// Text, email, and password have form inputs; totp and passkey do not and are
+	// omitted from both Kernel-hosted and customer React forms. Password, totp, and
+	// passkey must be sensitive. A totp value is an RFC 4648 Base32 generator seed
+	// (case-insensitive, optional trailing padding), not an otpauth URI or current
+	// code. Reject invalid or empty decoded seeds. Browser fill generates an RFC 6238
+	// code at execution time using HMAC-SHA1, 6 digits, and a 30-second period.
+	// Preserve leading zeros; never fill the seed. Custom algorithms, digits, periods,
+	// and form enrollment are unsupported. A passkey value is a JSON-encoded FIDO
+	// Credential Exchange Format passkey object with unpadded base64url
+	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
+	// private key), a lowercase `rpId` domain, and optional `username` and
+	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
+	// pages.
 	//
-	// Any of "text", "email", "password", "totp".
+	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type" api:"required"`
 	// Optional human-readable display label. It is returned as non-secret metadata and
 	// never affects value keys, updates, or browser fills. Use single-line, trimmed
@@ -1601,20 +1607,71 @@ func (r *CredentialVaultFieldDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// A field definition without a value. Field updates add fields with this shape and
+// set their values in `fields`.
+//
+// The properties Name, Type are required.
+type CredentialVaultFieldDefinitionInputParam struct {
+	// Unique stable field name used to key values, updates, and browser fills.
+	Name string `json:"name" api:"required"`
+	// Text, email, and password have form inputs; totp and passkey do not and are
+	// omitted from both Kernel-hosted and customer React forms. Password, totp, and
+	// passkey must be sensitive. A totp value is an RFC 4648 Base32 generator seed
+	// (case-insensitive, optional trailing padding), not an otpauth URI or current
+	// code. Reject invalid or empty decoded seeds. Browser fill generates an RFC 6238
+	// code at execution time using HMAC-SHA1, 6 digits, and a 30-second period.
+	// Preserve leading zeros; never fill the seed. Custom algorithms, digits, periods,
+	// and form enrollment are unsupported. A passkey value is a JSON-encoded FIDO
+	// Credential Exchange Format passkey object with unpadded base64url
+	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
+	// private key), a lowercase `rpId` domain, and optional `username` and
+	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
+	// pages.
+	//
+	// Any of "text", "email", "password", "totp", "passkey".
+	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
+	// Optional human-readable display label. It is returned as non-secret metadata and
+	// never affects value keys, updates, or browser fills. Use single-line, trimmed
+	// display text without control or formatting characters. The server enforces a
+	// 128-byte UTF-8 limit.
+	Label    param.Opt[string] `json:"label,omitzero"`
+	Required param.Opt[bool]   `json:"required,omitzero"`
+	// Set false explicitly for ordinary usernames, email addresses, and other
+	// non-secret identifiers. Reserve true for secrets such as passwords, API tokens,
+	// and TOTP seeds. Password, totp, and passkey fields must be true. Omission
+	// defaults to true for safety; do not rely on that default for every field. False
+	// permits API reads and form prefilling.
+	Sensitive param.Opt[bool] `json:"sensitive,omitzero"`
+	paramObj
+}
+
+func (r CredentialVaultFieldDefinitionInputParam) MarshalJSON() (data []byte, err error) {
+	type shadow CredentialVaultFieldDefinitionInputParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *CredentialVaultFieldDefinitionInputParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // The properties Name, Type are required.
 type CredentialVaultFieldInputParam struct {
 	// Unique stable field name used to key values, updates, and browser fills.
 	Name string `json:"name" api:"required"`
-	// Text, email, and password have form inputs; totp does not and is omitted from
-	// both Kernel-hosted and customer React forms. Password and totp must be
-	// sensitive. A totp value is an RFC 4648 Base32 generator seed (case-insensitive,
-	// optional trailing padding), not an otpauth URI or current code. Reject invalid
-	// or empty decoded seeds. Browser fill generates an RFC 6238 code at execution
-	// time using HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros;
-	// never fill the seed. Custom algorithms, digits, periods, and form enrollment are
-	// unsupported.
+	// Text, email, and password have form inputs; totp and passkey do not and are
+	// omitted from both Kernel-hosted and customer React forms. Password, totp, and
+	// passkey must be sensitive. A totp value is an RFC 4648 Base32 generator seed
+	// (case-insensitive, optional trailing padding), not an otpauth URI or current
+	// code. Reject invalid or empty decoded seeds. Browser fill generates an RFC 6238
+	// code at execution time using HMAC-SHA1, 6 digits, and a 30-second period.
+	// Preserve leading zeros; never fill the seed. Custom algorithms, digits, periods,
+	// and form enrollment are unsupported. A passkey value is a JSON-encoded FIDO
+	// Credential Exchange Format passkey object with unpadded base64url
+	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
+	// private key), a lowercase `rpId` domain, and optional `username` and
+	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
+	// pages.
 	//
-	// Any of "text", "email", "password", "totp".
+	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
 	// Alternative to value for custom credential collection web apps. Use this only if
 	// you run your own credential collection web app and want values encrypted in the
@@ -1637,9 +1694,9 @@ type CredentialVaultFieldInputParam struct {
 	Required param.Opt[bool]   `json:"required,omitzero"`
 	// Set false explicitly for ordinary usernames, email addresses, and other
 	// non-secret identifiers. Reserve true for secrets such as passwords, API tokens,
-	// and TOTP seeds. Password and totp fields must be true. Omission defaults to true
-	// for safety; do not rely on that default for every field. False permits API reads
-	// and form prefilling.
+	// and TOTP seeds. Password, totp, and passkey fields must be true. Omission
+	// defaults to true for safety; do not rely on that default for every field. False
+	// permits API reads and form prefilling.
 	Sensitive param.Opt[bool] `json:"sensitive,omitzero"`
 	// Optional initial value satisfying the declared type, at most 16 KiB in UTF-8
 	// bytes. Omit to leave unset; null and empty strings are rejected on creation.
@@ -1679,14 +1736,19 @@ func (r *CredentialVaultFieldState) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Text, email, and password have form inputs; totp does not and is omitted from
-// both Kernel-hosted and customer React forms. Password and totp must be
-// sensitive. A totp value is an RFC 4648 Base32 generator seed (case-insensitive,
-// optional trailing padding), not an otpauth URI or current code. Reject invalid
-// or empty decoded seeds. Browser fill generates an RFC 6238 code at execution
-// time using HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros;
-// never fill the seed. Custom algorithms, digits, periods, and form enrollment are
-// unsupported.
+// Text, email, and password have form inputs; totp and passkey do not and are
+// omitted from both Kernel-hosted and customer React forms. Password, totp, and
+// passkey must be sensitive. A totp value is an RFC 4648 Base32 generator seed
+// (case-insensitive, optional trailing padding), not an otpauth URI or current
+// code. Reject invalid or empty decoded seeds. Browser fill generates an RFC 6238
+// code at execution time using HMAC-SHA1, 6 digits, and a 30-second period.
+// Preserve leading zeros; never fill the seed. Custom algorithms, digits, periods,
+// and form enrollment are unsupported. A passkey value is a JSON-encoded FIDO
+// Credential Exchange Format passkey object with unpadded base64url
+// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
+// private key), a lowercase `rpId` domain, and optional `username` and
+// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
+// pages.
 type CredentialVaultFieldType string
 
 const (
@@ -1694,6 +1756,7 @@ const (
 	CredentialVaultFieldTypeEmail    CredentialVaultFieldType = "email"
 	CredentialVaultFieldTypePassword CredentialVaultFieldType = "password"
 	CredentialVaultFieldTypeTotp     CredentialVaultFieldType = "totp"
+	CredentialVaultFieldTypePasskey  CredentialVaultFieldType = "passkey"
 )
 
 // Set exactly one of value or encrypted_value. Use value unless the update comes
@@ -1704,8 +1767,9 @@ type CredentialVaultFieldUpdateParam struct {
 	// immediately clear the stored value. Clearing a required form-supported field
 	// reopens collection; clearing an optional field does not prevent readiness.
 	// Values must satisfy the declared field type. For totp, value is the generator
-	// seed, never a current code. Clearing a required totp field returns 400 because
-	// it cannot be collected in a form.
+	// seed, never a current code. For passkey, value is the JSON-encoded CXF passkey
+	// object. Clearing a required totp or passkey field returns 400 because it cannot
+	// be collected in a form.
 	Value param.Opt[string] `json:"value,omitzero"`
 	// Alternative to value for custom credential collection web apps. Use this only if
 	// you run your own credential collection web app and want values encrypted in the
@@ -1755,30 +1819,31 @@ type CredentialVaultItem struct {
 	// underlying credential are read at fill time and do not change the version.
 	Version int64 `json:"version" api:"required"`
 	// One schema-derived form for the item, available in ready or pending_collection
-	// state. Render every form-supported field as editable; omit totp fields and
-	// preserve their stored seeds. Prefill non-sensitive values, and allow existing
-	// sensitive values to be preserved or replaced without ever revealing them. No
-	// field subsets or per-request form configuration exist. Validate required fields
-	// against the resulting values, including preserved secrets. Submit changed values
-	// only, using the version used to render the form. Scoped hosted submission
-	// rejects totp edits; seed writes require the ordinary authenticated item API.
-	// Customer forms likewise omit totp from their payloads. Save edits atomically. A
-	// successful hosted submission increments the version, marks ready, and consumes
-	// the session; an empty edit may complete collection while preserving values. A
-	// customer form uses PATCH for changed values and does not send an empty PATCH
-	// when nothing changed. Kernel-hosted bearer sessions require no Kernel account
-	// and are bound to the item version. Expired, superseded, consumed, or
-	// deleted-item sessions cannot submit. Authenticated item GET renews expired
-	// active sessions for ready or pending items; pending items always receive an
-	// action. A ready item with no active session omits the action until collect is
-	// invoked. Concurrent renewals return the same link. Renewal changes neither
-	// values nor item version. An expired link cannot renew itself. The hosted form
-	// handles its collection protocol; callers only open the returned URL and do not
-	// extract or submit its token through the public API. For customer-hosted forms,
-	// use @onkernel/vault-react and an authenticated customer backend calling the
-	// ordinary item GET/PATCH API. Kernel does not store customer collection URLs or
-	// authenticate the customer's end users. Treat URLs and submitted values as
-	// secrets and exclude them from logs, traces, and errors.
+	// state. Render every form-supported field as editable; omit totp and passkey
+	// fields and preserve their stored values. Prefill non-sensitive values, and allow
+	// existing sensitive values to be preserved or replaced without ever revealing
+	// them. No field subsets or per-request form configuration exist. Validate
+	// required fields against the resulting values, including preserved secrets.
+	// Submit changed values only, using the version used to render the form. Scoped
+	// hosted submission rejects totp and passkey edits; those writes require the
+	// ordinary authenticated item API. Customer forms likewise omit them from their
+	// payloads. Save edits atomically. A successful hosted submission increments the
+	// version, marks ready, and consumes the session; an empty edit may complete
+	// collection while preserving values. A customer form uses PATCH for changed
+	// values and does not send an empty PATCH when nothing changed. Kernel-hosted
+	// bearer sessions require no Kernel account and are bound to the item version.
+	// Expired, superseded, consumed, or deleted-item sessions cannot submit.
+	// Authenticated item GET renews expired active sessions for ready or pending
+	// items; pending items always receive an action. A ready item with no active
+	// session omits the action until collect is invoked. Concurrent renewals return
+	// the same link. Renewal changes neither values nor item version. An expired link
+	// cannot renew itself. The hosted form handles its collection protocol; callers
+	// only open the returned URL and do not extract or submit its token through the
+	// public API. For customer-hosted forms, use @onkernel/vault-react and an
+	// authenticated customer backend calling the ordinary item GET/PATCH API. Kernel
+	// does not store customer collection URLs or authenticate the customer's end
+	// users. Treat URLs and submitted values as secrets and exclude them from logs,
+	// traces, and errors.
 	Action CredentialVaultItemActionUnion `json:"action"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2222,8 +2287,16 @@ type CredentialVaultItemSpecUpdateParam struct {
 	// Recognizable site or service name used as the form title, without suffixes such
 	// as sign-in credentials. An empty string clears it. Display text only, not an
 	// enforced destination policy. The server also enforces a 16 KiB UTF-8 byte limit.
-	Description param.Opt[string]                          `json:"description,omitzero"`
-	Fields      map[string]CredentialVaultFieldUpdateParam `json:"fields,omitzero"`
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Field definitions to append, with the same defaults as creation. Set their
+	// values in `fields` in the same update. Names must be unique after removals; at
+	// most 32 fields may result. A required totp or passkey field needs a value in
+	// `fields`.
+	AddFields []CredentialVaultFieldDefinitionInputParam `json:"add_fields,omitzero"`
+	Fields    map[string]CredentialVaultFieldUpdateParam `json:"fields,omitzero"`
+	// Names of fields to delete with their values. Unknown names return 400. At least
+	// one field must remain.
+	RemoveFields []string `json:"remove_fields,omitzero"`
 	paramObj
 }
 
@@ -2344,15 +2417,18 @@ func (r *CredentialVaultItemStateUnionFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Atomically update description and selected values. Omitted properties are
-// preserved. Field names, types, required flags, and sensitivity cannot change.
-// Unknown field names return 400; stale versions or mismatched item types return
-// 409 without changing the item. A successful update increments version and
-// invalidates outstanding Kernel-hosted collection sessions. If required values
-// remain missing, return pending_collection and a fresh collection action.
-// Otherwise return ready without an action; collect can open the form again
-// without clearing values. Customer URLs have no Kernel-managed expiry. 1Password
-// and managed auth credentials return 409.
+// Atomically update description, field definitions, and selected values. Omitted
+// properties are preserved. `remove_fields` deletes definitions and their values,
+// then `add_fields` appends definitions, then `fields` sets values, including for
+// added fields. An existing field's definition cannot be edited in place; to
+// change it, remove the field and add it again, in the same update or a later one.
+// The old value is deleted with it. Unknown field names return 400; stale versions
+// or mismatched item types return 409 without changing the item. A successful
+// update increments version and invalidates outstanding Kernel-hosted collection
+// sessions. If required values remain missing, return pending_collection and a
+// fresh collection action. Otherwise return ready without an action; collect can
+// open the form again without clearing values. Customer URLs have no
+// Kernel-managed expiry. 1Password and managed auth credentials return 409.
 //
 // The properties Spec, Type, Version are required.
 type CredentialVaultItemUpdateRequestParam struct {
@@ -2928,16 +3004,21 @@ func (r *KernelWalletVaultItemSpecParam) UnmarshalJSON(data []byte) error {
 }
 
 type ManagedAuthCredentialVaultField struct {
-	// Text, email, and password have form inputs; totp does not and is omitted from
-	// both Kernel-hosted and customer React forms. Password and totp must be
-	// sensitive. A totp value is an RFC 4648 Base32 generator seed (case-insensitive,
-	// optional trailing padding), not an otpauth URI or current code. Reject invalid
-	// or empty decoded seeds. Browser fill generates an RFC 6238 code at execution
-	// time using HMAC-SHA1, 6 digits, and a 30-second period. Preserve leading zeros;
-	// never fill the seed. Custom algorithms, digits, periods, and form enrollment are
-	// unsupported.
+	// Text, email, and password have form inputs; totp and passkey do not and are
+	// omitted from both Kernel-hosted and customer React forms. Password, totp, and
+	// passkey must be sensitive. A totp value is an RFC 4648 Base32 generator seed
+	// (case-insensitive, optional trailing padding), not an otpauth URI or current
+	// code. Reject invalid or empty decoded seeds. Browser fill generates an RFC 6238
+	// code at execution time using HMAC-SHA1, 6 digits, and a 30-second period.
+	// Preserve leading zeros; never fill the seed. Custom algorithms, digits, periods,
+	// and form enrollment are unsupported. A passkey value is a JSON-encoded FIDO
+	// Credential Exchange Format passkey object with unpadded base64url
+	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
+	// private key), a lowercase `rpId` domain, and optional `username` and
+	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
+	// pages.
 	//
-	// Any of "text", "email", "password", "totp".
+	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5744,7 +5825,7 @@ func (r *VaultPaymentMethodDisplay) UnmarshalJSON(data []byte) error {
 // The properties Field, InputPath are required.
 type VaultWebmcpBindingParam struct {
 	// A declared, populated credential field or supported card field. A TOTP field
-	// supplies a fresh code, never its seed.
+	// supplies a fresh code, never its seed. Passkey fields cannot be filled.
 	Field string `json:"field" api:"required"`
 	// RFC 6901 JSON Pointer to an existing null value in input. Object keys are exact;
 	// array indices must be canonical and in range. No root or array-append paths.
@@ -6316,15 +6397,18 @@ type VaultItemUpdateParams struct {
 	// This field is a request body variant, only one variant field can be set.
 	OfCardVaultItemUpdateRequest *VaultItemUpdateParamsBodyCardVaultItemUpdateRequest `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
-	// Atomically update description and selected values. Omitted properties are
-	// preserved. Field names, types, required flags, and sensitivity cannot change.
-	// Unknown field names return 400; stale versions or mismatched item types return
-	// 409 without changing the item. A successful update increments version and
-	// invalidates outstanding Kernel-hosted collection sessions. If required values
-	// remain missing, return pending_collection and a fresh collection action.
-	// Otherwise return ready without an action; collect can open the form again
-	// without clearing values. Customer URLs have no Kernel-managed expiry. 1Password
-	// and managed auth credentials return 409.
+	// Atomically update description, field definitions, and selected values. Omitted
+	// properties are preserved. `remove_fields` deletes definitions and their values,
+	// then `add_fields` appends definitions, then `fields` sets values, including for
+	// added fields. An existing field's definition cannot be edited in place; to
+	// change it, remove the field and add it again, in the same update or a later one.
+	// The old value is deleted with it. Unknown field names return 400; stale versions
+	// or mismatched item types return 409 without changing the item. A successful
+	// update increments version and invalidates outstanding Kernel-hosted collection
+	// sessions. If required values remain missing, return pending_collection and a
+	// fresh collection action. Otherwise return ready without an action; collect can
+	// open the form again without clearing values. Customer URLs have no
+	// Kernel-managed expiry. 1Password and managed auth credentials return 409.
 	OfCredentialVaultItemUpdateRequest *CredentialVaultItemUpdateRequestParam `json:",inline"`
 
 	paramObj
@@ -6428,16 +6512,16 @@ type VaultItemPerformOperationParams struct {
 	// This field is a request body variant, only one variant field can be set. Return
 	// the credential item with its collection action. Supported for ready and
 	// pending_collection credential items. Always render the same form from every
-	// form-supported field; totp fields have no form input and are omitted. No
-	// caller-selected field subsets or form overrides are accepted. Reuse an active
-	// Kernel-hosted session or renew an expired session atomically. Customer-hosted
-	// forms use their own backend and ordinary item GET/PATCH. Opening the form does
-	// not clear values or change readiness or item version. To observe edits on a
-	// ready item, record its version and poll GET without wait until the version
-	// changes, then reconcile the returned state. Version changes may also come from
-	// PATCH; they do not identify a particular form submission. Customer-hosted apps
-	// use their own submission callback, including for unchanged forms. The wait
-	// parameter waits for readiness, not edits.
+	// form-supported field; totp and passkey fields have no form input and are
+	// omitted. No caller-selected field subsets or form overrides are accepted. Reuse
+	// an active Kernel-hosted session or renew an expired session atomically.
+	// Customer-hosted forms use their own backend and ordinary item GET/PATCH. Opening
+	// the form does not clear values or change readiness or item version. To observe
+	// edits on a ready item, record its version and poll GET without wait until the
+	// version changes, then reconcile the returned state. Version changes may also
+	// come from PATCH; they do not identify a particular form submission.
+	// Customer-hosted apps use their own submission callback, including for unchanged
+	// forms. The wait parameter waits for readiness, not edits.
 	OfCollect *CollectVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Prepare
 	// an unused AgentCard card for a supported checkout. Deliver the returned approval
