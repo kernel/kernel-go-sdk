@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/kernel/kernel-go-sdk"
 	"github.com/kernel/kernel-go-sdk/internal/testutil"
@@ -29,7 +30,14 @@ func TestAPIKeyNewWithOptionalParams(t *testing.T) {
 	_, err := client.APIKeys.New(context.TODO(), kernel.APIKeyNewParams{
 		Name:         "staging",
 		DaysToExpire: kernel.Int(30),
-		ProjectID:    kernel.String("proj_abc123"),
+		ExpiresAt:    kernel.Time(time.Now()),
+		Policy: kernel.APIKeyNewParamsPolicy{
+			Statements: []kernel.APIKeyNewParamsPolicyStatement{{
+				Action:   "browsers:use",
+				Resource: "projects/proj_abc123/browsers/br_abc123",
+			}},
+		},
+		ProjectID: kernel.String("proj_abc123"),
 	})
 	if err != nil {
 		var apierr *kernel.Error

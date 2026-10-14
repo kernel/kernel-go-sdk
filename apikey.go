@@ -41,7 +41,8 @@ func NewAPIKeyService(opts ...option.RequestOption) (r APIKeyService) {
 	return
 }
 
-// Create a new API key within the authenticated organization.
+// Create a new API key. API keys may be scoped by project and may include a
+// policy.
 func (r *APIKeyService) New(ctx context.Context, body APIKeyNewParams, opts ...option.RequestOption) (res *CreatedAPIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "org/api_keys"
@@ -146,6 +147,9 @@ type APIKey struct {
 	// Project name for project-scoped API keys. Null means the key is org-wide or the
 	// project name is unavailable.
 	ProjectName string `json:"project_name" api:"required"`
+	// Permissions granted to a scoped API key. Absent for an ordinary key, which keeps
+	// unrestricted access within its organization or project.
+	Policy APIKeyPolicy `json:"policy" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -157,6 +161,7 @@ type APIKey struct {
 		Name        respjson.Field
 		ProjectID   respjson.Field
 		ProjectName respjson.Field
+		Policy      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -191,6 +196,46 @@ func (r *APIKeyCreatedBy) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Permissions granted to a scoped API key. Absent for an ordinary key, which keeps
+// unrestricted access within its organization or project.
+type APIKeyPolicy struct {
+	// Allow statements. Every action and resource not listed is denied.
+	Statements []APIKeyPolicyStatement `json:"statements" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Statements  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r APIKeyPolicy) RawJSON() string { return r.JSON.raw }
+func (r *APIKeyPolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type APIKeyPolicyStatement struct {
+	// Permitted action, such as browsers:use or vaults:read.
+	Action string `json:"action" api:"required"`
+	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
+	// Wildcards are supported.
+	Resource string `json:"resource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Action      respjson.Field
+		Resource    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r APIKeyPolicyStatement) RawJSON() string { return r.JSON.raw }
+func (r *APIKeyPolicyStatement) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // API key returned immediately after creation. Includes the plaintext key once.
 type CreatedAPIKey struct {
 	// Plaintext API key. Only returned once when the key is created.
@@ -213,10 +258,17 @@ func (r *CreatedAPIKey) UnmarshalJSON(data []byte) error {
 type APIKeyNewParams struct {
 	// Label for the API key (1-255 characters). API keys are not addressable by name.
 	Name string `json:"name" api:"required"`
-	// Number of days until expiry, up to 3650. Use null for never.
+	// Number of days until expiry, up to 3650. Use null for never. Cannot be combined
+	// with expires_at.
 	DaysToExpire param.Opt[int64] `json:"days_to_expire,omitzero"`
+	// Exact expiry time. Must be in the future and no later than the issuing
+	// credential's own expiry. Cannot be combined with days_to_expire.
+	ExpiresAt param.Opt[time.Time] `json:"expires_at,omitzero" format:"date-time"`
 	// Unique project identifier
 	ProjectID param.Opt[string] `json:"project_id,omitzero"`
+	// Issue a scoped key that may only perform the listed actions on the listed
+	// resources.
+	Policy APIKeyNewParamsPolicy `json:"policy,omitzero"`
 	paramObj
 }
 
@@ -225,6 +277,42 @@ func (r APIKeyNewParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *APIKeyNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Issue a scoped key that may only perform the listed actions on the listed
+// resources.
+//
+// The property Statements is required.
+type APIKeyNewParamsPolicy struct {
+	// Allow statements. Every action and resource not listed is denied.
+	Statements []APIKeyNewParamsPolicyStatement `json:"statements,omitzero" api:"required"`
+	paramObj
+}
+
+func (r APIKeyNewParamsPolicy) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyNewParamsPolicy
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyNewParamsPolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Action, Resource are required.
+type APIKeyNewParamsPolicyStatement struct {
+	// Permitted action, such as browsers:use or vaults:read.
+	Action string `json:"action" api:"required"`
+	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
+	// Wildcards are supported.
+	Resource string `json:"resource" api:"required"`
+	paramObj
+}
+
+func (r APIKeyNewParamsPolicyStatement) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyNewParamsPolicyStatement
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyNewParamsPolicyStatement) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
