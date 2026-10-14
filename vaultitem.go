@@ -75,7 +75,9 @@ func (r *VaultItemService) Get(ctx context.Context, key string, params VaultItem
 // remain unchanged and explicit empty lists clear them. Wallet/provider binding
 // and unsupported fields cannot change after authorization starts. An uncertain
 // update enters recovery_required and must not be retried. Checkout cards may be
-// edited between authorizations.
+// edited between authorizations. A Link card authorized with browser_id and
+// page_url cannot be changed; delete it and create a new card with the updated
+// details.
 func (r *VaultItemService) Update(ctx context.Context, key string, params VaultItemUpdateParams, opts ...option.RequestOption) (res *VaultItemUnion, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if params.IDOrName == "" {
@@ -150,10 +152,11 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // `available_operations`, following its natural-language description. Availability
 // is rechecked at execution time; unavailable operations return 409. Authorization
 // and preparation may call an external provider and return updated state. Link
-// cards advertise authorize without checkout context. Eligible unused AgentCard
-// cards advertise prepare_checkout, which requires checkout context and obtains
-// device approval before native Square Pay. Keep the returned approval page open,
-// poll until ready_to_submit, then submit before preparation.expires_at. Unused
+// cards advertise authorize; pass browser_id and page_url from the final checkout
+// page so Kernel can inspect the checkout. Eligible unused AgentCard cards
+// advertise prepare_checkout, which requires checkout context and obtains device
+// approval before native Square Pay. Keep the returned approval page open, poll
+// until ready_to_submit, then submit before preparation.expires_at. Unused
 // preparations expire automatically and cannot be reused. If spend-request
 // creation is rejected with a non-retryable provider error, the card item is
 // deleted and the provider's error code and message are returned. Rate limits
@@ -383,14 +386,26 @@ const (
 )
 
 // Authorize a Link or Kernel card using its existing purchase specification. Use
-// only after explicit user approval and when the item advertises authorize. Do not
-// automatically retry provider failures or indeterminate outcomes. Checkout
-// context is not accepted.
+// only after explicit user approval and when the item advertises authorize; follow
+// the advertised operation's description. For a Link card, pass browser_id and
+// page_url together while the browser is on the final checkout page: Kernel
+// inspects that checkout, chooses how the credential is delivered, and limits fill
+// to that checkout's origin in any browser with this vault attached. Omitting both
+// issues a virtual card that fills any page on the merchant origin. Once approval
+// has been requested, browser_id and page_url are ignored and authorize only
+// re-checks the request. Browser and checkout inspection errors occur before any
+// provider request and can be retried once the browser is on the checkout page.
+// Kernel cards do not accept browser_id or page_url.
 //
 // The property Type is required.
 type AuthorizeVaultItemOperationRequestParam struct {
 	// Any of "authorize".
 	Type AuthorizeVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Browser session ID, not a reusable browser name. The browser must have this
+	// vault attached.
+	BrowserID param.Opt[string] `json:"browser_id,omitzero"`
+	// Exact current top-level URL of the final checkout page open in browser_id.
+	PageURL param.Opt[string] `json:"page_url,omitzero" format:"uri"`
 	paramObj
 }
 
@@ -532,10 +547,16 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 	return param.Override[CardVaultItemSpecUnionParam](json.RawMessage(r.RawJSON()))
 }
 
-// Live payment card. Test-mode card creation is not supported.
+// Live Link card request. Test-mode card creation is not supported. The spec can
+// be changed with PATCH until the card is authorized at a checkout. Authorize it
+// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+// and internally chooses a merchant-bound Link Pay Token when supported or a
+// virtual card otherwise. Callers never receive or choose how the credential is
+// delivered.
 type CardVaultItemSpecLink struct {
-	// Integer amount in minor currency units. Link permits at most 50000 per spend
-	// request.
+	// Integer amount in minor currency units. Link Pay Token execution permits at most
+	// 500000; virtual-card execution permits at most 50000. Authorization rejects a
+	// larger amount when the checkout requires a virtual card.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -546,7 +567,7 @@ type CardVaultItemSpecLink struct {
 	// request.
 	PaymentMethodID string        `json:"payment_method_id" api:"required"`
 	Provider        constant.Link `json:"provider" default:"link"`
-	// Wallet item key used to mint this card.
+	// Connected Link wallet item key.
 	Wallet    string                          `json:"wallet" api:"required"`
 	ExpiresAt int64                           `json:"expires_at"`
 	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
@@ -899,13 +920,19 @@ func init() {
 	)
 }
 
-// Live payment card. Test-mode card creation is not supported.
+// Live Link card request. Test-mode card creation is not supported. The spec can
+// be changed with PATCH until the card is authorized at a checkout. Authorize it
+// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+// and internally chooses a merchant-bound Link Pay Token when supported or a
+// virtual card otherwise. Callers never receive or choose how the credential is
+// delivered.
 //
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
 type CardVaultItemSpecLinkParam struct {
-	// Integer amount in minor currency units. Link permits at most 50000 per spend
-	// request.
+	// Integer amount in minor currency units. Link Pay Token execution permits at most
+	// 500000; virtual-card execution permits at most 50000. Authorization rejects a
+	// larger amount when the checkout requires a virtual card.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -915,7 +942,7 @@ type CardVaultItemSpecLinkParam struct {
 	// The provider decides whether the selected funding method can satisfy the card
 	// request.
 	PaymentMethodID string `json:"payment_method_id" api:"required"`
-	// Wallet item key used to mint this card.
+	// Connected Link wallet item key.
 	Wallet    string                               `json:"wallet" api:"required"`
 	ExpiresAt param.Opt[int64]                     `json:"expires_at,omitzero"`
 	LineItems []CardVaultItemSpecLinkLineItemParam `json:"line_items,omitzero"`
@@ -2356,54 +2383,46 @@ const (
 	CredentialVaultItemUpdateRequestTypeCredential CredentialVaultItemUpdateRequestType = "credential"
 )
 
-// Fill selected fields from one ready credential or ready, unexpired Link or
-// Kernel card into a browser linked to its vault. Only invoke when the item
-// advertises `fill`. Browser and vault must belong to the same project. Kernel
-// checks access and allowed destinations before filling; providing a page URL does
-// not authorize a destination.
+// Use a vault item in a browser session, for example to fill a login or payment
+// form. Only invoke when the item advertises `fill`; the advertised operation
+// describes the inputs that item needs. Requires `browser_id` and usually
+// `page_url`; some items also require `fields`. Browser and vault must belong to
+// the same project. Kernel checks access and allowed destinations before filling;
+// providing a page URL does not authorize a destination.
 //
-// Find exactly one open page matching `page_url`. Credential items may omit
-// `page_url` to require exactly one open page; cards require an HTTPS page URL.
-// Credentials have no destination allowlist. TOTP fields generate a current code
-// immediately before writing; their seeds never enter the browser. For each
-// selector, search the main frame and all descendant frames for editable inputs or
-// selects matched directly or contained within matching elements. Each selector
-// must resolve to one unique editable element across all frames; zero or multiple
-// candidates fail. Count each element once, even if multiple matching containers
-// contain it. Validate all bindings before filling. Select elements match an
-// option by its value, not its label. If the page navigates or a target disappears
-// during filling, stop rather than selecting a different page or element.
-//
-// Fill in request order and stop on the first failure. This operation is not
-// atomic: previously filled fields are not rolled back. Never submit the form or
-// click buttons, though input/change events may trigger site behavior. Link and
-// Kernel cards use fill for browser checkout and do not expose aliases or support
-// egress substitution. Fill does not consume the item, so a failed or
-// indeterminate fill is safe to retry; a retry rewrites the same fields. A retry
-// right after an indeterminate fill may wait up to 15 seconds for the earlier
-// attempt's browser lock to expire.
+// Fill never submits forms or clicks buttons, though input and change events may
+// trigger site behavior. It is not atomic: completed steps are not rolled back.
+// Fill does not consume the item, so a failed or indeterminate fill is safe to
+// retry. A retry right after an indeterminate fill may wait up to 15 seconds for
+// the earlier attempt's browser lock to expire.
 //
 // Secret values are never returned or included in operation logs, traces, audit
 // events, or error details. This does not prevent an agent with unrestricted
 // browser access from reading values from the page or other browser observation
 // surfaces.
 //
-// The properties BrowserID, Fields, Type are required.
+// The properties BrowserID, Type are required.
 type FillVaultItemOperationRequestParam struct {
 	// Browser session ID, not a reusable browser name.
 	BrowserID string `json:"browser_id" api:"required"`
-	// Field bindings for this step. No two bindings may resolve to the same element.
-	Fields []VaultFillFieldParam `json:"fields,omitzero" api:"required"`
 	// Any of "fill".
 	Type FillVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
 	// Exact current top-level page URL, including path, query, and fragment. Must
 	// match exactly one open page in the browser; zero or multiple matches fail. No
-	// prefix or glob matching. Required for cards, which must use HTTPS without
-	// embedded credentials. Optional for credentials, where omission requires exactly
-	// one open page.
+	// prefix or glob matching. When an item allows omitting it, the browser must have
+	// exactly one open page.
 	PageURL param.Opt[string] `json:"page_url,omitzero" format:"uri"`
 	// Total operation deadline in milliseconds, not a per-field timeout.
 	TimeoutMs param.Opt[int64] `json:"timeout_ms,omitzero"`
+	// Field bindings, when the item's advertised fill operation requires them. Each
+	// selector is searched in the main frame and all descendant frames and must
+	// resolve to exactly one editable input or select, matched directly or through a
+	// containing element; zero or multiple candidates fail, and no two bindings may
+	// resolve to the same element. Select elements match an option by value, not
+	// label. All bindings are validated before any write, then filled in request
+	// order, stopping at the first failure. If the page navigates or a target
+	// disappears, fill stops rather than choosing another page or element.
+	Fields []VaultFillFieldParam `json:"fields,omitzero"`
 	paramObj
 }
 
@@ -2422,12 +2441,13 @@ const (
 )
 
 type FillVaultItemOperationResult struct {
-	// Exactly one result per request binding, in request order. After the first failed
-	// or unknown field, all remaining fields are not_attempted.
+	// One result per request binding, in request order; empty when the fill used no
+	// bindings. After the first failed or unknown field, all remaining fields are
+	// not_attempted.
 	Fields []VaultFillFieldResult `json:"fields" api:"required"`
-	// Completed only when all fields were filled. Failed when execution stopped with
-	// known outcomes. Unknown when any field's outcome cannot be determined. None of
-	// these statuses confirms payment or merchant acceptance.
+	// Completed when the fill finished. Failed when execution stopped with known
+	// outcomes. Unknown when an outcome cannot be determined. Completed means values
+	// were supplied to the page, not that the site accepted or submitted them.
 	//
 	// Any of "completed", "failed", "unknown".
 	Status FillVaultItemOperationResultStatus `json:"status" api:"required"`
@@ -2449,9 +2469,9 @@ func (r *FillVaultItemOperationResult) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Completed only when all fields were filled. Failed when execution stopped with
-// known outcomes. Unknown when any field's outcome cannot be determined. None of
-// these statuses confirms payment or merchant acceptance.
+// Completed when the fill finished. Failed when execution stopped with known
+// outcomes. Unknown when an outcome cannot be determined. Completed means values
+// were supplied to the page, not that the site accepted or submitted them.
 type FillVaultItemOperationResultStatus string
 
 const (
@@ -4080,6 +4100,8 @@ type VaultItemUnion struct {
 	// [CredentialVaultItemActionUnion]
 	Action VaultItemUnionAction `json:"action"`
 	// This field is from variant [VaultItemWallet].
+	Description string `json:"description"`
+	// This field is from variant [VaultItemWallet].
 	Expanded  VaultItemWalletExpanded `json:"expanded"`
 	ExpiresAt time.Time               `json:"expires_at"`
 	// This field is from variant [CredentialVaultItem].
@@ -4095,6 +4117,7 @@ type VaultItemUnion struct {
 		Type                respjson.Field
 		UpdatedAt           respjson.Field
 		Action              respjson.Field
+		Description         respjson.Field
 		Expanded            respjson.Field
 		ExpiresAt           respjson.Field
 		Version             respjson.Field
@@ -4515,6 +4538,8 @@ type VaultItemWallet struct {
 	Type      constant.Wallet           `json:"type" default:"wallet"`
 	UpdatedAt time.Time                 `json:"updated_at" api:"required" format:"date-time"`
 	Action    VaultItemActionUnion      `json:"action"`
+	// Server-generated provider and lifecycle guidance for agents.
+	Description string `json:"description"`
 	// Live, non-persisted data requested through the item GET expand parameter.
 	Expanded  VaultItemWalletExpanded `json:"expanded"`
 	ExpiresAt time.Time               `json:"expires_at" format:"date-time"`
@@ -4530,6 +4555,7 @@ type VaultItemWallet struct {
 		Type                respjson.Field
 		UpdatedAt           respjson.Field
 		Action              respjson.Field
+		Description         respjson.Field
 		Expanded            respjson.Field
 		ExpiresAt           respjson.Field
 		ExtraFields         map[string]respjson.Field
@@ -4612,7 +4638,12 @@ type VaultItemCard struct {
 	CreatedAt           time.Time                         `json:"created_at" api:"required" format:"date-time"`
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
-	// Live payment card. Test-mode card creation is not supported.
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
 	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
 	// Issued Link cards retain encrypted card material for the fill operation. Link
 	// cards do not expose aliases or support egress substitution.
@@ -4988,6 +5019,8 @@ type VaultItemOperationResponseUnion struct {
 	// [CredentialVaultItemActionUnion]
 	Action VaultItemOperationResponseUnionAction `json:"action"`
 	// This field is from variant [VaultItemOperationResponseWalletVaultItem].
+	Description string `json:"description"`
+	// This field is from variant [VaultItemOperationResponseWalletVaultItem].
 	Expanded  VaultItemOperationResponseWalletVaultItemExpanded `json:"expanded"`
 	ExpiresAt time.Time                                         `json:"expires_at"`
 	// This field is from variant [CredentialVaultItem].
@@ -5014,6 +5047,7 @@ type VaultItemOperationResponseUnion struct {
 		Type                respjson.Field
 		UpdatedAt           respjson.Field
 		Action              respjson.Field
+		Description         respjson.Field
 		Expanded            respjson.Field
 		ExpiresAt           respjson.Field
 		Version             respjson.Field
@@ -5429,6 +5463,8 @@ type VaultItemOperationResponseWalletVaultItem struct {
 	Type      string               `json:"type" api:"required"`
 	UpdatedAt time.Time            `json:"updated_at" api:"required" format:"date-time"`
 	Action    VaultItemActionUnion `json:"action"`
+	// Server-generated provider and lifecycle guidance for agents.
+	Description string `json:"description"`
 	// Live, non-persisted data requested through the item GET expand parameter.
 	Expanded  VaultItemOperationResponseWalletVaultItemExpanded `json:"expanded"`
 	ExpiresAt time.Time                                         `json:"expires_at" format:"date-time"`
@@ -5444,6 +5480,7 @@ type VaultItemOperationResponseWalletVaultItem struct {
 		Type                respjson.Field
 		UpdatedAt           respjson.Field
 		Action              respjson.Field
+		Description         respjson.Field
 		Expanded            respjson.Field
 		ExpiresAt           respjson.Field
 		ExtraFields         map[string]respjson.Field
@@ -5530,7 +5567,12 @@ type VaultItemOperationResponseCardVaultItem struct {
 	CreatedAt           time.Time                                                   `json:"created_at" api:"required" format:"date-time"`
 	// Immutable item key assigned when the item is created.
 	Key string `json:"key" api:"required"`
-	// Live payment card. Test-mode card creation is not supported.
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
 	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
 	// Issued Link cards retain encrypted card material for the fill operation. Link
 	// cards do not expose aliases or support egress substitution.
@@ -6297,7 +6339,12 @@ func (r *VaultItemUpdateParams) UnmarshalJSON(data []byte) error {
 
 // The property Spec is required.
 type VaultItemUpdateParamsBodyCardVaultItemUpdateRequest struct {
-	// Live payment card. Test-mode card creation is not supported.
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
 	Spec CardVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// Any of "card".
 	Type string `json:"type,omitzero"`
@@ -6349,9 +6396,16 @@ type VaultItemPerformOperationParams struct {
 
 	// This field is a request body variant, only one variant field can be set.
 	// Authorize a Link or Kernel card using its existing purchase specification. Use
-	// only after explicit user approval and when the item advertises authorize. Do not
-	// automatically retry provider failures or indeterminate outcomes. Checkout
-	// context is not accepted.
+	// only after explicit user approval and when the item advertises authorize; follow
+	// the advertised operation's description. For a Link card, pass browser_id and
+	// page_url together while the browser is on the final checkout page: Kernel
+	// inspects that checkout, chooses how the credential is delivered, and limits fill
+	// to that checkout's origin in any browser with this vault attached. Omitting both
+	// issues a virtual card that fills any page on the merchant origin. Once approval
+	// has been requested, browser_id and page_url are ignored and authorize only
+	// re-checks the request. Browser and checkout inspection errors occur before any
+	// provider request and can be retried once the browser is on the checkout page.
+	// Kernel cards do not accept browser_id or page_url.
 	OfAuthorize *AuthorizeVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	// Explicitly prepare a fresh local verification session for the same Kernel Visa
@@ -6393,33 +6447,19 @@ type VaultItemPerformOperationParams struct {
 	// even after failure or expiry; do not automatically retry and reconcile uncertain
 	// outcomes with the merchant.
 	OfPrepareCheckout *PrepareCheckoutVaultItemOperationRequestParam `json:",inline"`
-	// This field is a request body variant, only one variant field can be set. Fill
-	// selected fields from one ready credential or ready, unexpired Link or Kernel
-	// card into a browser linked to its vault. Only invoke when the item advertises
-	// `fill`. Browser and vault must belong to the same project. Kernel checks access
-	// and allowed destinations before filling; providing a page URL does not authorize
-	// a destination.
+	// This field is a request body variant, only one variant field can be set. Use a
+	// vault item in a browser session, for example to fill a login or payment form.
+	// Only invoke when the item advertises `fill`; the advertised operation describes
+	// the inputs that item needs. Requires `browser_id` and usually `page_url`; some
+	// items also require `fields`. Browser and vault must belong to the same project.
+	// Kernel checks access and allowed destinations before filling; providing a page
+	// URL does not authorize a destination.
 	//
-	// Find exactly one open page matching `page_url`. Credential items may omit
-	// `page_url` to require exactly one open page; cards require an HTTPS page URL.
-	// Credentials have no destination allowlist. TOTP fields generate a current code
-	// immediately before writing; their seeds never enter the browser. For each
-	// selector, search the main frame and all descendant frames for editable inputs or
-	// selects matched directly or contained within matching elements. Each selector
-	// must resolve to one unique editable element across all frames; zero or multiple
-	// candidates fail. Count each element once, even if multiple matching containers
-	// contain it. Validate all bindings before filling. Select elements match an
-	// option by its value, not its label. If the page navigates or a target disappears
-	// during filling, stop rather than selecting a different page or element.
-	//
-	// Fill in request order and stop on the first failure. This operation is not
-	// atomic: previously filled fields are not rolled back. Never submit the form or
-	// click buttons, though input/change events may trigger site behavior. Link and
-	// Kernel cards use fill for browser checkout and do not expose aliases or support
-	// egress substitution. Fill does not consume the item, so a failed or
-	// indeterminate fill is safe to retry; a retry rewrites the same fields. A retry
-	// right after an indeterminate fill may wait up to 15 seconds for the earlier
-	// attempt's browser lock to expire.
+	// Fill never submits forms or clicks buttons, though input and change events may
+	// trigger site behavior. It is not atomic: completed steps are not rolled back.
+	// Fill does not consume the item, so a failed or indeterminate fill is safe to
+	// retry. A retry right after an indeterminate fill may wait up to 15 seconds for
+	// the earlier attempt's browser lock to expire.
 	//
 	// Secret values are never returned or included in operation logs, traces, audit
 	// events, or error details. This does not prevent an agent with unrestricted
@@ -6983,7 +7023,12 @@ func (r *VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig) UnmarshalJS
 
 // The properties Spec, Type are required.
 type VaultItemUpsertParamsBodyCard struct {
-	// Live payment card. Test-mode card creation is not supported.
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
 	Spec CardVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// This field can be elided, and will marshal its zero value as "card".
 	Type constant.Card `json:"type" default:"card"`
