@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.126.0](https://github.com/kernel/kernel-go-sdk/compare/v0.125.0...v0.126.0) (2026-10-14)
+
+
+### Features
+
+* support Link Pay Tokens when authorizing Link cards at checkout ([85a66eb](https://github.com/kernel/kernel-go-sdk/commit/85a66eb544948d5c30ee79465ba226756416df4f))
+
 ## [0.125.0](https://github.com/kernel/kernel-go-sdk/compare/v0.124.0...v0.125.0) (2026-10-13)
 
 
