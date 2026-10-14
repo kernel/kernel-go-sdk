@@ -213,7 +213,9 @@ func TestVaultItemPerformOperationWithOptionalParams(t *testing.T) {
 		kernel.VaultItemPerformOperationParams{
 			IDOrName: "id_or_name",
 			OfAuthorize: &kernel.AuthorizeVaultItemOperationRequestParam{
-				Type: kernel.AuthorizeVaultItemOperationRequestTypeAuthorize,
+				Type:      kernel.AuthorizeVaultItemOperationRequestTypeAuthorize,
+				BrowserID: kernel.String("browser-session-id"),
+				PageURL:   kernel.String("https://store.example.com/checkout"),
 			},
 		},
 	)
