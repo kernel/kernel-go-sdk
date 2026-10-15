@@ -446,8 +446,6 @@ type CardVaultItemSpecUnion struct {
 	Provider string `json:"provider"`
 	Wallet   string `json:"wallet"`
 	// This field is from variant [CardVaultItemSpecLink].
-	ExpiresAt int64 `json:"expires_at"`
-	// This field is from variant [CardVaultItemSpecLink].
 	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
 	// This field is from variant [CardVaultItemSpecLink].
 	Metadata map[string]string `json:"metadata"`
@@ -474,7 +472,6 @@ type CardVaultItemSpecUnion struct {
 		PaymentMethodID      respjson.Field
 		Provider             respjson.Field
 		Wallet               respjson.Field
-		ExpiresAt            respjson.Field
 		LineItems            respjson.Field
 		Metadata             respjson.Field
 		Totals               respjson.Field
@@ -572,7 +569,6 @@ type CardVaultItemSpecLink struct {
 	Provider        constant.Link `json:"provider" default:"link"`
 	// Connected Link wallet item key.
 	Wallet    string                          `json:"wallet" api:"required"`
-	ExpiresAt int64                           `json:"expires_at"`
 	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
 	Metadata  map[string]string               `json:"metadata"`
 	Totals    []CardVaultItemSpecLinkTotal    `json:"totals"`
@@ -586,7 +582,6 @@ type CardVaultItemSpecLink struct {
 		PaymentMethodID respjson.Field
 		Provider        respjson.Field
 		Wallet          respjson.Field
-		ExpiresAt       respjson.Field
 		LineItems       respjson.Field
 		Metadata        respjson.Field
 		Totals          respjson.Field
@@ -767,14 +762,6 @@ func (u CardVaultItemSpecUnionParam) GetPaymentMethodID() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetExpiresAt() *int64 {
-	if vt := u.OfLink; vt != nil && vt.ExpiresAt.Valid() {
-		return &vt.ExpiresAt.Value
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
 func (u CardVaultItemSpecUnionParam) GetLineItems() []CardVaultItemSpecLinkLineItemParam {
 	if vt := u.OfLink; vt != nil {
 		return vt.LineItems
@@ -947,7 +934,6 @@ type CardVaultItemSpecLinkParam struct {
 	PaymentMethodID string `json:"payment_method_id" api:"required"`
 	// Connected Link wallet item key.
 	Wallet    string                               `json:"wallet" api:"required"`
-	ExpiresAt param.Opt[int64]                     `json:"expires_at,omitzero"`
 	LineItems []CardVaultItemSpecLinkLineItemParam `json:"line_items,omitzero"`
 	Metadata  map[string]string                    `json:"metadata,omitzero"`
 	Totals    []CardVaultItemSpecLinkTotalParam    `json:"totals,omitzero"`
@@ -4384,8 +4370,6 @@ type VaultItemUnionSpec struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
 	// This field is from variant [CardVaultItemSpecUnion].
-	ExpiresAt int64 `json:"expires_at"`
-	// This field is from variant [CardVaultItemSpecUnion].
 	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Metadata map[string]string `json:"metadata"`
@@ -4426,7 +4410,6 @@ type VaultItemUnionSpec struct {
 		MerchantURL          respjson.Field
 		PaymentMethodID      respjson.Field
 		Wallet               respjson.Field
-		ExpiresAt            respjson.Field
 		LineItems            respjson.Field
 		Metadata             respjson.Field
 		Totals               respjson.Field
@@ -5306,8 +5289,6 @@ type VaultItemOperationResponseUnionSpec struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
 	// This field is from variant [CardVaultItemSpecUnion].
-	ExpiresAt int64 `json:"expires_at"`
-	// This field is from variant [CardVaultItemSpecUnion].
 	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Metadata map[string]string `json:"metadata"`
@@ -5348,7 +5329,6 @@ type VaultItemOperationResponseUnionSpec struct {
 		MerchantURL          respjson.Field
 		PaymentMethodID      respjson.Field
 		Wallet               respjson.Field
-		ExpiresAt            respjson.Field
 		LineItems            respjson.Field
 		Metadata             respjson.Field
 		Totals               respjson.Field
