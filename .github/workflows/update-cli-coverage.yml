@@ -72,10 +72,17 @@ jobs:
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
-      - name: Install Claude Code CLI
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Pi
+        env:
+          PI_TELEMETRY: '0'
         run: |
-          curl -fsSL https://claude.ai/install.sh | bash
-          echo "$HOME/.local/bin" >> $GITHUB_PATH
+          npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+          pi --version
 
       - name: Configure git identity
         run: |
@@ -167,11 +174,18 @@ jobs:
       - name: Update CLI coverage
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          PI_PREFERRED_MODEL: ${{ vars.PI_PREFERRED_MODEL }}
+          PI_SKIP_VERSION_CHECK: '1'
+          PI_TELEMETRY: '0'
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
           BRANCH_PREFIX: cli-coverage-update
         run: |
-          claude -p "You are a CLI updater that implements missing CLI commands based on SDK updates.
+          : "${PI_PREFERRED_MODEL:?Set the PI_PREFERRED_MODEL organization variable}"
+          pi --print --no-session --approve \
+            --model "$PI_PREFERRED_MODEL" --thinking max \
+            "You are a CLI updater that implements missing CLI commands based on SDK updates.
 
           The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/cli).
 
@@ -417,4 +431,4 @@ jobs:
           - Streaming methods may have different CLI implementations (e.g., follow flags)
           - Even if no coverage gaps are found, still create a PR for the SDK version bump
           - Ensure code compiles before pushing
-          " --model ${{ vars.CLAUDE_CODE_PREFERRED_MODEL }} --dangerously-skip-permissions --output-format text --verbose
+          "
