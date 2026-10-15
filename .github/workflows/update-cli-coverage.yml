@@ -15,24 +15,33 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
+
+concurrency:
+  group: update-cli-coverage
+  cancel-in-progress: false
 
 jobs:
   update-cli-coverage:
+    if: github.repository == 'kernel/kernel-go-sdk'
     runs-on: ubuntu-latest
+    timeout-minutes: 55
     steps:
-      - name: Generate app token
-        id: app-token
-        uses: actions/create-github-app-token@v1
+      - name: Generate API read token
+        id: api-read-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
         with:
           app-id: ${{ secrets.ADMIN_APP_ID }}
           private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
           owner: kernel
+          repositories: kernel
+          permission-contents: read
 
       - name: Get PR info for manual dispatch
         id: pr-info
         if: github.event_name == 'workflow_dispatch'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           if [ -n "${{ inputs.pr_number }}" ]; then
             # Use provided PR number
@@ -65,15 +74,16 @@ jobs:
           fi
 
       - name: Checkout SDK repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
+          persist-credentials: false
           fetch-depth: 2
           fetch-tags: true
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
 
@@ -90,29 +100,26 @@ jobs:
           git config --global user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
 
       - name: Setup Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: 'stable'
 
       - name: Clone API repo
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.api-read-token.outputs.token }}
         run: |
           gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
+          gh api --method DELETE /installation/token
 
       - name: Clone CLI repo
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
-          gh repo clone kernel/cli /tmp/kernel-cli
+          git clone https://github.com/kernel/cli.git /tmp/kernel-cli
           cd /tmp/kernel-cli
-          
-          if git fetch origin cli-coverage-update 2>/dev/null; then
-            echo "Branch cli-coverage-update exists, checking it out..."
-            git checkout cli-coverage-update
-            git merge -X theirs origin/main -m "Merge main into cli-coverage-update" --no-edit || true
+          if git show-ref --verify --quiet refs/remotes/origin/cli-coverage-update; then
+            git switch --track origin/cli-coverage-update
+            git merge origin/main --no-edit
           else
-            echo "Branch cli-coverage-update does not exist, will create from main"
+            git switch -c cli-coverage-update origin/main
           fi
 
       - name: Get SDK version info
@@ -178,7 +185,6 @@ jobs:
           PI_PREFERRED_MODEL: ${{ vars.PI_PREFERRED_MODEL }}
           PI_SKIP_VERSION_CHECK: '1'
           PI_TELEMETRY: '0'
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
           KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
           BRANCH_PREFIX: cli-coverage-update
         run: |
@@ -187,7 +193,8 @@ jobs:
             --model "$PI_PREFERRED_MODEL" --thinking max \
             "You are a CLI updater that implements missing CLI commands based on SDK updates.
 
-          The GitHub CLI is available as \`gh\` and authenticated via GH_TOKEN. Git is available. You have write access to the CLI repository (kernel/cli).
+          Git is available for local diffs only. You have no GitHub publishing credentials.
+          Do not commit, push, open, or merge PRs. The workflow validates and publishes your changes.
 
           # Context
           - SDK Repo: ${{ github.repository }} (current directory)
@@ -304,14 +311,11 @@ jobs:
 
           7d. If you added no new commands or flags (SDK version bump only), skip this step.
 
-          ## Step 8: Commit and Push
-          - You should already be on the cli-coverage-update branch (it was checked out during setup if it existed)
-          - If you're on main, create/switch to the cli-coverage-update branch
-          - Commit with message describing SDK version bump and any new commands/flags
-          - Include test results in the commit message (e.g., 'Tested: browsers create --gpu, browsers computer get-mouse-position')
-          - IMPORTANT: Do NOT force push! Use regular \`git push origin cli-coverage-update\` to preserve existing work on the branch
-          - If push fails due to divergence, pull and rebase first: \`git pull --rebase origin cli-coverage-update\`
-          - Create or update the PR in kernel/cli
+          ## Step 8: Review and Report
+          - Read the full diff against origin/main and remove unrelated changes or unnecessary wrappers/casts.
+          - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, intentional exclusions, and test results or limitations.
+          - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
+          - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
 
           # SDK Method -> CLI Command Mapping Guide
           - client.Resource.New() -> kernel resource create
@@ -381,54 +385,71 @@ jobs:
           See \`cmd/profiles.go\` ProfilesCmd.List and \`cmd/app.go\` runAppList for working
           implementations of this pattern.
 
-          # Output Format
-          After pushing changes, create or update an evergreen PR using gh:
-
-          1. Check if an open PR already exists for the cli-coverage-update branch:
-             gh pr list --repo kernel/cli --head cli-coverage-update --state open --json number
-
-          2. If an open PR exists, update it. If not, create a new one.
-
-          If new commands or flags were added:
-            Title: 'CLI: Update SDK to <version> and add new commands/flags'
-            Body:
-            'This PR updates the Go SDK to ${{ steps.sdk-version.outputs.version }} and adds CLI commands/flags for new SDK methods.
-
-            ## SDK Update
-            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
-
-            ## Coverage Analysis
-            This PR was generated by performing a full enumeration of SDK methods and CLI commands.
-
-            ## New Commands
-            - \`kernel <resource> <action>\` for \`client.Resource.Action()\`
-
-            ## New Flags
-            - \`--flag-name\` for \`ResourceParams.FieldName\`
-
-            Triggered by: kernel/kernel-go-sdk@${{ steps.pr-info.outputs.merge_sha || github.sha }}
-            Reviewer: @<commit_author>'
-
-          If only SDK version update (no coverage gaps found):
-            Title: 'CLI: Update Go SDK to ${{ steps.sdk-version.outputs.version }}'
-            Body:
-            'This PR updates the Go SDK dependency to the latest version.
-
-            ## SDK Update
-            - Updated kernel-go-sdk to ${{ steps.sdk-version.outputs.version }}
-
-            ## Coverage Analysis
-            A full enumeration of SDK methods and CLI commands was performed. No coverage gaps were found.
-
-            Triggered by: kernel/kernel-go-sdk@${{ steps.pr-info.outputs.merge_sha || github.sha }}
-            Reviewer: @<commit_author>'
-
           # Constraints
           - ALWAYS update the SDK version in go.mod - this is the primary purpose
           - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
           - ALL SDK methods in api.md MUST have corresponding CLI commands, EXCEPT those marked with x-cli-skip in openapi.yaml
           - SKIP endpoints marked with x-cli-skip: true in openapi.yaml - these are internal endpoints (e.g., hosted UI auth flows) not suitable for CLI
           - Streaming methods may have different CLI implementations (e.g., follow flags)
-          - Even if no coverage gaps are found, still create a PR for the SDK version bump
-          - Ensure code compiles before pushing
+          - Even if no coverage gaps are found, still leave the SDK version bump and write the coverage report
+          - Ensure code compiles before finishing
           "
+
+      - name: Verify CLI changes
+        working-directory: /tmp/kernel-cli
+        env:
+          SDK_MODULE: ${{ steps.sdk-version.outputs.module }}
+          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
+        run: |
+          test -s "$RUNNER_TEMP/cli-coverage-report.md"
+          expected=$(go list -m -f '{{.Version}}' "$SDK_MODULE@$SDK_VERSION")
+          test "$(go list -m -f '{{.Version}}' "$SDK_MODULE")" = "$expected"
+          go build ./...
+          go vet ./...
+          go test ./...
+          git diff --check
+
+      - name: Generate CLI publishing token
+        id: publish-token
+        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        with:
+          app-id: ${{ secrets.ADMIN_APP_ID }}
+          private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
+          owner: kernel
+          repositories: cli
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Open or update CLI coverage PR
+        working-directory: /tmp/kernel-cli
+        env:
+          GH_TOKEN: ${{ steps.publish-token.outputs.token }}
+          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
+        run: |
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Go SDK to $SDK_VERSION and CLI coverage"
+          fi
+          if git diff --quiet origin/main HEAD; then
+            echo "CLI coverage is already up to date."
+            exit 0
+          fi
+          gh auth setup-git
+          git push origin cli-coverage-update
+
+          body="$RUNNER_TEMP/cli-coverage-pr.md"
+          {
+            printf '## Summary\n\n- Update the Go SDK to `%s`.\n' "$SDK_VERSION"
+            printf '\n## Coverage\n\n'
+            cat "$RUNNER_TEMP/cli-coverage-report.md"
+            printf '\n## Validation\n\n- Go build\n- Go vet\n- Go tests\n'
+          } > "$body"
+          pr=$(gh pr list --repo kernel/cli --head cli-coverage-update --base main \
+            --state open --json number --jq '.[0].number // empty')
+          title="CLI: Update Go SDK to $SDK_VERSION"
+          if [[ -n "$pr" ]]; then
+            gh pr edit "$pr" --repo kernel/cli --title "$title" --body-file "$body"
+          else
+            gh pr create --repo kernel/cli --head cli-coverage-update --base main \
+              --title "$title" --body-file "$body"
+          fi

@@ -1,0 +1,51 @@
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import test from 'node:test';
+
+const workflow = readFileSync(new URL('../workflows/update-cli-coverage.yml', import.meta.url), 'utf8');
+const steps = workflow.split(/(?=^      - )/m).slice(1);
+const step = (name) => {
+  const value = steps.find((entry) => entry.startsWith(`      - name: ${name}\n`));
+  assert.ok(value, `missing step: ${name}`);
+  return value;
+};
+
+test('actions are pinned and checkouts do not persist credentials', () => {
+  for (const entry of steps.filter((entry) => entry.includes('uses: '))) {
+    assert.match(entry, /uses: [\w/-]+@[a-f0-9]{40}(?:\s|$)/);
+    if (entry.includes('uses: actions/checkout@')) {
+      assert.match(entry, /persist-credentials: false/);
+    }
+  }
+});
+
+test('API source access is read-only and revoked before generation', () => {
+  const readToken = step('Generate API read token');
+  assert.match(readToken, /repositories: kernel\n/);
+  assert.match(readToken, /permission-contents: read/);
+  assert.doesNotMatch(readToken, /permission-[\w-]+: write/);
+  assert.match(step('Clone API repo'), /gh api --method DELETE \/installation\/token/);
+  assert.ok(steps.indexOf(step('Clone API repo')) < steps.indexOf(step('Update CLI coverage')));
+  assert.doesNotMatch(step('Clone CLI repo'), /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/);
+});
+
+test('the write token is minted only after generation and validation', () => {
+  const agent = steps.indexOf(step('Update CLI coverage'));
+  const verify = steps.indexOf(step('Verify CLI changes'));
+  const mint = steps.indexOf(step('Generate CLI publishing token'));
+  const publish = steps.indexOf(step('Open or update CLI coverage PR'));
+  assert.ok(agent < verify && verify < mint && mint < publish);
+  assert.doesNotMatch(steps.slice(0, mint).join(''), /permission-[\w-]+: write/);
+  assert.doesNotMatch(steps[agent], /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/);
+  assert.match(steps[mint], /repositories: cli\n/);
+  assert.match(steps[mint], /permission-contents: write/);
+  assert.match(steps[publish], /GH_TOKEN: \$\{\{ steps\.publish-token\.outputs\.token \}\}/);
+  assert.match(steps[publish], /gh auth setup-git\n\s+git push/);
+  assert.match(steps[verify], /go build \.\/\.\.\./);
+  assert.match(steps[verify], /go vet \.\/\.\.\./);
+  assert.match(steps[verify], /go test \.\/\.\.\./);
+  assert.match(steps[agent], /Do not commit, push, open, or merge PRs/);
+  for (const entry of steps.slice(verify, publish + 1)) {
+    assert.doesNotMatch(entry, /continue-on-error: true|always\(\)/);
+  }
+});
