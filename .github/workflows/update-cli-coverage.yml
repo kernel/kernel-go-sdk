@@ -104,13 +104,6 @@ jobs:
         with:
           go-version: 'stable'
 
-      - name: Clone API repo
-        env:
-          GH_TOKEN: ${{ steps.api-read-token.outputs.token }}
-        run: |
-          gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
-          gh api --method DELETE /installation/token
-
       - name: Clone CLI repo
         run: |
           git clone https://github.com/kernel/cli.git /tmp/kernel-cli
@@ -178,6 +171,37 @@ jobs:
             echo "" > /tmp/sdk-diff.patch
           fi
 
+          echo "old_date=$(git log -1 --format=%cI "$OLD_SDK_VERSION" 2>/dev/null || true)" >> $GITHUB_OUTPUT
+          echo "new_date=$(git log -1 --format=%cI HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Fetch API spec
+        env:
+          GH_TOKEN: ${{ steps.api-read-token.outputs.token }}
+          OLD_DATE: ${{ steps.sdk-diff.outputs.old_date }}
+          NEW_DATE: ${{ steps.sdk-diff.outputs.new_date }}
+        run: |
+          gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
+          spec=packages/api/openapi.yaml
+          spec_commit() {
+            gh api "repos/kernel/kernel/commits?sha=main&path=$spec&until=$1&per_page=1" --jq '.[0].sha // empty'
+          }
+          base=""
+          head=$(spec_commit "$NEW_DATE")
+          if [[ -n "$OLD_DATE" ]]; then
+            base=$(spec_commit "$OLD_DATE")
+          fi
+          if [[ -n "$base" && -n "$head" ]]; then
+            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$spec?ref=$base" > "$RUNNER_TEMP/openapi-base.yaml"
+            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$spec?ref=$head" > "$RUNNER_TEMP/openapi-head.yaml"
+            diff -u --label "openapi.yaml@$base" --label "openapi.yaml@$head" \
+              "$RUNNER_TEMP/openapi-base.yaml" "$RUNNER_TEMP/openapi-head.yaml" \
+              > /tmp/openapi-diff.patch || [[ $? -eq 1 ]]
+            rm "$RUNNER_TEMP/openapi-base.yaml" "$RUNNER_TEMP/openapi-head.yaml"
+          else
+            printf 'Spec baseline unavailable; compare all relevant descriptions in openapi.yaml.\n' > /tmp/openapi-diff.patch
+          fi
+          gh api --method DELETE /installation/token
+
       - name: Update CLI coverage
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -217,6 +241,7 @@ jobs:
           - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the CLI's current SDK version (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
           - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
           - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
+          - API Spec diff: /tmp/openapi-diff.patch - Spec changes between the CLI's current SDK version and the new one, including endpoint, parameter, and field description changes.
           - CLI: /tmp/kernel-cli - Existing CLI commands
 
           # Task
@@ -290,6 +315,14 @@ jobs:
           - Add missing flags to existing commands
           - Run \`go build ./...\` to verify the code compiles
 
+          ## Step 6b: Sync Help Text With the API Spec
+          The SDK is generated from openapi.yaml, so its endpoint, parameter, and schema descriptions are the source of truth for what the API does.
+          - For every changed summary or description in /tmp/openapi-diff.patch that belongs to an endpoint, parameter, or field the CLI exposes, update the matching command Short/Long text and flag usage string. Use the spec text for anything you add in this run too.
+          - Adapt the text; do not copy it verbatim. API descriptions are written for HTTP callers and often reference other endpoints, HTTP methods, status codes, headers, or JSON body paths that mean nothing to a CLI user. Rewrite those references in CLI terms: name the kernel command and flags that do the equivalent. For example, \"List connections with \`GET /auth/connections\`\" becomes \"List connections with \`kernel auth connections list\`\", and a body field like \`max_concurrent_sessions\` becomes its flag, \`--max-concurrent-sessions\`. Drop API details that do not apply to the command.
+          - Follow existing help text style: keep Short to one concise line and put caveats in Long.
+          - Preserve meaning exactly: limits, defaults, units, accepted values, deprecations, and caveats must match the spec. Do not invent behavior the spec does not state.
+          - Change only text whose meaning the spec change affects, or existing text the spec now shows to be wrong. Do not restyle unrelated help text.
+
           ## Step 7: Test Your Changes (ALWAYS DO THIS)
           After implementing, build the CLI and smoke test the new commands/flags you just added against the real API.
           The KERNEL_API_KEY environment variable is available for authentication.
@@ -313,7 +346,7 @@ jobs:
 
           ## Step 8: Review and Report
           - Read the full diff against origin/main and remove unrelated changes or unnecessary wrappers/casts.
-          - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, intentional exclusions, and test results or limitations.
+          - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, help text updated to match spec changes (with the spec operation or field each follows), intentional exclusions, and test results or limitations.
           - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
           - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
 

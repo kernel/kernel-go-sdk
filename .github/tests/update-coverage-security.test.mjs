@@ -24,8 +24,10 @@ test('API source access is read-only and revoked before generation', () => {
   assert.match(readToken, /repositories: kernel\n/);
   assert.match(readToken, /permission-contents: read/);
   assert.doesNotMatch(readToken, /permission-[\w-]+: write/);
-  assert.match(step('Clone API repo'), /gh api --method DELETE \/installation\/token/);
-  assert.ok(steps.indexOf(step('Clone API repo')) < steps.indexOf(step('Update CLI coverage')));
+  const fetch = step('Fetch API spec');
+  assert.match(fetch, /GH_TOKEN: \$\{\{ steps\.api-read-token\.outputs\.token \}\}/);
+  assert.match(fetch, /gh api --method DELETE \/installation\/token\s*$/);
+  assert.ok(steps.indexOf(fetch) < steps.indexOf(step('Update CLI coverage')));
   assert.doesNotMatch(step('Clone CLI repo'), /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/);
 });
 
