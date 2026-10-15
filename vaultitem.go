@@ -2667,7 +2667,7 @@ func (r *KernelCardStateMasks) UnmarshalJSON(data []byte) error {
 // payment requests sent by the browser. Card updates are not supported; delete and
 // create a new item instead.
 type KernelCardVaultItemSpec struct {
-	// Integer amount in minor currency units (at most 50000), bound to the one-time
+	// Integer amount in minor currency units (at most 1000000), bound to the one-time
 	// code.
 	Amount int64 `json:"amount" api:"required"`
 	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
@@ -2744,7 +2744,7 @@ const (
 // The properties Amount, Currency, MerchantName, MerchantURL, Provider, Wallet are
 // required.
 type KernelCardVaultItemSpecParam struct {
-	// Integer amount in minor currency units (at most 50000), bound to the one-time
+	// Integer amount in minor currency units (at most 1000000), bound to the one-time
 	// code.
 	Amount int64 `json:"amount" api:"required"`
 	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
