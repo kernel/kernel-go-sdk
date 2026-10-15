@@ -803,6 +803,13 @@ type BrowserPoolUpdateParams struct {
 	// https://chromeenterprise.google/policies/ The serialized JSON payload is capped
 	// at 5 MiB.
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
+	// Optional optimistic concurrency precondition. Send the network configuration
+	// from the last pool response, or {} when it has no network configuration. The
+	// entire update is rejected with 409 stale_network if the saved network differs,
+	// checked atomically with the write. Omit for unconditional updates. Explicit
+	// empty lists differ from omitted lists; route targets must match the saved
+	// references (resolved IDs, not equivalent proxy names).
+	ExpectedNetwork BrowserNetworkConfigParam `json:"expected_network,omitzero"`
 	// If provided, replaces the extension list. Empty array clears all
 	// previously-selected extensions. Omit this field to leave extensions unchanged.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`

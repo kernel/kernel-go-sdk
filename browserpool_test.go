@@ -171,6 +171,17 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 				"foo": "bar",
 			},
 			DiscardAllIdle: kernel.Bool(false),
+			ExpectedNetwork: kernel.BrowserNetworkConfigParam{
+				AllowedHosts: []string{"example.com", "*.example.com"},
+				PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+				ProxyRoutes: []kernel.BrowserNetworkConfigProxyRouteParam{{
+					Hosts: []string{"string"},
+					Proxy: kernel.BrowserNetworkConfigProxyRouteProxyParam{
+						ID:   kernel.String("x"),
+						Name: kernel.String("x"),
+					},
+				}},
+			},
 			Extensions: []shared.BrowserExtensionParam{{
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
