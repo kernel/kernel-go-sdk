@@ -303,10 +303,10 @@ type BrowserCaptchaChallengeResultEventData struct {
 	// Enterprise reCAPTCHA variants are grouped into their version bucket
 	// (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold
 	// challenges served by HUMAN (formerly PerimeterX) use human, and unlisted
-	// products use other.
+	// products, including text captchas a site draws itself, use other.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
-	// "arkose", "human", "other".
+	// "arkose", "human", "binance", "other".
 	CaptchaProvider string `json:"captcha_provider"`
 	// Opaque identifier shared by events for one visible challenge. An image-grid
 	// captcha may create multiple task_id values for one challenge_id. The same value
@@ -400,10 +400,10 @@ type BrowserCaptchaSolveResultEventData struct {
 	// Enterprise reCAPTCHA variants are grouped into their version bucket
 	// (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold
 	// challenges served by HUMAN (formerly PerimeterX) use human, and unlisted
-	// products use other.
+	// products, including text captchas a site draws itself, use other.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
-	// "arkose", "human", "other".
+	// "arkose", "human", "binance", "other".
 	CaptchaProvider string `json:"captcha_provider"`
 	// Opaque identifier shared by events for one visible challenge. An image-grid
 	// captcha may create multiple task_id values for one challenge_id. The same value
@@ -413,6 +413,10 @@ type BrowserCaptchaSolveResultEventData struct {
 	// Solver-specific error code on failure (e.g. ERROR_CAPTCHA_UNSOLVABLE). Absent on
 	// success.
 	ErrorCode string `json:"error_code"`
+	// Captured hCaptcha recognition media, when known.
+	//
+	// Any of "image", "video".
+	Media string `json:"media"`
 	// Opaque identifier shared with the matching captcha_solve_started.
 	TaskID string `json:"task_id"`
 	// What the solver task produces. Absent when the producer cannot tell.
@@ -431,6 +435,7 @@ type BrowserCaptchaSolveResultEventData struct {
 		CaptchaProvider respjson.Field
 		ChallengeID     respjson.Field
 		ErrorCode       respjson.Field
+		Media           respjson.Field
 		TaskID          respjson.Field
 		TaskKind        respjson.Field
 		WebsiteHost     respjson.Field
@@ -496,16 +501,20 @@ type BrowserCaptchaSolveStartedEventData struct {
 	// Enterprise reCAPTCHA variants are grouped into their version bucket
 	// (recaptcha_v2 or recaptcha_v3), FunCaptcha uses arkose, press-and-hold
 	// challenges served by HUMAN (formerly PerimeterX) use human, and unlisted
-	// products use other.
+	// products, including text captchas a site draws itself, use other.
 	//
 	// Any of "hcaptcha", "recaptcha_v2", "recaptcha_v3", "turnstile", "geetest",
-	// "arkose", "human", "other".
+	// "arkose", "human", "binance", "other".
 	CaptchaProvider string `json:"captcha_provider"`
 	// Opaque identifier shared by events for one visible challenge. An image-grid
 	// captcha may create multiple task_id values for one challenge_id. The same value
 	// may continue across a page reload when the challenge episode continues. It does
 	// not indicate task ordering or challenge completion.
 	ChallengeID string `json:"challenge_id"`
+	// Captured hCaptcha recognition media, when known.
+	//
+	// Any of "image", "video".
+	Media string `json:"media"`
 	// Opaque identifier shared with the matching captcha_solve_result.
 	TaskID string `json:"task_id"`
 	// What the solver task produces. Absent when the producer cannot tell.
@@ -522,6 +531,7 @@ type BrowserCaptchaSolveStartedEventData struct {
 		CaptchaType     respjson.Field
 		CaptchaProvider respjson.Field
 		ChallengeID     respjson.Field
+		Media           respjson.Field
 		TaskID          respjson.Field
 		TaskKind        respjson.Field
 		WebsiteHost     respjson.Field
@@ -6452,6 +6462,7 @@ type BrowserTelemetryEventUnionData struct {
 	CaptchaType       string `json:"captcha_type"`
 	CaptchaProvider   string `json:"captcha_provider"`
 	ChallengeID       string `json:"challenge_id"`
+	Media             string `json:"media"`
 	TaskID            string `json:"task_id"`
 	TaskKind          string `json:"task_kind"`
 	WebsiteHost       string `json:"website_host"`
@@ -6660,6 +6671,7 @@ type BrowserTelemetryEventUnionData struct {
 		CaptchaType                       respjson.Field
 		CaptchaProvider                   respjson.Field
 		ChallengeID                       respjson.Field
+		Media                             respjson.Field
 		TaskID                            respjson.Field
 		TaskKind                          respjson.Field
 		WebsiteHost                       respjson.Field
