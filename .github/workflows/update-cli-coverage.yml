@@ -22,10 +22,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-cli-coverage:
+  generate:
     if: github.repository == 'kernel/kernel-go-sdk'
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    outputs:
+      changed: ${{ steps.snapshot.outputs.changed }}
+      main_sha: ${{ steps.cli-clone.outputs.main_sha }}
+      update_sha: ${{ steps.cli-clone.outputs.update_sha }}
+      version: ${{ steps.sdk-version.outputs.version }}
     steps:
       - name: Generate API read token
         id: api-read-token
@@ -82,6 +87,13 @@ jobs:
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
+      - name: Checkout updater scripts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          path: updater
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
@@ -105,12 +117,18 @@ jobs:
           go-version: 'stable'
 
       - name: Clone CLI repo
+        id: cli-clone
         run: |
           git clone https://github.com/kernel/cli.git /tmp/kernel-cli
           cd /tmp/kernel-cli
+          echo "main_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
           if git show-ref --verify --quiet refs/remotes/origin/cli-coverage-update; then
+            echo "update_sha=$(git rev-parse origin/cli-coverage-update)" >> "$GITHUB_OUTPUT"
             git switch --track origin/cli-coverage-update
-            git merge origin/main --no-edit
+            if ! git merge origin/main --no-edit; then
+              echo "::error::cli-coverage-update conflicts with main. Resolve the conflicts on that branch, or delete it to start fresh, then rerun this workflow."
+              exit 1
+            fi
           else
             git switch -c cli-coverage-update origin/main
           fi
@@ -171,8 +189,11 @@ jobs:
             echo "" > /tmp/sdk-diff.patch
           fi
 
-          echo "old_date=$(git log -1 --format=%cI "$OLD_SDK_VERSION" 2>/dev/null || true)" >> $GITHUB_OUTPUT
-          echo "new_date=$(git log -1 --format=%cI HEAD)" >> $GITHUB_OUTPUT
+          utc_date() {
+            TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd "$1"
+          }
+          echo "old_date=$(utc_date "$OLD_SDK_VERSION" 2>/dev/null || true)" >> $GITHUB_OUTPUT
+          echo "new_date=$(utc_date HEAD)" >> $GITHUB_OUTPUT
 
       - name: Fetch API spec
         env:
@@ -180,23 +201,28 @@ jobs:
           OLD_DATE: ${{ steps.sdk-diff.outputs.old_date }}
           NEW_DATE: ${{ steps.sdk-diff.outputs.new_date }}
         run: |
-          gh repo clone kernel/kernel /tmp/kernel-api -- --depth=1
-          spec=packages/api/openapi.yaml
-          spec_commit() {
-            gh api "repos/kernel/kernel/commits?sha=main&path=$spec&until=$1&per_page=1" --jq '.[0].sha // empty'
+          main_at() {
+            gh api -X GET repos/kernel/kernel/commits -f sha=main -f until="$1" -f per_page=1 --jq '.[0].sha // empty'
           }
+          file_at() {
+            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$1?ref=$2"
+          }
+          head=$(main_at "$NEW_DATE")
+          test -n "$head"
+          mkdir -p /tmp/kernel-api/packages/api
+          for file in openapi.yaml stainless.yaml; do
+            file_at "packages/api/$file" "$head" > "/tmp/kernel-api/packages/api/$file"
+          done
           base=""
-          head=$(spec_commit "$NEW_DATE")
           if [[ -n "$OLD_DATE" ]]; then
-            base=$(spec_commit "$OLD_DATE")
+            base=$(main_at "$OLD_DATE")
           fi
-          if [[ -n "$base" && -n "$head" ]]; then
-            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$spec?ref=$base" > "$RUNNER_TEMP/openapi-base.yaml"
-            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$spec?ref=$head" > "$RUNNER_TEMP/openapi-head.yaml"
+          if [[ -n "$base" ]]; then
+            file_at packages/api/openapi.yaml "$base" > "$RUNNER_TEMP/openapi-base.yaml"
             diff -u --label "openapi.yaml@$base" --label "openapi.yaml@$head" \
-              "$RUNNER_TEMP/openapi-base.yaml" "$RUNNER_TEMP/openapi-head.yaml" \
+              "$RUNNER_TEMP/openapi-base.yaml" /tmp/kernel-api/packages/api/openapi.yaml \
               > /tmp/openapi-diff.patch || [[ $? -eq 1 ]]
-            rm "$RUNNER_TEMP/openapi-base.yaml" "$RUNNER_TEMP/openapi-head.yaml"
+            rm "$RUNNER_TEMP/openapi-base.yaml"
           else
             printf 'Spec baseline unavailable; compare all relevant descriptions in openapi.yaml.\n' > /tmp/openapi-diff.patch
           fi
@@ -213,6 +239,7 @@ jobs:
           BRANCH_PREFIX: cli-coverage-update
         run: |
           : "${PI_PREFERRED_MODEL:?Set the PI_PREFERRED_MODEL organization variable}"
+          mkdir -p "$RUNNER_TEMP/cli-scratch"
           pi --print --no-session --approve \
             --model "$PI_PREFERRED_MODEL" --thinking max \
             "You are a CLI updater that implements missing CLI commands based on SDK updates.
@@ -227,7 +254,7 @@ jobs:
           - Commit SHA: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
           - Commit Author: ${{ steps.sdk-version.outputs.author }}
           - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
-          - API Repo Location: /tmp/kernel-api
+          - API Spec Location: /tmp/kernel-api/packages/api (openapi.yaml and stainless.yaml as of this SDK release)
           - CLI Repo Location: /tmp/kernel-cli
           - Update Branch Prefix: cli-coverage-update
 
@@ -327,8 +354,10 @@ jobs:
           After implementing, build the CLI and smoke test the new commands/flags you just added against the real API.
           The KERNEL_API_KEY environment variable is available for authentication.
 
+          Keep every smoke-test artifact outside the checkout: write binaries, command output, JSON responses, and logs under $RUNNER_TEMP/cli-scratch, never under /tmp/kernel-cli.
+
           7a. Build the CLI:
-              cd /tmp/kernel-cli && go build -o /tmp/kernel-cli/bin/kernel ./cmd/kernel
+              cd /tmp/kernel-cli && go build -o $RUNNER_TEMP/cli-scratch/kernel ./cmd/kernel
 
           7b. For each new command or flag you added:
               - Run the command against the real API and verify it succeeds
@@ -336,9 +365,9 @@ jobs:
               - For read commands: call them and verify the output format is correct
               - For flag additions: create a resource with the new flag and verify it shows up in the get output
               Example test flow for a new browser flag:
-                /tmp/kernel-cli/bin/kernel browsers create --new-flag value -t 30
-                /tmp/kernel-cli/bin/kernel browsers get <id>  # verify new-flag appears
-                /tmp/kernel-cli/bin/kernel browsers delete <id>  # clean up
+                $RUNNER_TEMP/cli-scratch/kernel browsers create --new-flag value -t 30
+                $RUNNER_TEMP/cli-scratch/kernel browsers get <id>  # verify new-flag appears
+                $RUNNER_TEMP/cli-scratch/kernel browsers delete <id>  # clean up
 
           7c. If any command fails or produces unexpected output, fix the implementation and re-test before proceeding.
 
@@ -349,6 +378,7 @@ jobs:
           - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, help text updated to match spec changes (with the spec operation or field each follows), intentional exclusions, and test results or limitations.
           - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
           - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
+          - Only go.mod, go.sum, and .go files under cmd/ and pkg/ are published. The workflow discards every other change before validation.
 
           # SDK Method -> CLI Command Mapping Guide
           - client.Resource.New() -> kernel resource create
@@ -428,6 +458,26 @@ jobs:
           - Ensure code compiles before finishing
           "
 
+      - name: Snapshot publishable changes
+        id: snapshot
+        working-directory: /tmp/kernel-cli
+        run: |
+          git add -A
+          git diff --cached --name-only --no-renames -z \
+            | "$GITHUB_WORKSPACE/updater/.github/scripts/cli-update-disallowed-paths.sh" > "$RUNNER_TEMP/excluded-paths"
+          if [[ -s "$RUNNER_TEMP/excluded-paths" ]]; then
+            echo "::warning::Discarding changes outside the CLI updater allowlist:"
+            tr '\0' '\n' < "$RUNNER_TEMP/excluded-paths"
+            GIT_LITERAL_PATHSPECS=1 git reset -q --pathspec-from-file="$RUNNER_TEMP/excluded-paths" --pathspec-file-nul
+          fi
+          git diff --cached --binary --no-renames --no-ext-diff --no-textconv > "$RUNNER_TEMP/changes.patch"
+          git reset -q --hard
+          git clean -fdq
+          if [[ -s "$RUNNER_TEMP/changes.patch" ]]; then
+            git apply --index "$RUNNER_TEMP/changes.patch"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Verify CLI changes
         working-directory: /tmp/kernel-cli
         env:
@@ -437,10 +487,78 @@ jobs:
           test -s "$RUNNER_TEMP/cli-coverage-report.md"
           expected=$(go list -m -f '{{.Version}}' "$SDK_MODULE@$SDK_VERSION")
           test "$(go list -m -f '{{.Version}}' "$SDK_MODULE")" = "$expected"
+          # Validation must build against published modules, not local replacements.
+          test -z "$(go list -m -f '{{with .Replace}}{{.Path}}{{end}}' "$SDK_MODULE")"
+          go mod edit -json | jq -e '[.Replace[]? | select(.New.Version == null)] | length == 0'
           go build ./...
           go vet ./...
           go test ./...
-          git diff --check
+          git diff --cached --check
+
+      - name: Upload validated changes
+        if: steps.snapshot.outputs.changed == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cli-coverage-update
+          path: |
+            ${{ runner.temp }}/changes.patch
+            ${{ runner.temp }}/cli-coverage-report.md
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: generate
+    if: needs.generate.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      SDK_VERSION: ${{ needs.generate.outputs.version }}
+      MAIN_SHA: ${{ needs.generate.outputs.main_sha }}
+      UPDATE_SHA: ${{ needs.generate.outputs.update_sha }}
+    steps:
+      - name: Checkout updater scripts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+
+      - name: Download validated changes
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cli-coverage-update
+          path: ${{ runner.temp }}/cli-coverage-update
+
+      - name: Checkout CLI
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          repository: kernel/cli
+          path: cli
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Apply validated changes
+        working-directory: cli
+        run: |
+          git config user.name "kernel-internal[bot]"
+          git config user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
+          if [[ -n "$UPDATE_SHA" ]]; then
+            git switch -c cli-coverage-update "$UPDATE_SHA"
+            git merge --no-edit "$MAIN_SHA"
+          else
+            git switch -c cli-coverage-update "$MAIN_SHA"
+          fi
+          git apply --index "$RUNNER_TEMP/cli-coverage-update/changes.patch"
+          git diff --cached --name-only --no-renames -z \
+            | ../.github/scripts/cli-update-disallowed-paths.sh > "$RUNNER_TEMP/disallowed-paths"
+          if [[ -s "$RUNNER_TEMP/disallowed-paths" ]]; then
+            echo "::error::Validated changes include paths outside the CLI updater allowlist:"
+            tr '\0' '\n' < "$RUNNER_TEMP/disallowed-paths"
+            exit 1
+          fi
+          if git diff --cached --raw --no-renames | awk '$2 !~ /^(100644|100755|000000)$/ { found = 1 } END { exit !found }'; then
+            echo "::error::Validated changes may only contain regular files."
+            exit 1
+          fi
+          git commit -q -m "Update Go SDK to $SDK_VERSION and CLI coverage"
 
       - name: Generate CLI publishing token
         id: publish-token
@@ -454,15 +572,10 @@ jobs:
           permission-pull-requests: write
 
       - name: Open or update CLI coverage PR
-        working-directory: /tmp/kernel-cli
+        working-directory: cli
         env:
           GH_TOKEN: ${{ steps.publish-token.outputs.token }}
-          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
         run: |
-          git add .
-          if ! git diff --cached --quiet; then
-            git commit -m "Update Go SDK to $SDK_VERSION and CLI coverage"
-          fi
           if git diff --quiet origin/main HEAD; then
             echo "CLI coverage is already up to date."
             exit 0
@@ -474,7 +587,7 @@ jobs:
           {
             printf '## Summary\n\n- Update the Go SDK to `%s`.\n' "$SDK_VERSION"
             printf '\n## Coverage\n\n'
-            cat "$RUNNER_TEMP/cli-coverage-report.md"
+            head -c 60000 "$RUNNER_TEMP/cli-coverage-update/cli-coverage-report.md"
             printf '\n## Validation\n\n- Go build\n- Go vet\n- Go tests\n'
           } > "$body"
           pr=$(gh pr list --repo kernel/cli --head cli-coverage-update --base main \
