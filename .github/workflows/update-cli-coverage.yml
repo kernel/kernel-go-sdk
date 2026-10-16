@@ -132,6 +132,7 @@ jobs:
           else
             git switch -c cli-coverage-update origin/main
           fi
+          echo "agent_base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Get SDK version info
         id: sdk-version
@@ -461,10 +462,13 @@ jobs:
       - name: Snapshot publishable changes
         id: snapshot
         working-directory: /tmp/kernel-cli
+        env:
+          AGENT_BASE: ${{ steps.cli-clone.outputs.agent_base }}
         run: |
+          git reset -q --soft "$AGENT_BASE"
           git add -A
           git diff --cached --name-only --no-renames -z \
-            | "$GITHUB_WORKSPACE/updater/.github/scripts/cli-update-disallowed-paths.sh" > "$RUNNER_TEMP/excluded-paths"
+            | bash "$GITHUB_WORKSPACE/updater/.github/scripts/cli-update-disallowed-paths.sh" > "$RUNNER_TEMP/excluded-paths"
           if [[ -s "$RUNNER_TEMP/excluded-paths" ]]; then
             echo "::warning::Discarding changes outside the CLI updater allowlist:"
             tr '\0' '\n' < "$RUNNER_TEMP/excluded-paths"
@@ -548,7 +552,7 @@ jobs:
           fi
           git apply --index "$RUNNER_TEMP/cli-coverage-update/changes.patch"
           git diff --cached --name-only --no-renames -z \
-            | ../.github/scripts/cli-update-disallowed-paths.sh > "$RUNNER_TEMP/disallowed-paths"
+            | bash ../.github/scripts/cli-update-disallowed-paths.sh > "$RUNNER_TEMP/disallowed-paths"
           if [[ -s "$RUNNER_TEMP/disallowed-paths" ]]; then
             echo "::error::Validated changes include paths outside the CLI updater allowlist:"
             tr '\0' '\n' < "$RUNNER_TEMP/disallowed-paths"

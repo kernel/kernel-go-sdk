@@ -64,6 +64,12 @@ test('changes are restricted to the allowlist and validated against published mo
   assert.match(snapshot, /updater\/\.github\/scripts\/cli-update-disallowed-paths\.sh/);
   assert.match(step('generate', 'Checkout updater scripts'), /sparse-checkout: \.github\/scripts/);
   assert.match(snapshot, /git reset -q --hard\n\s+git clean -fdq/);
+  assert.match(snapshot, /AGENT_BASE: \$\{\{ steps\.cli-clone\.outputs\.agent_base \}\}/);
+  assert.match(snapshot, /git reset -q --soft "\$AGENT_BASE"\n\s+git add -A/);
+  assert.match(step('generate', 'Clone CLI repo'), /agent_base=\$\(git rev-parse HEAD\)/);
+  const scriptCalls = workflow.match(/^.*disallowed-paths\.sh.*$/gm);
+  assert.equal(scriptCalls.length, 2);
+  for (const line of scriptCalls) assert.match(line, /\| bash /);
   assert.match(verify, /\{\{with \.Replace\}\}/);
   assert.match(verify, /select\(\.New\.Version == null\)/);
   for (const command of ['go build ./...', 'go vet ./...', 'go test ./...']) {
