@@ -200,16 +200,21 @@ type BrowserMemory string
 const (
 	BrowserMemory1GiB  BrowserMemory = "1GiB"
 	BrowserMemory2GiB  BrowserMemory = "2GiB"
+	BrowserMemory4GiB  BrowserMemory = "4GiB"
 	BrowserMemory6GiB  BrowserMemory = "6GiB"
 	BrowserMemory8GiB  BrowserMemory = "8GiB"
 	BrowserMemory12GiB BrowserMemory = "12GiB"
 	BrowserMemory16GiB BrowserMemory = "16GiB"
 )
 
-// Memory requested for a headful, non-GPU browser session.
+// Memory requested for a non-GPU browser. Headless browsers support 1GiB
+// (default), 2GiB, or 4GiB; headful browsers support 8GiB (default) or 16GiB.
 type BrowserMemoryRequest string
 
 const (
+	BrowserMemoryRequest1GiB  BrowserMemoryRequest = "1GiB"
+	BrowserMemoryRequest2GiB  BrowserMemoryRequest = "2GiB"
+	BrowserMemoryRequest4GiB  BrowserMemoryRequest = "4GiB"
 	BrowserMemoryRequest8GiB  BrowserMemoryRequest = "8GiB"
 	BrowserMemoryRequest16GiB BrowserMemoryRequest = "16GiB"
 )
@@ -950,7 +955,7 @@ type BrowserNewResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1107,7 +1112,7 @@ type BrowserGetResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1264,7 +1269,7 @@ type BrowserUpdateResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1421,7 +1426,7 @@ type BrowserListResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -1644,9 +1649,10 @@ type BrowserNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
-	// Memory for a headful, non-GPU browser session. Defaults to 8GiB.
+	// Memory for a non-GPU browser. Headless: 1GiB (default), 2GiB, or 4GiB. Headful:
+	// 8GiB (default) or 16GiB.
 	//
-	// Any of "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "8GiB", "16GiB".
 	Memory BrowserMemoryRequest `json:"memory,omitzero"`
 	// Network configuration for the browser session. Only allowed_hosts can be changed
 	// after creation, with PATCH /browsers/{id_or_name}.
