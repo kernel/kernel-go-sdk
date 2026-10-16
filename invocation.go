@@ -575,7 +575,7 @@ type InvocationListBrowsersResponseBrowser struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//

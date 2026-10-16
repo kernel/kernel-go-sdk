@@ -171,6 +171,17 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 				"foo": "bar",
 			},
 			DiscardAllIdle: kernel.Bool(false),
+			ExpectedNetwork: kernel.BrowserNetworkConfigParam{
+				AllowedHosts: []string{"example.com", "*.example.com"},
+				PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
+				ProxyRoutes: []kernel.BrowserNetworkConfigProxyRouteParam{{
+					Hosts: []string{"string"},
+					Proxy: kernel.BrowserNetworkConfigProxyRouteProxyParam{
+						ID:   kernel.String("x"),
+						Name: kernel.String("x"),
+					},
+				}},
+			},
 			Extensions: []shared.BrowserExtensionParam{{
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
@@ -178,7 +189,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			FillRatePerMinute: kernel.Int(0),
 			Headless:          kernel.Bool(false),
 			KioskMode:         kernel.Bool(true),
-			Memory:            kernel.BrowserPoolUpdateParamsMemory8GiB,
+			Memory:            kernel.BrowserPoolUpdateParamsMemory1GiB,
 			Name:              kernel.String("my-pool"),
 			Network: kernel.BrowserNetworkConfigParam{
 				AllowedHosts: []string{"example.com", "*.example.com"},

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.127.0](https://github.com/kernel/kernel-go-sdk/compare/v0.126.0...v0.127.0) (2026-10-16)
+
+
+### Features
+
+* Add atomic preconditions to pool network updates ([4ba1a16](https://github.com/kernel/kernel-go-sdk/commit/4ba1a16b77cf49e77fb755de50602e9ceb96f767))
+* Add passkey credential fields and PATCH field add/remove ([5fcd5cb](https://github.com/kernel/kernel-go-sdk/commit/5fcd5cb3d70a57e4eaa55cf9a4e31d8826a0d4bd))
+* Allow replacing vault cards whose provider outcome is unknown ([c29cc0a](https://github.com/kernel/kernel-go-sdk/commit/c29cc0a2acc90a2a8cb85009e0b675795f9fbbde))
+* chore(stlc): seal custom-code tracking files ([83755ea](https://github.com/kernel/kernel-go-sdk/commit/83755ea520bdc77e2d898abfbadac4d9a6d6a43c))
+* Classify text captchas as token tasks and Binance as a provider ([a7500db](https://github.com/kernel/kernel-go-sdk/commit/a7500dba27215b13133ab42299f42720aaefd952))
+* Deliver Kernel card details through fill ([c01e7cb](https://github.com/kernel/kernel-go-sdk/commit/c01e7cb515705a9e8a82a6334b6b88727f649ced))
+* Raise Kernel card amount cap to $10,000 ([c543575](https://github.com/kernel/kernel-go-sdk/commit/c5435759242aaa83f6280dcd3506c8dd185752ae))
+* Remove Link expires_at, return 400 for missing credential values, and log fill failures ([aaa851d](https://github.com/kernel/kernel-go-sdk/commit/aaa851dc850d81283fbe553be52a759de4842b39))
+
 ## [0.126.0](https://github.com/kernel/kernel-go-sdk/compare/v0.125.0...v0.126.0) (2026-10-14)
 
 

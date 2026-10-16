@@ -233,7 +233,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	KioskMode bool `json:"kiosk_mode"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name string `json:"name"`
@@ -356,7 +356,7 @@ type BrowserPoolAcquireResponse struct {
 	Headless bool `json:"headless" api:"required"`
 	// Memory allocated to the browser session.
 	//
-	// Any of "1GiB", "2GiB", "6GiB", "8GiB", "12GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "6GiB", "8GiB", "12GiB", "16GiB".
 	Memory BrowserMemory `json:"memory" api:"required"`
 	// Geographic region of the browser session. Fixed once the session is created.
 	//
@@ -554,9 +554,10 @@ type BrowserPoolNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
-	// Memory requested for headful browsers in this pool.
+	// Memory for browsers in this pool. Headless: 1GiB (default), 2GiB, or 4GiB.
+	// Headful: 8GiB (default) or 16GiB.
 	//
-	// Any of "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "8GiB", "16GiB".
 	Memory BrowserMemoryRequest `json:"memory,omitzero"`
 	// Network configuration applied to browsers in this pool. Egress allowlists and
 	// proxy routes require proxy-v3; the pool will not provision browsers through
@@ -803,14 +804,21 @@ type BrowserPoolUpdateParams struct {
 	// https://chromeenterprise.google/policies/ The serialized JSON payload is capped
 	// at 5 MiB.
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
+	// Optional optimistic concurrency precondition. Send the network configuration
+	// from the last pool response, or {} when it has no network configuration. The
+	// entire update is rejected with 409 stale_network if the saved network differs,
+	// checked atomically with the write. Omit for unconditional updates. Explicit
+	// empty lists differ from omitted lists; route targets must match the saved
+	// references (resolved IDs, not equivalent proxy names).
+	ExpectedNetwork BrowserNetworkConfigParam `json:"expected_network,omitzero"`
 	// If provided, replaces the extension list. Empty array clears all
 	// previously-selected extensions. Omit this field to leave extensions unchanged.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
-	// Memory requested for newly-warmed headful browsers in this pool. Existing
-	// browsers retain their original allocation. Use discard_all_idle to replace idle
-	// browsers.
+	// Memory requested for newly-warmed browsers in this pool: 1GiB, 2GiB, or 4GiB for
+	// headless, 8GiB or 16GiB for headful. Existing browsers retain their original
+	// allocation. Use discard_all_idle to replace idle browsers.
 	//
-	// Any of "8GiB", "16GiB".
+	// Any of "1GiB", "2GiB", "4GiB", "8GiB", "16GiB".
 	Memory BrowserPoolUpdateParamsMemory `json:"memory,omitzero"`
 	// If provided, replaces the pool's network configuration. Omit to leave the
 	// existing configuration unchanged; an empty object ({}) removes it, while
@@ -854,12 +862,15 @@ func (r *BrowserPoolUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Memory requested for newly-warmed headful browsers in this pool. Existing
-// browsers retain their original allocation. Use discard_all_idle to replace idle
-// browsers.
+// Memory requested for newly-warmed browsers in this pool: 1GiB, 2GiB, or 4GiB for
+// headless, 8GiB or 16GiB for headful. Existing browsers retain their original
+// allocation. Use discard_all_idle to replace idle browsers.
 type BrowserPoolUpdateParamsMemory string
 
 const (
+	BrowserPoolUpdateParamsMemory1GiB  BrowserPoolUpdateParamsMemory = "1GiB"
+	BrowserPoolUpdateParamsMemory2GiB  BrowserPoolUpdateParamsMemory = "2GiB"
+	BrowserPoolUpdateParamsMemory4GiB  BrowserPoolUpdateParamsMemory = "4GiB"
 	BrowserPoolUpdateParamsMemory8GiB  BrowserPoolUpdateParamsMemory = "8GiB"
 	BrowserPoolUpdateParamsMemory16GiB BrowserPoolUpdateParamsMemory = "16GiB"
 )
