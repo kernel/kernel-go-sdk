@@ -50,29 +50,30 @@ func (r *ProxyService) New(ctx context.Context, body ProxyNewParams, opts ...opt
 	return res, err
 }
 
-// Retrieve a proxy in the resolved project by ID.
-func (r *ProxyService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ProxyGetResponse, err error) {
+// Retrieve a proxy in the resolved project by ID or exact name using the database
+// collation. IDs take precedence when a value matches both an ID and a name. Proxy
+// names are not unique; an ambiguous name returns a 400 response with code
+// ambiguous_proxy_name.
+func (r *ProxyService) Get(ctx context.Context, idOrName string, opts ...option.RequestOption) (res *ProxyGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("proxies/%s", id)
+	path := fmt.Sprintf("proxies/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
-// Update a proxy's name. Proxy names are not unique and are not ID-or-name
-// addressable on this endpoint; duplicate names are allowed. Name-based
-// session-create lookups can remain ambiguous until callers resolve proxies by ID
-// or the API adds a stronger uniqueness contract.
-func (r *ProxyService) Update(ctx context.Context, id string, body ProxyUpdateParams, opts ...option.RequestOption) (res *ProxyUpdateResponse, err error) {
+// Update a proxy's name. Proxy names are not unique and duplicate names are
+// allowed.
+func (r *ProxyService) Update(ctx context.Context, idOrName string, body ProxyUpdateParams, opts ...option.RequestOption) (res *ProxyUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("proxies/%s", id)
+	path := fmt.Sprintf("proxies/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
 	return res, err
 }
@@ -104,14 +105,14 @@ func (r *ProxyService) ListAutoPaging(ctx context.Context, query ProxyListParams
 // binding polling is enabled, existing tunnels for active sessions using the proxy
 // are terminated within one polling interval; subsequent connections through the
 // deleted proxy are rejected.
-func (r *ProxyService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
+func (r *ProxyService) Delete(ctx context.Context, idOrName string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return err
 	}
-	path := fmt.Sprintf("proxies/%s", id)
+	path := fmt.Sprintf("proxies/%s", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
 }
@@ -122,13 +123,13 @@ func (r *ProxyService) Delete(ctx context.Context, id string, opts ...option.Req
 // residential and mobile proxies, the exit node varies between requests, so this
 // validates proxy configuration and connectivity rather than guaranteeing
 // site-specific reachability.
-func (r *ProxyService) Check(ctx context.Context, id string, body ProxyCheckParams, opts ...option.RequestOption) (res *ProxyCheckResponse, err error) {
+func (r *ProxyService) Check(ctx context.Context, idOrName string, body ProxyCheckParams, opts ...option.RequestOption) (res *ProxyCheckResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("proxies/%s/check", id)
+	path := fmt.Sprintf("proxies/%s/check", idOrName)
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }

@@ -59,7 +59,7 @@ func TestProxyGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Proxies.Get(context.TODO(), "id")
+	_, err := client.Proxies.Get(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -84,7 +84,7 @@ func TestProxyUpdate(t *testing.T) {
 	)
 	_, err := client.Proxies.Update(
 		context.TODO(),
-		"id",
+		"id_or_name",
 		kernel.ProxyUpdateParams{
 			Name: "my-renamed-proxy",
 		},
@@ -139,7 +139,7 @@ func TestProxyDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Proxies.Delete(context.TODO(), "id")
+	err := client.Proxies.Delete(context.TODO(), "id_or_name")
 	if err != nil {
 		var apierr *kernel.Error
 		if errors.As(err, &apierr) {
@@ -164,7 +164,7 @@ func TestProxyCheckWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Proxies.Check(
 		context.TODO(),
-		"id",
+		"id_or_name",
 		kernel.ProxyCheckParams{
 			URL: kernel.String("https://example.com"),
 		},

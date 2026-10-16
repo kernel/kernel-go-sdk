@@ -555,9 +555,7 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 // virtual card otherwise. Callers never receive or choose how the credential is
 // delivered.
 type CardVaultItemSpecLink struct {
-	// Integer amount in minor currency units. Link Pay Token execution permits at most
-	// 500000; virtual-card execution permits at most 50000. Authorization rejects a
-	// larger amount when the checkout requires a virtual card.
+	// Integer amount in minor currency units, at most 50000.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -921,9 +919,7 @@ func init() {
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
 type CardVaultItemSpecLinkParam struct {
-	// Integer amount in minor currency units. Link Pay Token execution permits at most
-	// 500000; virtual-card execution permits at most 50000. Authorization rejects a
-	// larger amount when the checkout requires a virtual card.
+	// Integer amount in minor currency units, at most 50000.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
