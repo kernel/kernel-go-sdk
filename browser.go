@@ -194,6 +194,138 @@ func (r *BrowserService) Repl(ctx context.Context, idOrName string, body Browser
 	return res, err
 }
 
+type BrowserAllowlistState struct {
+	// Opaque revision to pass as network.expected_allowlist_revision on an update.
+	Revision string `json:"revision" api:"required"`
+	// Revision against which that mutation was accepted; reuse it when retrying the
+	// mutation.
+	BaseRevision string `json:"base_revision"`
+	// ID of the last conditional allowlist update saved on this browser.
+	MutationID string `json:"mutation_id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Revision     respjson.Field
+		BaseRevision respjson.Field
+		MutationID   respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserAllowlistState) RawJSON() string { return r.JSON.raw }
+func (r *BrowserAllowlistState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserAllowlistState to a BrowserAllowlistStateParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserAllowlistStateParam.Overrides()
+func (r BrowserAllowlistState) ToParam() BrowserAllowlistStateParam {
+	return param.Override[BrowserAllowlistStateParam](json.RawMessage(r.RawJSON()))
+}
+
+// The property Revision is required.
+type BrowserAllowlistStateParam struct {
+	// Opaque revision to pass as network.expected_allowlist_revision on an update.
+	Revision string `json:"revision" api:"required"`
+	// Revision against which that mutation was accepted; reuse it when retrying the
+	// mutation.
+	BaseRevision param.Opt[string] `json:"base_revision,omitzero"`
+	// ID of the last conditional allowlist update saved on this browser.
+	MutationID param.Opt[string] `json:"mutation_id,omitzero"`
+	paramObj
+}
+
+func (r BrowserAllowlistStateParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserAllowlistStateParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserAllowlistStateParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserLocation struct {
+	// Effective canonical BCP 47 formatting locale selected for the browser session.
+	Locale string `json:"locale" api:"required"`
+	// Where one effective browser location field came from. `override` is set
+	// explicitly on the session; `metro` is the default for the browser's region.
+	//
+	// Any of "override", "metro".
+	LocaleSource BrowserLocationSource `json:"locale_source" api:"required"`
+	// Effective IANA timezone selected for the browser session.
+	Timezone string `json:"timezone" api:"required"`
+	// Where one effective browser location field came from. `override` is set
+	// explicitly on the session; `metro` is the default for the browser's region.
+	//
+	// Any of "override", "metro".
+	TimezoneSource BrowserLocationSource `json:"timezone_source" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Locale         respjson.Field
+		LocaleSource   respjson.Field
+		Timezone       respjson.Field
+		TimezoneSource respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserLocation) RawJSON() string { return r.JSON.raw }
+func (r *BrowserLocation) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserLocationRequestParam struct {
+	// Session-only supported canonical BCP 47 locale override. Omit to use the default
+	// for the browser's region.
+	Locale param.Opt[string] `json:"locale,omitzero"`
+	// Session-only IANA timezone override. Omit to use the default for the browser's
+	// region.
+	Timezone param.Opt[string] `json:"timezone,omitzero"`
+	paramObj
+}
+
+func (r BrowserLocationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserLocationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserLocationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where one effective browser location field came from. `override` is set
+// explicitly on the session; `metro` is the default for the browser's region.
+type BrowserLocationSource string
+
+const (
+	BrowserLocationSourceOverride BrowserLocationSource = "override"
+	BrowserLocationSourceMetro    BrowserLocationSource = "metro"
+)
+
+// Omit a field to leave it unchanged, set a string override, or set null to clear
+// the override and use the default for the browser's region.
+type BrowserLocationUpdateRequestParam struct {
+	// Session-only supported canonical BCP 47 locale override. Null clears the
+	// override and uses the browser region's default.
+	Locale param.Opt[string] `json:"locale,omitzero"`
+	// Session-only IANA timezone override. Null clears the override and uses the
+	// browser region's default.
+	Timezone param.Opt[string] `json:"timezone,omitzero"`
+	paramObj
+}
+
+func (r BrowserLocationUpdateRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserLocationUpdateRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserLocationUpdateRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Memory allocated to the browser session.
 type BrowserMemory string
 
@@ -245,6 +377,11 @@ type BrowserNetworkConfig struct {
 	// lessee removes the allowlist and the pool still requires one, the browser is
 	// replaced on release rather than given an allowlist again. Requires proxy v3.
 	AllowedHosts []string `json:"allowed_hosts"`
+	// Concurrency metadata for a browser's saved allowlist configuration. Browser
+	// pools omit it. This remains present after removal so an uncertain removal can be
+	// retried. It does not prove proxy or VM application completed. Do not include it
+	// in creation or pool updates.
+	AllowlistState BrowserAllowlistState `json:"allowlist_state"`
 	// Destinations the browser reaches directly through the session's own network
 	// instead of through Kernel-managed egress — for private hosts reachable over a
 	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
@@ -285,11 +422,12 @@ type BrowserNetworkConfig struct {
 	ProxyRoutes []BrowserNetworkConfigProxyRoute `json:"proxy_routes"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		AllowedHosts respjson.Field
-		PrivateHosts respjson.Field
-		ProxyRoutes  respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		AllowedHosts   respjson.Field
+		AllowlistState respjson.Field
+		PrivateHosts   respjson.Field
+		ProxyRoutes    respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -463,6 +601,19 @@ func (r *BrowserNetworkConfigProxyRouteProxyParam) UnmarshalJSON(data []byte) er
 // Network configuration changes for a running browser session. Other network
 // settings can only be set at creation.
 type BrowserNetworkUpdateParam struct {
+	// The network.allowlist_state.revision from the browser's last saved snapshot.
+	// Supply together with mutation_id to opt into conditional allowlist updates. The
+	// revision is checked atomically with the configuration write. A stale request
+	// returns 409 stale_network without changing the allowlist. A GET alone does not
+	// fence an earlier unfinished PATCH.
+	ExpectedAllowlistRevision param.Opt[string] `json:"expected_allowlist_revision,omitzero"`
+	// A unique ID for this allowlist update, supplied together with
+	// expected_allowlist_revision. Reuse both values and the identical allowed_hosts
+	// payload when retrying an uncertain update. If it is still the current mutation,
+	// the retry finishes proxy and VM application without creating another revision. A
+	// superseded mutation returns 409 stale_network. These fields guard only
+	// network.allowed_hosts, not other browser update fields.
+	MutationID param.Opt[string] `json:"mutation_id,omitzero"`
 	// Replaces the session's egress allowlist, using the same entry rules as
 	// network.allowed_hosts on create. Only an allowlist the browser was created with
 	// can be changed: a browser created without one can't be given one, and an
@@ -985,6 +1136,8 @@ type BrowserNewResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1058,6 +1211,7 @@ type BrowserNewResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1142,6 +1296,8 @@ type BrowserGetResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1215,6 +1371,7 @@ type BrowserGetResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1299,6 +1456,8 @@ type BrowserUpdateResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1372,6 +1531,7 @@ type BrowserUpdateResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1456,6 +1616,8 @@ type BrowserListResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1529,6 +1691,7 @@ type BrowserListResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1649,6 +1812,9 @@ type BrowserNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Optional session-only timezone and locale overrides. Each omitted field uses the
+	// default for the browser's region. start_url opens once the location applies.
+	Location BrowserLocationRequestParam `json:"location,omitzero"`
 	// Memory for a non-GPU browser. Headless: 1GiB (default), 2GiB, or 4GiB. Headful:
 	// 8GiB (default) or 16GiB.
 	//
@@ -1872,6 +2038,14 @@ type BrowserUpdateParams struct {
 	// category settings for per-category updates. Explicitly disabling all four
 	// categories also stops capture.
 	Telemetry BrowserUpdateParamsTelemetry `json:"telemetry,omitzero"`
+	// Session-only timezone and locale overrides. Omit the object or a field to leave
+	// it unchanged; set a string to override; set null to clear that field and use the
+	// browser region's default. A browser that cannot change location refuses the
+	// request before anything changes. The location applies after the request's other
+	// changes, and start_url opens once it has applied. If applying it fails, the
+	// other changes and the saved override remain and start_url does not open; retry
+	// the request to apply both.
+	Location BrowserLocationUpdateRequestParam `json:"location,omitzero"`
 	// Network configuration changes to apply to the running browser session.
 	Network BrowserNetworkUpdateParam `json:"network,omitzero"`
 	// Profile to load into the browser session. Only allowed if the session does not

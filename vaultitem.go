@@ -555,9 +555,7 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 // virtual card otherwise. Callers never receive or choose how the credential is
 // delivered.
 type CardVaultItemSpecLink struct {
-	// Integer amount in minor currency units. Link Pay Token execution permits at most
-	// 500000; virtual-card execution permits at most 50000. Authorization rejects a
-	// larger amount when the checkout requires a virtual card.
+	// Integer amount in minor currency units, at most 50000.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -921,9 +919,7 @@ func init() {
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
 type CardVaultItemSpecLinkParam struct {
-	// Integer amount in minor currency units. Link Pay Token execution permits at most
-	// 500000; virtual-card execution permits at most 50000. Authorization rejects a
-	// larger amount when the checkout requires a virtual card.
+	// Integer amount in minor currency units, at most 50000.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -4616,8 +4612,16 @@ type VaultItemWallet struct {
 	// select a customer-owned configuration. Mode (sandbox vs live) is determined by
 	// the selected credential; there is no per-item test flag. Without user_id,
 	// creation returns a hosted enrollment action and Kernel polls until the user
-	// connects. user_id may only reference a user already enrolled by a wallet in this
-	// organization under the same configuration.
+	// connects. With a customer-owned provider_config, user_id imports an existing
+	// connection after verifying access with the selected credentials in their sandbox
+	// or live mode; no hosted enrollment is needed, even if the connected user has no
+	// stored cards. With Kernel-managed credentials, user_id may only reference a user
+	// already enrolled by a wallet in this organization under the same configuration.
+	// The user and configuration bindings cannot be changed after creation. Import
+	// validation is read-only and runs before creation: a failed validation leaves no
+	// wallet or reserved key, so the user_id can be corrected and retried. Concurrent
+	// imports of the same key may both validate, but create at most one wallet and
+	// connected event.
 	Spec      WalletVaultItemSpecUnion  `json:"spec" api:"required"`
 	State     WalletVaultItemStateUnion `json:"state" api:"required"`
 	Type      constant.Wallet           `json:"type" default:"wallet"`
@@ -5537,8 +5541,16 @@ type VaultItemOperationResponseWalletVaultItem struct {
 	// select a customer-owned configuration. Mode (sandbox vs live) is determined by
 	// the selected credential; there is no per-item test flag. Without user_id,
 	// creation returns a hosted enrollment action and Kernel polls until the user
-	// connects. user_id may only reference a user already enrolled by a wallet in this
-	// organization under the same configuration.
+	// connects. With a customer-owned provider_config, user_id imports an existing
+	// connection after verifying access with the selected credentials in their sandbox
+	// or live mode; no hosted enrollment is needed, even if the connected user has no
+	// stored cards. With Kernel-managed credentials, user_id may only reference a user
+	// already enrolled by a wallet in this organization under the same configuration.
+	// The user and configuration bindings cannot be changed after creation. Import
+	// validation is read-only and runs before creation: a failed validation leaves no
+	// wallet or reserved key, so the user_id can be corrected and retried. Concurrent
+	// imports of the same key may both validate, but create at most one wallet and
+	// connected event.
 	Spec  WalletVaultItemSpecUnion  `json:"spec" api:"required"`
 	State WalletVaultItemStateUnion `json:"state" api:"required"`
 	// Any of "wallet".
@@ -6096,8 +6108,16 @@ func (r *WalletVaultItemSpecLinkAuthorizationClientCustomerManagedProviderConfig
 // select a customer-owned configuration. Mode (sandbox vs live) is determined by
 // the selected credential; there is no per-item test flag. Without user_id,
 // creation returns a hosted enrollment action and Kernel polls until the user
-// connects. user_id may only reference a user already enrolled by a wallet in this
-// organization under the same configuration.
+// connects. With a customer-owned provider_config, user_id imports an existing
+// connection after verifying access with the selected credentials in their sandbox
+// or live mode; no hosted enrollment is needed, even if the connected user has no
+// stored cards. With Kernel-managed credentials, user_id may only reference a user
+// already enrolled by a wallet in this organization under the same configuration.
+// The user and configuration bindings cannot be changed after creation. Import
+// validation is read-only and runs before creation: a failed validation leaves no
+// wallet or reserved key, so the user_id can be corrected and retried. Concurrent
+// imports of the same key may both validate, but create at most one wallet and
+// connected event.
 type WalletVaultItemSpecAgentcard struct {
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
 	// Select an AgentCard configuration. The wallet's configuration cannot be changed
@@ -6705,8 +6725,16 @@ type VaultItemUpsertParamsBodyWallet struct {
 	// select a customer-owned configuration. Mode (sandbox vs live) is determined by
 	// the selected credential; there is no per-item test flag. Without user_id,
 	// creation returns a hosted enrollment action and Kernel polls until the user
-	// connects. user_id may only reference a user already enrolled by a wallet in this
-	// organization under the same configuration.
+	// connects. With a customer-owned provider_config, user_id imports an existing
+	// connection after verifying access with the selected credentials in their sandbox
+	// or live mode; no hosted enrollment is needed, even if the connected user has no
+	// stored cards. With Kernel-managed credentials, user_id may only reference a user
+	// already enrolled by a wallet in this organization under the same configuration.
+	// The user and configuration bindings cannot be changed after creation. Import
+	// validation is read-only and runs before creation: a failed validation leaves no
+	// wallet or reserved key, so the user_id can be corrected and retried. Concurrent
+	// imports of the same key may both validate, but create at most one wallet and
+	// connected event.
 	Spec VaultItemUpsertParamsBodyWalletSpecUnion `json:"spec,omitzero" api:"required"`
 	// This field can be elided, and will marshal its zero value as "wallet".
 	Type constant.Wallet `json:"type" default:"wallet"`
@@ -7068,8 +7096,16 @@ func (r *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthori
 // select a customer-owned configuration. Mode (sandbox vs live) is determined by
 // the selected credential; there is no per-item test flag. Without user_id,
 // creation returns a hosted enrollment action and Kernel polls until the user
-// connects. user_id may only reference a user already enrolled by a wallet in this
-// organization under the same configuration.
+// connects. With a customer-owned provider_config, user_id imports an existing
+// connection after verifying access with the selected credentials in their sandbox
+// or live mode; no hosted enrollment is needed, even if the connected user has no
+// stored cards. With Kernel-managed credentials, user_id may only reference a user
+// already enrolled by a wallet in this organization under the same configuration.
+// The user and configuration bindings cannot be changed after creation. Import
+// validation is read-only and runs before creation: a failed validation leaves no
+// wallet or reserved key, so the user_id can be corrected and retried. Concurrent
+// imports of the same key may both validate, but create at most one wallet and
+// connected event.
 //
 // The property Provider is required.
 type VaultItemUpsertParamsBodyWalletSpecAgentcard struct {

@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.128.0](https://github.com/kernel/kernel-go-sdk/compare/v0.127.0...v0.128.0) (2026-10-19)
+
+
+### Features
+
+* Add browser location session policy ([23f3f65](https://github.com/kernel/kernel-go-sdk/commit/23f3f656d237ff574efa1deda1197afd8c4aa020))
+* chore(stlc): seal custom-code tracking files ([e7ca6df](https://github.com/kernel/kernel-go-sdk/commit/e7ca6df46851167f66df59f3dc7c1bb46d1fca55))
+* Fence browser allowlist updates with revision checks ([991f003](https://github.com/kernel/kernel-go-sdk/commit/991f0037874c9a5b96bd694ac5ff67f090be3b70))
+* Support existing-user AgentCard wallet imports ([534bd1a](https://github.com/kernel/kernel-go-sdk/commit/534bd1af4dfed8a64f7cb1d455672cd0d763af6f))
+
 ## [0.127.0](https://github.com/kernel/kernel-go-sdk/compare/v0.126.0...v0.127.0) (2026-10-16)
 
 

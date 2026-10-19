@@ -41,8 +41,12 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		Headless:     kernel.Bool(false),
 		InvocationID: kernel.String("rr33xuugxj9h0bkf1rdt2bet"),
 		KioskMode:    kernel.Bool(true),
-		Memory:       kernel.BrowserMemoryRequest8GiB,
-		Name:         kernel.String("checkout-flow-1"),
+		Location: kernel.BrowserLocationRequestParam{
+			Locale:   kernel.String("en-US"),
+			Timezone: kernel.String("America/Los_Angeles"),
+		},
+		Memory: kernel.BrowserMemoryRequest8GiB,
+		Name:   kernel.String("checkout-flow-1"),
 		Network: kernel.BrowserNetworkConfigParam{
 			AllowedHosts: []string{"example.com", "*.example.com"},
 			PrivateHosts: []string{"*.example.ts.net", "100.64.0.0/10"},
@@ -190,9 +194,15 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserUpdateParams{
 			DisableDefaultProxy: kernel.Bool(true),
-			Name:                kernel.String("checkout-flow-1"),
+			Location: kernel.BrowserLocationUpdateRequestParam{
+				Locale:   kernel.String("en-US"),
+				Timezone: kernel.String("America/Los_Angeles"),
+			},
+			Name: kernel.String("checkout-flow-1"),
 			Network: kernel.BrowserNetworkUpdateParam{
-				AllowedHosts: []string{"example.com", "*.example.com"},
+				AllowedHosts:              []string{"example.com", "*.example.com"},
+				ExpectedAllowlistRevision: kernel.String("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"),
+				MutationID:                kernel.String("mutation_id"),
 			},
 			Profile: shared.BrowserProfileParam{
 				ID:          kernel.String("id"),
