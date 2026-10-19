@@ -194,6 +194,59 @@ func (r *BrowserService) Repl(ctx context.Context, idOrName string, body Browser
 	return res, err
 }
 
+type BrowserAllowlistState struct {
+	// Opaque revision to pass as network.expected_allowlist_revision on an update.
+	Revision string `json:"revision" api:"required"`
+	// Revision against which that mutation was accepted; reuse it when retrying the
+	// mutation.
+	BaseRevision string `json:"base_revision"`
+	// ID of the last conditional allowlist update saved on this browser.
+	MutationID string `json:"mutation_id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Revision     respjson.Field
+		BaseRevision respjson.Field
+		MutationID   respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserAllowlistState) RawJSON() string { return r.JSON.raw }
+func (r *BrowserAllowlistState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserAllowlistState to a BrowserAllowlistStateParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserAllowlistStateParam.Overrides()
+func (r BrowserAllowlistState) ToParam() BrowserAllowlistStateParam {
+	return param.Override[BrowserAllowlistStateParam](json.RawMessage(r.RawJSON()))
+}
+
+// The property Revision is required.
+type BrowserAllowlistStateParam struct {
+	// Opaque revision to pass as network.expected_allowlist_revision on an update.
+	Revision string `json:"revision" api:"required"`
+	// Revision against which that mutation was accepted; reuse it when retrying the
+	// mutation.
+	BaseRevision param.Opt[string] `json:"base_revision,omitzero"`
+	// ID of the last conditional allowlist update saved on this browser.
+	MutationID param.Opt[string] `json:"mutation_id,omitzero"`
+	paramObj
+}
+
+func (r BrowserAllowlistStateParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserAllowlistStateParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserAllowlistStateParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Memory allocated to the browser session.
 type BrowserMemory string
 
@@ -245,6 +298,11 @@ type BrowserNetworkConfig struct {
 	// lessee removes the allowlist and the pool still requires one, the browser is
 	// replaced on release rather than given an allowlist again. Requires proxy v3.
 	AllowedHosts []string `json:"allowed_hosts"`
+	// Concurrency metadata for a browser's saved allowlist configuration. Browser
+	// pools omit it. This remains present after removal so an uncertain removal can be
+	// retried. It does not prove proxy or VM application completed. Do not include it
+	// in creation or pool updates.
+	AllowlistState BrowserAllowlistState `json:"allowlist_state"`
 	// Destinations the browser reaches directly through the session's own network
 	// instead of through Kernel-managed egress — for private hosts reachable over a
 	// VPN or tunnel the session has joined (e.g. a Tailscale tailnet). By default,
@@ -285,11 +343,12 @@ type BrowserNetworkConfig struct {
 	ProxyRoutes []BrowserNetworkConfigProxyRoute `json:"proxy_routes"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		AllowedHosts respjson.Field
-		PrivateHosts respjson.Field
-		ProxyRoutes  respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		AllowedHosts   respjson.Field
+		AllowlistState respjson.Field
+		PrivateHosts   respjson.Field
+		ProxyRoutes    respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -463,6 +522,19 @@ func (r *BrowserNetworkConfigProxyRouteProxyParam) UnmarshalJSON(data []byte) er
 // Network configuration changes for a running browser session. Other network
 // settings can only be set at creation.
 type BrowserNetworkUpdateParam struct {
+	// The network.allowlist_state.revision from the browser's last saved snapshot.
+	// Supply together with mutation_id to opt into conditional allowlist updates. The
+	// revision is checked atomically with the configuration write. A stale request
+	// returns 409 stale_network without changing the allowlist. A GET alone does not
+	// fence an earlier unfinished PATCH.
+	ExpectedAllowlistRevision param.Opt[string] `json:"expected_allowlist_revision,omitzero"`
+	// A unique ID for this allowlist update, supplied together with
+	// expected_allowlist_revision. Reuse both values and the identical allowed_hosts
+	// payload when retrying an uncertain update. If it is still the current mutation,
+	// the retry finishes proxy and VM application without creating another revision. A
+	// superseded mutation returns 409 stale_network. These fields guard only
+	// network.allowed_hosts, not other browser update fields.
+	MutationID param.Opt[string] `json:"mutation_id,omitzero"`
 	// Replaces the session's egress allowlist, using the same entry rules as
 	// network.allowed_hosts on create. Only an allowlist the browser was created with
 	// can be changed: a browser created without one can't be given one, and an
