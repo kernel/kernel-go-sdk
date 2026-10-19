@@ -247,6 +247,85 @@ func (r *BrowserAllowlistStateParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type BrowserLocation struct {
+	// Effective canonical BCP 47 formatting locale selected for the browser session.
+	Locale string `json:"locale" api:"required"`
+	// Where one effective browser location field came from. `override` is set
+	// explicitly on the session; `metro` is the default for the browser's region.
+	//
+	// Any of "override", "metro".
+	LocaleSource BrowserLocationSource `json:"locale_source" api:"required"`
+	// Effective IANA timezone selected for the browser session.
+	Timezone string `json:"timezone" api:"required"`
+	// Where one effective browser location field came from. `override` is set
+	// explicitly on the session; `metro` is the default for the browser's region.
+	//
+	// Any of "override", "metro".
+	TimezoneSource BrowserLocationSource `json:"timezone_source" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Locale         respjson.Field
+		LocaleSource   respjson.Field
+		Timezone       respjson.Field
+		TimezoneSource respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserLocation) RawJSON() string { return r.JSON.raw }
+func (r *BrowserLocation) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserLocationRequestParam struct {
+	// Session-only supported canonical BCP 47 locale override. Omit to use the default
+	// for the browser's region.
+	Locale param.Opt[string] `json:"locale,omitzero"`
+	// Session-only IANA timezone override. Omit to use the default for the browser's
+	// region.
+	Timezone param.Opt[string] `json:"timezone,omitzero"`
+	paramObj
+}
+
+func (r BrowserLocationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserLocationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserLocationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where one effective browser location field came from. `override` is set
+// explicitly on the session; `metro` is the default for the browser's region.
+type BrowserLocationSource string
+
+const (
+	BrowserLocationSourceOverride BrowserLocationSource = "override"
+	BrowserLocationSourceMetro    BrowserLocationSource = "metro"
+)
+
+// Omit a field to leave it unchanged, set a string override, or set null to clear
+// the override and use the default for the browser's region.
+type BrowserLocationUpdateRequestParam struct {
+	// Session-only supported canonical BCP 47 locale override. Null clears the
+	// override and uses the browser region's default.
+	Locale param.Opt[string] `json:"locale,omitzero"`
+	// Session-only IANA timezone override. Null clears the override and uses the
+	// browser region's default.
+	Timezone param.Opt[string] `json:"timezone,omitzero"`
+	paramObj
+}
+
+func (r BrowserLocationUpdateRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserLocationUpdateRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserLocationUpdateRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Memory allocated to the browser session.
 type BrowserMemory string
 
@@ -1057,6 +1136,8 @@ type BrowserNewResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1130,6 +1211,7 @@ type BrowserNewResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1214,6 +1296,8 @@ type BrowserGetResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1287,6 +1371,7 @@ type BrowserGetResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1371,6 +1456,8 @@ type BrowserUpdateResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1444,6 +1531,7 @@ type BrowserUpdateResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1528,6 +1616,8 @@ type BrowserListResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -1601,6 +1691,7 @@ type BrowserListResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
@@ -1721,6 +1812,9 @@ type BrowserNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Optional session-only timezone and locale overrides. Each omitted field uses the
+	// default for the browser's region. start_url opens once the location applies.
+	Location BrowserLocationRequestParam `json:"location,omitzero"`
 	// Memory for a non-GPU browser. Headless: 1GiB (default), 2GiB, or 4GiB. Headful:
 	// 8GiB (default) or 16GiB.
 	//
@@ -1944,6 +2038,14 @@ type BrowserUpdateParams struct {
 	// category settings for per-category updates. Explicitly disabling all four
 	// categories also stops capture.
 	Telemetry BrowserUpdateParamsTelemetry `json:"telemetry,omitzero"`
+	// Session-only timezone and locale overrides. Omit the object or a field to leave
+	// it unchanged; set a string to override; set null to clear that field and use the
+	// browser region's default. A browser that cannot change location refuses the
+	// request before anything changes. The location applies after the request's other
+	// changes, and start_url opens once it has applied. If applying it fails, the
+	// other changes and the saved override remain and start_url does not open; retry
+	// the request to apply both.
+	Location BrowserLocationUpdateRequestParam `json:"location,omitzero"`
 	// Network configuration changes to apply to the running browser session.
 	Network BrowserNetworkUpdateParam `json:"network,omitzero"`
 	// Profile to load into the browser session. Only allowed if the session does not

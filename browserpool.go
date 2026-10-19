@@ -386,6 +386,8 @@ type BrowserPoolAcquireResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// Effective browser timezone and locale with per-field provenance.
+	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
 	Name string `json:"name"`
 	// Network configuration the session was created with, if any. Omitted when the
@@ -459,6 +461,7 @@ type BrowserPoolAcquireResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
 		Pool               respjson.Field
