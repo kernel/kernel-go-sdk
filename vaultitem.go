@@ -4584,6 +4584,8 @@ func (r *VaultItemUnionStateFields) UnmarshalJSON(data []byte) error {
 type VaultItemUnionAction struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+	// This field is from variant [VaultItemActionUnion].
+	CaptureToken string `json:"capture_token"`
 	// This field is from variant [CredentialVaultItemActionUnion].
 	ExpiresAt time.Time `json:"expires_at"`
 	// This field is from variant [CredentialVaultItemActionUnion].
@@ -4591,6 +4593,7 @@ type VaultItemUnionAction struct {
 	JSON         struct {
 		Name         respjson.Field
 		URL          respjson.Field
+		CaptureToken respjson.Field
 		ExpiresAt    respjson.Field
 		Instructions respjson.Field
 		raw          string
@@ -4824,10 +4827,13 @@ type VaultItemActionUnion struct {
 	// "collect", "mfa", "embedded_ceremony", "card_enrollment".
 	Name string `json:"name"`
 	URL  string `json:"url"`
-	JSON struct {
-		Name respjson.Field
-		URL  respjson.Field
-		raw  string
+	// This field is from variant [VaultItemActionCardEnrollment].
+	CaptureToken string `json:"capture_token"`
+	JSON         struct {
+		Name         respjson.Field
+		URL          respjson.Field
+		CaptureToken respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
@@ -5032,12 +5038,17 @@ func (r *VaultItemActionEmbeddedCeremony) UnmarshalJSON(data []byte) error {
 type VaultItemActionCardEnrollment struct {
 	Name constant.CardEnrollment `json:"name" default:"card_enrollment"`
 	URL  string                  `json:"url" api:"required" format:"uri"`
+	// Secret bearer capability for embedded card capture with @onkernel/vault-react.
+	// Present only for Kernel wallets; never for AgentCard. Treat it like the
+	// enrollment URL and do not log or persist it in browser storage.
+	CaptureToken string `json:"capture_token"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Name        respjson.Field
-		URL         respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Name         respjson.Field
+		URL          respjson.Field
+		CaptureToken respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
@@ -5513,6 +5524,8 @@ func (r *VaultItemOperationResponseUnionStateFields) UnmarshalJSON(data []byte) 
 type VaultItemOperationResponseUnionAction struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+	// This field is from variant [VaultItemActionUnion].
+	CaptureToken string `json:"capture_token"`
 	// This field is from variant [CredentialVaultItemActionUnion].
 	ExpiresAt time.Time `json:"expires_at"`
 	// This field is from variant [CredentialVaultItemActionUnion].
@@ -5520,6 +5533,7 @@ type VaultItemOperationResponseUnionAction struct {
 	JSON         struct {
 		Name         respjson.Field
 		URL          respjson.Field
+		CaptureToken respjson.Field
 		ExpiresAt    respjson.Field
 		Instructions respjson.Field
 		raw          string
