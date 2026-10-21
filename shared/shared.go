@@ -135,8 +135,8 @@ type BrowserViewport struct {
 	Height int64 `json:"height" api:"required"`
 	// Browser window width in pixels. Any positive integer is accepted.
 	Width int64 `json:"width" api:"required"`
-	// Display refresh rate in Hz. Any positive integer is accepted; if omitted,
-	// automatically determined from width and height.
+	// Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU
+	// browsers default to 60 and other browsers derive it from width and height.
 	RefreshRate int64 `json:"refresh_rate"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -182,8 +182,8 @@ type BrowserViewportParam struct {
 	Height int64 `json:"height" api:"required"`
 	// Browser window width in pixels. Any positive integer is accepted.
 	Width int64 `json:"width" api:"required"`
-	// Display refresh rate in Hz. Any positive integer is accepted; if omitted,
-	// automatically determined from width and height.
+	// Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU
+	// browsers default to 60 and other browsers derive it from width and height.
 	RefreshRate param.Opt[int64] `json:"refresh_rate,omitzero"`
 	paramObj
 }

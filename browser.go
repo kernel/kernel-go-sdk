@@ -251,16 +251,16 @@ type BrowserLocation struct {
 	// Effective canonical BCP 47 formatting locale selected for the browser session.
 	Locale string `json:"locale" api:"required"`
 	// Where one effective browser location field came from. `override` is set
-	// explicitly on the session; `metro` is the default for the browser's region.
+	// explicitly on the session; `default` comes from the browser's region.
 	//
-	// Any of "override", "metro".
+	// Any of "override", "default".
 	LocaleSource BrowserLocationSource `json:"locale_source" api:"required"`
 	// Effective IANA timezone selected for the browser session.
 	Timezone string `json:"timezone" api:"required"`
 	// Where one effective browser location field came from. `override` is set
-	// explicitly on the session; `metro` is the default for the browser's region.
+	// explicitly on the session; `default` comes from the browser's region.
 	//
-	// Any of "override", "metro".
+	// Any of "override", "default".
 	TimezoneSource BrowserLocationSource `json:"timezone_source" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -298,12 +298,12 @@ func (r *BrowserLocationRequestParam) UnmarshalJSON(data []byte) error {
 }
 
 // Where one effective browser location field came from. `override` is set
-// explicitly on the session; `metro` is the default for the browser's region.
+// explicitly on the session; `default` comes from the browser's region.
 type BrowserLocationSource string
 
 const (
 	BrowserLocationSourceOverride BrowserLocationSource = "override"
-	BrowserLocationSourceMetro    BrowserLocationSource = "metro"
+	BrowserLocationSourceDefault  BrowserLocationSource = "default"
 )
 
 // Omit a field to leave it unchanged, set a string override, or set null to clear
