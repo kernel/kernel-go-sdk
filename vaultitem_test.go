@@ -90,6 +90,10 @@ func TestVaultItemUpdateWithOptionalParams(t *testing.T) {
 						Metadata: map[string]string{
 							"foo": "string",
 						},
+						Recurring: kernel.CardVaultItemSpecLinkRecurringParam{
+							Interval:      "day",
+							IntervalCount: kernel.Int(1),
+						},
 						Totals: []kernel.CardVaultItemSpecLinkTotalParam{{
 							Amount:      0,
 							DisplayText: "display_text",
