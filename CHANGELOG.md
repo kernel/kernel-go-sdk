@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.130.0](https://github.com/kernel/kernel-go-sdk/compare/v0.129.0...v0.130.0) (2026-10-24)
+
+
+### Features
+
+* Support Link recurring spend requests on vault Link cards ([0f094b3](https://github.com/kernel/kernel-go-sdk/commit/0f094b3f2d251c535aecd71101bbf5841cb18277))
+
 ## [0.129.0](https://github.com/kernel/kernel-go-sdk/compare/v0.128.0...v0.129.0) (2026-10-21)
 
 
