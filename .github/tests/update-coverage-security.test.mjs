@@ -64,9 +64,12 @@ test('changes are restricted to the allowlist and validated against published mo
   assert.match(snapshot, /updater\/\.github\/scripts\/cli-update-disallowed-paths\.sh/);
   assert.match(step('generate', 'Checkout updater scripts'), /sparse-checkout: \.github\/scripts/);
   assert.match(snapshot, /git reset -q --hard\n\s+git clean -fdq/);
-  assert.match(snapshot, /AGENT_BASE: \$\{\{ steps\.cli-clone\.outputs\.agent_base \}\}/);
-  assert.match(snapshot, /git reset -q --soft "\$AGENT_BASE"\n\s+git add -A/);
-  assert.match(step('generate', 'Clone CLI repo'), /agent_base=\$\(git rev-parse HEAD\)/);
+  assert.match(snapshot, /MAIN_SHA: \$\{\{ steps\.cli-clone\.outputs\.main_sha \}\}/);
+  assert.match(snapshot, /git reset -q --soft "\$MAIN_SHA"\n\s+git add -A/);
+  const prepare = step('generate', 'Clone CLI repo');
+  assert.match(prepare, /main_sha=\$\(git rev-parse origin\/main\)/);
+  // Only a branch without human commits may be regenerated from main.
+  assert.match(prepare, /git rebase --abort\n[\s\S]*grep -qvxF '260533166\+kernel-internal\[bot\]@users\.noreply\.github\.com'[\s\S]*exit 1\n[\s\S]*git switch -C /);
   const scriptCalls = workflow.match(/^.*disallowed-paths\.sh.*$/gm);
   assert.equal(scriptCalls.length, 2);
   for (const line of scriptCalls) assert.match(line, /\| bash /);
@@ -115,7 +118,7 @@ test('publishing runs in a separate job that never executes repository code', ()
   assert.doesNotMatch(jobs.publish.slice(0, mint).join(''), /GH_TOKEN:/);
   const publish = step('publish', 'Open or update CLI coverage PR');
   assert.match(publish, /GH_TOKEN: \$\{\{ steps\.publish-token\.outputs\.token \}\}/);
-  assert.match(publish, /gh auth setup-git\n\s+git push/);
+  assert.match(publish, /gh auth setup-git\n\s+git push --force-with-lease="cli-coverage-update:\$UPDATE_SHA"/);
   for (const entry of jobs.publish) {
     assert.doesNotMatch(entry, /continue-on-error: true|always\(\)/);
   }
