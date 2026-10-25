@@ -451,6 +451,8 @@ type CardVaultItemSpecUnion struct {
 	// This field is from variant [CardVaultItemSpecLink].
 	Metadata map[string]string `json:"metadata"`
 	// This field is from variant [CardVaultItemSpecLink].
+	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
+	// This field is from variant [CardVaultItemSpecLink].
 	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	Merchant string `json:"merchant"`
@@ -475,6 +477,7 @@ type CardVaultItemSpecUnion struct {
 		Wallet               respjson.Field
 		LineItems            respjson.Field
 		Metadata             respjson.Field
+		Recurring            respjson.Field
 		Totals               respjson.Field
 		Merchant             respjson.Field
 		CardID               respjson.Field
@@ -555,7 +558,8 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 // virtual card otherwise. Callers never receive or choose how the credential is
 // delivered.
 type CardVaultItemSpecLink struct {
-	// Integer amount in minor currency units, at most 50000.
+	// Integer amount in minor currency units, at most 50000. With recurring, the
+	// spending limit per period, not a lifetime total.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -570,7 +574,17 @@ type CardVaultItemSpecLink struct {
 	Wallet    string                          `json:"wallet" api:"required"`
 	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
 	Metadata  map[string]string               `json:"metadata"`
-	Totals    []CardVaultItemSpecLinkTotal    `json:"totals"`
+	// Recurring terms for a subscription or other repeated purchase. The amount
+	// becomes the spending limit for each period of interval_count intervals, for
+	// example every 2 weeks. The merchant schedules charges. The card stays ready
+	// after each charge until it expires or is deleted; do not create a new card each
+	// period. Deleting the card, its wallet or its vault first cancels the credential
+	// with Link, so later charges decline; if Link cannot be reached, deletion returns
+	// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+	// the subscription with the merchant. Recurring terms cannot be changed once the
+	// card is authorized.
+	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
+	Totals    []CardVaultItemSpecLinkTotal   `json:"totals"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Amount          respjson.Field
@@ -583,6 +597,7 @@ type CardVaultItemSpecLink struct {
 		Wallet          respjson.Field
 		LineItems       respjson.Field
 		Metadata        respjson.Field
+		Recurring       respjson.Field
 		Totals          respjson.Field
 		ExtraFields     map[string]respjson.Field
 		raw             string
@@ -646,6 +661,35 @@ type CardVaultItemSpecLinkLineItemTotal struct {
 // Returns the unmodified JSON received from the API
 func (r CardVaultItemSpecLinkLineItemTotal) RawJSON() string { return r.JSON.raw }
 func (r *CardVaultItemSpecLinkLineItemTotal) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Recurring terms for a subscription or other repeated purchase. The amount
+// becomes the spending limit for each period of interval_count intervals, for
+// example every 2 weeks. The merchant schedules charges. The card stays ready
+// after each charge until it expires or is deleted; do not create a new card each
+// period. Deleting the card, its wallet or its vault first cancels the credential
+// with Link, so later charges decline; if Link cannot be reached, deletion returns
+// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+// the subscription with the merchant. Recurring terms cannot be changed once the
+// card is authorized.
+type CardVaultItemSpecLinkRecurring struct {
+	// Any of "day", "week", "month", "year".
+	Interval string `json:"interval" api:"required"`
+	// Number of intervals per period. Link defaults it to 1.
+	IntervalCount int64 `json:"interval_count"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Interval      respjson.Field
+		IntervalCount respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r CardVaultItemSpecLinkRecurring) RawJSON() string { return r.JSON.raw }
+func (r *CardVaultItemSpecLinkRecurring) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -772,6 +816,14 @@ func (u CardVaultItemSpecUnionParam) GetLineItems() []CardVaultItemSpecLinkLineI
 func (u CardVaultItemSpecUnionParam) GetMetadata() map[string]string {
 	if vt := u.OfLink; vt != nil {
 		return vt.Metadata
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetRecurring() *CardVaultItemSpecLinkRecurringParam {
+	if vt := u.OfLink; vt != nil {
+		return &vt.Recurring
 	}
 	return nil
 }
@@ -919,7 +971,8 @@ func init() {
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
 type CardVaultItemSpecLinkParam struct {
-	// Integer amount in minor currency units, at most 50000.
+	// Integer amount in minor currency units, at most 50000. With recurring, the
+	// spending limit per period, not a lifetime total.
 	Amount       int64  `json:"amount" api:"required"`
 	Context      string `json:"context" api:"required"`
 	Currency     string `json:"currency" api:"required"`
@@ -933,7 +986,17 @@ type CardVaultItemSpecLinkParam struct {
 	Wallet    string                               `json:"wallet" api:"required"`
 	LineItems []CardVaultItemSpecLinkLineItemParam `json:"line_items,omitzero"`
 	Metadata  map[string]string                    `json:"metadata,omitzero"`
-	Totals    []CardVaultItemSpecLinkTotalParam    `json:"totals,omitzero"`
+	// Recurring terms for a subscription or other repeated purchase. The amount
+	// becomes the spending limit for each period of interval_count intervals, for
+	// example every 2 weeks. The merchant schedules charges. The card stays ready
+	// after each charge until it expires or is deleted; do not create a new card each
+	// period. Deleting the card, its wallet or its vault first cancels the credential
+	// with Link, so later charges decline; if Link cannot be reached, deletion returns
+	// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+	// the subscription with the merchant. Recurring terms cannot be changed once the
+	// card is authorized.
+	Recurring CardVaultItemSpecLinkRecurringParam `json:"recurring,omitzero"`
+	Totals    []CardVaultItemSpecLinkTotalParam   `json:"totals,omitzero"`
 	// This field can be elided, and will marshal its zero value as "link".
 	Provider constant.Link `json:"provider" default:"link"`
 	paramObj
@@ -985,6 +1048,39 @@ func (r CardVaultItemSpecLinkLineItemTotalParam) MarshalJSON() (data []byte, err
 }
 func (r *CardVaultItemSpecLinkLineItemTotalParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Recurring terms for a subscription or other repeated purchase. The amount
+// becomes the spending limit for each period of interval_count intervals, for
+// example every 2 weeks. The merchant schedules charges. The card stays ready
+// after each charge until it expires or is deleted; do not create a new card each
+// period. Deleting the card, its wallet or its vault first cancels the credential
+// with Link, so later charges decline; if Link cannot be reached, deletion returns
+// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+// the subscription with the merchant. Recurring terms cannot be changed once the
+// card is authorized.
+//
+// The property Interval is required.
+type CardVaultItemSpecLinkRecurringParam struct {
+	// Any of "day", "week", "month", "year".
+	Interval string `json:"interval,omitzero" api:"required"`
+	// Number of intervals per period. Link defaults it to 1.
+	IntervalCount param.Opt[int64] `json:"interval_count,omitzero"`
+	paramObj
+}
+
+func (r CardVaultItemSpecLinkRecurringParam) MarshalJSON() (data []byte, err error) {
+	type shadow CardVaultItemSpecLinkRecurringParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *CardVaultItemSpecLinkRecurringParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[CardVaultItemSpecLinkRecurringParam](
+		"interval", "day", "week", "month", "year",
+	)
 }
 
 // The properties Amount, DisplayText, Type are required.
@@ -1421,7 +1517,7 @@ func (r *CredentialAccountVaultItem) UnmarshalJSON(data []byte) error {
 // expand parameter.
 type CredentialAccountVaultItemAvailableExpansion struct {
 	Description string `json:"description" api:"required"`
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1860,7 +1956,7 @@ func (r *CredentialVaultItem) UnmarshalJSON(data []byte) error {
 // expand parameter.
 type CredentialVaultItemAvailableExpansion struct {
 	Description string `json:"description" api:"required"`
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2475,7 +2571,10 @@ type FillVaultItemOperationRequestParam struct {
 	// prefix or glob matching. When an item allows omitting it, the browser must have
 	// exactly one open page.
 	PageURL param.Opt[string] `json:"page_url,omitzero" format:"uri"`
-	// Total operation deadline in milliseconds, not a per-field timeout.
+	// Ignored. Fill sets no operation deadline; typing pace adapts to the length of
+	// the values instead. Accepted for compatibility.
+	//
+	// Deprecated: deprecated
 	TimeoutMs param.Opt[int64] `json:"timeout_ms,omitzero"`
 	// Field bindings, when the item's advertised fill operation requires them. Each
 	// selector is searched in the main frame and all descendant frames and must
@@ -2559,8 +2658,11 @@ const (
 type KernelCardState struct {
 	// Any of "kernel".
 	Provider KernelCardStateProvider `json:"provider" api:"required"`
-	// pending_authorization on a Visa purchase waits for the cardholder to approve it
-	// through the spend_approval action; an unused link expires after 30 minutes.
+	// pending_authorization waits for cardholder approval on Visa purchases or fresh
+	// security-code collection on alias-mode purchases through the spend_approval
+	// action; an unused link expires after 30 minutes. Alias-mode cards become ready
+	// after collection and expire at the temporary security-code alias deadline, by
+	// default five minutes later. An expired alias purchase requires a new card.
 	// recovery_required means verification, approving the purchase or issuing the
 	// one-time code has an unresolved outcome. A server-classified initial attestation
 	// failure before intent dispatch may advertise restart_verification to prepare a
@@ -2605,8 +2707,11 @@ const (
 	KernelCardStateProviderKernel KernelCardStateProvider = "kernel"
 )
 
-// pending_authorization on a Visa purchase waits for the cardholder to approve it
-// through the spend_approval action; an unused link expires after 30 minutes.
+// pending_authorization waits for cardholder approval on Visa purchases or fresh
+// security-code collection on alias-mode purchases through the spend_approval
+// action; an unused link expires after 30 minutes. Alias-mode cards become ready
+// after collection and expire at the temporary security-code alias deadline, by
+// default five minutes later. An expired alias purchase requires a new card.
 // recovery_required means verification, approving the purchase or issuing the
 // one-time code has an unresolved outcome. A server-classified initial attestation
 // failure before intent dispatch may advertise restart_verification to prepare a
@@ -2662,12 +2767,13 @@ func (r *KernelCardStateMasks) UnmarshalJSON(data []byte) error {
 // spend_approval action: the cardholder approves it with a Visa passkey, and
 // Kernel registers a Visa intent for one transaction up to the amount before
 // issuing the code. For supported cards whose network cannot be enrolled for
-// agentic tokens, authorize prepares checkout details without issuing a one-time
-// code. The card can be filled into one checkout before its expires_at, one hour
-// after authorization. Fill types those details on merchant_url's origin. The
-// amount, merchant_url and merchant_country are recorded but do not restrict
-// payment requests sent by the browser. Card updates are not supported; delete and
-// create a new item instead.
+// agentic tokens, authorize returns pending_authorization with a spend_approval
+// action to collect a fresh security code in a hosted field. Once collected, the
+// card is ready and can be filled before its expires_at, by default five minutes
+// after collection. An expired card requires a new purchase. Fill types those
+// details on merchant_url's origin. The amount, merchant_url and merchant_country
+// are recorded but do not restrict payment requests sent by the browser. Card
+// updates are not supported; delete and create a new item instead.
 type KernelCardVaultItemSpec struct {
 	// Integer amount in minor currency units (at most 1000000), bound to the one-time
 	// code.
@@ -2736,12 +2842,13 @@ const (
 // spend_approval action: the cardholder approves it with a Visa passkey, and
 // Kernel registers a Visa intent for one transaction up to the amount before
 // issuing the code. For supported cards whose network cannot be enrolled for
-// agentic tokens, authorize prepares checkout details without issuing a one-time
-// code. The card can be filled into one checkout before its expires_at, one hour
-// after authorization. Fill types those details on merchant_url's origin. The
-// amount, merchant_url and merchant_country are recorded but do not restrict
-// payment requests sent by the browser. Card updates are not supported; delete and
-// create a new item instead.
+// agentic tokens, authorize returns pending_authorization with a spend_approval
+// action to collect a fresh security code in a hosted field. Once collected, the
+// card is ready and can be filled before its expires_at, by default five minutes
+// after collection. An expired card requires a new purchase. Fill types those
+// details on merchant_url's origin. The amount, merchant_url and merchant_country
+// are recorded but do not restrict payment requests sent by the browser. Card
+// updates are not supported; delete and create a new item instead.
 //
 // The properties Amount, Currency, MerchantName, MerchantURL, Provider, Wallet are
 // required.
@@ -3003,6 +3110,248 @@ func (r KernelWalletVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *KernelWalletVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// One entry of Link's `GET /shipping_addresses` response, passed through as Link
+// reports it. Kernel never stores it.
+type LinkShippingAddress struct {
+	// Link shipping address ID.
+	ID        string `json:"id" api:"required"`
+	IsDefault bool   `json:"is_default" api:"required"`
+	Nickname  string `json:"nickname" api:"required"`
+	// Link's nullable postal address fields. Omitted from the shipping address when
+	// Link reports null.
+	Address LinkShippingAddressAddress `json:"address"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		IsDefault   respjson.Field
+		Nickname    respjson.Field
+		Address     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkShippingAddress) RawJSON() string { return r.JSON.raw }
+func (r *LinkShippingAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Link's nullable postal address fields. Omitted from the shipping address when
+// Link reports null.
+type LinkShippingAddressAddress struct {
+	// State, province or region.
+	AdministrativeArea string `json:"administrative_area" api:"required"`
+	CountryCode        string `json:"country_code" api:"required"`
+	DependentLocality  string `json:"dependent_locality" api:"required"`
+	Line1              string `json:"line_1" api:"required"`
+	Line2              string `json:"line_2" api:"required"`
+	// City or town.
+	Locality    string `json:"locality" api:"required"`
+	Name        string `json:"name" api:"required"`
+	PostalCode  string `json:"postal_code" api:"required"`
+	SortingCode string `json:"sorting_code" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AdministrativeArea respjson.Field
+		CountryCode        respjson.Field
+		DependentLocality  respjson.Field
+		Line1              respjson.Field
+		Line2              respjson.Field
+		Locality           respjson.Field
+		Name               respjson.Field
+		PostalCode         respjson.Field
+		SortingCode        respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkShippingAddressAddress) RawJSON() string { return r.JSON.raw }
+func (r *LinkShippingAddressAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Link's `GET /userinfo` response for the connected wallet, passed through as Link
+// reports it when the `link_user_info` expansion is requested. Kernel never stores
+// it. Null fields are null at Link; omitted fields were not reported. Amounts are
+// in the minor unit of `default_spend_request_currency`.
+type LinkUserInfo struct {
+	// Stable Link user ID.
+	ID        string `json:"id" api:"required"`
+	Email     string `json:"email" api:"required"`
+	FirstName string `json:"first_name" api:"required"`
+	LastName  string `json:"last_name" api:"required"`
+	Name      string `json:"name" api:"required"`
+	Phone     string `json:"phone" api:"required"`
+	// The Link user's postal address. Omitted when Link reports none.
+	Address LinkUserInfoAddress `json:"address"`
+	// Link's agent wallet spend limits, per transaction and over rolling periods.
+	AgentWalletSpendLimits LinkUserInfoAgentWalletSpendLimits `json:"agent_wallet_spend_limits"`
+	// Verification Link requires from the user before the agent wallet can spend.
+	AgentWalletStepUp LinkUserInfoAgentWalletStepUp `json:"agent_wallet_step_up"`
+	// Lowercase ISO currency Link applies to a spend request created without one.
+	DefaultSpendRequestCurrency string `json:"default_spend_request_currency"`
+	// Whether the user can fund purchases from a Link balance.
+	EligibleForBalance bool `json:"eligible_for_balance"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                          respjson.Field
+		Email                       respjson.Field
+		FirstName                   respjson.Field
+		LastName                    respjson.Field
+		Name                        respjson.Field
+		Phone                       respjson.Field
+		Address                     respjson.Field
+		AgentWalletSpendLimits      respjson.Field
+		AgentWalletStepUp           respjson.Field
+		DefaultSpendRequestCurrency respjson.Field
+		EligibleForBalance          respjson.Field
+		ExtraFields                 map[string]respjson.Field
+		raw                         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfo) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfo) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The Link user's postal address. Omitted when Link reports none.
+type LinkUserInfoAddress struct {
+	City       string `json:"city" api:"required"`
+	Country    string `json:"country" api:"required"`
+	Line1      string `json:"line1" api:"required"`
+	Line2      string `json:"line2" api:"required"`
+	PostalCode string `json:"postal_code" api:"required"`
+	State      string `json:"state" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Line1       respjson.Field
+		Line2       respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfoAddress) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfoAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Link's agent wallet spend limits, per transaction and over rolling periods.
+type LinkUserInfoAgentWalletSpendLimits struct {
+	Daily          LinkUserInfoAgentWalletSpendLimitsDaily          `json:"daily" api:"required"`
+	PerTransaction LinkUserInfoAgentWalletSpendLimitsPerTransaction `json:"per_transaction" api:"required"`
+	ThirtyDay      LinkUserInfoAgentWalletSpendLimitsThirtyDay      `json:"thirty_day" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Daily          respjson.Field
+		PerTransaction respjson.Field
+		ThirtyDay      respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfoAgentWalletSpendLimits) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfoAgentWalletSpendLimits) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type LinkUserInfoAgentWalletSpendLimitsDaily struct {
+	// Null means unlimited.
+	Limit int64 `json:"limit" api:"required"`
+	// Amount still available in the rolling period; null means unlimited.
+	Remaining int64 `json:"remaining" api:"required"`
+	// Amount already spent in the rolling period.
+	Used int64 `json:"used" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Limit       respjson.Field
+		Remaining   respjson.Field
+		Used        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfoAgentWalletSpendLimitsDaily) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfoAgentWalletSpendLimitsDaily) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type LinkUserInfoAgentWalletSpendLimitsPerTransaction struct {
+	// Null means unlimited.
+	Limit int64 `json:"limit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Limit       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfoAgentWalletSpendLimitsPerTransaction) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfoAgentWalletSpendLimitsPerTransaction) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type LinkUserInfoAgentWalletSpendLimitsThirtyDay struct {
+	// Null means unlimited.
+	Limit int64 `json:"limit" api:"required"`
+	// Amount still available in the rolling period; null means unlimited.
+	Remaining int64 `json:"remaining" api:"required"`
+	// Amount already spent in the rolling period.
+	Used int64 `json:"used" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Limit       respjson.Field
+		Remaining   respjson.Field
+		Used        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfoAgentWalletSpendLimitsThirtyDay) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfoAgentWalletSpendLimitsThirtyDay) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Verification Link requires from the user before the agent wallet can spend.
+type LinkUserInfoAgentWalletStepUp struct {
+	// URL where the user completes verification; null when no action is available.
+	ActionURL string `json:"action_url" api:"required"`
+	// Link status such as not_required, ssn_verification, identity_verification,
+	// contact_support or complete.
+	Status string `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ActionURL   respjson.Field
+		Status      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkUserInfoAgentWalletStepUp) RawJSON() string { return r.JSON.raw }
+func (r *LinkUserInfoAgentWalletStepUp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -4376,6 +4725,8 @@ type VaultItemUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	Metadata map[string]string `json:"metadata"`
 	// This field is from variant [CardVaultItemSpecUnion].
+	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
+	// This field is from variant [CardVaultItemSpecUnion].
 	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Merchant string `json:"merchant"`
@@ -4414,6 +4765,7 @@ type VaultItemUnionSpec struct {
 		Wallet               respjson.Field
 		LineItems            respjson.Field
 		Metadata             respjson.Field
+		Recurring            respjson.Field
 		Totals               respjson.Field
 		Merchant             respjson.Field
 		CardID               respjson.Field
@@ -4665,7 +5017,7 @@ func (r *VaultItemWallet) UnmarshalJSON(data []byte) error {
 // expand parameter.
 type VaultItemWalletAvailableExpansion struct {
 	Description string `json:"description" api:"required"`
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4708,12 +5060,22 @@ func (r *VaultItemWalletAvailableOperation) UnmarshalJSON(data []byte) error {
 
 // Live, non-persisted data requested through the item GET expand parameter.
 type VaultItemWalletExpanded struct {
+	// Link's saved shipping addresses, present when the `link_shipping_addresses`
+	// expansion is requested.
+	LinkShippingAddresses []LinkShippingAddress `json:"link_shipping_addresses"`
+	// Link's `GET /userinfo` response for the connected wallet, passed through as Link
+	// reports it when the `link_user_info` expansion is requested. Kernel never stores
+	// it. Null fields are null at Link; omitted fields were not reported. Amounts are
+	// in the minor unit of `default_spend_request_currency`.
+	LinkUserInfo   LinkUserInfo         `json:"link_user_info"`
 	PaymentMethods []VaultPaymentMethod `json:"payment_methods"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		PaymentMethods respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		LinkShippingAddresses respjson.Field
+		LinkUserInfo          respjson.Field
+		PaymentMethods        respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
 	} `json:"-"`
 }
 
@@ -4772,7 +5134,7 @@ func (r *VaultItemCard) UnmarshalJSON(data []byte) error {
 // expand parameter.
 type VaultItemCardAvailableExpansion struct {
 	Description string `json:"description" api:"required"`
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5314,6 +5676,8 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	Metadata map[string]string `json:"metadata"`
 	// This field is from variant [CardVaultItemSpecUnion].
+	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
+	// This field is from variant [CardVaultItemSpecUnion].
 	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Merchant string `json:"merchant"`
@@ -5352,6 +5716,7 @@ type VaultItemOperationResponseUnionSpec struct {
 		Wallet               respjson.Field
 		LineItems            respjson.Field
 		Metadata             respjson.Field
+		Recurring            respjson.Field
 		Totals               respjson.Field
 		Merchant             respjson.Field
 		CardID               respjson.Field
@@ -5606,7 +5971,7 @@ func (r *VaultItemOperationResponseWalletVaultItem) UnmarshalJSON(data []byte) e
 // expand parameter.
 type VaultItemOperationResponseWalletVaultItemAvailableExpansion struct {
 	Description string `json:"description" api:"required"`
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5653,12 +6018,22 @@ func (r *VaultItemOperationResponseWalletVaultItemAvailableOperation) UnmarshalJ
 
 // Live, non-persisted data requested through the item GET expand parameter.
 type VaultItemOperationResponseWalletVaultItemExpanded struct {
+	// Link's saved shipping addresses, present when the `link_shipping_addresses`
+	// expansion is requested.
+	LinkShippingAddresses []LinkShippingAddress `json:"link_shipping_addresses"`
+	// Link's `GET /userinfo` response for the connected wallet, passed through as Link
+	// reports it when the `link_user_info` expansion is requested. Kernel never stores
+	// it. Null fields are null at Link; omitted fields were not reported. Amounts are
+	// in the minor unit of `default_spend_request_currency`.
+	LinkUserInfo   LinkUserInfo         `json:"link_user_info"`
 	PaymentMethods []VaultPaymentMethod `json:"payment_methods"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		PaymentMethods respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		LinkShippingAddresses respjson.Field
+		LinkUserInfo          respjson.Field
+		PaymentMethods        respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
 	} `json:"-"`
 }
 
@@ -5718,7 +6093,7 @@ func (r *VaultItemOperationResponseCardVaultItem) UnmarshalJSON(data []byte) err
 // expand parameter.
 type VaultItemOperationResponseCardVaultItemAvailableExpansion struct {
 	Description string `json:"description" api:"required"`
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6409,7 +6784,7 @@ type VaultItemGetParams struct {
 	Wait param.Opt[int64] `query:"wait,omitzero" json:"-"`
 	// Live fields advertised by `available_expansions` to include in `expanded`.
 	//
-	// Any of "payment_methods".
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
 	Expand []string `query:"expand,omitzero" json:"-"`
 	paramObj
 }

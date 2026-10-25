@@ -139,25 +139,26 @@ func (r *OffsetPagination[T]) UnmarshalJSON(data []byte) error {
 // there is no next page, this function will return a 'nil' for the page value, but
 // will not return an error
 func (r *OffsetPagination[T]) GetNextPage() (res *OffsetPagination[T], err error) {
-	if len(r.Items) == 0 {
-		return nil, nil
-	}
 	cfg := r.cfg.Clone(r.cfg.Context)
 
 	nextStr := r.res.Header.Get("X-Next-Offset")
+	if nextStr == "" && len(r.Items) == 0 {
+		return nil, nil
+	}
 	next, err := strconv.ParseInt(nextStr, 10, 64)
 	if err != nil {
 		return nil, err
 	}
-	length := int64(len(r.Items))
 
-	if length > 0 && next != 0 {
-		err = cfg.Apply(option.WithQuery("offset", strconv.FormatInt(next, 10)))
-		if err != nil {
-			return nil, err
-		}
-	} else {
+	// An empty page can still have more pages behind it. Cursors can move in
+	// either direction, so only 0 or a repeated cursor ends pagination.
+	requested, _ := strconv.ParseInt(cfg.Request.URL.Query().Get("offset"), 10, 64)
+	if next == 0 || next == requested {
 		return nil, nil
+	}
+	err = cfg.Apply(option.WithQuery("offset", strconv.FormatInt(next, 10)))
+	if err != nil {
+		return nil, err
 	}
 	var raw *http.Response
 	cfg.ResponseInto = &raw
@@ -195,13 +196,23 @@ func NewOffsetPaginationAutoPager[T any](page *OffsetPagination[T], err error) *
 }
 
 func (r *OffsetPaginationAutoPager[T]) Next() bool {
-	if r.page == nil || len(r.page.Items) == 0 {
+	if r.page == nil {
 		return false
 	}
 	if r.idx >= len(r.page.Items) {
 		r.idx = 0
 		r.page, r.err = r.page.GetNextPage()
-		if r.err != nil || r.page == nil || len(r.page.Items) == 0 {
+		if r.err != nil || r.page == nil {
+			return false
+		}
+	}
+	// if the API returned empty data then keep iterating
+	// until we either get more data or there are no more pages
+	// to fetch
+	for len(r.page.Items) == 0 {
+		r.idx = 0
+		r.page, r.err = r.page.GetNextPage()
+		if r.err != nil || r.page == nil {
 			return false
 		}
 	}
