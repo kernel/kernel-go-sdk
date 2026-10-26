@@ -389,6 +389,49 @@ const (
 	AgentcardPreparedProcessorAdyen       AgentcardPreparedProcessor = "adyen"
 )
 
+// Let a browser attached to the item's vault sign in with a stored passkey. Only
+// invoke when the item advertises `arm_passkey`. Returns immediately; there is no
+// time limit. While armed, when a page in that browser whose origin matches the
+// passkey's relying party asks for a passkey (`navigator.credentials.get`,
+// including autofill requests made at page load), Kernel answers with this
+// passkey. The private key never enters the browser: Kernel signs on its servers,
+// using the origin Chrome reports for the requesting frame. Arming a passkey for a
+// relying party replaces any passkey armed earlier in the browser for the same
+// relying party. The arm lasts until `disarm_passkey`, the browser ends, the vault
+// is detached, or the item or field is deleted. Drive the sign-in with your own
+// browser tools and inspect the page to confirm it. A page opened in a new tab or
+// window can run its first scripts before Kernel's handler attaches; if such a
+// page asks for a passkey as soon as it loads, reload it. While armed, any script
+// running on the relying party's pages can obtain a sign-in without user
+// interaction, as with a password manager that fills automatically; disarm when
+// the task is done. Passkeys report a signature counter of 0 and backup flags, as
+// synced passkeys do.
+//
+// The properties BrowserID, Type are required.
+type ArmPasskeyVaultItemOperationRequestParam struct {
+	// Browser session ID, not a reusable browser name.
+	BrowserID string `json:"browser_id" api:"required"`
+	// Any of "arm_passkey".
+	Type ArmPasskeyVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Passkey field to arm. Required when more than one passkey field holds a passkey.
+	Field param.Opt[string] `json:"field,omitzero"`
+	paramObj
+}
+
+func (r ArmPasskeyVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow ArmPasskeyVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ArmPasskeyVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ArmPasskeyVaultItemOperationRequestType string
+
+const (
+	ArmPasskeyVaultItemOperationRequestTypeArmPasskey ArmPasskeyVaultItemOperationRequestType = "arm_passkey"
+)
+
 // Authorize a Link or Kernel card using its existing purchase specification. Use
 // only after explicit user approval and when the item advertises authorize; follow
 // the advertised operation's description. For a Link card, pass browser_id and
@@ -1539,9 +1582,9 @@ func (r *CredentialAccountVaultItemAvailableExpansion) UnmarshalJSON(data []byte
 type CredentialAccountVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
-	// "prepare_checkout", "fill", "1pw_create_access_request",
-	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
-	// "1pw_update_access_token", "webmcp_invoke".
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1663,7 +1706,7 @@ type CredentialVaultFieldDefinition struct {
 	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
 	// private key), a lowercase `rpId` domain, and optional `username` and
 	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
-	// pages.
+	// pages; use arm_passkey to sign in with one and register_passkey to create one.
 	//
 	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type" api:"required"`
@@ -1709,7 +1752,7 @@ type CredentialVaultFieldDefinitionInputParam struct {
 	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
 	// private key), a lowercase `rpId` domain, and optional `username` and
 	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
-	// pages.
+	// pages; use arm_passkey to sign in with one and register_passkey to create one.
 	//
 	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
@@ -1752,7 +1795,7 @@ type CredentialVaultFieldInputParam struct {
 	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
 	// private key), a lowercase `rpId` domain, and optional `username` and
 	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
-	// pages.
+	// pages; use arm_passkey to sign in with one and register_passkey to create one.
 	//
 	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type,omitzero" api:"required"`
@@ -1831,7 +1874,7 @@ func (r *CredentialVaultFieldState) UnmarshalJSON(data []byte) error {
 // `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
 // private key), a lowercase `rpId` domain, and optional `username` and
 // `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
-// pages.
+// pages; use arm_passkey to sign in with one and register_passkey to create one.
 type CredentialVaultFieldType string
 
 const (
@@ -1978,9 +2021,9 @@ func (r *CredentialVaultItemAvailableExpansion) UnmarshalJSON(data []byte) error
 type CredentialVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
-	// "prepare_checkout", "fill", "1pw_create_access_request",
-	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
-	// "1pw_update_access_token", "webmcp_invoke".
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2540,6 +2583,36 @@ type CredentialVaultItemUpdateRequestType string
 
 const (
 	CredentialVaultItemUpdateRequestTypeCredential CredentialVaultItemUpdateRequestType = "credential"
+)
+
+// Stop a browser from using this item's passkeys: removes its armed passkeys and
+// its pending registration into this item. Pages that already loaded keep Kernel's
+// WebAuthn handler but get the browser's own behavior.
+//
+// The properties BrowserID, Type are required.
+type DisarmPasskeyVaultItemOperationRequestParam struct {
+	// Browser session ID, not a reusable browser name.
+	BrowserID string `json:"browser_id" api:"required"`
+	// Any of "disarm_passkey".
+	Type DisarmPasskeyVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Limit disarming to one passkey field. Omit to disarm every passkey field of the
+	// item.
+	Field param.Opt[string] `json:"field,omitzero"`
+	paramObj
+}
+
+func (r DisarmPasskeyVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow DisarmPasskeyVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *DisarmPasskeyVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type DisarmPasskeyVaultItemOperationRequestType string
+
+const (
+	DisarmPasskeyVaultItemOperationRequestTypeDisarmPasskey DisarmPasskeyVaultItemOperationRequestType = "disarm_passkey"
 )
 
 // Use a vault item in a browser session, for example to fill a login or payment
@@ -3368,7 +3441,7 @@ type ManagedAuthCredentialVaultField struct {
 	// `credentialId`, `userHandle` (at most 64 bytes), and `key` (a PKCS#8 ECDSA P-256
 	// private key), a lowercase `rpId` domain, and optional `username` and
 	// `userDisplayName`. Other CXF members are ignored. Passkeys are never filled into
-	// pages.
+	// pages; use arm_passkey to sign in with one and register_passkey to create one.
 	//
 	// Any of "text", "email", "password", "totp", "passkey".
 	Type CredentialVaultFieldType `json:"type" api:"required"`
@@ -4274,6 +4347,51 @@ const (
 	OnePasswordRequestAccessVaultItemOperationRequestType1pwCreateAccessRequest OnePasswordRequestAccessVaultItemOperationRequestType = "1pw_create_access_request"
 )
 
+type PasskeyVaultItemOperationResult struct {
+	// armed means the browser will answer matching passkey requests; it does not mean
+	// a page has asked yet. disarmed means the browser no longer uses this item's
+	// passkeys.
+	//
+	// Any of "armed", "disarmed".
+	Status PasskeyVaultItemOperationResultStatus `json:"status" api:"required"`
+	// Any of "arm_passkey", "register_passkey", "disarm_passkey".
+	Type PasskeyVaultItemOperationResultType `json:"type" api:"required"`
+	// Relying party the armed passkey answers for. Returned by arm_passkey.
+	RpID string `json:"rp_id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Status      respjson.Field
+		Type        respjson.Field
+		RpID        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PasskeyVaultItemOperationResult) RawJSON() string { return r.JSON.raw }
+func (r *PasskeyVaultItemOperationResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// armed means the browser will answer matching passkey requests; it does not mean
+// a page has asked yet. disarmed means the browser no longer uses this item's
+// passkeys.
+type PasskeyVaultItemOperationResultStatus string
+
+const (
+	PasskeyVaultItemOperationResultStatusArmed    PasskeyVaultItemOperationResultStatus = "armed"
+	PasskeyVaultItemOperationResultStatusDisarmed PasskeyVaultItemOperationResultStatus = "disarmed"
+)
+
+type PasskeyVaultItemOperationResultType string
+
+const (
+	PasskeyVaultItemOperationResultTypeArmPasskey      PasskeyVaultItemOperationResultType = "arm_passkey"
+	PasskeyVaultItemOperationResultTypeRegisterPasskey PasskeyVaultItemOperationResultType = "register_passkey"
+	PasskeyVaultItemOperationResultTypeDisarmPasskey   PasskeyVaultItemOperationResultType = "disarm_passkey"
+)
+
 // Prepare an unused AgentCard card for a supported checkout. Deliver the returned
 // approval URL and keep the approval page open. Poll the item until
 // ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
@@ -4306,6 +4424,45 @@ type PrepareCheckoutVaultItemOperationRequestType string
 
 const (
 	PrepareCheckoutVaultItemOperationRequestTypePrepareCheckout PrepareCheckoutVaultItemOperationRequestType = "prepare_checkout"
+)
+
+// Let a browser attached to the item's vault create a passkey on a website and
+// store it in an empty passkey field. Only invoke when the item advertises
+// `register_passkey`; declare the field first, for example by adding an optional
+// passkey field with a credential update. Returns immediately; there is no time
+// limit. The next passkey a page in that browser creates
+// (`navigator.credentials.create`) is generated by Kernel, stored in the field,
+// and only then returned to the page, so the website never receives a passkey
+// Kernel failed to store. Each browser has one pending registration; a later
+// `register_passkey` replaces it. Drive the website's "add a passkey" flow with
+// your own browser tools, then confirm by reading the item (the field reports
+// `has_value`) or its `credential_passkey_registered` event, and by signing in
+// with `arm_passkey`. Only ES256 passkeys are created.
+//
+// The properties BrowserID, Type are required.
+type RegisterPasskeyVaultItemOperationRequestParam struct {
+	// Browser session ID, not a reusable browser name.
+	BrowserID string `json:"browser_id" api:"required"`
+	// Any of "register_passkey".
+	Type RegisterPasskeyVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Empty passkey field to store the new passkey in. Required when more than one
+	// passkey field is empty.
+	Field param.Opt[string] `json:"field,omitzero"`
+	paramObj
+}
+
+func (r RegisterPasskeyVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow RegisterPasskeyVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *RegisterPasskeyVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type RegisterPasskeyVaultItemOperationRequestType string
+
+const (
+	RegisterPasskeyVaultItemOperationRequestTypeRegisterPasskey RegisterPasskeyVaultItemOperationRequestType = "register_passkey"
 )
 
 // Explicitly prepare a fresh local verification session for the same Kernel Visa
@@ -5039,9 +5196,9 @@ func (r *VaultItemWalletAvailableExpansion) UnmarshalJSON(data []byte) error {
 type VaultItemWalletAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
-	// "prepare_checkout", "fill", "1pw_create_access_request",
-	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
-	// "1pw_update_access_token", "webmcp_invoke".
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5156,9 +5313,9 @@ func (r *VaultItemCardAvailableExpansion) UnmarshalJSON(data []byte) error {
 type VaultItemCardAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
-	// "prepare_checkout", "fill", "1pw_create_access_request",
-	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
-	// "1pw_update_access_token", "webmcp_invoke".
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5449,7 +5606,7 @@ func (r *VaultItemEvent) UnmarshalJSON(data []byte) error {
 // [VaultItemOperationResponseWalletVaultItem],
 // [VaultItemOperationResponseCardVaultItem], [CredentialAccountVaultItem],
 // [CredentialVaultItem], [FillVaultItemOperationResult],
-// [OnePasswordFillVaultItemOperationResult],
+// [PasskeyVaultItemOperationResult], [OnePasswordFillVaultItemOperationResult],
 // [WebmcpInvokeVaultItemOperationResult].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
@@ -5490,6 +5647,8 @@ type VaultItemOperationResponseUnion struct {
 	// This field is from variant [FillVaultItemOperationResult].
 	Fields []VaultFillFieldResult `json:"fields"`
 	Status string                 `json:"status"`
+	// This field is from variant [PasskeyVaultItemOperationResult].
+	RpID string `json:"rp_id"`
 	// This field is from variant [OnePasswordFillVaultItemOperationResult].
 	ErrorCode OnePasswordFillVaultItemOperationResultErrorCode `json:"error_code"`
 	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
@@ -5515,6 +5674,7 @@ type VaultItemOperationResponseUnion struct {
 		Version             respjson.Field
 		Fields              respjson.Field
 		Status              respjson.Field
+		RpID                respjson.Field
 		ErrorCode           respjson.Field
 		ErrorText           respjson.Field
 		InvocationID        respjson.Field
@@ -5544,6 +5704,11 @@ func (u VaultItemOperationResponseUnion) AsCredentialVaultItem() (v CredentialVa
 }
 
 func (u VaultItemOperationResponseUnion) AsFillVaultItemOperationResult() (v FillVaultItemOperationResult) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsPasskeyVaultItemOperationResult() (v PasskeyVaultItemOperationResult) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -5995,9 +6160,9 @@ func (r *VaultItemOperationResponseWalletVaultItemAvailableExpansion) UnmarshalJ
 type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
-	// "prepare_checkout", "fill", "1pw_create_access_request",
-	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
-	// "1pw_update_access_token", "webmcp_invoke".
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6117,9 +6282,9 @@ func (r *VaultItemOperationResponseCardVaultItemAvailableExpansion) UnmarshalJSO
 type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	Description string `json:"description" api:"required"`
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
-	// "prepare_checkout", "fill", "1pw_create_access_request",
-	// "1pw_access_request_status", "1pw_fill", "1pw_recover",
-	// "1pw_update_access_token", "webmcp_invoke".
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6960,6 +7125,44 @@ type VaultItemPerformOperationParams struct {
 	// browser access from reading values from the page or other browser observation
 	// surfaces.
 	OfFill *FillVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Let a
+	// browser attached to the item's vault sign in with a stored passkey. Only invoke
+	// when the item advertises `arm_passkey`. Returns immediately; there is no time
+	// limit. While armed, when a page in that browser whose origin matches the
+	// passkey's relying party asks for a passkey (`navigator.credentials.get`,
+	// including autofill requests made at page load), Kernel answers with this
+	// passkey. The private key never enters the browser: Kernel signs on its servers,
+	// using the origin Chrome reports for the requesting frame. Arming a passkey for a
+	// relying party replaces any passkey armed earlier in the browser for the same
+	// relying party. The arm lasts until `disarm_passkey`, the browser ends, the vault
+	// is detached, or the item or field is deleted. Drive the sign-in with your own
+	// browser tools and inspect the page to confirm it. A page opened in a new tab or
+	// window can run its first scripts before Kernel's handler attaches; if such a
+	// page asks for a passkey as soon as it loads, reload it. While armed, any script
+	// running on the relying party's pages can obtain a sign-in without user
+	// interaction, as with a password manager that fills automatically; disarm when
+	// the task is done. Passkeys report a signature counter of 0 and backup flags, as
+	// synced passkeys do.
+	OfArmPasskey *ArmPasskeyVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Let a
+	// browser attached to the item's vault create a passkey on a website and store it
+	// in an empty passkey field. Only invoke when the item advertises
+	// `register_passkey`; declare the field first, for example by adding an optional
+	// passkey field with a credential update. Returns immediately; there is no time
+	// limit. The next passkey a page in that browser creates
+	// (`navigator.credentials.create`) is generated by Kernel, stored in the field,
+	// and only then returned to the page, so the website never receives a passkey
+	// Kernel failed to store. Each browser has one pending registration; a later
+	// `register_passkey` replaces it. Drive the website's "add a passkey" flow with
+	// your own browser tools, then confirm by reading the item (the field reports
+	// `has_value`) or its `credential_passkey_registered` event, and by signing in
+	// with `arm_passkey`. Only ES256 passkeys are created.
+	OfRegisterPasskey *RegisterPasskeyVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Stop a
+	// browser from using this item's passkeys: removes its armed passkeys and its
+	// pending registration into this item. Pages that already loaded keep Kernel's
+	// WebAuthn handler but get the browser's own behavior.
+	OfDisarmPasskey *DisarmPasskeyVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Request
 	// access to login entries in the end-user's own, non-shared 1Password vault. No
 	// browser is needed; the end-user approves access in the 1Password app.
@@ -7011,6 +7214,9 @@ func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 		u.OfCollect,
 		u.OfPrepareCheckout,
 		u.OfFill,
+		u.OfArmPasskey,
+		u.OfRegisterPasskey,
+		u.OfDisarmPasskey,
 		u.Of1pwCreateAccessRequest,
 		u.Of1pwAccessRequestStatus,
 		u.Of1pwFill,
