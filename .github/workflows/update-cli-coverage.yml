@@ -125,14 +125,21 @@ jobs:
           if git show-ref --verify --quiet refs/remotes/origin/cli-coverage-update; then
             echo "update_sha=$(git rev-parse origin/cli-coverage-update)" >> "$GITHUB_OUTPUT"
             git switch --track origin/cli-coverage-update
-            if ! git merge origin/main --no-edit; then
-              echo "::error::cli-coverage-update conflicts with main. Resolve the conflicts on that branch, or delete it to start fresh, then rerun this workflow."
-              exit 1
+            if ! git rebase origin/main; then
+              git rebase --abort
+              # The agent covers everything since main's SDK version, so a bot-only
+              # branch can be regenerated from main. Human commits must be kept.
+              if git log --no-merges --format=%ae origin/main..origin/cli-coverage-update \
+                | grep -qvxF '260533166+kernel-internal[bot]@users.noreply.github.com'; then
+                echo "::error::cli-coverage-update has human commits that conflict with main. Resolve the conflicts on that branch, then rerun this workflow."
+                exit 1
+              fi
+              echo "::warning::cli-coverage-update conflicts with main; regenerating it from main."
+              git switch -C cli-coverage-update origin/main
             fi
           else
             git switch -c cli-coverage-update origin/main
           fi
-          echo "agent_base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Get SDK version info
         id: sdk-version
@@ -463,9 +470,9 @@ jobs:
         id: snapshot
         working-directory: /tmp/kernel-cli
         env:
-          AGENT_BASE: ${{ steps.cli-clone.outputs.agent_base }}
+          MAIN_SHA: ${{ steps.cli-clone.outputs.main_sha }}
         run: |
-          git reset -q --soft "$AGENT_BASE"
+          git reset -q --soft "$MAIN_SHA"
           git add -A
           git diff --cached --name-only --no-renames -z \
             | bash "$GITHUB_WORKSPACE/updater/.github/scripts/cli-update-disallowed-paths.sh" > "$RUNNER_TEMP/excluded-paths"
@@ -544,12 +551,7 @@ jobs:
         run: |
           git config user.name "kernel-internal[bot]"
           git config user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
-          if [[ -n "$UPDATE_SHA" ]]; then
-            git switch -c cli-coverage-update "$UPDATE_SHA"
-            git merge --no-edit "$MAIN_SHA"
-          else
-            git switch -c cli-coverage-update "$MAIN_SHA"
-          fi
+          git switch -c cli-coverage-update "$MAIN_SHA"
           git apply --index "$RUNNER_TEMP/cli-coverage-update/changes.patch"
           git diff --cached --name-only --no-renames -z \
             | bash ../.github/scripts/cli-update-disallowed-paths.sh > "$RUNNER_TEMP/disallowed-paths"
@@ -585,7 +587,7 @@ jobs:
             exit 0
           fi
           gh auth setup-git
-          git push origin cli-coverage-update
+          git push --force-with-lease="cli-coverage-update:$UPDATE_SHA" origin cli-coverage-update
 
           body="$RUNNER_TEMP/cli-coverage-pr.md"
           {
