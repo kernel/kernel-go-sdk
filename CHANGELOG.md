@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.131.0](https://github.com/kernel/kernel-go-sdk/compare/v0.130.0...v0.131.0) (2026-10-26)
+
+
+### Features
+
+* Arm vault passkeys in browsers and sign WebAuthn requests in metro-api ([1f8dbc1](https://github.com/kernel/kernel-go-sdk/commit/1f8dbc1e1123f82d02e120ceba4aeee9a4ac101e))
+
 ## [0.130.0](https://github.com/kernel/kernel-go-sdk/compare/v0.129.0...v0.130.0) (2026-10-24)
 
 
