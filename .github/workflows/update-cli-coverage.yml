@@ -30,6 +30,8 @@ jobs:
       changed: ${{ steps.snapshot.outputs.changed }}
       main_sha: ${{ steps.cli-clone.outputs.main_sha }}
       update_sha: ${{ steps.cli-clone.outputs.update_sha }}
+      rebased: ${{ steps.cli-clone.outputs.rebased }}
+      agent_base_tree: ${{ steps.cli-clone.outputs.agent_base_tree }}
       version: ${{ steps.sdk-version.outputs.version }}
     steps:
       - name: Generate API read token
@@ -121,6 +123,8 @@ jobs:
         run: |
           git clone https://github.com/kernel/cli.git /tmp/kernel-cli
           cd /tmp/kernel-cli
+          git config user.name "kernel-internal[bot]"
+          git config user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
           echo "main_sha=$(git rev-parse origin/main)" >> "$GITHUB_OUTPUT"
           if git show-ref --verify --quiet refs/remotes/origin/cli-coverage-update; then
             echo "update_sha=$(git rev-parse origin/cli-coverage-update)" >> "$GITHUB_OUTPUT"
@@ -136,10 +140,16 @@ jobs:
               fi
               echo "::warning::cli-coverage-update conflicts with main; regenerating it from main."
               git switch -C cli-coverage-update origin/main
+            else
+              echo "rebased=true" >> "$GITHUB_OUTPUT"
             fi
           else
             git switch -c cli-coverage-update origin/main
           fi
+          # The agent's changes are published on top of this head, so human
+          # commits on the update branch keep their content and authorship.
+          echo "agent_base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          echo "agent_base_tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
 
       - name: Get SDK version info
         id: sdk-version
@@ -470,9 +480,9 @@ jobs:
         id: snapshot
         working-directory: /tmp/kernel-cli
         env:
-          MAIN_SHA: ${{ steps.cli-clone.outputs.main_sha }}
+          AGENT_BASE: ${{ steps.cli-clone.outputs.agent_base }}
         run: |
-          git reset -q --soft "$MAIN_SHA"
+          git reset -q --soft "$AGENT_BASE"
           git add -A
           git diff --cached --name-only --no-renames -z \
             | bash "$GITHUB_WORKSPACE/updater/.github/scripts/cli-update-disallowed-paths.sh" > "$RUNNER_TEMP/excluded-paths"
@@ -526,6 +536,8 @@ jobs:
       SDK_VERSION: ${{ needs.generate.outputs.version }}
       MAIN_SHA: ${{ needs.generate.outputs.main_sha }}
       UPDATE_SHA: ${{ needs.generate.outputs.update_sha }}
+      REBASED: ${{ needs.generate.outputs.rebased }}
+      AGENT_BASE_TREE: ${{ needs.generate.outputs.agent_base_tree }}
     steps:
       - name: Checkout updater scripts
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
@@ -551,7 +563,16 @@ jobs:
         run: |
           git config user.name "kernel-internal[bot]"
           git config user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
-          git switch -c cli-coverage-update "$MAIN_SHA"
+          if [[ "$REBASED" == true ]]; then
+            git switch -c cli-coverage-update "$UPDATE_SHA"
+            git rebase -q "$MAIN_SHA"
+          else
+            git switch -c cli-coverage-update "$MAIN_SHA"
+          fi
+          if [[ "$(git rev-parse 'HEAD^{tree}')" != "$AGENT_BASE_TREE" ]]; then
+            echo "::error::The rebuilt update branch differs from the one the changes were validated on."
+            exit 1
+          fi
           git apply --index "$RUNNER_TEMP/cli-coverage-update/changes.patch"
           git diff --cached --name-only --no-renames -z \
             | bash ../.github/scripts/cli-update-disallowed-paths.sh > "$RUNNER_TEMP/disallowed-paths"

@@ -64,10 +64,12 @@ test('changes are restricted to the allowlist and validated against published mo
   assert.match(snapshot, /updater\/\.github\/scripts\/cli-update-disallowed-paths\.sh/);
   assert.match(step('generate', 'Checkout updater scripts'), /sparse-checkout: \.github\/scripts/);
   assert.match(snapshot, /git reset -q --hard\n\s+git clean -fdq/);
-  assert.match(snapshot, /MAIN_SHA: \$\{\{ steps\.cli-clone\.outputs\.main_sha \}\}/);
-  assert.match(snapshot, /git reset -q --soft "\$MAIN_SHA"\n\s+git add -A/);
+  assert.match(snapshot, /AGENT_BASE: \$\{\{ steps\.cli-clone\.outputs\.agent_base \}\}/);
+  assert.match(snapshot, /git reset -q --soft "\$AGENT_BASE"\n\s+git add -A/);
   const prepare = step('generate', 'Clone CLI repo');
   assert.match(prepare, /main_sha=\$\(git rev-parse origin\/main\)/);
+  assert.match(prepare, /git config user\.email[\s\S]*git rebase origin\/main; then[\s\S]*else\n\s+echo "rebased=true"/);
+  assert.match(prepare, /agent_base=\$\(git rev-parse HEAD\)[\s\S]*agent_base_tree=/);
   // Only a branch without human commits may be regenerated from main.
   assert.match(prepare, /git rebase --abort\n[\s\S]*grep -qvxF '260533166\+kernel-internal\[bot\]@users\.noreply\.github\.com'[\s\S]*exit 1\n[\s\S]*git switch -C /);
   const scriptCalls = workflow.match(/^.*disallowed-paths\.sh.*$/gm);
@@ -113,6 +115,11 @@ test('publishing runs in a separate job that never executes repository code', ()
   assert.match(apply, /git apply --index "\$RUNNER_TEMP\/cli-coverage-update\/changes\.patch"/);
   assert.match(apply, /cli-update-disallowed-paths\.sh/);
   assert.match(apply, /100644\|100755\|000000/);
+  // Publishing rebuilds the exact head the changes were validated on, so human
+  // commits on the update branch are never squashed or dropped.
+  assert.match(apply, /if \[\[ "\$REBASED" == true \]\]; then\n\s+git switch -c \S+ "\$UPDATE_SHA"\n\s+git rebase -q "\$MAIN_SHA"/);
+  assert.match(apply, /"\$\(git rev-parse 'HEAD\^\{tree\}'\)" != "\$AGENT_BASE_TREE"[\s\S]*exit 1/);
+  assert.ok(apply.indexOf('AGENT_BASE_TREE') < apply.indexOf('git apply --index'));
   const mint = jobs.publish.indexOf(mintStep);
   assert.ok(jobs.publish.indexOf(apply) < mint);
   assert.doesNotMatch(jobs.publish.slice(0, mint).join(''), /GH_TOKEN:/);
