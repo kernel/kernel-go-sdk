@@ -5,7 +5,7 @@
 
 ### Features
 
-* Refresh SDK custom-code seals after updater changes ([5549ed9](https://github.com/kernel/kernel-go-sdk/commit/5549ed93f6c4fe2e83e321fbda19a7b23d8ba456))
+* Return `last_used_at` on API keys ([5549ed9](https://github.com/kernel/kernel-go-sdk/commit/5549ed93f6c4fe2e83e321fbda19a7b23d8ba456))
 
 ## [0.131.0](https://github.com/kernel/kernel-go-sdk/compare/v0.130.0...v0.131.0) (2026-10-26)
 
