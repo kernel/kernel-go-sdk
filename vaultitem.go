@@ -173,6 +173,12 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // known partial failures and indeterminate field outcomes return 200 with status
 // `failed` or `unknown`. Fill never submits the page, so it is safe to retry after
 // a failure, an `unknown` outcome, or a transport error.
+//
+// Connected Kernel wallets may advertise add_payment_method, which returns a
+// single-use hosted card_enrollment link for a card, and remove_payment_method,
+// which removes one card without affecting the others. Both operations require
+// vaults:write in addition to vaults:use on the vault for scoped API keys, and
+// return 403 without both permissions.
 func (r *VaultItemService) PerformOperation(ctx context.Context, key string, params VaultItemPerformOperationParams, opts ...option.RequestOption) (res *VaultItemOperationResponseUnion, err error) {
 	opts = slices.Concat(r.Options, []option.RequestOption{option.WithMaxRetries(0)}, opts)
 	if params.IDOrName == "" {
@@ -195,8 +201,10 @@ func (r *VaultItemService) PerformOperation(ctx context.Context, key string, par
 // Provider-specific authorization requirements and retry behavior are described in
 // the item's request schema. Do not use credential items to store, collect, or
 // fill credit card data, including card numbers (PANs), security codes (CVV/CVC),
-// or expiration dates. Use wallet and card item types for credit cards and payment
-// checkout instead.
+// or expiration dates. Use wallet, payment_request and card item types for credit
+// cards and payment checkout instead. Where enabled, Link and Kernel purchases can
+// be payment_request items parented by their wallet; card items remain supported
+// for them and for AgentCard reusable cards.
 func (r *VaultItemService) Upsert(ctx context.Context, key string, params VaultItemUpsertParams, opts ...option.RequestOption) (res *VaultItemUnion, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if params.IDOrName == "" {
@@ -211,6 +219,64 @@ func (r *VaultItemService) Upsert(ctx context.Context, key string, params VaultI
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPut, path, params, &res, opts...)
 	return res, err
 }
+
+// Start hosted enrollment of a card in a connected Kernel wallet, including its
+// first card, only when the wallet advertises add_payment_method. Returns a new
+// payment method in pending_enrollment with a single-use card_enrollment URL for
+// the cardholder. Card details go directly to the card vault and are never
+// accepted by this API. Each call creates a separate link that expires after 30
+// minutes; a failed or expired enrollment does not affect the wallet's other
+// payment methods. Scoped API keys require vaults:write in addition to vaults:use
+// on this vault; otherwise the operation returns 403.
+//
+// The property Type is required.
+type AddPaymentMethodVaultItemOperationRequestParam struct {
+	// Any of "add_payment_method".
+	Type AddPaymentMethodVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r AddPaymentMethodVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow AddPaymentMethodVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AddPaymentMethodVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AddPaymentMethodVaultItemOperationRequestType string
+
+const (
+	AddPaymentMethodVaultItemOperationRequestTypeAddPaymentMethod AddPaymentMethodVaultItemOperationRequestType = "add_payment_method"
+)
+
+// The payment method created in pending_enrollment. Deliver action.url to the
+// cardholder; it is a single-use capability and must not be logged. Observe
+// completion through the wallet's payment_methods expansion.
+type AddPaymentMethodVaultItemOperationResult struct {
+	PaymentMethod VaultPaymentMethod `json:"payment_method" api:"required"`
+	// Any of "add_payment_method".
+	Type AddPaymentMethodVaultItemOperationResultType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		PaymentMethod respjson.Field
+		Type          respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AddPaymentMethodVaultItemOperationResult) RawJSON() string { return r.JSON.raw }
+func (r *AddPaymentMethodVaultItemOperationResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AddPaymentMethodVaultItemOperationResultType string
+
+const (
+	AddPaymentMethodVaultItemOperationResultTypeAddPaymentMethod AddPaymentMethodVaultItemOperationResultType = "add_payment_method"
+)
 
 // The in-flight or most recent checkout authorization. Present while a checkout is
 // pending approval and after it settles.
@@ -480,11 +546,10 @@ const (
 type CardVaultItemSpecUnion struct {
 	Amount int64 `json:"amount"`
 	// This field is from variant [CardVaultItemSpecLink].
-	Context      string `json:"context"`
-	Currency     string `json:"currency"`
-	MerchantName string `json:"merchant_name"`
-	MerchantURL  string `json:"merchant_url"`
-	// This field is from variant [CardVaultItemSpecLink].
+	Context         string `json:"context"`
+	Currency        string `json:"currency"`
+	MerchantName    string `json:"merchant_name"`
+	MerchantURL     string `json:"merchant_url"`
 	PaymentMethodID string `json:"payment_method_id"`
 	// Any of "link", "agentcard", "kernel".
 	Provider string `json:"provider"`
@@ -840,14 +905,6 @@ func (u CardVaultItemSpecUnionParam) GetContext() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetPaymentMethodID() *string {
-	if vt := u.OfLink; vt != nil {
-		return &vt.PaymentMethodID
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
 func (u CardVaultItemSpecUnionParam) GetLineItems() []CardVaultItemSpecLinkLineItemParam {
 	if vt := u.OfLink; vt != nil {
 		return vt.LineItems
@@ -967,6 +1024,16 @@ func (u CardVaultItemSpecUnionParam) GetMerchantURL() *string {
 		return (*string)(&vt.MerchantURL)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.MerchantURL)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetPaymentMethodID() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.PaymentMethodID)
+	} else if vt := u.OfKernel; vt != nil && vt.PaymentMethodID.Valid() {
+		return &vt.PaymentMethodID.Value
 	}
 	return nil
 }
@@ -1204,16 +1271,22 @@ type CardVaultItemStateUnion struct {
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateAgentcard].
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
-	JSON        struct {
-		Provider      respjson.Field
-		Status        respjson.Field
-		Domains       respjson.Field
-		Masks         respjson.Field
-		StatusReason  respjson.Field
-		Aliases       respjson.Field
-		Authorization respjson.Field
-		Preparation   respjson.Field
-		raw           string
+	// This field is from variant [KernelCardState].
+	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
+	// This field is from variant [KernelCardState].
+	PaymentMethodID string `json:"payment_method_id"`
+	JSON            struct {
+		Provider        respjson.Field
+		Status          respjson.Field
+		Domains         respjson.Field
+		Masks           respjson.Field
+		StatusReason    respjson.Field
+		Aliases         respjson.Field
+		Authorization   respjson.Field
+		Preparation     respjson.Field
+		FundingStatus   respjson.Field
+		PaymentMethodID respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -1584,7 +1657,8 @@ type CredentialAccountVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2023,7 +2097,8 @@ type CredentialVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2145,22 +2220,22 @@ func (r *CredentialVaultItemAction1passwordAccessApproval) UnmarshalJSON(data []
 // path fails, collect a Kernel-hosted credential item instead. Never automatically
 // retry an uncertain 1Password request. After an uncertain fill, inspect the page
 // to see the result of the fill. Do not use credential items for credit card data.
-// Use wallet and card item types instead. Kernel credentials declare fields and
-// may enter pending_collection. 1Password credentials either reference a connected
-// credential_account or store a supplied access token and integration key
-// encrypted on the item. They store no login values or selectors. Managed auth
-// credentials reference a managed auth connection in the same project that already
-// has a saved credential, and read it at fill time; they store no values.
-// Repeating the original creation request returns the current item without
+// Use wallet, payment_request and card item types instead. Kernel credentials
+// declare fields and may enter pending_collection. 1Password credentials either
+// reference a connected credential_account or store a supplied access token and
+// integration key encrypted on the item. They store no login values or selectors.
+// Managed auth credentials reference a managed auth connection in the same project
+// that already has a saved credential, and read it at fill time; they store no
+// values. Repeating the original creation request returns the current item without
 // overwriting later state. A different request at the same key returns 409.
 //
 // The properties Spec, Type are required.
 type CredentialVaultItemRequestParam struct {
 	// Credential fields are for login and other non-payment credentials. Do not store,
-	// collect, or fill credit card data in credential items. Use wallet and card item
-	// types for credit cards and payment checkout instead. Field order is preserved in
-	// the user-facing collection form, so list fields in the same top-to-bottom order
-	// as the website.
+	// collect, or fill credit card data in credential items. Use wallet,
+	// payment_request and card item types for credit cards and payment checkout
+	// instead. Field order is preserved in the user-facing collection form, so list
+	// fields in the same top-to-bottom order as the website.
 	Spec CredentialVaultItemSpecInputUnionParam `json:"spec,omitzero" api:"required"`
 	// Any of "credential".
 	Type CredentialVaultItemRequestType `json:"type,omitzero" api:"required"`
@@ -2753,18 +2828,33 @@ type KernelCardState struct {
 	// "declined", "recovery_required".
 	Status KernelCardStateStatus `json:"status" api:"required"`
 	// Informational registrable domain. Fill is locked to merchant_url's exact origin.
-	Domains      []string             `json:"domains"`
-	Masks        KernelCardStateMasks `json:"masks"`
-	StatusReason string               `json:"status_reason"`
+	Domains []string `json:"domains"`
+	// Whether payment_method_id can still fund this purchase. unavailable means the
+	// method is being removed or awaits recovery, so authorization, fill and
+	// confirmation are refused until it recovers. removed means the method was removed
+	// from its wallet, so this purchase can no longer be paid; create a new purchase
+	// with another method. Neither changes status, which still reports what already
+	// happened to this purchase.
+	//
+	// Any of "available", "unavailable", "removed".
+	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
+	Masks         KernelCardStateMasks         `json:"masks"`
+	// Wallet-scoped ID of the payment method funding this purchase. It is bound when
+	// the purchase is created and never changes; purchases created before payment
+	// methods could be selected report the wallet's default card, card.
+	PaymentMethodID string `json:"payment_method_id"`
+	StatusReason    string `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Provider     respjson.Field
-		Status       respjson.Field
-		Domains      respjson.Field
-		Masks        respjson.Field
-		StatusReason respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		Provider        respjson.Field
+		Status          respjson.Field
+		Domains         respjson.Field
+		FundingStatus   respjson.Field
+		Masks           respjson.Field
+		PaymentMethodID respjson.Field
+		StatusReason    respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -2807,6 +2897,20 @@ const (
 	KernelCardStateStatusExpired              KernelCardStateStatus = "expired"
 	KernelCardStateStatusDeclined             KernelCardStateStatus = "declined"
 	KernelCardStateStatusRecoveryRequired     KernelCardStateStatus = "recovery_required"
+)
+
+// Whether payment_method_id can still fund this purchase. unavailable means the
+// method is being removed or awaits recovery, so authorization, fill and
+// confirmation are refused until it recovers. removed means the method was removed
+// from its wallet, so this purchase can no longer be paid; create a new purchase
+// with another method. Neither changes status, which still reports what already
+// happened to this purchase.
+type KernelCardStateFundingStatus string
+
+const (
+	KernelCardStateFundingStatusAvailable   KernelCardStateFundingStatus = "available"
+	KernelCardStateFundingStatusUnavailable KernelCardStateFundingStatus = "unavailable"
+	KernelCardStateFundingStatusRemoved     KernelCardStateFundingStatus = "removed"
 )
 
 type KernelCardStateMasks struct {
@@ -2869,6 +2973,12 @@ type KernelCardVaultItemSpec struct {
 	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
 	// one-time code is issued for the merchant's country.
 	MerchantCountry string `json:"merchant_country"`
+	// Wallet-scoped payment method ID from the wallet's payment_methods expansion.
+	// Omission selects the wallet's default card, ID card, for compatibility with
+	// existing requests; it never falls back to another method, and a wallet without a
+	// default card requires the ID. The purchase is bound to the method's enrolled
+	// card and network token, so later operations cannot switch funding.
+	PaymentMethodID string `json:"payment_method_id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Amount               respjson.Field
@@ -2880,6 +2990,7 @@ type KernelCardVaultItemSpec struct {
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
+		PaymentMethodID      respjson.Field
 		ExtraFields          map[string]respjson.Field
 		raw                  string
 	} `json:"-"`
@@ -2947,6 +3058,12 @@ type KernelCardVaultItemSpecParam struct {
 	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
 	// one-time code is issued for the merchant's country.
 	MerchantCountry param.Opt[string] `json:"merchant_country,omitzero"`
+	// Wallet-scoped payment method ID from the wallet's payment_methods expansion.
+	// Omission selects the wallet's default card, ID card, for compatibility with
+	// existing requests; it never falls back to another method, and a wallet without a
+	// default card requires the ID. The purchase is bound to the method's enrolled
+	// card and network token, so later operations cannot switch funding.
+	PaymentMethodID param.Opt[string] `json:"payment_method_id,omitzero"`
 	paramObj
 }
 
@@ -2990,10 +3107,10 @@ const (
 )
 
 // Credential fields are for login and other non-payment credentials. Do not store,
-// collect, or fill credit card data in credential items. Use wallet and card item
-// types for credit cards and payment checkout instead. Field order is preserved in
-// the user-facing collection form, so list fields in the same top-to-bottom order
-// as the website.
+// collect, or fill credit card data in credential items. Use wallet,
+// payment_request and card item types for credit cards and payment checkout
+// instead. Field order is preserved in the user-facing collection form, so list
+// fields in the same top-to-bottom order as the website.
 //
 // The properties Fields, Provider are required.
 type KernelCredentialVaultItemSpecInputParam struct {
@@ -3065,15 +3182,134 @@ const (
 	KernelCredentialVaultItemStateStatusReady             KernelCredentialVaultItemStateStatus = "ready"
 )
 
+// One live purchase funded by the Kernel wallet payment method named by
+// payment_method_id. The method must be active and eligible when the request is
+// created. The purchase is bound to that method; later operations cannot switch
+// funding, and removing the method makes the purchase unusable rather than moving
+// it to another card. Approval, issuance, fill and the alias fallback behave as
+// described for KernelCardVaultItemSpec.
+type KernelPaymentRequestVaultItemSpec struct {
+	// Integer amount in minor currency units (at most 1000000), bound to the one-time
+	// code.
+	Amount int64 `json:"amount" api:"required"`
+	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
+	// krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	// Merchant checkout URL. Fill is allowed only on this URL's origin.
+	MerchantURL string `json:"merchant_url" api:"required" format:"uri"`
+	// Payment method ID from the wallet's payment_methods expansion.
+	PaymentMethodID string `json:"payment_method_id" api:"required"`
+	// Any of "kernel".
+	Provider KernelPaymentRequestVaultItemSpecProvider `json:"provider" api:"required"`
+	// Key of the Kernel wallet item that owns the payment method.
+	Wallet string `json:"wallet" api:"required"`
+	// Actual merchant category when known. Omit rather than invent a category.
+	MerchantCategory string `json:"merchant_category"`
+	// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not
+	// accepted.
+	MerchantCategoryCode string `json:"merchant_category_code"`
+	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
+	// one-time code is issued for the merchant's country.
+	MerchantCountry string `json:"merchant_country"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount               respjson.Field
+		Currency             respjson.Field
+		MerchantName         respjson.Field
+		MerchantURL          respjson.Field
+		PaymentMethodID      respjson.Field
+		Provider             respjson.Field
+		Wallet               respjson.Field
+		MerchantCategory     respjson.Field
+		MerchantCategoryCode respjson.Field
+		MerchantCountry      respjson.Field
+		ExtraFields          map[string]respjson.Field
+		raw                  string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r KernelPaymentRequestVaultItemSpec) RawJSON() string { return r.JSON.raw }
+func (r *KernelPaymentRequestVaultItemSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this KernelPaymentRequestVaultItemSpec to a
+// KernelPaymentRequestVaultItemSpecParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// KernelPaymentRequestVaultItemSpecParam.Overrides()
+func (r KernelPaymentRequestVaultItemSpec) ToParam() KernelPaymentRequestVaultItemSpecParam {
+	return param.Override[KernelPaymentRequestVaultItemSpecParam](json.RawMessage(r.RawJSON()))
+}
+
+type KernelPaymentRequestVaultItemSpecProvider string
+
+const (
+	KernelPaymentRequestVaultItemSpecProviderKernel KernelPaymentRequestVaultItemSpecProvider = "kernel"
+)
+
+// One live purchase funded by the Kernel wallet payment method named by
+// payment_method_id. The method must be active and eligible when the request is
+// created. The purchase is bound to that method; later operations cannot switch
+// funding, and removing the method makes the purchase unusable rather than moving
+// it to another card. Approval, issuance, fill and the alias fallback behave as
+// described for KernelCardVaultItemSpec.
+//
+// The properties Amount, Currency, MerchantName, MerchantURL, PaymentMethodID,
+// Provider, Wallet are required.
+type KernelPaymentRequestVaultItemSpecParam struct {
+	// Integer amount in minor currency units (at most 1000000), bound to the one-time
+	// code.
+	Amount int64 `json:"amount" api:"required"`
+	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
+	// krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	// Merchant checkout URL. Fill is allowed only on this URL's origin.
+	MerchantURL string `json:"merchant_url" api:"required" format:"uri"`
+	// Payment method ID from the wallet's payment_methods expansion.
+	PaymentMethodID string `json:"payment_method_id" api:"required"`
+	// Any of "kernel".
+	Provider KernelPaymentRequestVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
+	// Key of the Kernel wallet item that owns the payment method.
+	Wallet string `json:"wallet" api:"required"`
+	// Actual merchant category when known. Omit rather than invent a category.
+	MerchantCategory param.Opt[string] `json:"merchant_category,omitzero"`
+	// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not
+	// accepted.
+	MerchantCategoryCode param.Opt[string] `json:"merchant_category_code,omitzero"`
+	// The merchant's ISO 3166-1 alpha-2 country code. Required for Visa cards, whose
+	// one-time code is issued for the merchant's country.
+	MerchantCountry param.Opt[string] `json:"merchant_country,omitzero"`
+	paramObj
+}
+
+func (r KernelPaymentRequestVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
+	type shadow KernelPaymentRequestVaultItemSpecParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *KernelPaymentRequestVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type KernelWalletState struct {
 	// Any of "kernel".
 	Provider KernelWalletStateProvider `json:"provider" api:"required"`
-	// pending_authorization asks the cardholder to use the card_enrollment action.
-	// connected means the card is stored; it can pay once payment_methods reports
-	// capabilities.single_use_card.eligible. reconnect_required asks the cardholder to
-	// use a new card_enrollment action after an uncertain enrollment was safely
-	// removed. degraded means the enrollment outcome is unknown and the wallet must be
-	// deleted before adding another card.
+	// connected means the wallet is usable. It holds zero or more cards as payment
+	// methods, listed by the payment_methods expansion, and each can pay once it
+	// reports capabilities.single_use_card.eligible. A wallet with no cards, before
+	// its first card or after its last is removed, is still connected. Where the
+	// wallet advertises add_payment_method and remove_payment_method, use them to
+	// manage cards. Otherwise the wallet enrolls one default card when created; until
+	// that card is enrolled the wallet reports pending_authorization with the card's
+	// card_enrollment action, or degraded when the card's enrollment outcome is
+	// unknown and the wallet must be deleted before adding another card.
+	// reconnect_required appears only on a wallet created before cards were payment
+	// methods and not yet upgraded. Reads preserve its stored state until the operator
+	// upgrade; payment and deletion requests are refused until then.
 	//
 	// Any of "pending_authorization", "connected", "reconnect_required", "degraded".
 	Status       KernelWalletStateStatus `json:"status" api:"required"`
@@ -3100,12 +3336,18 @@ const (
 	KernelWalletStateProviderKernel KernelWalletStateProvider = "kernel"
 )
 
-// pending_authorization asks the cardholder to use the card_enrollment action.
-// connected means the card is stored; it can pay once payment_methods reports
-// capabilities.single_use_card.eligible. reconnect_required asks the cardholder to
-// use a new card_enrollment action after an uncertain enrollment was safely
-// removed. degraded means the enrollment outcome is unknown and the wallet must be
-// deleted before adding another card.
+// connected means the wallet is usable. It holds zero or more cards as payment
+// methods, listed by the payment_methods expansion, and each can pay once it
+// reports capabilities.single_use_card.eligible. A wallet with no cards, before
+// its first card or after its last is removed, is still connected. Where the
+// wallet advertises add_payment_method and remove_payment_method, use them to
+// manage cards. Otherwise the wallet enrolls one default card when created; until
+// that card is enrolled the wallet reports pending_authorization with the card's
+// card_enrollment action, or degraded when the card's enrollment outcome is
+// unknown and the wallet must be deleted before adding another card.
+// reconnect_required appears only on a wallet created before cards were payment
+// methods and not yet upgraded. Reads preserve its stored state until the operator
+// upgrade; payment and deletion requests are refused until then.
 type KernelWalletStateStatus string
 
 const (
@@ -3115,17 +3357,21 @@ const (
 	KernelWalletStateStatusDegraded             KernelWalletStateStatus = "degraded"
 )
 
-// One card stored with Kernel-managed credentials. Creation returns a
-// card*enrollment action: the cardholder enters the card and their email on a
-// Kernel-hosted page, and the wallet connects once the card is stored. Kernel then
-// enrolls it for an agentic network token when the issuer supports it. The card
-// number never reaches Kernel. The connected wallet's payment_methods expansion
-// lists the card; capabilities.single_use_card.eligible is false, with a
-// network_token*\* reason, until the card has a network token, and authorize
-// returns 400 for such a card unless Kernel supports checkout delivery without a
-// network token for that card. In that case, fill types the checkout details. Visa
-// purchases require the cardholder to complete a spend_approval action before
-// Kernel issues a one-time code; Mastercard purchases need no hosted approval.
+// Cards stored with Kernel-managed credentials, each a payment method of the
+// wallet. Each card is enrolled through a card*enrollment action: the cardholder
+// enters the card and their email on a Kernel-hosted page. Where the wallet
+// advertises add_payment_method, creation returns an empty connected wallet and
+// each card is enrolled with that operation. Otherwise creation returns the
+// wallet's default card's card_enrollment action, and the wallet connects once
+// that card is stored. Kernel then enrolls each card for an agentic network token
+// when the issuer supports it. The card number never reaches Kernel. The connected
+// wallet's payment_methods expansion lists the cards;
+// capabilities.single_use_card.eligible is false, with a network_token*\* reason,
+// until the card has a network token, and authorize returns 400 for such a card
+// unless Kernel supports checkout delivery without a network token for that card.
+// In that case, fill types the checkout details. Visa purchases require the
+// cardholder to complete a spend_approval action before Kernel issues a one-time
+// code; Mastercard purchases need no hosted approval.
 type KernelWalletVaultItemSpec struct {
 	// Any of "kernel".
 	Provider KernelWalletVaultItemSpecProvider `json:"provider" api:"required"`
@@ -3159,17 +3405,21 @@ const (
 	KernelWalletVaultItemSpecProviderKernel KernelWalletVaultItemSpecProvider = "kernel"
 )
 
-// One card stored with Kernel-managed credentials. Creation returns a
-// card*enrollment action: the cardholder enters the card and their email on a
-// Kernel-hosted page, and the wallet connects once the card is stored. Kernel then
-// enrolls it for an agentic network token when the issuer supports it. The card
-// number never reaches Kernel. The connected wallet's payment_methods expansion
-// lists the card; capabilities.single_use_card.eligible is false, with a
-// network_token*\* reason, until the card has a network token, and authorize
-// returns 400 for such a card unless Kernel supports checkout delivery without a
-// network token for that card. In that case, fill types the checkout details. Visa
-// purchases require the cardholder to complete a spend_approval action before
-// Kernel issues a one-time code; Mastercard purchases need no hosted approval.
+// Cards stored with Kernel-managed credentials, each a payment method of the
+// wallet. Each card is enrolled through a card*enrollment action: the cardholder
+// enters the card and their email on a Kernel-hosted page. Where the wallet
+// advertises add_payment_method, creation returns an empty connected wallet and
+// each card is enrolled with that operation. Otherwise creation returns the
+// wallet's default card's card_enrollment action, and the wallet connects once
+// that card is stored. Kernel then enrolls each card for an agentic network token
+// when the issuer supports it. The card number never reaches Kernel. The connected
+// wallet's payment_methods expansion lists the cards;
+// capabilities.single_use_card.eligible is false, with a network_token*\* reason,
+// until the card has a network token, and authorize returns 400 for such a card
+// unless Kernel supports checkout delivery without a network token for that card.
+// In that case, fill types the checkout details. Visa purchases require the
+// cardholder to complete a spend_approval action before Kernel issues a one-time
+// code; Mastercard purchases need no hosted approval.
 //
 // The property Provider is required.
 type KernelWalletVaultItemSpecParam struct {
@@ -4392,6 +4642,839 @@ const (
 	PasskeyVaultItemOperationResultTypeDisarmPasskey   PasskeyVaultItemOperationResultType = "disarm_passkey"
 )
 
+// One purchase from a Link or Kernel wallet, parented by that wallet. It has the
+// same lifecycle, operations and fill behavior as a Link or Kernel card item.
+// AgentCard reusable cards remain card items.
+type PaymentRequestVaultItem struct {
+	ID                  string                                      `json:"id" api:"required"`
+	AvailableExpansions []PaymentRequestVaultItemAvailableExpansion `json:"available_expansions" api:"required"`
+	AvailableOperations []PaymentRequestVaultItemAvailableOperation `json:"available_operations" api:"required"`
+	CreatedAt           time.Time                                   `json:"created_at" api:"required" format:"date-time"`
+	// Immutable item key assigned when the item is created.
+	Key string `json:"key" api:"required"`
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
+	Spec PaymentRequestVaultItemSpecUnion `json:"spec" api:"required"`
+	// Issued Link cards retain encrypted card material for the fill operation. Link
+	// cards do not expose aliases or support egress substitution.
+	State PaymentRequestVaultItemStateUnion `json:"state" api:"required"`
+	// Any of "payment_request".
+	Type      PaymentRequestVaultItemType `json:"type" api:"required"`
+	UpdatedAt time.Time                   `json:"updated_at" api:"required" format:"date-time"`
+	Action    VaultItemActionUnion        `json:"action"`
+	ExpiresAt time.Time                   `json:"expires_at" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                  respjson.Field
+		AvailableExpansions respjson.Field
+		AvailableOperations respjson.Field
+		CreatedAt           respjson.Field
+		Key                 respjson.Field
+		Spec                respjson.Field
+		State               respjson.Field
+		Type                respjson.Field
+		UpdatedAt           respjson.Field
+		Action              respjson.Field
+		ExpiresAt           respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItem) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Live data that can currently be requested by passing its type to the item GET
+// expand parameter.
+type PaymentRequestVaultItemAvailableExpansion struct {
+	Description string `json:"description" api:"required"`
+	// Any of "payment_methods", "link_user_info", "link_shipping_addresses".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemAvailableExpansion) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemAvailableExpansion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// An operation that is currently valid for this item. Read the description before
+// invoking it through the item operations endpoint.
+type PaymentRequestVaultItemAvailableOperation struct {
+	Description string `json:"description" api:"required"`
+	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
+	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
+	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemAvailableOperation) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemAvailableOperation) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type PaymentRequestVaultItemType string
+
+const (
+	PaymentRequestVaultItemTypePaymentRequest PaymentRequestVaultItemType = "payment_request"
+)
+
+// PaymentRequestVaultItemSpecUnion contains all possible properties and values
+// from [PaymentRequestVaultItemSpecLink], [KernelPaymentRequestVaultItemSpec].
+//
+// Use the [PaymentRequestVaultItemSpecUnion.AsAny] method to switch on the
+// variant.
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type PaymentRequestVaultItemSpecUnion struct {
+	Amount int64 `json:"amount"`
+	// This field is from variant [PaymentRequestVaultItemSpecLink].
+	Context         string `json:"context"`
+	Currency        string `json:"currency"`
+	MerchantName    string `json:"merchant_name"`
+	MerchantURL     string `json:"merchant_url"`
+	PaymentMethodID string `json:"payment_method_id"`
+	// Any of "link", "kernel".
+	Provider string `json:"provider"`
+	Wallet   string `json:"wallet"`
+	// This field is from variant [PaymentRequestVaultItemSpecLink].
+	LineItems []PaymentRequestVaultItemSpecLinkLineItem `json:"line_items"`
+	// This field is from variant [PaymentRequestVaultItemSpecLink].
+	Metadata map[string]string `json:"metadata"`
+	// This field is from variant [PaymentRequestVaultItemSpecLink].
+	Recurring PaymentRequestVaultItemSpecLinkRecurring `json:"recurring"`
+	// This field is from variant [PaymentRequestVaultItemSpecLink].
+	Totals []PaymentRequestVaultItemSpecLinkTotal `json:"totals"`
+	// This field is from variant [KernelPaymentRequestVaultItemSpec].
+	MerchantCategory string `json:"merchant_category"`
+	// This field is from variant [KernelPaymentRequestVaultItemSpec].
+	MerchantCategoryCode string `json:"merchant_category_code"`
+	// This field is from variant [KernelPaymentRequestVaultItemSpec].
+	MerchantCountry string `json:"merchant_country"`
+	JSON            struct {
+		Amount               respjson.Field
+		Context              respjson.Field
+		Currency             respjson.Field
+		MerchantName         respjson.Field
+		MerchantURL          respjson.Field
+		PaymentMethodID      respjson.Field
+		Provider             respjson.Field
+		Wallet               respjson.Field
+		LineItems            respjson.Field
+		Metadata             respjson.Field
+		Recurring            respjson.Field
+		Totals               respjson.Field
+		MerchantCategory     respjson.Field
+		MerchantCategoryCode respjson.Field
+		MerchantCountry      respjson.Field
+		raw                  string
+	} `json:"-"`
+}
+
+// anyPaymentRequestVaultItemSpec is implemented by each variant of
+// [PaymentRequestVaultItemSpecUnion] to add type safety for the return type of
+// [PaymentRequestVaultItemSpecUnion.AsAny]
+type anyPaymentRequestVaultItemSpec interface {
+	implPaymentRequestVaultItemSpecUnion()
+}
+
+func (PaymentRequestVaultItemSpecLink) implPaymentRequestVaultItemSpecUnion()   {}
+func (KernelPaymentRequestVaultItemSpec) implPaymentRequestVaultItemSpecUnion() {}
+
+// Use the following switch statement to find the correct variant
+//
+//	switch variant := PaymentRequestVaultItemSpecUnion.AsAny().(type) {
+//	case kernel.PaymentRequestVaultItemSpecLink:
+//	case kernel.KernelPaymentRequestVaultItemSpec:
+//	default:
+//	  fmt.Errorf("no variant present")
+//	}
+func (u PaymentRequestVaultItemSpecUnion) AsAny() anyPaymentRequestVaultItemSpec {
+	switch u.Provider {
+	case "link":
+		return u.AsLink()
+	case "kernel":
+		return u.AsKernel()
+	}
+	return nil
+}
+
+func (u PaymentRequestVaultItemSpecUnion) AsLink() (v PaymentRequestVaultItemSpecLink) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u PaymentRequestVaultItemSpecUnion) AsKernel() (v KernelPaymentRequestVaultItemSpec) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u PaymentRequestVaultItemSpecUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *PaymentRequestVaultItemSpecUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this PaymentRequestVaultItemSpecUnion to a
+// PaymentRequestVaultItemSpecUnionParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// PaymentRequestVaultItemSpecUnionParam.Overrides()
+func (r PaymentRequestVaultItemSpecUnion) ToParam() PaymentRequestVaultItemSpecUnionParam {
+	return param.Override[PaymentRequestVaultItemSpecUnionParam](json.RawMessage(r.RawJSON()))
+}
+
+// Live Link card request. Test-mode card creation is not supported. The spec can
+// be changed with PATCH until the card is authorized at a checkout. Authorize it
+// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+// and internally chooses a merchant-bound Link Pay Token when supported or a
+// virtual card otherwise. Callers never receive or choose how the credential is
+// delivered.
+type PaymentRequestVaultItemSpecLink struct {
+	// Integer amount in minor currency units, at most 50000. With recurring, the
+	// spending limit per period, not a lifetime total.
+	Amount       int64  `json:"amount" api:"required"`
+	Context      string `json:"context" api:"required"`
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	MerchantURL  string `json:"merchant_url" api:"required" format:"uri"`
+	// Payment-method ID returned by the referenced wallet's payment-method listing.
+	// The provider decides whether the selected funding method can satisfy the card
+	// request.
+	PaymentMethodID string        `json:"payment_method_id" api:"required"`
+	Provider        constant.Link `json:"provider" default:"link"`
+	// Connected Link wallet item key.
+	Wallet    string                                    `json:"wallet" api:"required"`
+	LineItems []PaymentRequestVaultItemSpecLinkLineItem `json:"line_items"`
+	Metadata  map[string]string                         `json:"metadata"`
+	// Recurring terms for a subscription or other repeated purchase. The amount
+	// becomes the spending limit for each period of interval_count intervals, for
+	// example every 2 weeks. The merchant schedules charges. The card stays ready
+	// after each charge until it expires or is deleted; do not create a new card each
+	// period. Deleting the card, its wallet or its vault first cancels the credential
+	// with Link, so later charges decline; if Link cannot be reached, deletion returns
+	// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+	// the subscription with the merchant. Recurring terms cannot be changed once the
+	// card is authorized.
+	Recurring PaymentRequestVaultItemSpecLinkRecurring `json:"recurring"`
+	Totals    []PaymentRequestVaultItemSpecLinkTotal   `json:"totals"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount          respjson.Field
+		Context         respjson.Field
+		Currency        respjson.Field
+		MerchantName    respjson.Field
+		MerchantURL     respjson.Field
+		PaymentMethodID respjson.Field
+		Provider        respjson.Field
+		Wallet          respjson.Field
+		LineItems       respjson.Field
+		Metadata        respjson.Field
+		Recurring       respjson.Field
+		Totals          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemSpecLink) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemSpecLink) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type PaymentRequestVaultItemSpecLinkLineItem struct {
+	Name        string                                         `json:"name" api:"required"`
+	Description string                                         `json:"description"`
+	ImageURL    string                                         `json:"image_url"`
+	ProductURL  string                                         `json:"product_url"`
+	Quantity    int64                                          `json:"quantity"`
+	SKU         string                                         `json:"sku"`
+	Totals      []PaymentRequestVaultItemSpecLinkLineItemTotal `json:"totals"`
+	// Unit amount in minor currency units.
+	UnitAmount int64  `json:"unit_amount"`
+	URL        string `json:"url"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Name        respjson.Field
+		Description respjson.Field
+		ImageURL    respjson.Field
+		ProductURL  respjson.Field
+		Quantity    respjson.Field
+		SKU         respjson.Field
+		Totals      respjson.Field
+		UnitAmount  respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemSpecLinkLineItem) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemSpecLinkLineItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type PaymentRequestVaultItemSpecLinkLineItemTotal struct {
+	// Total amount in minor currency units.
+	Amount      int64  `json:"amount" api:"required"`
+	DisplayText string `json:"display_text" api:"required"`
+	Type        string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount      respjson.Field
+		DisplayText respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemSpecLinkLineItemTotal) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemSpecLinkLineItemTotal) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Recurring terms for a subscription or other repeated purchase. The amount
+// becomes the spending limit for each period of interval_count intervals, for
+// example every 2 weeks. The merchant schedules charges. The card stays ready
+// after each charge until it expires or is deleted; do not create a new card each
+// period. Deleting the card, its wallet or its vault first cancels the credential
+// with Link, so later charges decline; if Link cannot be reached, deletion returns
+// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+// the subscription with the merchant. Recurring terms cannot be changed once the
+// card is authorized.
+type PaymentRequestVaultItemSpecLinkRecurring struct {
+	// Any of "day", "week", "month", "year".
+	Interval string `json:"interval" api:"required"`
+	// Number of intervals per period. Link defaults it to 1.
+	IntervalCount int64 `json:"interval_count"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Interval      respjson.Field
+		IntervalCount respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemSpecLinkRecurring) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemSpecLinkRecurring) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type PaymentRequestVaultItemSpecLinkTotal struct {
+	// Total amount in minor currency units.
+	Amount      int64  `json:"amount" api:"required"`
+	DisplayText string `json:"display_text" api:"required"`
+	Type        string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount      respjson.Field
+		DisplayText respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemSpecLinkTotal) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemSpecLinkTotal) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type PaymentRequestVaultItemSpecUnionParam struct {
+	OfLink   *PaymentRequestVaultItemSpecLinkParam   `json:",omitzero,inline"`
+	OfKernel *KernelPaymentRequestVaultItemSpecParam `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u PaymentRequestVaultItemSpecUnionParam) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfLink, u.OfKernel)
+}
+func (u *PaymentRequestVaultItemSpecUnionParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+func (u *PaymentRequestVaultItemSpecUnionParam) asAny() any {
+	if !param.IsOmitted(u.OfLink) {
+		return u.OfLink
+	} else if !param.IsOmitted(u.OfKernel) {
+		return u.OfKernel
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetContext() *string {
+	if vt := u.OfLink; vt != nil {
+		return &vt.Context
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetLineItems() []PaymentRequestVaultItemSpecLinkLineItemParam {
+	if vt := u.OfLink; vt != nil {
+		return vt.LineItems
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetMetadata() map[string]string {
+	if vt := u.OfLink; vt != nil {
+		return vt.Metadata
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetRecurring() *PaymentRequestVaultItemSpecLinkRecurringParam {
+	if vt := u.OfLink; vt != nil {
+		return &vt.Recurring
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetTotals() []PaymentRequestVaultItemSpecLinkTotalParam {
+	if vt := u.OfLink; vt != nil {
+		return vt.Totals
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetMerchantCategory() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCategory.Valid() {
+		return &vt.MerchantCategory.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetMerchantCategoryCode() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCategoryCode.Valid() {
+		return &vt.MerchantCategoryCode.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetMerchantCountry() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCountry.Valid() {
+		return &vt.MerchantCountry.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetAmount() *int64 {
+	if vt := u.OfLink; vt != nil {
+		return (*int64)(&vt.Amount)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*int64)(&vt.Amount)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetCurrency() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.Currency)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.Currency)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetMerchantName() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.MerchantName)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.MerchantName)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetMerchantURL() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.MerchantURL)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.MerchantURL)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetPaymentMethodID() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.PaymentMethodID)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.PaymentMethodID)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetProvider() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.Provider)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.Provider)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u PaymentRequestVaultItemSpecUnionParam) GetWallet() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.Wallet)
+	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.Wallet)
+	}
+	return nil
+}
+
+func init() {
+	apijson.RegisterUnion[PaymentRequestVaultItemSpecUnionParam](
+		"provider",
+		apijson.Discriminator[PaymentRequestVaultItemSpecLinkParam]("link"),
+		apijson.Discriminator[KernelPaymentRequestVaultItemSpecParam]("kernel"),
+	)
+}
+
+// Live Link card request. Test-mode card creation is not supported. The spec can
+// be changed with PATCH until the card is authorized at a checkout. Authorize it
+// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+// and internally chooses a merchant-bound Link Pay Token when supported or a
+// virtual card otherwise. Callers never receive or choose how the credential is
+// delivered.
+//
+// The properties Amount, Context, Currency, MerchantName, MerchantURL,
+// PaymentMethodID, Provider, Wallet are required.
+type PaymentRequestVaultItemSpecLinkParam struct {
+	// Integer amount in minor currency units, at most 50000. With recurring, the
+	// spending limit per period, not a lifetime total.
+	Amount       int64  `json:"amount" api:"required"`
+	Context      string `json:"context" api:"required"`
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	MerchantURL  string `json:"merchant_url" api:"required" format:"uri"`
+	// Payment-method ID returned by the referenced wallet's payment-method listing.
+	// The provider decides whether the selected funding method can satisfy the card
+	// request.
+	PaymentMethodID string `json:"payment_method_id" api:"required"`
+	// Connected Link wallet item key.
+	Wallet    string                                         `json:"wallet" api:"required"`
+	LineItems []PaymentRequestVaultItemSpecLinkLineItemParam `json:"line_items,omitzero"`
+	Metadata  map[string]string                              `json:"metadata,omitzero"`
+	// Recurring terms for a subscription or other repeated purchase. The amount
+	// becomes the spending limit for each period of interval_count intervals, for
+	// example every 2 weeks. The merchant schedules charges. The card stays ready
+	// after each charge until it expires or is deleted; do not create a new card each
+	// period. Deleting the card, its wallet or its vault first cancels the credential
+	// with Link, so later charges decline; if Link cannot be reached, deletion returns
+	// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+	// the subscription with the merchant. Recurring terms cannot be changed once the
+	// card is authorized.
+	Recurring PaymentRequestVaultItemSpecLinkRecurringParam `json:"recurring,omitzero"`
+	Totals    []PaymentRequestVaultItemSpecLinkTotalParam   `json:"totals,omitzero"`
+	// This field can be elided, and will marshal its zero value as "link".
+	Provider constant.Link `json:"provider" default:"link"`
+	paramObj
+}
+
+func (r PaymentRequestVaultItemSpecLinkParam) MarshalJSON() (data []byte, err error) {
+	type shadow PaymentRequestVaultItemSpecLinkParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *PaymentRequestVaultItemSpecLinkParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property Name is required.
+type PaymentRequestVaultItemSpecLinkLineItemParam struct {
+	Name        string            `json:"name" api:"required"`
+	Description param.Opt[string] `json:"description,omitzero"`
+	ImageURL    param.Opt[string] `json:"image_url,omitzero"`
+	ProductURL  param.Opt[string] `json:"product_url,omitzero"`
+	Quantity    param.Opt[int64]  `json:"quantity,omitzero"`
+	SKU         param.Opt[string] `json:"sku,omitzero"`
+	// Unit amount in minor currency units.
+	UnitAmount param.Opt[int64]                                    `json:"unit_amount,omitzero"`
+	URL        param.Opt[string]                                   `json:"url,omitzero"`
+	Totals     []PaymentRequestVaultItemSpecLinkLineItemTotalParam `json:"totals,omitzero"`
+	paramObj
+}
+
+func (r PaymentRequestVaultItemSpecLinkLineItemParam) MarshalJSON() (data []byte, err error) {
+	type shadow PaymentRequestVaultItemSpecLinkLineItemParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *PaymentRequestVaultItemSpecLinkLineItemParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Amount, DisplayText, Type are required.
+type PaymentRequestVaultItemSpecLinkLineItemTotalParam struct {
+	// Total amount in minor currency units.
+	Amount      int64  `json:"amount" api:"required"`
+	DisplayText string `json:"display_text" api:"required"`
+	Type        string `json:"type" api:"required"`
+	paramObj
+}
+
+func (r PaymentRequestVaultItemSpecLinkLineItemTotalParam) MarshalJSON() (data []byte, err error) {
+	type shadow PaymentRequestVaultItemSpecLinkLineItemTotalParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *PaymentRequestVaultItemSpecLinkLineItemTotalParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Recurring terms for a subscription or other repeated purchase. The amount
+// becomes the spending limit for each period of interval_count intervals, for
+// example every 2 weeks. The merchant schedules charges. The card stays ready
+// after each charge until it expires or is deleted; do not create a new card each
+// period. Deleting the card, its wallet or its vault first cancels the credential
+// with Link, so later charges decline; if Link cannot be reached, deletion returns
+// 409 provider_revocation_pending and should be retried. Deletion does not cancel
+// the subscription with the merchant. Recurring terms cannot be changed once the
+// card is authorized.
+//
+// The property Interval is required.
+type PaymentRequestVaultItemSpecLinkRecurringParam struct {
+	// Any of "day", "week", "month", "year".
+	Interval string `json:"interval,omitzero" api:"required"`
+	// Number of intervals per period. Link defaults it to 1.
+	IntervalCount param.Opt[int64] `json:"interval_count,omitzero"`
+	paramObj
+}
+
+func (r PaymentRequestVaultItemSpecLinkRecurringParam) MarshalJSON() (data []byte, err error) {
+	type shadow PaymentRequestVaultItemSpecLinkRecurringParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *PaymentRequestVaultItemSpecLinkRecurringParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[PaymentRequestVaultItemSpecLinkRecurringParam](
+		"interval", "day", "week", "month", "year",
+	)
+}
+
+// The properties Amount, DisplayText, Type are required.
+type PaymentRequestVaultItemSpecLinkTotalParam struct {
+	// Total amount in minor currency units.
+	Amount      int64  `json:"amount" api:"required"`
+	DisplayText string `json:"display_text" api:"required"`
+	Type        string `json:"type" api:"required"`
+	paramObj
+}
+
+func (r PaymentRequestVaultItemSpecLinkTotalParam) MarshalJSON() (data []byte, err error) {
+	type shadow PaymentRequestVaultItemSpecLinkTotalParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *PaymentRequestVaultItemSpecLinkTotalParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// PaymentRequestVaultItemStateUnion contains all possible properties and values
+// from [PaymentRequestVaultItemStateLink], [KernelCardState].
+//
+// Use the [PaymentRequestVaultItemStateUnion.AsAny] method to switch on the
+// variant.
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type PaymentRequestVaultItemStateUnion struct {
+	// Any of "link", "kernel".
+	Provider string   `json:"provider"`
+	Status   string   `json:"status"`
+	Domains  []string `json:"domains"`
+	// This field is a union of [PaymentRequestVaultItemStateLinkMasks],
+	// [KernelCardStateMasks]
+	Masks        PaymentRequestVaultItemStateUnionMasks `json:"masks"`
+	StatusReason string                                 `json:"status_reason"`
+	// This field is from variant [KernelCardState].
+	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
+	// This field is from variant [KernelCardState].
+	PaymentMethodID string `json:"payment_method_id"`
+	JSON            struct {
+		Provider        respjson.Field
+		Status          respjson.Field
+		Domains         respjson.Field
+		Masks           respjson.Field
+		StatusReason    respjson.Field
+		FundingStatus   respjson.Field
+		PaymentMethodID respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// anyPaymentRequestVaultItemState is implemented by each variant of
+// [PaymentRequestVaultItemStateUnion] to add type safety for the return type of
+// [PaymentRequestVaultItemStateUnion.AsAny]
+type anyPaymentRequestVaultItemState interface {
+	implPaymentRequestVaultItemStateUnion()
+}
+
+func (PaymentRequestVaultItemStateLink) implPaymentRequestVaultItemStateUnion() {}
+func (KernelCardState) implPaymentRequestVaultItemStateUnion()                  {}
+
+// Use the following switch statement to find the correct variant
+//
+//	switch variant := PaymentRequestVaultItemStateUnion.AsAny().(type) {
+//	case kernel.PaymentRequestVaultItemStateLink:
+//	case kernel.KernelCardState:
+//	default:
+//	  fmt.Errorf("no variant present")
+//	}
+func (u PaymentRequestVaultItemStateUnion) AsAny() anyPaymentRequestVaultItemState {
+	switch u.Provider {
+	case "link":
+		return u.AsLink()
+	case "kernel":
+		return u.AsKernel()
+	}
+	return nil
+}
+
+func (u PaymentRequestVaultItemStateUnion) AsLink() (v PaymentRequestVaultItemStateLink) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u PaymentRequestVaultItemStateUnion) AsKernel() (v KernelCardState) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u PaymentRequestVaultItemStateUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *PaymentRequestVaultItemStateUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// PaymentRequestVaultItemStateUnionMasks is an implicit subunion of
+// [PaymentRequestVaultItemStateUnion]. PaymentRequestVaultItemStateUnionMasks
+// provides convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [PaymentRequestVaultItemStateUnion].
+type PaymentRequestVaultItemStateUnionMasks struct {
+	Brand      string `json:"brand"`
+	Last4      string `json:"last4"`
+	TokenLast4 string `json:"token_last4"`
+	JSON       struct {
+		Brand      respjson.Field
+		Last4      respjson.Field
+		TokenLast4 respjson.Field
+		raw        string
+	} `json:"-"`
+}
+
+func (r *PaymentRequestVaultItemStateUnionMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Issued Link cards retain encrypted card material for the fill operation. Link
+// cards do not expose aliases or support egress substitution.
+type PaymentRequestVaultItemStateLink struct {
+	Provider constant.Link `json:"provider" default:"link"`
+	// recovery_required means an original provider operation has an unresolved outcome
+	// and the card cannot be used. Reads keep observing a known provider request and
+	// may clear the recovery. To continue, delete this card and create a new one;
+	// deleting cancels the original request when its ID is known and keeps the
+	// recovery evidence. The user may see an approval request for the original card
+	// and should approve only the new one.
+	//
+	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
+	// "declined", "recovery_required".
+	Status       string                                `json:"status" api:"required"`
+	Domains      []string                              `json:"domains"`
+	Masks        PaymentRequestVaultItemStateLinkMasks `json:"masks"`
+	StatusReason string                                `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider     respjson.Field
+		Status       respjson.Field
+		Domains      respjson.Field
+		Masks        respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemStateLink) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemStateLink) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type PaymentRequestVaultItemStateLinkMasks struct {
+	Brand string `json:"brand"`
+	Last4 string `json:"last4"`
+	// Last four digits of the network token presented to the merchant.
+	TokenLast4  string            `json:"token_last4"`
+	ExtraFields map[string]string `json:"" api:"extrafields"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Brand       respjson.Field
+		Last4       respjson.Field
+		TokenLast4  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r PaymentRequestVaultItemStateLinkMasks) RawJSON() string { return r.JSON.raw }
+func (r *PaymentRequestVaultItemStateLinkMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Prepare an unused AgentCard card for a supported checkout. Deliver the returned
 // approval URL and keep the approval page open. Poll the item until
 // ready_to_submit, then submit native Pay before preparation.expires_at. Readiness
@@ -4463,6 +5546,73 @@ type RegisterPasskeyVaultItemOperationRequestType string
 
 const (
 	RegisterPasskeyVaultItemOperationRequestTypeRegisterPasskey RegisterPasskeyVaultItemOperationRequestType = "register_passkey"
+)
+
+// Remove one payment method from a Kernel wallet, only when the wallet advertises
+// remove_payment_method. Removal deletes the stored card and blocks new purchases,
+// fills and confirmations funded by it without affecting the wallet's other
+// payment methods; the wallet stays connected even with no payment methods left. A
+// purchase funded by the method with an unresolved outcome blocks removal with 409
+// purchase_unresolved. If the provider outcome is uncertain the method stays in
+// removal_pending and keeps refusing payments; retry the removal later. Removal is
+// not proof that a payment did not occur. Scoped API keys require vaults:write in
+// addition to vaults:use on this vault; otherwise the operation returns 403.
+//
+// The properties PaymentMethodID, Type are required.
+type RemovePaymentMethodVaultItemOperationRequestParam struct {
+	// ID from the wallet's payment_methods expansion.
+	PaymentMethodID string `json:"payment_method_id" api:"required"`
+	// Any of "remove_payment_method".
+	Type RemovePaymentMethodVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r RemovePaymentMethodVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow RemovePaymentMethodVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *RemovePaymentMethodVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type RemovePaymentMethodVaultItemOperationRequestType string
+
+const (
+	RemovePaymentMethodVaultItemOperationRequestTypeRemovePaymentMethod RemovePaymentMethodVaultItemOperationRequestType = "remove_payment_method"
+)
+
+type RemovePaymentMethodVaultItemOperationResult struct {
+	PaymentMethodID string `json:"payment_method_id" api:"required"`
+	// Any of "removed".
+	Status RemovePaymentMethodVaultItemOperationResultStatus `json:"status" api:"required"`
+	// Any of "remove_payment_method".
+	Type RemovePaymentMethodVaultItemOperationResultType `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		PaymentMethodID respjson.Field
+		Status          respjson.Field
+		Type            respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r RemovePaymentMethodVaultItemOperationResult) RawJSON() string { return r.JSON.raw }
+func (r *RemovePaymentMethodVaultItemOperationResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type RemovePaymentMethodVaultItemOperationResultStatus string
+
+const (
+	RemovePaymentMethodVaultItemOperationResultStatusRemoved RemovePaymentMethodVaultItemOperationResultStatus = "removed"
+)
+
+type RemovePaymentMethodVaultItemOperationResultType string
+
+const (
+	RemovePaymentMethodVaultItemOperationResultTypeRemovePaymentMethod RemovePaymentMethodVaultItemOperationResultType = "remove_payment_method"
 )
 
 // Explicitly prepare a fresh local verification session for the same Kernel Visa
@@ -4657,8 +5807,8 @@ const (
 )
 
 // VaultItemUnion contains all possible properties and values from
-// [VaultItemWallet], [VaultItemCard], [CredentialAccountVaultItem],
-// [CredentialVaultItem].
+// [VaultItemWallet], [VaultItemCard], [PaymentRequestVaultItem],
+// [CredentialAccountVaultItem], [CredentialVaultItem].
 //
 // Use the [VaultItemUnion.AsAny] method to switch on the variant.
 //
@@ -4667,23 +5817,27 @@ type VaultItemUnion struct {
 	ID string `json:"id"`
 	// This field is a union of [[]VaultItemWalletAvailableExpansion],
 	// [[]VaultItemCardAvailableExpansion],
+	// [[]PaymentRequestVaultItemAvailableExpansion],
 	// [[]CredentialAccountVaultItemAvailableExpansion],
 	// [[]CredentialVaultItemAvailableExpansion]
 	AvailableExpansions VaultItemUnionAvailableExpansions `json:"available_expansions"`
 	// This field is a union of [[]VaultItemWalletAvailableOperation],
 	// [[]VaultItemCardAvailableOperation],
+	// [[]PaymentRequestVaultItemAvailableOperation],
 	// [[]CredentialAccountVaultItemAvailableOperation],
 	// [[]CredentialVaultItemAvailableOperation]
 	AvailableOperations VaultItemUnionAvailableOperations `json:"available_operations"`
 	CreatedAt           time.Time                         `json:"created_at"`
 	Key                 string                            `json:"key"`
 	// This field is a union of [WalletVaultItemSpecUnion], [CardVaultItemSpecUnion],
-	// [OnePasswordCredentialAccountSpec], [CredentialVaultItemSpecUnion]
+	// [PaymentRequestVaultItemSpecUnion], [OnePasswordCredentialAccountSpec],
+	// [CredentialVaultItemSpecUnion]
 	Spec VaultItemUnionSpec `json:"spec"`
 	// This field is a union of [WalletVaultItemStateUnion], [CardVaultItemStateUnion],
-	// [OnePasswordCredentialAccountState], [CredentialVaultItemStateUnion]
+	// [PaymentRequestVaultItemStateUnion], [OnePasswordCredentialAccountState],
+	// [CredentialVaultItemStateUnion]
 	State VaultItemUnionState `json:"state"`
-	// Any of "wallet", "card", "credential_account", "credential".
+	// Any of "wallet", "card", "payment_request", "credential_account", "credential".
 	Type      string    `json:"type"`
 	UpdatedAt time.Time `json:"updated_at"`
 	// This field is a union of [VaultItemActionUnion], [OnePasswordOAuthAction],
@@ -4723,6 +5877,7 @@ type anyVaultItem interface {
 
 func (VaultItemWallet) implVaultItemUnion()            {}
 func (VaultItemCard) implVaultItemUnion()              {}
+func (PaymentRequestVaultItem) implVaultItemUnion()    {}
 func (CredentialAccountVaultItem) implVaultItemUnion() {}
 func (CredentialVaultItem) implVaultItemUnion()        {}
 
@@ -4731,6 +5886,7 @@ func (CredentialVaultItem) implVaultItemUnion()        {}
 //	switch variant := VaultItemUnion.AsAny().(type) {
 //	case kernel.VaultItemWallet:
 //	case kernel.VaultItemCard:
+//	case kernel.PaymentRequestVaultItem:
 //	case kernel.CredentialAccountVaultItem:
 //	case kernel.CredentialVaultItem:
 //	default:
@@ -4742,6 +5898,8 @@ func (u VaultItemUnion) AsAny() anyVaultItem {
 		return u.AsWallet()
 	case "card":
 		return u.AsCard()
+	case "payment_request":
+		return u.AsPaymentRequest()
 	case "credential_account":
 		return u.AsCredentialAccount()
 	case "credential":
@@ -4756,6 +5914,11 @@ func (u VaultItemUnion) AsWallet() (v VaultItemWallet) {
 }
 
 func (u VaultItemUnion) AsCard() (v VaultItemCard) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemUnion) AsPaymentRequest() (v PaymentRequestVaultItem) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -4786,7 +5949,7 @@ func (r *VaultItemUnion) UnmarshalJSON(data []byte) error {
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfVaultItemWalletAvailableExpansions
-// OfVaultItemCardAvailableExpansions
+// OfVaultItemCardAvailableExpansions OfPaymentRequestVaultItemAvailableExpansions
 // OfCredentialAccountVaultItemAvailableExpansions
 // OfCredentialVaultItemAvailableExpansions]
 type VaultItemUnionAvailableExpansions struct {
@@ -4797,6 +5960,9 @@ type VaultItemUnionAvailableExpansions struct {
 	// instead of an object.
 	OfVaultItemCardAvailableExpansions []VaultItemCardAvailableExpansion `json:",inline"`
 	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemAvailableExpansion] instead of an object.
+	OfPaymentRequestVaultItemAvailableExpansions []PaymentRequestVaultItemAvailableExpansion `json:",inline"`
+	// This field will be present if the value is a
 	// [[]CredentialAccountVaultItemAvailableExpansion] instead of an object.
 	OfCredentialAccountVaultItemAvailableExpansions []CredentialAccountVaultItemAvailableExpansion `json:",inline"`
 	// This field will be present if the value is a
@@ -4805,6 +5971,7 @@ type VaultItemUnionAvailableExpansions struct {
 	JSON                                     struct {
 		OfVaultItemWalletAvailableExpansions            respjson.Field
 		OfVaultItemCardAvailableExpansions              respjson.Field
+		OfPaymentRequestVaultItemAvailableExpansions    respjson.Field
 		OfCredentialAccountVaultItemAvailableExpansions respjson.Field
 		OfCredentialVaultItemAvailableExpansions        respjson.Field
 		raw                                             string
@@ -4824,7 +5991,7 @@ func (r *VaultItemUnionAvailableExpansions) UnmarshalJSON(data []byte) error {
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfVaultItemWalletAvailableOperations
-// OfVaultItemCardAvailableOperations
+// OfVaultItemCardAvailableOperations OfPaymentRequestVaultItemAvailableOperations
 // OfCredentialAccountVaultItemAvailableOperations
 // OfCredentialVaultItemAvailableOperations]
 type VaultItemUnionAvailableOperations struct {
@@ -4835,6 +6002,9 @@ type VaultItemUnionAvailableOperations struct {
 	// instead of an object.
 	OfVaultItemCardAvailableOperations []VaultItemCardAvailableOperation `json:",inline"`
 	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemAvailableOperation] instead of an object.
+	OfPaymentRequestVaultItemAvailableOperations []PaymentRequestVaultItemAvailableOperation `json:",inline"`
+	// This field will be present if the value is a
 	// [[]CredentialAccountVaultItemAvailableOperation] instead of an object.
 	OfCredentialAccountVaultItemAvailableOperations []CredentialAccountVaultItemAvailableOperation `json:",inline"`
 	// This field will be present if the value is a
@@ -4843,6 +6013,7 @@ type VaultItemUnionAvailableOperations struct {
 	JSON                                     struct {
 		OfVaultItemWalletAvailableOperations            respjson.Field
 		OfVaultItemCardAvailableOperations              respjson.Field
+		OfPaymentRequestVaultItemAvailableOperations    respjson.Field
 		OfCredentialAccountVaultItemAvailableOperations respjson.Field
 		OfCredentialVaultItemAvailableOperations        respjson.Field
 		raw                                             string
@@ -4867,36 +6038,33 @@ type VaultItemUnionSpec struct {
 	// This field is from variant [WalletVaultItemSpecUnion].
 	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
 	// This field is from variant [WalletVaultItemSpecUnion].
-	UserID string `json:"user_id"`
-	Amount int64  `json:"amount"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Context      string `json:"context"`
-	Currency     string `json:"currency"`
-	MerchantName string `json:"merchant_name"`
-	MerchantURL  string `json:"merchant_url"`
-	// This field is from variant [CardVaultItemSpecUnion].
+	UserID          string `json:"user_id"`
+	Amount          int64  `json:"amount"`
+	Context         string `json:"context"`
+	Currency        string `json:"currency"`
+	MerchantName    string `json:"merchant_name"`
+	MerchantURL     string `json:"merchant_url"`
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Metadata map[string]string `json:"metadata"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
+	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
+	// [[]PaymentRequestVaultItemSpecLinkLineItem]
+	LineItems VaultItemUnionSpecLineItems `json:"line_items"`
+	Metadata  string                      `json:"metadata"`
+	// This field is a union of [CardVaultItemSpecLinkRecurring],
+	// [PaymentRequestVaultItemSpecLinkRecurring]
+	Recurring VaultItemUnionSpecRecurring `json:"recurring"`
+	// This field is a union of [[]CardVaultItemSpecLinkTotal],
+	// [[]PaymentRequestVaultItemSpecLinkTotal]
+	Totals VaultItemUnionSpecTotals `json:"totals"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Merchant string `json:"merchant"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
-	CheckoutOrigin string `json:"checkout_origin"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	MerchantCategory string `json:"merchant_category"`
-	// This field is from variant [CardVaultItemSpecUnion].
+	CheckoutOrigin       string `json:"checkout_origin"`
+	MerchantCategory     string `json:"merchant_category"`
 	MerchantCategoryCode string `json:"merchant_category_code"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	MerchantCountry string `json:"merchant_country"`
+	MerchantCountry      string `json:"merchant_country"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -4987,6 +6155,82 @@ func (r *VaultItemUnionSpecAuthorizationClient) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// VaultItemUnionSpecLineItems is an implicit subunion of [VaultItemUnion].
+// VaultItemUnionSpecLineItems provides convenient access to the sub-properties of
+// the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfCardVaultItemSpecLinkLineItems
+// OfPaymentRequestVaultItemSpecLinkLineItems]
+type VaultItemUnionSpecLineItems struct {
+	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
+	// instead of an object.
+	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
+	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemSpecLinkLineItem] instead of an object.
+	OfPaymentRequestVaultItemSpecLinkLineItems []PaymentRequestVaultItemSpecLinkLineItem `json:",inline"`
+	JSON                                       struct {
+		OfCardVaultItemSpecLinkLineItems           respjson.Field
+		OfPaymentRequestVaultItemSpecLinkLineItems respjson.Field
+		raw                                        string
+	} `json:"-"`
+}
+
+func (r *VaultItemUnionSpecLineItems) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemUnionSpecRecurring is an implicit subunion of [VaultItemUnion].
+// VaultItemUnionSpecRecurring provides convenient access to the sub-properties of
+// the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemUnion].
+type VaultItemUnionSpecRecurring struct {
+	Interval      string `json:"interval"`
+	IntervalCount int64  `json:"interval_count"`
+	JSON          struct {
+		Interval      respjson.Field
+		IntervalCount respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (r *VaultItemUnionSpecRecurring) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemUnionSpecTotals is an implicit subunion of [VaultItemUnion].
+// VaultItemUnionSpecTotals provides convenient access to the sub-properties of the
+// union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfCardVaultItemSpecLinkTotals
+// OfPaymentRequestVaultItemSpecLinkTotals]
+type VaultItemUnionSpecTotals struct {
+	// This field will be present if the value is a [[]CardVaultItemSpecLinkTotal]
+	// instead of an object.
+	OfCardVaultItemSpecLinkTotals []CardVaultItemSpecLinkTotal `json:",inline"`
+	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemSpecLinkTotal] instead of an object.
+	OfPaymentRequestVaultItemSpecLinkTotals []PaymentRequestVaultItemSpecLinkTotal `json:",inline"`
+	JSON                                    struct {
+		OfCardVaultItemSpecLinkTotals           respjson.Field
+		OfPaymentRequestVaultItemSpecLinkTotals respjson.Field
+		raw                                     string
+	} `json:"-"`
+}
+
+func (r *VaultItemUnionSpecTotals) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // VaultItemUnionState is an implicit subunion of [VaultItemUnion].
 // VaultItemUnionState provides convenient access to the sub-properties of the
 // union.
@@ -5001,7 +6245,8 @@ type VaultItemUnionState struct {
 	UserID  string   `json:"user_id"`
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
-	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks]
+	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
+	// [PaymentRequestVaultItemStateLinkMasks]
 	Masks VaultItemUnionStateMasks `json:"masks"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Aliases VaultCardAliases `json:"aliases"`
@@ -5009,6 +6254,12 @@ type VaultItemUnionState struct {
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
+	// This field is from variant [CardVaultItemStateUnion],
+	// [PaymentRequestVaultItemStateUnion].
+	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
+	// This field is from variant [CardVaultItemStateUnion],
+	// [PaymentRequestVaultItemStateUnion].
+	PaymentMethodID string `json:"payment_method_id"`
 	// This field is a union of [map[string]CredentialVaultFieldState],
 	// [map[string]ManagedAuthCredentialVaultField]
 	Fields VaultItemUnionStateFields `json:"fields"`
@@ -5026,6 +6277,8 @@ type VaultItemUnionState struct {
 		Aliases         respjson.Field
 		Authorization   respjson.Field
 		Preparation     respjson.Field
+		FundingStatus   respjson.Field
+		PaymentMethodID respjson.Field
 		Fields          respjson.Field
 		AccessRequest   respjson.Field
 		AccessRequestID respjson.Field
@@ -5198,7 +6451,8 @@ type VaultItemWalletAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5315,7 +6569,8 @@ type VaultItemCardAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5604,10 +6859,13 @@ func (r *VaultItemEvent) UnmarshalJSON(data []byte) error {
 
 // VaultItemOperationResponseUnion contains all possible properties and values from
 // [VaultItemOperationResponseWalletVaultItem],
-// [VaultItemOperationResponseCardVaultItem], [CredentialAccountVaultItem],
-// [CredentialVaultItem], [FillVaultItemOperationResult],
-// [PasskeyVaultItemOperationResult], [OnePasswordFillVaultItemOperationResult],
-// [WebmcpInvokeVaultItemOperationResult].
+// [VaultItemOperationResponseCardVaultItem], [PaymentRequestVaultItem],
+// [CredentialAccountVaultItem], [CredentialVaultItem],
+// [FillVaultItemOperationResult], [PasskeyVaultItemOperationResult],
+// [OnePasswordFillVaultItemOperationResult],
+// [WebmcpInvokeVaultItemOperationResult],
+// [AddPaymentMethodVaultItemOperationResult],
+// [RemovePaymentMethodVaultItemOperationResult].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type VaultItemOperationResponseUnion struct {
@@ -5615,22 +6873,26 @@ type VaultItemOperationResponseUnion struct {
 	// This field is a union of
 	// [[]VaultItemOperationResponseWalletVaultItemAvailableExpansion],
 	// [[]VaultItemOperationResponseCardVaultItemAvailableExpansion],
+	// [[]PaymentRequestVaultItemAvailableExpansion],
 	// [[]CredentialAccountVaultItemAvailableExpansion],
 	// [[]CredentialVaultItemAvailableExpansion]
 	AvailableExpansions VaultItemOperationResponseUnionAvailableExpansions `json:"available_expansions"`
 	// This field is a union of
 	// [[]VaultItemOperationResponseWalletVaultItemAvailableOperation],
 	// [[]VaultItemOperationResponseCardVaultItemAvailableOperation],
+	// [[]PaymentRequestVaultItemAvailableOperation],
 	// [[]CredentialAccountVaultItemAvailableOperation],
 	// [[]CredentialVaultItemAvailableOperation]
 	AvailableOperations VaultItemOperationResponseUnionAvailableOperations `json:"available_operations"`
 	CreatedAt           time.Time                                          `json:"created_at"`
 	Key                 string                                             `json:"key"`
 	// This field is a union of [WalletVaultItemSpecUnion], [CardVaultItemSpecUnion],
-	// [OnePasswordCredentialAccountSpec], [CredentialVaultItemSpecUnion]
+	// [PaymentRequestVaultItemSpecUnion], [OnePasswordCredentialAccountSpec],
+	// [CredentialVaultItemSpecUnion]
 	Spec VaultItemOperationResponseUnionSpec `json:"spec"`
 	// This field is a union of [WalletVaultItemStateUnion], [CardVaultItemStateUnion],
-	// [OnePasswordCredentialAccountState], [CredentialVaultItemStateUnion]
+	// [PaymentRequestVaultItemStateUnion], [OnePasswordCredentialAccountState],
+	// [CredentialVaultItemStateUnion]
 	State     VaultItemOperationResponseUnionState `json:"state"`
 	Type      string                               `json:"type"`
 	UpdatedAt time.Time                            `json:"updated_at"`
@@ -5657,7 +6919,11 @@ type VaultItemOperationResponseUnion struct {
 	InvocationID string `json:"invocation_id"`
 	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
 	Output any `json:"output"`
-	JSON   struct {
+	// This field is from variant [AddPaymentMethodVaultItemOperationResult].
+	PaymentMethod VaultPaymentMethod `json:"payment_method"`
+	// This field is from variant [RemovePaymentMethodVaultItemOperationResult].
+	PaymentMethodID string `json:"payment_method_id"`
+	JSON            struct {
 		ID                  respjson.Field
 		AvailableExpansions respjson.Field
 		AvailableOperations respjson.Field
@@ -5679,6 +6945,8 @@ type VaultItemOperationResponseUnion struct {
 		ErrorText           respjson.Field
 		InvocationID        respjson.Field
 		Output              respjson.Field
+		PaymentMethod       respjson.Field
+		PaymentMethodID     respjson.Field
 		raw                 string
 	} `json:"-"`
 }
@@ -5689,6 +6957,11 @@ func (u VaultItemOperationResponseUnion) AsVaultItemOperationResponseWalletVault
 }
 
 func (u VaultItemOperationResponseUnion) AsVaultItemOperationResponseCardVaultItem() (v VaultItemOperationResponseCardVaultItem) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsPaymentRequestVaultItem() (v PaymentRequestVaultItem) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -5723,6 +6996,16 @@ func (u VaultItemOperationResponseUnion) AsWebmcpInvokeVaultItemOperationResult(
 	return
 }
 
+func (u VaultItemOperationResponseUnion) AsAddPaymentMethodVaultItemOperationResult() (v AddPaymentMethodVaultItemOperationResult) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsRemovePaymentMethodVaultItemOperationResult() (v RemovePaymentMethodVaultItemOperationResult) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u VaultItemOperationResponseUnion) RawJSON() string { return u.JSON.raw }
 
@@ -5741,6 +7024,7 @@ func (r *VaultItemOperationResponseUnion) UnmarshalJSON(data []byte) error {
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfVaultItemOperationResponseWalletVaultItemAvailableExpansions
 // OfVaultItemOperationResponseCardVaultItemAvailableExpansions
+// OfPaymentRequestVaultItemAvailableExpansions
 // OfCredentialAccountVaultItemAvailableExpansions
 // OfCredentialVaultItemAvailableExpansions]
 type VaultItemOperationResponseUnionAvailableExpansions struct {
@@ -5753,6 +7037,9 @@ type VaultItemOperationResponseUnionAvailableExpansions struct {
 	// object.
 	OfVaultItemOperationResponseCardVaultItemAvailableExpansions []VaultItemOperationResponseCardVaultItemAvailableExpansion `json:",inline"`
 	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemAvailableExpansion] instead of an object.
+	OfPaymentRequestVaultItemAvailableExpansions []PaymentRequestVaultItemAvailableExpansion `json:",inline"`
+	// This field will be present if the value is a
 	// [[]CredentialAccountVaultItemAvailableExpansion] instead of an object.
 	OfCredentialAccountVaultItemAvailableExpansions []CredentialAccountVaultItemAvailableExpansion `json:",inline"`
 	// This field will be present if the value is a
@@ -5761,6 +7048,7 @@ type VaultItemOperationResponseUnionAvailableExpansions struct {
 	JSON                                     struct {
 		OfVaultItemOperationResponseWalletVaultItemAvailableExpansions respjson.Field
 		OfVaultItemOperationResponseCardVaultItemAvailableExpansions   respjson.Field
+		OfPaymentRequestVaultItemAvailableExpansions                   respjson.Field
 		OfCredentialAccountVaultItemAvailableExpansions                respjson.Field
 		OfCredentialVaultItemAvailableExpansions                       respjson.Field
 		raw                                                            string
@@ -5782,6 +7070,7 @@ func (r *VaultItemOperationResponseUnionAvailableExpansions) UnmarshalJSON(data 
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfVaultItemOperationResponseWalletVaultItemAvailableOperations
 // OfVaultItemOperationResponseCardVaultItemAvailableOperations
+// OfPaymentRequestVaultItemAvailableOperations
 // OfCredentialAccountVaultItemAvailableOperations
 // OfCredentialVaultItemAvailableOperations]
 type VaultItemOperationResponseUnionAvailableOperations struct {
@@ -5794,6 +7083,9 @@ type VaultItemOperationResponseUnionAvailableOperations struct {
 	// object.
 	OfVaultItemOperationResponseCardVaultItemAvailableOperations []VaultItemOperationResponseCardVaultItemAvailableOperation `json:",inline"`
 	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemAvailableOperation] instead of an object.
+	OfPaymentRequestVaultItemAvailableOperations []PaymentRequestVaultItemAvailableOperation `json:",inline"`
+	// This field will be present if the value is a
 	// [[]CredentialAccountVaultItemAvailableOperation] instead of an object.
 	OfCredentialAccountVaultItemAvailableOperations []CredentialAccountVaultItemAvailableOperation `json:",inline"`
 	// This field will be present if the value is a
@@ -5802,6 +7094,7 @@ type VaultItemOperationResponseUnionAvailableOperations struct {
 	JSON                                     struct {
 		OfVaultItemOperationResponseWalletVaultItemAvailableOperations respjson.Field
 		OfVaultItemOperationResponseCardVaultItemAvailableOperations   respjson.Field
+		OfPaymentRequestVaultItemAvailableOperations                   respjson.Field
 		OfCredentialAccountVaultItemAvailableOperations                respjson.Field
 		OfCredentialVaultItemAvailableOperations                       respjson.Field
 		raw                                                            string
@@ -5826,36 +7119,33 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is from variant [WalletVaultItemSpecUnion].
 	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
 	// This field is from variant [WalletVaultItemSpecUnion].
-	UserID string `json:"user_id"`
-	Amount int64  `json:"amount"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Context      string `json:"context"`
-	Currency     string `json:"currency"`
-	MerchantName string `json:"merchant_name"`
-	MerchantURL  string `json:"merchant_url"`
-	// This field is from variant [CardVaultItemSpecUnion].
+	UserID          string `json:"user_id"`
+	Amount          int64  `json:"amount"`
+	Context         string `json:"context"`
+	Currency        string `json:"currency"`
+	MerchantName    string `json:"merchant_name"`
+	MerchantURL     string `json:"merchant_url"`
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Metadata map[string]string `json:"metadata"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
+	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
+	// [[]PaymentRequestVaultItemSpecLinkLineItem]
+	LineItems VaultItemOperationResponseUnionSpecLineItems `json:"line_items"`
+	Metadata  string                                       `json:"metadata"`
+	// This field is a union of [CardVaultItemSpecLinkRecurring],
+	// [PaymentRequestVaultItemSpecLinkRecurring]
+	Recurring VaultItemOperationResponseUnionSpecRecurring `json:"recurring"`
+	// This field is a union of [[]CardVaultItemSpecLinkTotal],
+	// [[]PaymentRequestVaultItemSpecLinkTotal]
+	Totals VaultItemOperationResponseUnionSpecTotals `json:"totals"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Merchant string `json:"merchant"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
-	CheckoutOrigin string `json:"checkout_origin"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	MerchantCategory string `json:"merchant_category"`
-	// This field is from variant [CardVaultItemSpecUnion].
+	CheckoutOrigin       string `json:"checkout_origin"`
+	MerchantCategory     string `json:"merchant_category"`
 	MerchantCategoryCode string `json:"merchant_category_code"`
-	// This field is from variant [CardVaultItemSpecUnion].
-	MerchantCountry string `json:"merchant_country"`
+	MerchantCountry      string `json:"merchant_country"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -5948,6 +7238,82 @@ func (r *VaultItemOperationResponseUnionSpecAuthorizationClient) UnmarshalJSON(d
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// VaultItemOperationResponseUnionSpecLineItems is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionSpecLineItems
+// provides convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfCardVaultItemSpecLinkLineItems
+// OfPaymentRequestVaultItemSpecLinkLineItems]
+type VaultItemOperationResponseUnionSpecLineItems struct {
+	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
+	// instead of an object.
+	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
+	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemSpecLinkLineItem] instead of an object.
+	OfPaymentRequestVaultItemSpecLinkLineItems []PaymentRequestVaultItemSpecLinkLineItem `json:",inline"`
+	JSON                                       struct {
+		OfCardVaultItemSpecLinkLineItems           respjson.Field
+		OfPaymentRequestVaultItemSpecLinkLineItems respjson.Field
+		raw                                        string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionSpecLineItems) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionSpecRecurring is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionSpecRecurring
+// provides convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+type VaultItemOperationResponseUnionSpecRecurring struct {
+	Interval      string `json:"interval"`
+	IntervalCount int64  `json:"interval_count"`
+	JSON          struct {
+		Interval      respjson.Field
+		IntervalCount respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionSpecRecurring) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionSpecTotals is an implicit subunion of
+// [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionSpecTotals
+// provides convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfCardVaultItemSpecLinkTotals
+// OfPaymentRequestVaultItemSpecLinkTotals]
+type VaultItemOperationResponseUnionSpecTotals struct {
+	// This field will be present if the value is a [[]CardVaultItemSpecLinkTotal]
+	// instead of an object.
+	OfCardVaultItemSpecLinkTotals []CardVaultItemSpecLinkTotal `json:",inline"`
+	// This field will be present if the value is a
+	// [[]PaymentRequestVaultItemSpecLinkTotal] instead of an object.
+	OfPaymentRequestVaultItemSpecLinkTotals []PaymentRequestVaultItemSpecLinkTotal `json:",inline"`
+	JSON                                    struct {
+		OfCardVaultItemSpecLinkTotals           respjson.Field
+		OfPaymentRequestVaultItemSpecLinkTotals respjson.Field
+		raw                                     string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionSpecTotals) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // VaultItemOperationResponseUnionState is an implicit subunion of
 // [VaultItemOperationResponseUnion]. VaultItemOperationResponseUnionState provides
 // convenient access to the sub-properties of the union.
@@ -5962,7 +7328,8 @@ type VaultItemOperationResponseUnionState struct {
 	UserID  string   `json:"user_id"`
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
-	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks]
+	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
+	// [PaymentRequestVaultItemStateLinkMasks]
 	Masks VaultItemOperationResponseUnionStateMasks `json:"masks"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Aliases VaultCardAliases `json:"aliases"`
@@ -5970,6 +7337,12 @@ type VaultItemOperationResponseUnionState struct {
 	Authorization AgentcardCheckoutAuthorization `json:"authorization"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
+	// This field is from variant [CardVaultItemStateUnion],
+	// [PaymentRequestVaultItemStateUnion].
+	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
+	// This field is from variant [CardVaultItemStateUnion],
+	// [PaymentRequestVaultItemStateUnion].
+	PaymentMethodID string `json:"payment_method_id"`
 	// This field is a union of [map[string]CredentialVaultFieldState],
 	// [map[string]ManagedAuthCredentialVaultField]
 	Fields VaultItemOperationResponseUnionStateFields `json:"fields"`
@@ -5987,6 +7360,8 @@ type VaultItemOperationResponseUnionState struct {
 		Aliases         respjson.Field
 		Authorization   respjson.Field
 		Preparation     respjson.Field
+		FundingStatus   respjson.Field
+		PaymentMethodID respjson.Field
 		Fields          respjson.Field
 		AccessRequest   respjson.Field
 		AccessRequestID respjson.Field
@@ -6162,7 +7537,8 @@ type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6284,7 +7660,8 @@ type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke".
+	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -6309,11 +7686,29 @@ type VaultPaymentMethod struct {
 	// ineligible; only eligible=false is an explicit negative signal.
 	Capabilities VaultPaymentMethodCapabilities `json:"capabilities" api:"required"`
 	Display      VaultPaymentMethodDisplay      `json:"display" api:"required"`
-	IsDefault    bool                           `json:"is_default" api:"required"`
+	// For Kernel wallets, true for the default card, ID card, which a Kernel card item
+	// that omits payment_method_id selects. Wallets created with payment methods
+	// enabled have no default card.
+	IsDefault bool `json:"is_default" api:"required"`
 	// Provider that issued this payment-method ID.
 	Provider string `json:"provider" api:"required"`
 	// Provider-neutral payment-method type normalized to lowercase.
-	Type string `json:"type" api:"required"`
+	Type   string                   `json:"type" api:"required"`
+	Action VaultPaymentMethodAction `json:"action"`
+	// Expiry of a pending enrollment link.
+	ExpiresAt time.Time `json:"expires_at" format:"date-time"`
+	// Kernel wallets only. pending_enrollment means a card_enrollment link is open;
+	// active means the card is stored and can pay when
+	// capabilities.single_use_card.eligible is true; removal_pending means removal
+	// started but the provider outcome is unknown, so retry remove_payment_method;
+	// recovery_required means either an enrollment outcome is unknown (remove the
+	// method), or the stored card cannot be read (contact support; removal is refused
+	// with 409). Consult status_reason to distinguish these cases. Absent for other
+	// providers.
+	//
+	// Any of "pending_enrollment", "active", "removal_pending", "recovery_required".
+	Status       VaultPaymentMethodStatus `json:"status"`
+	StatusReason string                   `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -6322,6 +7717,10 @@ type VaultPaymentMethod struct {
 		IsDefault    respjson.Field
 		Provider     respjson.Field
 		Type         respjson.Field
+		Action       respjson.Field
+		ExpiresAt    respjson.Field
+		Status       respjson.Field
+		StatusReason respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -6388,6 +7787,47 @@ func (r VaultPaymentMethodDisplay) RawJSON() string { return r.JSON.raw }
 func (r *VaultPaymentMethodDisplay) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type VaultPaymentMethodAction struct {
+	// Any of "card_enrollment".
+	Name string `json:"name" api:"required"`
+	URL  string `json:"url" api:"required" format:"uri"`
+	// Secret bearer capability for embedded card capture with @onkernel/vault-react.
+	// Present only for Kernel wallets; never for AgentCard. Treat it like the
+	// enrollment URL and do not log or persist it in browser storage.
+	CaptureToken string `json:"capture_token"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Name         respjson.Field
+		URL          respjson.Field
+		CaptureToken respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultPaymentMethodAction) RawJSON() string { return r.JSON.raw }
+func (r *VaultPaymentMethodAction) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Kernel wallets only. pending_enrollment means a card_enrollment link is open;
+// active means the card is stored and can pay when
+// capabilities.single_use_card.eligible is true; removal_pending means removal
+// started but the provider outcome is unknown, so retry remove_payment_method;
+// recovery_required means either an enrollment outcome is unknown (remove the
+// method), or the stored card cannot be read (contact support; removal is refused
+// with 409). Consult status_reason to distinguish these cases. Absent for other
+// providers.
+type VaultPaymentMethodStatus string
+
+const (
+	VaultPaymentMethodStatusPendingEnrollment VaultPaymentMethodStatus = "pending_enrollment"
+	VaultPaymentMethodStatusActive            VaultPaymentMethodStatus = "active"
+	VaultPaymentMethodStatusRemovalPending    VaultPaymentMethodStatus = "removal_pending"
+	VaultPaymentMethodStatusRecoveryRequired  VaultPaymentMethodStatus = "recovery_required"
+)
 
 // The properties Field, InputPath are required.
 type VaultWebmcpBindingParam struct {
@@ -6972,6 +8412,8 @@ type VaultItemUpdateParams struct {
 	// This field is a request body variant, only one variant field can be set.
 	OfCardVaultItemUpdateRequest *VaultItemUpdateParamsBodyCardVaultItemUpdateRequest `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
+	OfPaymentRequestVaultItemUpdateRequest *VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest `json:",inline"`
+	// This field is a request body variant, only one variant field can be set.
 	// Atomically update description, field definitions, and selected values. Omitted
 	// properties are preserved. `remove_fields` deletes definitions and their values,
 	// then `add_fields` appends definitions, then `fields` sets values, including for
@@ -6990,7 +8432,7 @@ type VaultItemUpdateParams struct {
 }
 
 func (u VaultItemUpdateParams) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfCardVaultItemUpdateRequest, u.OfCredentialVaultItemUpdateRequest)
+	return param.MarshalUnion(u, u.OfCardVaultItemUpdateRequest, u.OfPaymentRequestVaultItemUpdateRequest, u.OfCredentialVaultItemUpdateRequest)
 }
 func (r *VaultItemUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
@@ -7021,6 +8463,34 @@ func (r *VaultItemUpdateParamsBodyCardVaultItemUpdateRequest) UnmarshalJSON(data
 func init() {
 	apijson.RegisterFieldValidator[VaultItemUpdateParamsBodyCardVaultItemUpdateRequest](
 		"type", "card",
+	)
+}
+
+// The properties Spec, Type are required.
+type VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest struct {
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
+	Spec PaymentRequestVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
+	// Any of "payment_request".
+	Type string `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest) MarshalJSON() (data []byte, err error) {
+	type shadow VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest](
+		"type", "payment_request",
 	)
 }
 
@@ -7203,6 +8673,27 @@ type VaultItemPerformOperationParams struct {
 	// Any item destination restrictions apply to the tool's top-level page and
 	// registering frame (if any).
 	OfWebmcpInvoke *WebmcpInvokeVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Start
+	// hosted enrollment of a card in a connected Kernel wallet, including its first
+	// card, only when the wallet advertises add_payment_method. Returns a new payment
+	// method in pending_enrollment with a single-use card_enrollment URL for the
+	// cardholder. Card details go directly to the card vault and are never accepted by
+	// this API. Each call creates a separate link that expires after 30 minutes; a
+	// failed or expired enrollment does not affect the wallet's other payment methods.
+	// Scoped API keys require vaults:write in addition to vaults:use on this vault;
+	// otherwise the operation returns 403.
+	OfAddPaymentMethod *AddPaymentMethodVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Remove
+	// one payment method from a Kernel wallet, only when the wallet advertises
+	// remove_payment_method. Removal deletes the stored card and blocks new purchases,
+	// fills and confirmations funded by it without affecting the wallet's other
+	// payment methods; the wallet stays connected even with no payment methods left. A
+	// purchase funded by the method with an unresolved outcome blocks removal with 409
+	// purchase_unresolved. If the provider outcome is uncertain the method stays in
+	// removal_pending and keeps refusing payments; retry the removal later. Removal is
+	// not proof that a payment did not occur. Scoped API keys require vaults:write in
+	// addition to vaults:use on this vault; otherwise the operation returns 403.
+	OfRemovePaymentMethod *RemovePaymentMethodVaultItemOperationRequestParam `json:",inline"`
 
 	paramObj
 }
@@ -7222,7 +8713,9 @@ func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 		u.Of1pwFill,
 		u.Of1pwRecover,
 		u.Of1pwUpdateAccessToken,
-		u.OfWebmcpInvoke)
+		u.OfWebmcpInvoke,
+		u.OfAddPaymentMethod,
+		u.OfRemovePaymentMethod)
 }
 func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
@@ -7283,8 +8776,15 @@ type VaultItemUpsertParams struct {
 
 	// This field is a request body variant, only one variant field can be set.
 	OfWallet *VaultItemUpsertParamsBodyWallet `json:",inline"`
-	// This field is a request body variant, only one variant field can be set.
+	// This field is a request body variant, only one variant field can be set. Card
+	// items are supported for Link and Kernel purchases and are required for AgentCard
+	// reusable cards. Where enabled, Link and Kernel purchases can also be created as
+	// payment_request items.
 	OfCard *VaultItemUpsertParamsBodyCard `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Create
+	// one Link or Kernel purchase under its wallet, where payment requests are enabled
+	// for the organization. Kernel requests must select payment_method_id explicitly.
+	OfPaymentRequest *VaultItemUpsertParamsBodyPaymentRequest `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	OfCredentialAccount *CredentialAccountVaultItemRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Ask the
@@ -7294,13 +8794,13 @@ type VaultItemUpsertParams struct {
 	// fails, collect a Kernel-hosted credential item instead. Never automatically
 	// retry an uncertain 1Password request. After an uncertain fill, inspect the page
 	// to see the result of the fill. Do not use credential items for credit card data.
-	// Use wallet and card item types instead. Kernel credentials declare fields and
-	// may enter pending_collection. 1Password credentials either reference a connected
-	// credential_account or store a supplied access token and integration key
-	// encrypted on the item. They store no login values or selectors. Managed auth
-	// credentials reference a managed auth connection in the same project that already
-	// has a saved credential, and read it at fill time; they store no values.
-	// Repeating the original creation request returns the current item without
+	// Use wallet, payment_request and card item types instead. Kernel credentials
+	// declare fields and may enter pending_collection. 1Password credentials either
+	// reference a connected credential_account or store a supplied access token and
+	// integration key encrypted on the item. They store no login values or selectors.
+	// Managed auth credentials reference a managed auth connection in the same project
+	// that already has a saved credential, and read it at fill time; they store no
+	// values. Repeating the original creation request returns the current item without
 	// overwriting later state. A different request at the same key returns 409.
 	OfCredential *CredentialVaultItemRequestParam `json:",inline"`
 
@@ -7308,7 +8808,11 @@ type VaultItemUpsertParams struct {
 }
 
 func (u VaultItemUpsertParams) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfWallet, u.OfCard, u.OfCredentialAccount, u.OfCredential)
+	return param.MarshalUnion(u, u.OfWallet,
+		u.OfCard,
+		u.OfPaymentRequest,
+		u.OfCredentialAccount,
+		u.OfCredential)
 }
 func (r *VaultItemUpsertParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
@@ -7737,6 +9241,10 @@ func (r *VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig) UnmarshalJS
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Card items are supported for Link and Kernel purchases and are required for
+// AgentCard reusable cards. Where enabled, Link and Kernel purchases can also be
+// created as payment_request items.
+//
 // The properties Spec, Type are required.
 type VaultItemUpsertParamsBodyCard struct {
 	// Live Link card request. Test-mode card creation is not supported. The spec can
@@ -7756,5 +9264,31 @@ func (r VaultItemUpsertParamsBodyCard) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *VaultItemUpsertParamsBodyCard) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Create one Link or Kernel purchase under its wallet, where payment requests are
+// enabled for the organization. Kernel requests must select payment_method_id
+// explicitly.
+//
+// The properties Spec, Type are required.
+type VaultItemUpsertParamsBodyPaymentRequest struct {
+	// Live Link card request. Test-mode card creation is not supported. The spec can
+	// be changed with PATCH until the card is authorized at a checkout. Authorize it
+	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
+	// and internally chooses a merchant-bound Link Pay Token when supported or a
+	// virtual card otherwise. Callers never receive or choose how the credential is
+	// delivered.
+	Spec PaymentRequestVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
+	// This field can be elided, and will marshal its zero value as "payment_request".
+	Type constant.PaymentRequest `json:"type" default:"payment_request"`
+	paramObj
+}
+
+func (r VaultItemUpsertParamsBodyPaymentRequest) MarshalJSON() (data []byte, err error) {
+	type shadow VaultItemUpsertParamsBodyPaymentRequest
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultItemUpsertParamsBodyPaymentRequest) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
