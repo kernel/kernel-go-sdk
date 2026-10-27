@@ -137,6 +137,9 @@ type APIKey struct {
 	DeletedAt time.Time `json:"deleted_at" api:"required" format:"date-time"`
 	// When the API key expires
 	ExpiresAt time.Time `json:"expires_at" api:"required" format:"date-time"`
+	// When the API key last authenticated a request, accurate to within about 20
+	// minutes. Null if the key has not been used since last-use tracking began.
+	LastUsedAt time.Time `json:"last_used_at" api:"required" format:"date-time"`
 	// Masked version of the API key
 	MaskedKey string `json:"masked_key" api:"required"`
 	// Label for the API key. API keys are not addressable by name; use the ID or key
@@ -157,6 +160,7 @@ type APIKey struct {
 		CreatedBy   respjson.Field
 		DeletedAt   respjson.Field
 		ExpiresAt   respjson.Field
+		LastUsedAt  respjson.Field
 		MaskedKey   respjson.Field
 		Name        respjson.Field
 		ProjectID   respjson.Field
