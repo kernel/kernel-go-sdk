@@ -120,6 +120,7 @@ type PageStartScreencast string             // Always "Page.startScreencast"
 type PageStopLoading string                 // Always "Page.stopLoading"
 type PageStopScreencast string              // Always "Page.stopScreencast"
 type Parallel string                        // Always "parallel"
+type PaymentRequest string                  // Always "payment_request"
 type Perplexity string                      // Always "perplexity"
 type Pinned string                          // Always "pinned"
 type Platform string                        // Always "platform"
@@ -271,6 +272,7 @@ func (c PageStartScreencast) Default() PageStartScreencast   { return "Page.star
 func (c PageStopLoading) Default() PageStopLoading           { return "Page.stopLoading" }
 func (c PageStopScreencast) Default() PageStopScreencast     { return "Page.stopScreencast" }
 func (c Parallel) Default() Parallel                         { return "parallel" }
+func (c PaymentRequest) Default() PaymentRequest             { return "payment_request" }
 func (c Perplexity) Default() Perplexity                     { return "perplexity" }
 func (c Pinned) Default() Pinned                             { return "pinned" }
 func (c Platform) Default() Platform                         { return "platform" }
@@ -402,6 +404,7 @@ func (c PageStartScreencast) MarshalJSON() ([]byte, error)             { return 
 func (c PageStopLoading) MarshalJSON() ([]byte, error)                 { return marshalString(c) }
 func (c PageStopScreencast) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c Parallel) MarshalJSON() ([]byte, error)                        { return marshalString(c) }
+func (c PaymentRequest) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c Perplexity) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c Pinned) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c Platform) MarshalJSON() ([]byte, error)                        { return marshalString(c) }

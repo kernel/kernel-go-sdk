@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.133.0](https://github.com/kernel/kernel-go-sdk/compare/v0.132.0...v0.133.0) (2026-10-28)
+
+
+### Features
+
+* Add mid-session browser profile saves ([fee4ffa](https://github.com/kernel/kernel-go-sdk/commit/fee4ffa709490af0a8da0a7c64de9860693ff6bf))
+* Forward Idempotency-Key on playwright and REPL execution ([bef52c3](https://github.com/kernel/kernel-go-sdk/commit/bef52c3c4db7104235ce2e1063d949df4dae855f))
+* Select 1Password fill pages by target and return stored-token grants ([542e034](https://github.com/kernel/kernel-go-sdk/commit/542e0342f55c4c6afa991d93368f64f5ed40ccda))
+* Support multiple Kernel wallet payment methods and payment requests ([389f3cb](https://github.com/kernel/kernel-go-sdk/commit/389f3cbc5c2e1be3cd9914d63853fb2714959eda))
+
 ## [0.132.0](https://github.com/kernel/kernel-go-sdk/compare/v0.131.0...v0.132.0) (2026-10-26)
 
 
