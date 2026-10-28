@@ -365,9 +365,10 @@ type APIKeyListParams struct {
 	// Case-insensitive substring match against API key name, creator, and project. API
 	// key identifiers and masked keys match by exact value or prefix.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
-	// Field to sort API keys by.
+	// Field to sort API keys by. Keys with no expiry or no recorded use sort last for
+	// expires_at and last_used_at in either direction.
 	//
-	// Any of "created_at", "name", "expires_at".
+	// Any of "created_at", "name", "expires_at", "last_used_at".
 	SortBy APIKeyListParamsSortBy `query:"sort_by,omitzero" json:"-"`
 	// Sort direction for API keys.
 	//
@@ -390,13 +391,15 @@ func (r APIKeyListParams) URLQuery() (v url.Values, err error) {
 	})
 }
 
-// Field to sort API keys by.
+// Field to sort API keys by. Keys with no expiry or no recorded use sort last for
+// expires_at and last_used_at in either direction.
 type APIKeyListParamsSortBy string
 
 const (
-	APIKeyListParamsSortByCreatedAt APIKeyListParamsSortBy = "created_at"
-	APIKeyListParamsSortByName      APIKeyListParamsSortBy = "name"
-	APIKeyListParamsSortByExpiresAt APIKeyListParamsSortBy = "expires_at"
+	APIKeyListParamsSortByCreatedAt  APIKeyListParamsSortBy = "created_at"
+	APIKeyListParamsSortByName       APIKeyListParamsSortBy = "name"
+	APIKeyListParamsSortByExpiresAt  APIKeyListParamsSortBy = "expires_at"
+	APIKeyListParamsSortByLastUsedAt APIKeyListParamsSortBy = "last_used_at"
 )
 
 // Sort direction for API keys.
