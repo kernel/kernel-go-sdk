@@ -501,15 +501,16 @@ const (
 // Authorize a Link, Kernel or Shop Pay card using its existing purchase
 // specification. Use only after explicit user approval and when the item
 // advertises authorize; follow the advertised operation's description. For a Link
-// card, pass browser_id and page_url together while the browser is on the final
-// checkout page: Kernel inspects that checkout, chooses how the credential is
-// delivered, and limits fill to that checkout's origin in any browser with this
-// vault attached. Omitting both issues a virtual card that fills any page on the
+// or Shop Pay card, pass browser_id and page_url together while the browser is on
+// the final checkout page: Kernel confirms that checkout is open, sends it to the
+// provider as the merchant, and limits fill to that checkout's origin in any
+// browser with this vault attached. For Link it also chooses how the credential is
+// delivered. Omitting both issues a virtual card that fills any page on the
 // merchant origin. Once approval has been requested, browser_id and page_url are
 // ignored and authorize only re-checks the request. Browser and checkout
 // inspection errors occur before any provider request and can be retried once the
-// browser is on the checkout page. Kernel and Shop Pay cards do not accept
-// browser_id or page_url.
+// browser is on the checkout page. Kernel cards do not accept browser_id or
+// page_url.
 //
 // The property Type is required.
 type AuthorizeVaultItemOperationRequestParam struct {
@@ -1683,6 +1684,17 @@ type ConfirmTransactionVaultItemOperationRequestParam struct {
 	TransactionType ConfirmTransactionVaultItemOperationRequestTransactionType `json:"transaction_type,omitzero" api:"required"`
 	// Any of "confirm_transaction".
 	Type ConfirmTransactionVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Why the purchase did not succeed, for any other outcome, such as 3ds_challenge,
+	// captcha, login_required, timeout or site_error. payment_declined goes only with
+	// DECLINED, which takes no other code. Shop Pay reports it; other providers ignore
+	// it.
+	FailureCode param.Opt[string] `json:"failure_code,omitzero"`
+	// The merchant's order number, for an APPROVED outcome. Shop Pay reports it; other
+	// providers ignore it.
+	OrderID param.Opt[string] `json:"order_id,omitzero"`
+	// The merchant's https order page, for an APPROVED outcome. Shop Pay reports it;
+	// other providers ignore it.
+	OrderURL param.Opt[string] `json:"order_url,omitzero" format:"uri"`
 	paramObj
 }
 
@@ -5871,7 +5883,9 @@ const (
 type ShopPayCardState struct {
 	// Any of "shop_pay".
 	Provider ShopPayCardStateProvider `json:"provider" api:"required"`
-	// declined covers a request the shopper declined or that was cancelled.
+	// declined covers a request the shopper declined or that was cancelled. consumed
+	// means the transaction outcome was reported with confirm_transaction; the card is
+	// no longer stored and cannot be filled again, whatever the outcome.
 	// recovery_required means a provider operation has an unresolved outcome and the
 	// card cannot be used. When status_reason says the provider refused retrieval
 	// before acceptance, no card was issued and a later read retries. Otherwise follow
@@ -5910,7 +5924,9 @@ const (
 	ShopPayCardStateProviderShopPay ShopPayCardStateProvider = "shop_pay"
 )
 
-// declined covers a request the shopper declined or that was cancelled.
+// declined covers a request the shopper declined or that was cancelled. consumed
+// means the transaction outcome was reported with confirm_transaction; the card is
+// no longer stored and cannot be filled again, whatever the outcome.
 // recovery_required means a provider operation has an unresolved outcome and the
 // card cannot be used. When status_reason says the provider refused retrieval
 // before acceptance, no card was issued and a later read retries. Otherwise follow
@@ -5954,16 +5970,18 @@ func (r *ShopPayCardStateMasks) UnmarshalJSON(data []byte) error {
 
 // Shop Pay purchase. amount is the limit the shopper approves; totals must include
 // exactly one positive total no higher than it. context is shown to the shopper
-// when they approve. Authorize without checkout context: authorize returns an
-// approval action for the shopper, who approves the purchase in Shop. Share its
-// URL unchanged when present. Once approved, the card becomes ready and fills
-// checkouts on the merchant_url origin. Report the merchant outcome with
-// confirm_transaction.
+// when they approve. Authorize it with the browser at final checkout: Kernel sends
+// that page to Shop as the merchant and the card fills only on its origin. Without
+// browser_id and page_url it authorizes for merchant_url. authorize returns an
+// approval action for the shopper, who approves the purchase in Shop; share its
+// URL unchanged when present. Report the merchant outcome with
+// confirm_transaction, which ends the card.
 type ShopPayCardVaultItemSpec struct {
-	// Approval limit in minor currency units.
+	// Approval limit in minor currency units, at most 1000000.
 	Amount int64 `json:"amount" api:"required"`
 	// What is being bought and why, written for the shopper.
-	Context      string `json:"context" api:"required"`
+	Context string `json:"context" api:"required"`
+	// Shop accepts USD spend requests only.
 	Currency     string `json:"currency" api:"required"`
 	MerchantName string `json:"merchant_name" api:"required"`
 	// The merchant's https URL.
@@ -6062,19 +6080,21 @@ func (r *ShopPayCardVaultItemSpecLineItem) UnmarshalJSON(data []byte) error {
 
 // Shop Pay purchase. amount is the limit the shopper approves; totals must include
 // exactly one positive total no higher than it. context is shown to the shopper
-// when they approve. Authorize without checkout context: authorize returns an
-// approval action for the shopper, who approves the purchase in Shop. Share its
-// URL unchanged when present. Once approved, the card becomes ready and fills
-// checkouts on the merchant_url origin. Report the merchant outcome with
-// confirm_transaction.
+// when they approve. Authorize it with the browser at final checkout: Kernel sends
+// that page to Shop as the merchant and the card fills only on its origin. Without
+// browser_id and page_url it authorizes for merchant_url. authorize returns an
+// approval action for the shopper, who approves the purchase in Shop; share its
+// URL unchanged when present. Report the merchant outcome with
+// confirm_transaction, which ends the card.
 //
 // The properties Amount, Context, Currency, MerchantName, MerchantURL, Provider,
 // Totals, Wallet are required.
 type ShopPayCardVaultItemSpecParam struct {
-	// Approval limit in minor currency units.
+	// Approval limit in minor currency units, at most 1000000.
 	Amount int64 `json:"amount" api:"required"`
 	// What is being bought and why, written for the shopper.
-	Context      string `json:"context" api:"required"`
+	Context string `json:"context" api:"required"`
+	// Shop accepts USD spend requests only.
 	Currency     string `json:"currency" api:"required"`
 	MerchantName string `json:"merchant_name" api:"required"`
 	// The merchant's https URL.
@@ -9306,15 +9326,16 @@ type VaultItemPerformOperationParams struct {
 	// Authorize a Link, Kernel or Shop Pay card using its existing purchase
 	// specification. Use only after explicit user approval and when the item
 	// advertises authorize; follow the advertised operation's description. For a Link
-	// card, pass browser_id and page_url together while the browser is on the final
-	// checkout page: Kernel inspects that checkout, chooses how the credential is
-	// delivered, and limits fill to that checkout's origin in any browser with this
-	// vault attached. Omitting both issues a virtual card that fills any page on the
+	// or Shop Pay card, pass browser_id and page_url together while the browser is on
+	// the final checkout page: Kernel confirms that checkout is open, sends it to the
+	// provider as the merchant, and limits fill to that checkout's origin in any
+	// browser with this vault attached. For Link it also chooses how the credential is
+	// delivered. Omitting both issues a virtual card that fills any page on the
 	// merchant origin. Once approval has been requested, browser_id and page_url are
 	// ignored and authorize only re-checks the request. Browser and checkout
 	// inspection errors occur before any provider request and can be retried once the
-	// browser is on the checkout page. Kernel and Shop Pay cards do not accept
-	// browser_id or page_url.
+	// browser is on the checkout page. Kernel cards do not accept browser_id or
+	// page_url.
 	OfAuthorize *AuthorizeVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	// Explicitly prepare a fresh local verification session for the same Kernel Visa
