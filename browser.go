@@ -194,6 +194,45 @@ func (r *BrowserService) Repl(ctx context.Context, idOrName string, body Browser
 	return res, err
 }
 
+// Saves the running browser's current user-data state to an existing or new
+// profile without ending the browser session.
+//
+// Saving restarts the browser. Active CDP and WebDriver connections are closed and
+// must reconnect, and WebDriver clients must create a new session. Open tabs are
+// restored, but pages reload and in-memory page state is lost. The browser is
+// stopped only while its user data is copied; this request returns once the
+// restarted browser accepts CDP connections again and the profile has been
+// uploaded. Caches, Service Worker storage and Google Drive IndexedDB data are
+// left out of the saved profile but kept in the running browser.
+//
+// This does not attach the destination profile to the browser or change its
+// save_changes setting. Active browsers that already loaded the destination
+// profile keep their in-memory state. Pools with refresh_on_profile_update enabled
+// flush idle sessions and replenish them from the new snapshot; other browsers
+// receive it the next time they load the profile. When saves made with this
+// endpoint to the same profile overlap, the save that started most recently wins,
+// even if an earlier one finishes later. The automatic save at the end of a
+// session whose profile has save_changes enabled is ordered against these saves by
+// when each finishes.
+//
+// A successful save restarts the browser's inactivity timeout (timeout_seconds). A
+// failed save leaves it unchanged.
+//
+// Returns 409 when the browser is no longer active, when a pooled browser was
+// released or reacquired after the request was made (browser_lease_changed), or
+// when the browser is briefly unable to accept a save (browser_busy), in which
+// case the request can be retried.
+func (r *BrowserService) SaveProfile(ctx context.Context, idOrName string, body BrowserSaveProfileParams, opts ...option.RequestOption) (res *Profile, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if idOrName == "" {
+		err = errors.New("missing required id_or_name parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("browsers/%s/profiles", idOrName)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 type BrowserAllowlistState struct {
 	// Opaque revision to pass as network.expected_allowlist_revision on an update.
 	Revision string `json:"revision" api:"required"`
@@ -1049,6 +1088,25 @@ type Profile struct {
 // Returns the unmodified JSON received from the API
 func (r Profile) RawJSON() string { return r.JSON.raw }
 func (r *Profile) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Destination profile for a snapshot of the running browser. Provide either id or
+// name. An id must identify an existing profile. A name overwrites the matching
+// profile in the browser's project, or creates it when no matching profile exists.
+type SaveProfileRequestParam struct {
+	// Existing profile ID to overwrite.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Profile name to overwrite or create.
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r SaveProfileRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow SaveProfileRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SaveProfileRequestParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2360,5 +2418,20 @@ func (r BrowserReplParams) MarshalJSON() (data []byte, err error) {
 	return shimjson.Marshal(r.BrowserReplRequest)
 }
 func (r *BrowserReplParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BrowserSaveProfileParams struct {
+	// Destination profile for a snapshot of the running browser. Provide either id or
+	// name. An id must identify an existing profile. A name overwrites the matching
+	// profile in the browser's project, or creates it when no matching profile exists.
+	SaveProfileRequest SaveProfileRequestParam
+	paramObj
+}
+
+func (r BrowserSaveProfileParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.SaveProfileRequest)
+}
+func (r *BrowserSaveProfileParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
