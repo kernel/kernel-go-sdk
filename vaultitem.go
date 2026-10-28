@@ -4218,8 +4218,9 @@ type OnePasswordCredentialVaultItemState struct {
 	Provider OnePasswordCredentialVaultItemStateProvider `json:"provider" api:"required"`
 	// Any of "pending_authorization", "ready", "declined", "failed".
 	Status OnePasswordCredentialVaultItemStateStatus `json:"status" api:"required"`
-	// Non-secret broker state. Granted credential references stay encrypted
-	// server-side and can only be used by the fill operation.
+	// Non-secret broker state. Granted credential references are returned in resolved
+	// only for credentials with a customer-supplied access token; otherwise they stay
+	// encrypted server-side and can only be used by the fill operation.
 	AccessRequest OnePasswordCredentialVaultItemStateAccessRequest `json:"access_request"`
 	// Opaque request ID returned by the 1Password broker after a successful
 	// createAccessRequest call.
@@ -4258,8 +4259,9 @@ const (
 	OnePasswordCredentialVaultItemStateStatusFailed               OnePasswordCredentialVaultItemStateStatus = "failed"
 )
 
-// Non-secret broker state. Granted credential references stay encrypted
-// server-side and can only be used by the fill operation.
+// Non-secret broker state. Granted credential references are returned in resolved
+// only for credentials with a customer-supplied access token; otherwise they stay
+// encrypted server-side and can only be used by the fill operation.
 type OnePasswordCredentialVaultItemStateAccessRequest struct {
 	ID               string `json:"id" api:"required"`
 	HasAutofillToken bool   `json:"has_autofill_token" api:"required"`
@@ -4280,6 +4282,11 @@ type OnePasswordCredentialVaultItemStateAccessRequest struct {
 	// The request object if returned by the extension. The observed create response
 	// may omit entries; no entry IDs are invented.
 	Request OnePasswordCredentialVaultItemStateAccessRequestRequest `json:"request"`
+	// Granted logins in the shape 1Password's getAccessRequestStatus returns. Present
+	// only for ready credentials with a customer-supplied access token, on single-item
+	// responses to callers that can use the vault. Each reference works only with that
+	// credential's access token and integration key.
+	Resolved []OnePasswordCredentialVaultItemStateAccessRequestResolved `json:"resolved"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
@@ -4292,6 +4299,7 @@ type OnePasswordCredentialVaultItemStateAccessRequest struct {
 		Identity         respjson.Field
 		Path             respjson.Field
 		Request          respjson.Field
+		Resolved         respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
 	} `json:"-"`
@@ -4411,24 +4419,50 @@ func (r *OnePasswordCredentialVaultItemStateAccessRequestRequestEntryParameters)
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type OnePasswordCredentialVaultItemStateAccessRequestResolved struct {
+	// 1Password credential reference. Pass it unchanged as resourcePath to the
+	// extension's fillCredential or to the 1Password SDK.
+	Reference string `json:"reference" api:"required"`
+	// The requested entry this login satisfies, when known.
+	EntryID string `json:"entryId"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Reference   respjson.Field
+		EntryID     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OnePasswordCredentialVaultItemStateAccessRequestResolved) RawJSON() string { return r.JSON.raw }
+func (r *OnePasswordCredentialVaultItemStateAccessRequestResolved) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Fill and submit an approved 1Password login in the selected browser page. The
 // page must share the selected entry's login origin. Supply entry_id when more
-// than one approved entry matches the page origin. The extension selects fields;
-// callers cannot supply selectors or secret values. Submission does not confirm
-// website authentication.
+// than one approved entry matches the page origin, and target_id when more than
+// one open page has page_url. The extension selects fields; callers cannot supply
+// selectors or secret values. Submission does not confirm website authentication.
 //
 // The properties BrowserID, PageURL, Type are required.
 type OnePasswordFillVaultItemOperationRequestParam struct {
 	// Browser session ID, not a reusable browser name.
 	BrowserID string `json:"browser_id" api:"required"`
 	// Exact current top-level page URL. Must match exactly one open page in the
-	// browser.
+	// browser unless target_id is supplied.
 	PageURL string `json:"page_url" api:"required" format:"uri"`
 	// Any of "1pw_fill".
 	Type OnePasswordFillVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
 	// ID of an approved request entry. Required when several approved entries have the
 	// page's origin.
-	EntryID   param.Opt[string] `json:"entry_id,omitzero"`
+	EntryID param.Opt[string] `json:"entry_id,omitzero"`
+	// CDP target ID of the page to fill, such as tab.target_id from
+	// playwright.execute. Use it when several open pages have page_url. The page's
+	// current URL must equal page_url. Kernel brings the page to the front of its
+	// window before filling.
+	TargetID  param.Opt[string] `json:"target_id,omitzero"`
 	TimeoutMs param.Opt[int64]  `json:"timeout_ms,omitzero"`
 	paramObj
 }
@@ -8643,15 +8677,16 @@ type VaultItemPerformOperationParams struct {
 	// Retrieve the status of a 1Password access request after presenting the approval
 	// link. On a confirmed failed status, ask the end-user before deleting and
 	// recreating the credential item for at most one new request. Do not retry an
-	// uncertain dispatched request. The response remains non-secret; approved
-	// references are retained only for fill.
+	// uncertain dispatched request. The response contains no secret values.
+	// Credentials with a customer-supplied access token also return the granted
+	// references in state.access_request.resolved.
 	Of1pwAccessRequestStatus *VaultItemPerformOperationParamsBody1pwAccessRequestStatus `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Fill
 	// and submit an approved 1Password login in the selected browser page. The page
 	// must share the selected entry's login origin. Supply entry_id when more than one
-	// approved entry matches the page origin. The extension selects fields; callers
-	// cannot supply selectors or secret values. Submission does not confirm website
-	// authentication.
+	// approved entry matches the page origin, and target_id when more than one open
+	// page has page_url. The extension selects fields; callers cannot supply selectors
+	// or secret values. Submission does not confirm website authentication.
 	Of1pwFill *OnePasswordFillVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Kernel
 	// encountered a recoverable error while linking this 1Password account. Use this
@@ -8724,8 +8759,9 @@ func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 // Retrieve the status of a 1Password access request after presenting the approval
 // link. On a confirmed failed status, ask the end-user before deleting and
 // recreating the credential item for at most one new request. Do not retry an
-// uncertain dispatched request. The response remains non-secret; approved
-// references are retained only for fill.
+// uncertain dispatched request. The response contains no secret values.
+// Credentials with a customer-supplied access token also return the granted
+// references in state.access_request.resolved.
 //
 // The property Type is required.
 type VaultItemPerformOperationParamsBody1pwAccessRequestStatus struct {
