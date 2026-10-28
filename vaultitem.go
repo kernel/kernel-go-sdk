@@ -2398,6 +2398,14 @@ func (u CredentialVaultItemSpecInputUnionParam) GetFields() []CredentialVaultFie
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u CredentialVaultItemSpecInputUnionParam) GetAccessRequestID() *string {
+	if vt := u.Of1password; vt != nil && vt.AccessRequestID.Valid() {
+		return &vt.AccessRequestID.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u CredentialVaultItemSpecInputUnionParam) GetAccessToken() *string {
 	if vt := u.Of1password; vt != nil && vt.AccessToken.Valid() {
 		return &vt.AccessToken.Value
@@ -2433,6 +2441,14 @@ func (u CredentialVaultItemSpecInputUnionParam) GetIntegrationKey() *string {
 func (u CredentialVaultItemSpecInputUnionParam) GetRequests() *OnePasswordCredentialVaultItemSpecInputRequestsParam {
 	if vt := u.Of1password; vt != nil {
 		return &vt.Requests
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CredentialVaultItemSpecInputUnionParam) GetResolved() []OnePasswordCredentialVaultItemSpecInputResolvedParam {
+	if vt := u.Of1password; vt != nil {
+		return vt.Resolved
 	}
 	return nil
 }
@@ -4075,13 +4091,17 @@ func (r *OnePasswordCredentialVaultItemSpecRequests) UnmarshalJSON(data []byte) 
 type OnePasswordCredentialVaultItemSpecRequestsEntry struct {
 	Parameters OnePasswordCredentialVaultItemSpecRequestsEntryParameters `json:"parameters" api:"required"`
 	// Must be login.
-	Type     string   `json:"type" api:"required"`
+	Type string `json:"type" api:"required"`
+	// 1Password's ID for this entry in an access request you created. Supply it only
+	// with resolved.
+	ID       string   `json:"id"`
 	Keywords []string `json:"keywords"`
 	Reason   string   `json:"reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Parameters  respjson.Field
 		Type        respjson.Field
+		ID          respjson.Field
 		Keywords    respjson.Field
 		Reason      respjson.Field
 		ExtraFields map[string]respjson.Field
@@ -4117,12 +4137,18 @@ func (r *OnePasswordCredentialVaultItemSpecRequestsEntryParameters) UnmarshalJSO
 // customer-supplied access token and matching integration key. Supply either
 // account or both secrets, never both. Supplied secrets are write-only and never
 // returned. Supply requests for new items; website remains supported for existing
-// account-backed callers.
+// account-backed callers. To use an access request you already created and the
+// user approved with the same access token and integration key, also supply
+// access_request_id, resolved, and each requests entry's id; the item is created
+// ready and Kernel doesn't create an access request.
 //
 // The property Provider is required.
 type OnePasswordCredentialVaultItemSpecInputParam struct {
 	// Any of "1password".
 	Provider OnePasswordCredentialVaultItemSpecInputProvider `json:"provider,omitzero" api:"required"`
+	// ID of an approved access request you created with this access_token and
+	// integration_key. Requires resolved.
+	AccessRequestID param.Opt[string] `json:"access_request_id,omitzero"`
 	// Customer-supplied 1Password broker token. Requires integration_key; stored
 	// encrypted on this item. Omit if providing a connected credential_account item
 	// via the account field.
@@ -4144,6 +4170,11 @@ type OnePasswordCredentialVaultItemSpecInputParam struct {
 	// Credential Request v2 input sent to the extension. A credential item may request
 	// up to five login entries.
 	Requests OnePasswordCredentialVaultItemSpecInputRequestsParam `json:"requests,omitzero"`
+	// Granted logins from 1Password's status for access_request_id, as returned by the
+	// 1Password SDK or extension. Requires access_request_id and an id on every
+	// requests entry. entryId may be omitted only when requests has one entry. Kernel
+	// doesn't verify the references; 1Password checks them when filling.
+	Resolved []OnePasswordCredentialVaultItemSpecInputResolvedParam `json:"resolved,omitzero"`
 	paramObj
 }
 
@@ -4185,7 +4216,10 @@ func (r *OnePasswordCredentialVaultItemSpecInputRequestsParam) UnmarshalJSON(dat
 type OnePasswordCredentialVaultItemSpecInputRequestsEntryParam struct {
 	Parameters OnePasswordCredentialVaultItemSpecInputRequestsEntryParametersParam `json:"parameters,omitzero" api:"required"`
 	// Must be login.
-	Type     string            `json:"type" api:"required"`
+	Type string `json:"type" api:"required"`
+	// 1Password's ID for this entry in an access request you created. Supply it only
+	// with resolved.
+	ID       param.Opt[string] `json:"id,omitzero"`
 	Reason   param.Opt[string] `json:"reason,omitzero"`
 	Keywords []string          `json:"keywords,omitzero"`
 	paramObj
@@ -4210,6 +4244,24 @@ func (r OnePasswordCredentialVaultItemSpecInputRequestsEntryParametersParam) Mar
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *OnePasswordCredentialVaultItemSpecInputRequestsEntryParametersParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The property Reference is required.
+type OnePasswordCredentialVaultItemSpecInputResolvedParam struct {
+	// 1Password credential reference. Pass it unchanged as resourcePath to the
+	// extension's fillCredential or to the 1Password SDK.
+	Reference string `json:"reference" api:"required"`
+	// The requested entry this login satisfies, when known.
+	EntryID param.Opt[string] `json:"entryId,omitzero"`
+	paramObj
+}
+
+func (r OnePasswordCredentialVaultItemSpecInputResolvedParam) MarshalJSON() (data []byte, err error) {
+	type shadow OnePasswordCredentialVaultItemSpecInputResolvedParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *OnePasswordCredentialVaultItemSpecInputResolvedParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
