@@ -6083,7 +6083,7 @@ type VaultItemUnionSpec struct {
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
 	// [[]PaymentRequestVaultItemSpecLinkLineItem]
 	LineItems VaultItemUnionSpecLineItems `json:"line_items"`
-	Metadata  string                      `json:"metadata"`
+	Metadata  map[string]string           `json:"metadata"`
 	// This field is a union of [CardVaultItemSpecLinkRecurring],
 	// [PaymentRequestVaultItemSpecLinkRecurring]
 	Recurring VaultItemUnionSpecRecurring `json:"recurring"`
@@ -7164,7 +7164,7 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
 	// [[]PaymentRequestVaultItemSpecLinkLineItem]
 	LineItems VaultItemOperationResponseUnionSpecLineItems `json:"line_items"`
-	Metadata  string                                       `json:"metadata"`
+	Metadata  map[string]string                            `json:"metadata"`
 	// This field is a union of [CardVaultItemSpecLinkRecurring],
 	// [PaymentRequestVaultItemSpecLinkRecurring]
 	Recurring VaultItemOperationResponseUnionSpecRecurring `json:"recurring"`
