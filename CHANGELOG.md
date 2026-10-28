@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.135.0](https://github.com/kernel/kernel-go-sdk/compare/v0.134.0...v0.135.0) (2026-10-28)
+
+
+### Features
+
+* chore(stlc): seal custom-code tracking files ([727d123](https://github.com/kernel/kernel-go-sdk/commit/727d1230cc94078c5e8ac5d618b7323ee4bc3884))
+
 ## [0.134.0](https://github.com/kernel/kernel-go-sdk/compare/v0.133.0...v0.134.0) (2026-10-28)
 
 
