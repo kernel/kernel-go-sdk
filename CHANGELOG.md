@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.134.0](https://github.com/kernel/kernel-go-sdk/compare/v0.133.0...v0.134.0) (2026-10-28)
+
+
+### Features
+
+* api: sort API keys by last_used_at ([25f068f](https://github.com/kernel/kernel-go-sdk/commit/25f068fcafd35b28b33825e88348577238466788))
+
 ## [0.133.0](https://github.com/kernel/kernel-go-sdk/compare/v0.132.0...v0.133.0) (2026-10-28)
 
 
