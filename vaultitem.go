@@ -110,13 +110,13 @@ func (r *VaultItemService) List(ctx context.Context, idOrName string, opts ...op
 // Unresolved payment operations normally block deletion, including operations on
 // child cards of a wallet. Deleting a connected Kernel wallet first blocks new
 // payments on it, then removes its enrolled card. If that fails, the wallet is
-// kept and keeps refusing payments; retry the deletion. A Link or Kernel card in
-// recovery_required for issuance, or an AgentCard card in recovery_required whose
-// checkout create response returned no authorization ID, may be explicitly
-// abandoned by deleting that card directly; deleting its wallet or vault remains
-// blocked until the card is deleted. Deleting or recreating an item is not proof
-// that a payment did not occur. Deleting a managed auth credential item leaves the
-// connection and its saved credential unchanged.
+// kept and keeps refusing payments; retry the deletion. A Link, Kernel or Shop Pay
+// card in recovery_required for issuance, or an AgentCard card in
+// recovery_required whose checkout create response returned no authorization ID,
+// may be explicitly abandoned by deleting that card directly; deleting its wallet
+// or vault remains blocked until the card is deleted. Deleting or recreating an
+// item is not proof that a payment did not occur. Deleting a managed auth
+// credential item leaves the connection and its saved credential unchanged.
 func (r *VaultItemService) Delete(ctx context.Context, key string, body VaultItemDeleteParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -498,17 +498,18 @@ const (
 	ArmPasskeyVaultItemOperationRequestTypeArmPasskey ArmPasskeyVaultItemOperationRequestType = "arm_passkey"
 )
 
-// Authorize a Link or Kernel card using its existing purchase specification. Use
-// only after explicit user approval and when the item advertises authorize; follow
-// the advertised operation's description. For a Link card, pass browser_id and
-// page_url together while the browser is on the final checkout page: Kernel
-// inspects that checkout, chooses how the credential is delivered, and limits fill
-// to that checkout's origin in any browser with this vault attached. Omitting both
-// issues a virtual card that fills any page on the merchant origin. Once approval
-// has been requested, browser_id and page_url are ignored and authorize only
-// re-checks the request. Browser and checkout inspection errors occur before any
-// provider request and can be retried once the browser is on the checkout page.
-// Kernel cards do not accept browser_id or page_url.
+// Authorize a Link, Kernel or Shop Pay card using its existing purchase
+// specification. Use only after explicit user approval and when the item
+// advertises authorize; follow the advertised operation's description. For a Link
+// card, pass browser_id and page_url together while the browser is on the final
+// checkout page: Kernel inspects that checkout, chooses how the credential is
+// delivered, and limits fill to that checkout's origin in any browser with this
+// vault attached. Omitting both issues a virtual card that fills any page on the
+// merchant origin. Once approval has been requested, browser_id and page_url are
+// ignored and authorize only re-checks the request. Browser and checkout
+// inspection errors occur before any provider request and can be retried once the
+// browser is on the checkout page. Kernel and Shop Pay cards do not accept
+// browser_id or page_url.
 //
 // The property Type is required.
 type AuthorizeVaultItemOperationRequestParam struct {
@@ -538,30 +539,31 @@ const (
 
 // CardVaultItemSpecUnion contains all possible properties and values from
 // [CardVaultItemSpecLink], [CardVaultItemSpecAgentcard],
-// [KernelCardVaultItemSpec].
+// [KernelCardVaultItemSpec], [ShopPayCardVaultItemSpec].
 //
 // Use the [CardVaultItemSpecUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type CardVaultItemSpecUnion struct {
-	Amount int64 `json:"amount"`
-	// This field is from variant [CardVaultItemSpecLink].
+	Amount          int64  `json:"amount"`
 	Context         string `json:"context"`
 	Currency        string `json:"currency"`
 	MerchantName    string `json:"merchant_name"`
 	MerchantURL     string `json:"merchant_url"`
 	PaymentMethodID string `json:"payment_method_id"`
-	// Any of "link", "agentcard", "kernel".
+	// Any of "link", "agentcard", "kernel", "shop_pay".
 	Provider string `json:"provider"`
 	Wallet   string `json:"wallet"`
-	// This field is from variant [CardVaultItemSpecLink].
-	LineItems []CardVaultItemSpecLinkLineItem `json:"line_items"`
+	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
+	// [[]ShopPayCardVaultItemSpecLineItem]
+	LineItems CardVaultItemSpecUnionLineItems `json:"line_items"`
 	// This field is from variant [CardVaultItemSpecLink].
 	Metadata map[string]string `json:"metadata"`
 	// This field is from variant [CardVaultItemSpecLink].
 	Recurring CardVaultItemSpecLinkRecurring `json:"recurring"`
-	// This field is from variant [CardVaultItemSpecLink].
-	Totals []CardVaultItemSpecLinkTotal `json:"totals"`
+	// This field is a union of [[]CardVaultItemSpecLinkTotal],
+	// [[]ShopPayCardVaultItemSpecTotal]
+	Totals CardVaultItemSpecUnionTotals `json:"totals"`
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	Merchant string `json:"merchant"`
 	// This field is from variant [CardVaultItemSpecAgentcard].
@@ -572,9 +574,8 @@ type CardVaultItemSpecUnion struct {
 	MerchantCategory string `json:"merchant_category"`
 	// This field is from variant [KernelCardVaultItemSpec].
 	MerchantCategoryCode string `json:"merchant_category_code"`
-	// This field is from variant [KernelCardVaultItemSpec].
-	MerchantCountry string `json:"merchant_country"`
-	JSON            struct {
+	MerchantCountry      string `json:"merchant_country"`
+	JSON                 struct {
 		Amount               respjson.Field
 		Context              respjson.Field
 		Currency             respjson.Field
@@ -606,6 +607,7 @@ type anyCardVaultItemSpec interface {
 func (CardVaultItemSpecLink) implCardVaultItemSpecUnion()      {}
 func (CardVaultItemSpecAgentcard) implCardVaultItemSpecUnion() {}
 func (KernelCardVaultItemSpec) implCardVaultItemSpecUnion()    {}
+func (ShopPayCardVaultItemSpec) implCardVaultItemSpecUnion()   {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -613,6 +615,7 @@ func (KernelCardVaultItemSpec) implCardVaultItemSpecUnion()    {}
 //	case kernel.CardVaultItemSpecLink:
 //	case kernel.CardVaultItemSpecAgentcard:
 //	case kernel.KernelCardVaultItemSpec:
+//	case kernel.ShopPayCardVaultItemSpec:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -624,6 +627,8 @@ func (u CardVaultItemSpecUnion) AsAny() anyCardVaultItemSpec {
 		return u.AsAgentcard()
 	case "kernel":
 		return u.AsKernel()
+	case "shop_pay":
+		return u.AsShopPay()
 	}
 	return nil
 }
@@ -643,10 +648,70 @@ func (u CardVaultItemSpecUnion) AsKernel() (v KernelCardVaultItemSpec) {
 	return
 }
 
+func (u CardVaultItemSpecUnion) AsShopPay() (v ShopPayCardVaultItemSpec) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u CardVaultItemSpecUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *CardVaultItemSpecUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// CardVaultItemSpecUnionLineItems is an implicit subunion of
+// [CardVaultItemSpecUnion]. CardVaultItemSpecUnionLineItems provides convenient
+// access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [CardVaultItemSpecUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfCardVaultItemSpecLinkLineItems
+// OfShopPayCardVaultItemSpecLineItems]
+type CardVaultItemSpecUnionLineItems struct {
+	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
+	// instead of an object.
+	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
+	// This field will be present if the value is a
+	// [[]ShopPayCardVaultItemSpecLineItem] instead of an object.
+	OfShopPayCardVaultItemSpecLineItems []ShopPayCardVaultItemSpecLineItem `json:",inline"`
+	JSON                                struct {
+		OfCardVaultItemSpecLinkLineItems    respjson.Field
+		OfShopPayCardVaultItemSpecLineItems respjson.Field
+		raw                                 string
+	} `json:"-"`
+}
+
+func (r *CardVaultItemSpecUnionLineItems) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// CardVaultItemSpecUnionTotals is an implicit subunion of
+// [CardVaultItemSpecUnion]. CardVaultItemSpecUnionTotals provides convenient
+// access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [CardVaultItemSpecUnion].
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfCardVaultItemSpecLinkTotals OfShopPayCardVaultItemSpecTotals]
+type CardVaultItemSpecUnionTotals struct {
+	// This field will be present if the value is a [[]CardVaultItemSpecLinkTotal]
+	// instead of an object.
+	OfCardVaultItemSpecLinkTotals []CardVaultItemSpecLinkTotal `json:",inline"`
+	// This field will be present if the value is a [[]ShopPayCardVaultItemSpecTotal]
+	// instead of an object.
+	OfShopPayCardVaultItemSpecTotals []ShopPayCardVaultItemSpecTotal `json:",inline"`
+	JSON                             struct {
+		OfCardVaultItemSpecLinkTotals    respjson.Field
+		OfShopPayCardVaultItemSpecTotals respjson.Field
+		raw                              string
+	} `json:"-"`
+}
+
+func (r *CardVaultItemSpecUnionTotals) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -875,11 +940,12 @@ type CardVaultItemSpecUnionParam struct {
 	OfLink      *CardVaultItemSpecLinkParam      `json:",omitzero,inline"`
 	OfAgentcard *CardVaultItemSpecAgentcardParam `json:",omitzero,inline"`
 	OfKernel    *KernelCardVaultItemSpecParam    `json:",omitzero,inline"`
+	OfShopPay   *ShopPayCardVaultItemSpecParam   `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u CardVaultItemSpecUnionParam) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfKernel)
+	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfKernel, u.OfShopPay)
 }
 func (u *CardVaultItemSpecUnionParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -892,22 +958,8 @@ func (u *CardVaultItemSpecUnionParam) asAny() any {
 		return u.OfAgentcard
 	} else if !param.IsOmitted(u.OfKernel) {
 		return u.OfKernel
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetContext() *string {
-	if vt := u.OfLink; vt != nil {
-		return &vt.Context
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetLineItems() []CardVaultItemSpecLinkLineItemParam {
-	if vt := u.OfLink; vt != nil {
-		return vt.LineItems
+	} else if !param.IsOmitted(u.OfShopPay) {
+		return u.OfShopPay
 	}
 	return nil
 }
@@ -924,14 +976,6 @@ func (u CardVaultItemSpecUnionParam) GetMetadata() map[string]string {
 func (u CardVaultItemSpecUnionParam) GetRecurring() *CardVaultItemSpecLinkRecurringParam {
 	if vt := u.OfLink; vt != nil {
 		return &vt.Recurring
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetTotals() []CardVaultItemSpecLinkTotalParam {
-	if vt := u.OfLink; vt != nil {
-		return vt.Totals
 	}
 	return nil
 }
@@ -977,14 +1021,6 @@ func (u CardVaultItemSpecUnionParam) GetMerchantCategoryCode() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u CardVaultItemSpecUnionParam) GetMerchantCountry() *string {
-	if vt := u.OfKernel; vt != nil && vt.MerchantCountry.Valid() {
-		return &vt.MerchantCountry.Value
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
 func (u CardVaultItemSpecUnionParam) GetAmount() *int64 {
 	if vt := u.OfLink; vt != nil {
 		return (*int64)(&vt.Amount)
@@ -992,6 +1028,18 @@ func (u CardVaultItemSpecUnionParam) GetAmount() *int64 {
 		return (*int64)(&vt.Amount)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*int64)(&vt.Amount)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*int64)(&vt.Amount)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetContext() *string {
+	if vt := u.OfLink; vt != nil {
+		return (*string)(&vt.Context)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Context)
 	}
 	return nil
 }
@@ -1004,6 +1052,8 @@ func (u CardVaultItemSpecUnionParam) GetCurrency() *string {
 		return (*string)(&vt.Currency)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Currency)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Currency)
 	}
 	return nil
 }
@@ -1013,6 +1063,8 @@ func (u CardVaultItemSpecUnionParam) GetMerchantName() *string {
 	if vt := u.OfLink; vt != nil {
 		return (*string)(&vt.MerchantName)
 	} else if vt := u.OfKernel; vt != nil {
+		return (*string)(&vt.MerchantName)
+	} else if vt := u.OfShopPay; vt != nil {
 		return (*string)(&vt.MerchantName)
 	}
 	return nil
@@ -1024,6 +1076,8 @@ func (u CardVaultItemSpecUnionParam) GetMerchantURL() *string {
 		return (*string)(&vt.MerchantURL)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.MerchantURL)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.MerchantURL)
 	}
 	return nil
 }
@@ -1033,6 +1087,8 @@ func (u CardVaultItemSpecUnionParam) GetPaymentMethodID() *string {
 	if vt := u.OfLink; vt != nil {
 		return (*string)(&vt.PaymentMethodID)
 	} else if vt := u.OfKernel; vt != nil && vt.PaymentMethodID.Valid() {
+		return &vt.PaymentMethodID.Value
+	} else if vt := u.OfShopPay; vt != nil && vt.PaymentMethodID.Valid() {
 		return &vt.PaymentMethodID.Value
 	}
 	return nil
@@ -1046,6 +1102,8 @@ func (u CardVaultItemSpecUnionParam) GetProvider() *string {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Provider)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Provider)
 	}
 	return nil
 }
@@ -1058,9 +1116,73 @@ func (u CardVaultItemSpecUnionParam) GetWallet() *string {
 		return (*string)(&vt.Wallet)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Wallet)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Wallet)
 	}
 	return nil
 }
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetMerchantCountry() *string {
+	if vt := u.OfKernel; vt != nil && vt.MerchantCountry.Valid() {
+		return &vt.MerchantCountry.Value
+	} else if vt := u.OfShopPay; vt != nil && vt.MerchantCountry.Valid() {
+		return &vt.MerchantCountry.Value
+	}
+	return nil
+}
+
+// Returns a subunion which exports methods to access subproperties
+//
+// Or use AsAny() to get the underlying value
+func (u CardVaultItemSpecUnionParam) GetLineItems() (res cardVaultItemSpecUnionParamLineItems) {
+	if vt := u.OfLink; vt != nil {
+		res.any = &vt.LineItems
+	} else if vt := u.OfShopPay; vt != nil {
+		res.any = &vt.LineItems
+	}
+	return
+}
+
+// Can have the runtime types [_[]CardVaultItemSpecLinkLineItemParam],
+// [_[]ShopPayCardVaultItemSpecLineItemParam]
+type cardVaultItemSpecUnionParamLineItems struct{ any }
+
+// Use the following switch statement to get the type of the union:
+//
+//	switch u.AsAny().(type) {
+//	case *[]kernel.CardVaultItemSpecLinkLineItemParam:
+//	case *[]kernel.ShopPayCardVaultItemSpecLineItemParam:
+//	default:
+//	    fmt.Errorf("not present")
+//	}
+func (u cardVaultItemSpecUnionParamLineItems) AsAny() any { return u.any }
+
+// Returns a subunion which exports methods to access subproperties
+//
+// Or use AsAny() to get the underlying value
+func (u CardVaultItemSpecUnionParam) GetTotals() (res cardVaultItemSpecUnionParamTotals) {
+	if vt := u.OfLink; vt != nil {
+		res.any = &vt.Totals
+	} else if vt := u.OfShopPay; vt != nil {
+		res.any = &vt.Totals
+	}
+	return
+}
+
+// Can have the runtime types [_[]CardVaultItemSpecLinkTotalParam],
+// [_[]ShopPayCardVaultItemSpecTotalParam]
+type cardVaultItemSpecUnionParamTotals struct{ any }
+
+// Use the following switch statement to get the type of the union:
+//
+//	switch u.AsAny().(type) {
+//	case *[]kernel.CardVaultItemSpecLinkTotalParam:
+//	case *[]kernel.ShopPayCardVaultItemSpecTotalParam:
+//	default:
+//	    fmt.Errorf("not present")
+//	}
+func (u cardVaultItemSpecUnionParamTotals) AsAny() any { return u.any }
 
 func init() {
 	apijson.RegisterUnion[CardVaultItemSpecUnionParam](
@@ -1068,6 +1190,7 @@ func init() {
 		apijson.Discriminator[CardVaultItemSpecLinkParam]("link"),
 		apijson.Discriminator[CardVaultItemSpecAgentcardParam]("agentcard"),
 		apijson.Discriminator[KernelCardVaultItemSpecParam]("kernel"),
+		apijson.Discriminator[ShopPayCardVaultItemSpecParam]("shop_pay"),
 	)
 }
 
@@ -1251,18 +1374,20 @@ func (r *CardVaultItemSpecAgentcardParam) UnmarshalJSON(data []byte) error {
 }
 
 // CardVaultItemStateUnion contains all possible properties and values from
-// [CardVaultItemStateLink], [CardVaultItemStateAgentcard], [KernelCardState].
+// [CardVaultItemStateLink], [CardVaultItemStateAgentcard], [KernelCardState],
+// [ShopPayCardState].
 //
 // Use the [CardVaultItemStateUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type CardVaultItemStateUnion struct {
-	// Any of "link", "agentcard", "kernel".
+	// Any of "link", "agentcard", "kernel", "shop_pay".
 	Provider string   `json:"provider"`
 	Status   string   `json:"status"`
 	Domains  []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
-	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks]
+	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
+	// [ShopPayCardStateMasks]
 	Masks        CardVaultItemStateUnionMasks `json:"masks"`
 	StatusReason string                       `json:"status_reason"`
 	// This field is from variant [CardVaultItemStateAgentcard].
@@ -1300,6 +1425,7 @@ type anyCardVaultItemState interface {
 func (CardVaultItemStateLink) implCardVaultItemStateUnion()      {}
 func (CardVaultItemStateAgentcard) implCardVaultItemStateUnion() {}
 func (KernelCardState) implCardVaultItemStateUnion()             {}
+func (ShopPayCardState) implCardVaultItemStateUnion()            {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -1307,6 +1433,7 @@ func (KernelCardState) implCardVaultItemStateUnion()             {}
 //	case kernel.CardVaultItemStateLink:
 //	case kernel.CardVaultItemStateAgentcard:
 //	case kernel.KernelCardState:
+//	case kernel.ShopPayCardState:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -1318,6 +1445,8 @@ func (u CardVaultItemStateUnion) AsAny() anyCardVaultItemState {
 		return u.AsAgentcard()
 	case "kernel":
 		return u.AsKernel()
+	case "shop_pay":
+		return u.AsShopPay()
 	}
 	return nil
 }
@@ -1333,6 +1462,11 @@ func (u CardVaultItemStateUnion) AsAgentcard() (v CardVaultItemStateAgentcard) {
 }
 
 func (u CardVaultItemStateUnion) AsKernel() (v KernelCardState) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u CardVaultItemStateUnion) AsShopPay() (v ShopPayCardState) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -1526,11 +1660,12 @@ const (
 	CollectVaultItemOperationRequestTypeCollect CollectVaultItemOperationRequestType = "collect"
 )
 
-// Report a real merchant transaction outcome for an issued Kernel Visa credential.
-// Never infer success from filling checkout or receiving a credential. Supply the
-// observed status, transaction type, actual amount, currency and timestamp.
-// Unknown outcomes require manual reconciliation, not retry. Each purchase accepts
-// one report.
+// Report a real merchant transaction outcome for an issued Kernel Visa or Shop Pay
+// credential. Shop Pay accepts PURCHASE, AUTHORIZATION and CAPTURE. Never infer
+// success from filling checkout or receiving a credential. Supply the observed
+// status, transaction type, actual amount, currency and timestamp. Unknown
+// outcomes require manual reconciliation, not retry. Each purchase accepts one
+// report.
 //
 // The properties Amount, Currency, OccurredAt, Status, TransactionType, Type are
 // required.
@@ -5732,6 +5867,452 @@ const (
 	RestartVerificationVaultItemOperationRequestTypeRestartVerification RestartVerificationVaultItemOperationRequestType = "restart_verification"
 )
 
+// Issued Shop Pay cards retain encrypted card material for the fill operation.
+type ShopPayCardState struct {
+	// Any of "shop_pay".
+	Provider ShopPayCardStateProvider `json:"provider" api:"required"`
+	// declined covers a request the shopper declined or that was cancelled.
+	// recovery_required means a provider operation has an unresolved outcome and the
+	// card cannot be used. When status_reason says the provider refused retrieval
+	// before acceptance, no card was issued and a later read retries. Otherwise follow
+	// status_reason: recovery for issuance can be abandoned by deleting the card and
+	// creating a new one, and the shopper approves the new purchase separately.
+	// Recovery while reporting a merchant transaction cannot be deleted and must be
+	// reconciled with support.
+	//
+	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
+	// "declined", "recovery_required".
+	Status       ShopPayCardStateStatus `json:"status" api:"required"`
+	Domains      []string               `json:"domains"`
+	Masks        ShopPayCardStateMasks  `json:"masks"`
+	StatusReason string                 `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider     respjson.Field
+		Status       respjson.Field
+		Domains      respjson.Field
+		Masks        respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayCardState) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayCardState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ShopPayCardStateProvider string
+
+const (
+	ShopPayCardStateProviderShopPay ShopPayCardStateProvider = "shop_pay"
+)
+
+// declined covers a request the shopper declined or that was cancelled.
+// recovery_required means a provider operation has an unresolved outcome and the
+// card cannot be used. When status_reason says the provider refused retrieval
+// before acceptance, no card was issued and a later read retries. Otherwise follow
+// status_reason: recovery for issuance can be abandoned by deleting the card and
+// creating a new one, and the shopper approves the new purchase separately.
+// Recovery while reporting a merchant transaction cannot be deleted and must be
+// reconciled with support.
+type ShopPayCardStateStatus string
+
+const (
+	ShopPayCardStateStatusRequested            ShopPayCardStateStatus = "requested"
+	ShopPayCardStateStatusPendingAuthorization ShopPayCardStateStatus = "pending_authorization"
+	ShopPayCardStateStatusReady                ShopPayCardStateStatus = "ready"
+	ShopPayCardStateStatusConsumed             ShopPayCardStateStatus = "consumed"
+	ShopPayCardStateStatusExpired              ShopPayCardStateStatus = "expired"
+	ShopPayCardStateStatusDeclined             ShopPayCardStateStatus = "declined"
+	ShopPayCardStateStatusRecoveryRequired     ShopPayCardStateStatus = "recovery_required"
+)
+
+type ShopPayCardStateMasks struct {
+	Brand string `json:"brand"`
+	Last4 string `json:"last4"`
+	// Last four digits of the network token presented to the merchant.
+	TokenLast4  string            `json:"token_last4"`
+	ExtraFields map[string]string `json:"" api:"extrafields"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Brand       respjson.Field
+		Last4       respjson.Field
+		TokenLast4  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayCardStateMasks) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayCardStateMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Shop Pay purchase. amount is the limit the shopper approves; totals must include
+// exactly one positive total no higher than it. context is shown to the shopper
+// when they approve. Authorize without checkout context: authorize returns an
+// approval action for the shopper, who approves the purchase in Shop. Share its
+// URL unchanged when present. Once approved, the card becomes ready and fills
+// checkouts on the merchant_url origin. Report the merchant outcome with
+// confirm_transaction.
+type ShopPayCardVaultItemSpec struct {
+	// Approval limit in minor currency units.
+	Amount int64 `json:"amount" api:"required"`
+	// What is being bought and why, written for the shopper.
+	Context      string `json:"context" api:"required"`
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	// The merchant's https URL.
+	MerchantURL string `json:"merchant_url" api:"required" format:"uri"`
+	// Any of "shop_pay".
+	Provider ShopPayCardVaultItemSpecProvider `json:"provider" api:"required"`
+	Totals   []ShopPayCardVaultItemSpecTotal  `json:"totals" api:"required"`
+	// Connected Shop Pay wallet item key.
+	Wallet    string                             `json:"wallet" api:"required"`
+	LineItems []ShopPayCardVaultItemSpecLineItem `json:"line_items"`
+	// ISO 3166-1 alpha-2 country of the merchant.
+	MerchantCountry string `json:"merchant_country"`
+	// Card ID from the wallet's payment_methods expansion. Omit it to use the
+	// shopper's preferred card.
+	PaymentMethodID string `json:"payment_method_id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount          respjson.Field
+		Context         respjson.Field
+		Currency        respjson.Field
+		MerchantName    respjson.Field
+		MerchantURL     respjson.Field
+		Provider        respjson.Field
+		Totals          respjson.Field
+		Wallet          respjson.Field
+		LineItems       respjson.Field
+		MerchantCountry respjson.Field
+		PaymentMethodID respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayCardVaultItemSpec) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayCardVaultItemSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this ShopPayCardVaultItemSpec to a
+// ShopPayCardVaultItemSpecParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// ShopPayCardVaultItemSpecParam.Overrides()
+func (r ShopPayCardVaultItemSpec) ToParam() ShopPayCardVaultItemSpecParam {
+	return param.Override[ShopPayCardVaultItemSpecParam](json.RawMessage(r.RawJSON()))
+}
+
+type ShopPayCardVaultItemSpecProvider string
+
+const (
+	ShopPayCardVaultItemSpecProviderShopPay ShopPayCardVaultItemSpecProvider = "shop_pay"
+)
+
+type ShopPayCardVaultItemSpecTotal struct {
+	// Amount in minor currency units; discounts are negative.
+	Amount int64 `json:"amount" api:"required"`
+	// For example subtotal, fulfillment, tax, discount or total.
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount      respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayCardVaultItemSpecTotal) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayCardVaultItemSpecTotal) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ShopPayCardVaultItemSpecLineItem struct {
+	Name     string `json:"name" api:"required"`
+	Quantity int64  `json:"quantity" api:"required"`
+	// Unit price in minor currency units.
+	UnitAmount int64 `json:"unit_amount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Name        respjson.Field
+		Quantity    respjson.Field
+		UnitAmount  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayCardVaultItemSpecLineItem) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayCardVaultItemSpecLineItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Shop Pay purchase. amount is the limit the shopper approves; totals must include
+// exactly one positive total no higher than it. context is shown to the shopper
+// when they approve. Authorize without checkout context: authorize returns an
+// approval action for the shopper, who approves the purchase in Shop. Share its
+// URL unchanged when present. Once approved, the card becomes ready and fills
+// checkouts on the merchant_url origin. Report the merchant outcome with
+// confirm_transaction.
+//
+// The properties Amount, Context, Currency, MerchantName, MerchantURL, Provider,
+// Totals, Wallet are required.
+type ShopPayCardVaultItemSpecParam struct {
+	// Approval limit in minor currency units.
+	Amount int64 `json:"amount" api:"required"`
+	// What is being bought and why, written for the shopper.
+	Context      string `json:"context" api:"required"`
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	// The merchant's https URL.
+	MerchantURL string `json:"merchant_url" api:"required" format:"uri"`
+	// Any of "shop_pay".
+	Provider ShopPayCardVaultItemSpecProvider     `json:"provider,omitzero" api:"required"`
+	Totals   []ShopPayCardVaultItemSpecTotalParam `json:"totals,omitzero" api:"required"`
+	// Connected Shop Pay wallet item key.
+	Wallet string `json:"wallet" api:"required"`
+	// ISO 3166-1 alpha-2 country of the merchant.
+	MerchantCountry param.Opt[string] `json:"merchant_country,omitzero"`
+	// Card ID from the wallet's payment_methods expansion. Omit it to use the
+	// shopper's preferred card.
+	PaymentMethodID param.Opt[string]                       `json:"payment_method_id,omitzero"`
+	LineItems       []ShopPayCardVaultItemSpecLineItemParam `json:"line_items,omitzero"`
+	paramObj
+}
+
+func (r ShopPayCardVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
+	type shadow ShopPayCardVaultItemSpecParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ShopPayCardVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Amount, Type are required.
+type ShopPayCardVaultItemSpecTotalParam struct {
+	// Amount in minor currency units; discounts are negative.
+	Amount int64 `json:"amount" api:"required"`
+	// For example subtotal, fulfillment, tax, discount or total.
+	Type string `json:"type" api:"required"`
+	paramObj
+}
+
+func (r ShopPayCardVaultItemSpecTotalParam) MarshalJSON() (data []byte, err error) {
+	type shadow ShopPayCardVaultItemSpecTotalParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ShopPayCardVaultItemSpecTotalParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Name, Quantity, UnitAmount are required.
+type ShopPayCardVaultItemSpecLineItemParam struct {
+	Name     string `json:"name" api:"required"`
+	Quantity int64  `json:"quantity" api:"required"`
+	// Unit price in minor currency units.
+	UnitAmount int64 `json:"unit_amount" api:"required"`
+	paramObj
+}
+
+func (r ShopPayCardVaultItemSpecLineItemParam) MarshalJSON() (data []byte, err error) {
+	type shadow ShopPayCardVaultItemSpecLineItemParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ShopPayCardVaultItemSpecLineItemParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ShopPayWalletState struct {
+	// Any of "shop_pay".
+	Provider ShopPayWalletStateProvider `json:"provider" api:"required"`
+	// Any of "pending_authorization", "connected", "declined", "reconnect_required",
+	// "degraded".
+	Status       ShopPayWalletStateStatus `json:"status" api:"required"`
+	StatusReason string                   `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider     respjson.Field
+		Status       respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayWalletState) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayWalletState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ShopPayWalletStateProvider string
+
+const (
+	ShopPayWalletStateProviderShopPay ShopPayWalletStateProvider = "shop_pay"
+)
+
+type ShopPayWalletStateStatus string
+
+const (
+	ShopPayWalletStateStatusPendingAuthorization ShopPayWalletStateStatus = "pending_authorization"
+	ShopPayWalletStateStatusConnected            ShopPayWalletStateStatus = "connected"
+	ShopPayWalletStateStatusDeclined             ShopPayWalletStateStatus = "declined"
+	ShopPayWalletStateStatusReconnectRequired    ShopPayWalletStateStatus = "reconnect_required"
+	ShopPayWalletStateStatusDegraded             ShopPayWalletStateStatus = "degraded"
+)
+
+// Shop Pay wallet connected through Kernel's Shop app. Creation returns a
+// shop_pay_oauth action: the shopper signs in to Shop and approves the connection,
+// and the wallet connects. The connected wallet's payment_methods expansion lists
+// the shopper's saved Shop Pay cards.
+type ShopPayWalletVaultItemSpec struct {
+	Authorization ShopPayWalletVaultItemSpecAuthorization `json:"authorization" api:"required"`
+	// Any of "shop_pay".
+	Provider ShopPayWalletVaultItemSpecProvider `json:"provider" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Authorization respjson.Field
+		Provider      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayWalletVaultItemSpec) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayWalletVaultItemSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this ShopPayWalletVaultItemSpec to a
+// ShopPayWalletVaultItemSpecParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// ShopPayWalletVaultItemSpecParam.Overrides()
+func (r ShopPayWalletVaultItemSpec) ToParam() ShopPayWalletVaultItemSpecParam {
+	return param.Override[ShopPayWalletVaultItemSpecParam](json.RawMessage(r.RawJSON()))
+}
+
+type ShopPayWalletVaultItemSpecAuthorization struct {
+	Client ShopPayWalletVaultItemSpecAuthorizationClient `json:"client" api:"required"`
+	// Any of "oauth".
+	Method string `json:"method" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Client      respjson.Field
+		Method      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayWalletVaultItemSpecAuthorization) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayWalletVaultItemSpecAuthorization) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ShopPayWalletVaultItemSpecAuthorizationClient struct {
+	// Any of "kernel_managed".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ShopPayWalletVaultItemSpecAuthorizationClient) RawJSON() string { return r.JSON.raw }
+func (r *ShopPayWalletVaultItemSpecAuthorizationClient) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ShopPayWalletVaultItemSpecProvider string
+
+const (
+	ShopPayWalletVaultItemSpecProviderShopPay ShopPayWalletVaultItemSpecProvider = "shop_pay"
+)
+
+// Shop Pay wallet connected through Kernel's Shop app. Creation returns a
+// shop_pay_oauth action: the shopper signs in to Shop and approves the connection,
+// and the wallet connects. The connected wallet's payment_methods expansion lists
+// the shopper's saved Shop Pay cards.
+//
+// The properties Authorization, Provider are required.
+type ShopPayWalletVaultItemSpecParam struct {
+	Authorization ShopPayWalletVaultItemSpecAuthorizationParam `json:"authorization,omitzero" api:"required"`
+	// Any of "shop_pay".
+	Provider ShopPayWalletVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
+	paramObj
+}
+
+func (r ShopPayWalletVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
+	type shadow ShopPayWalletVaultItemSpecParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ShopPayWalletVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Client, Method are required.
+type ShopPayWalletVaultItemSpecAuthorizationParam struct {
+	Client ShopPayWalletVaultItemSpecAuthorizationClientParam `json:"client,omitzero" api:"required"`
+	// Any of "oauth".
+	Method string `json:"method,omitzero" api:"required"`
+	paramObj
+}
+
+func (r ShopPayWalletVaultItemSpecAuthorizationParam) MarshalJSON() (data []byte, err error) {
+	type shadow ShopPayWalletVaultItemSpecAuthorizationParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ShopPayWalletVaultItemSpecAuthorizationParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ShopPayWalletVaultItemSpecAuthorizationParam](
+		"method", "oauth",
+	)
+}
+
+// The property Type is required.
+type ShopPayWalletVaultItemSpecAuthorizationClientParam struct {
+	// Any of "kernel_managed".
+	Type string `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r ShopPayWalletVaultItemSpecAuthorizationClientParam) MarshalJSON() (data []byte, err error) {
+	type shadow ShopPayWalletVaultItemSpecAuthorizationClientParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ShopPayWalletVaultItemSpecAuthorizationClientParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ShopPayWalletVaultItemSpecAuthorizationClientParam](
+		"type", "kernel_managed",
+	)
+}
+
 type VaultCardAliases struct {
 	Cvc      string `json:"cvc" api:"required"`
 	ExpMonth string `json:"exp_month" api:"required"`
@@ -6118,6 +6699,7 @@ func (r *VaultItemUnionAvailableOperations) UnmarshalJSON(data []byte) error {
 // [VaultItemUnion].
 type VaultItemUnionSpec struct {
 	// This field is a union of [WalletVaultItemSpecLinkAuthorization],
+	// [ShopPayWalletVaultItemSpecAuthorization],
 	// [OnePasswordCredentialAccountSpecAuthorization]
 	Authorization VaultItemUnionSpecAuthorization `json:"authorization"`
 	Provider      string                          `json:"provider"`
@@ -6133,6 +6715,7 @@ type VaultItemUnionSpec struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
+	// [[]ShopPayCardVaultItemSpecLineItem],
 	// [[]PaymentRequestVaultItemSpecLinkLineItem]
 	LineItems VaultItemUnionSpecLineItems `json:"line_items"`
 	Metadata  map[string]string           `json:"metadata"`
@@ -6140,7 +6723,7 @@ type VaultItemUnionSpec struct {
 	// [PaymentRequestVaultItemSpecLinkRecurring]
 	Recurring VaultItemUnionSpecRecurring `json:"recurring"`
 	// This field is a union of [[]CardVaultItemSpecLinkTotal],
-	// [[]PaymentRequestVaultItemSpecLinkTotal]
+	// [[]ShopPayCardVaultItemSpecTotal], [[]PaymentRequestVaultItemSpecLinkTotal]
 	Totals VaultItemUnionSpecTotals `json:"totals"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Merchant string `json:"merchant"`
@@ -6206,6 +6789,7 @@ func (r *VaultItemUnionSpec) UnmarshalJSON(data []byte) error {
 // [VaultItemUnion].
 type VaultItemUnionSpecAuthorization struct {
 	// This field is a union of [WalletVaultItemSpecLinkAuthorizationClientUnion],
+	// [ShopPayWalletVaultItemSpecAuthorizationClient],
 	// [OnePasswordCredentialAccountSpecAuthorizationClient]
 	Client VaultItemUnionSpecAuthorizationClient `json:"client"`
 	Method string                                `json:"method"`
@@ -6250,16 +6834,20 @@ func (r *VaultItemUnionSpecAuthorizationClient) UnmarshalJSON(data []byte) error
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfCardVaultItemSpecLinkLineItems
-// OfPaymentRequestVaultItemSpecLinkLineItems]
+// OfShopPayCardVaultItemSpecLineItems OfPaymentRequestVaultItemSpecLinkLineItems]
 type VaultItemUnionSpecLineItems struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
 	// instead of an object.
 	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
 	// This field will be present if the value is a
+	// [[]ShopPayCardVaultItemSpecLineItem] instead of an object.
+	OfShopPayCardVaultItemSpecLineItems []ShopPayCardVaultItemSpecLineItem `json:",inline"`
+	// This field will be present if the value is a
 	// [[]PaymentRequestVaultItemSpecLinkLineItem] instead of an object.
 	OfPaymentRequestVaultItemSpecLinkLineItems []PaymentRequestVaultItemSpecLinkLineItem `json:",inline"`
 	JSON                                       struct {
 		OfCardVaultItemSpecLinkLineItems           respjson.Field
+		OfShopPayCardVaultItemSpecLineItems        respjson.Field
 		OfPaymentRequestVaultItemSpecLinkLineItems respjson.Field
 		raw                                        string
 	} `json:"-"`
@@ -6297,17 +6885,21 @@ func (r *VaultItemUnionSpecRecurring) UnmarshalJSON(data []byte) error {
 // [VaultItemUnion].
 //
 // If the underlying value is not a json object, one of the following properties
-// will be valid: OfCardVaultItemSpecLinkTotals
+// will be valid: OfCardVaultItemSpecLinkTotals OfShopPayCardVaultItemSpecTotals
 // OfPaymentRequestVaultItemSpecLinkTotals]
 type VaultItemUnionSpecTotals struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkTotal]
 	// instead of an object.
 	OfCardVaultItemSpecLinkTotals []CardVaultItemSpecLinkTotal `json:",inline"`
+	// This field will be present if the value is a [[]ShopPayCardVaultItemSpecTotal]
+	// instead of an object.
+	OfShopPayCardVaultItemSpecTotals []ShopPayCardVaultItemSpecTotal `json:",inline"`
 	// This field will be present if the value is a
 	// [[]PaymentRequestVaultItemSpecLinkTotal] instead of an object.
 	OfPaymentRequestVaultItemSpecLinkTotals []PaymentRequestVaultItemSpecLinkTotal `json:",inline"`
 	JSON                                    struct {
 		OfCardVaultItemSpecLinkTotals           respjson.Field
+		OfShopPayCardVaultItemSpecTotals        respjson.Field
 		OfPaymentRequestVaultItemSpecLinkTotals respjson.Field
 		raw                                     string
 	} `json:"-"`
@@ -6332,7 +6924,7 @@ type VaultItemUnionState struct {
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
-	// [PaymentRequestVaultItemStateLinkMasks]
+	// [ShopPayCardStateMasks], [PaymentRequestVaultItemStateLinkMasks]
 	Masks VaultItemUnionStateMasks `json:"masks"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Aliases VaultCardAliases `json:"aliases"`
@@ -6674,17 +7266,17 @@ func (r *VaultItemCardAvailableOperation) UnmarshalJSON(data []byte) error {
 }
 
 // VaultItemActionUnion contains all possible properties and values from
-// [VaultItemActionLinkOAuth], [OnePasswordOAuthAction],
-// [VaultItemActionSpendApproval], [VaultItemActionPushApproval],
-// [VaultItemActionCollect], [VaultItemActionMfa],
+// [VaultItemActionLinkOAuth], [VaultItemActionShopPayOAuth],
+// [OnePasswordOAuthAction], [VaultItemActionSpendApproval],
+// [VaultItemActionPushApproval], [VaultItemActionCollect], [VaultItemActionMfa],
 // [VaultItemActionEmbeddedCeremony], [VaultItemActionCardEnrollment].
 //
 // Use the [VaultItemActionUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type VaultItemActionUnion struct {
-	// Any of "link_oauth", "1password_oauth", "spend_approval", "push_approval",
-	// "collect", "mfa", "embedded_ceremony", "card_enrollment".
+	// Any of "link_oauth", "shop_pay_oauth", "1password_oauth", "spend_approval",
+	// "push_approval", "collect", "mfa", "embedded_ceremony", "card_enrollment".
 	Name string `json:"name"`
 	URL  string `json:"url"`
 	// This field is from variant [VaultItemActionCardEnrollment].
@@ -6704,6 +7296,7 @@ type anyVaultItemAction interface {
 }
 
 func (VaultItemActionLinkOAuth) implVaultItemActionUnion()        {}
+func (VaultItemActionShopPayOAuth) implVaultItemActionUnion()     {}
 func (OnePasswordOAuthAction) implVaultItemActionUnion()          {}
 func (VaultItemActionSpendApproval) implVaultItemActionUnion()    {}
 func (VaultItemActionPushApproval) implVaultItemActionUnion()     {}
@@ -6716,6 +7309,7 @@ func (VaultItemActionCardEnrollment) implVaultItemActionUnion()   {}
 //
 //	switch variant := VaultItemActionUnion.AsAny().(type) {
 //	case kernel.VaultItemActionLinkOAuth:
+//	case kernel.VaultItemActionShopPayOAuth:
 //	case kernel.OnePasswordOAuthAction:
 //	case kernel.VaultItemActionSpendApproval:
 //	case kernel.VaultItemActionPushApproval:
@@ -6730,6 +7324,8 @@ func (u VaultItemActionUnion) AsAny() anyVaultItemAction {
 	switch u.Name {
 	case "link_oauth":
 		return u.AsLinkOAuth()
+	case "shop_pay_oauth":
+		return u.AsShopPayOAuth()
 	case "1password_oauth":
 		return u.As1passwordOAuth()
 	case "spend_approval":
@@ -6749,6 +7345,11 @@ func (u VaultItemActionUnion) AsAny() anyVaultItemAction {
 }
 
 func (u VaultItemActionUnion) AsLinkOAuth() (v VaultItemActionLinkOAuth) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemActionUnion) AsShopPayOAuth() (v VaultItemActionShopPayOAuth) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -6810,6 +7411,25 @@ type VaultItemActionLinkOAuth struct {
 // Returns the unmodified JSON received from the API
 func (r VaultItemActionLinkOAuth) RawJSON() string { return r.JSON.raw }
 func (r *VaultItemActionLinkOAuth) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type VaultItemActionShopPayOAuth struct {
+	Name constant.ShopPayOAuth `json:"name" default:"shop_pay_oauth"`
+	// Shop sign-in page where the shopper connects their Shop account to Kernel.
+	URL string `json:"url" api:"required" format:"uri"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Name        respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultItemActionShopPayOAuth) RawJSON() string { return r.JSON.raw }
+func (r *VaultItemActionShopPayOAuth) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -7199,6 +7819,7 @@ func (r *VaultItemOperationResponseUnionAvailableOperations) UnmarshalJSON(data 
 // [VaultItemOperationResponseUnion].
 type VaultItemOperationResponseUnionSpec struct {
 	// This field is a union of [WalletVaultItemSpecLinkAuthorization],
+	// [ShopPayWalletVaultItemSpecAuthorization],
 	// [OnePasswordCredentialAccountSpecAuthorization]
 	Authorization VaultItemOperationResponseUnionSpecAuthorization `json:"authorization"`
 	Provider      string                                           `json:"provider"`
@@ -7214,6 +7835,7 @@ type VaultItemOperationResponseUnionSpec struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
+	// [[]ShopPayCardVaultItemSpecLineItem],
 	// [[]PaymentRequestVaultItemSpecLinkLineItem]
 	LineItems VaultItemOperationResponseUnionSpecLineItems `json:"line_items"`
 	Metadata  map[string]string                            `json:"metadata"`
@@ -7221,7 +7843,7 @@ type VaultItemOperationResponseUnionSpec struct {
 	// [PaymentRequestVaultItemSpecLinkRecurring]
 	Recurring VaultItemOperationResponseUnionSpecRecurring `json:"recurring"`
 	// This field is a union of [[]CardVaultItemSpecLinkTotal],
-	// [[]PaymentRequestVaultItemSpecLinkTotal]
+	// [[]ShopPayCardVaultItemSpecTotal], [[]PaymentRequestVaultItemSpecLinkTotal]
 	Totals VaultItemOperationResponseUnionSpecTotals `json:"totals"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Merchant string `json:"merchant"`
@@ -7288,6 +7910,7 @@ func (r *VaultItemOperationResponseUnionSpec) UnmarshalJSON(data []byte) error {
 // [VaultItemOperationResponseUnion].
 type VaultItemOperationResponseUnionSpecAuthorization struct {
 	// This field is a union of [WalletVaultItemSpecLinkAuthorizationClientUnion],
+	// [ShopPayWalletVaultItemSpecAuthorizationClient],
 	// [OnePasswordCredentialAccountSpecAuthorizationClient]
 	Client VaultItemOperationResponseUnionSpecAuthorizationClient `json:"client"`
 	Method string                                                 `json:"method"`
@@ -7333,16 +7956,20 @@ func (r *VaultItemOperationResponseUnionSpecAuthorizationClient) UnmarshalJSON(d
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfCardVaultItemSpecLinkLineItems
-// OfPaymentRequestVaultItemSpecLinkLineItems]
+// OfShopPayCardVaultItemSpecLineItems OfPaymentRequestVaultItemSpecLinkLineItems]
 type VaultItemOperationResponseUnionSpecLineItems struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
 	// instead of an object.
 	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
 	// This field will be present if the value is a
+	// [[]ShopPayCardVaultItemSpecLineItem] instead of an object.
+	OfShopPayCardVaultItemSpecLineItems []ShopPayCardVaultItemSpecLineItem `json:",inline"`
+	// This field will be present if the value is a
 	// [[]PaymentRequestVaultItemSpecLinkLineItem] instead of an object.
 	OfPaymentRequestVaultItemSpecLinkLineItems []PaymentRequestVaultItemSpecLinkLineItem `json:",inline"`
 	JSON                                       struct {
 		OfCardVaultItemSpecLinkLineItems           respjson.Field
+		OfShopPayCardVaultItemSpecLineItems        respjson.Field
 		OfPaymentRequestVaultItemSpecLinkLineItems respjson.Field
 		raw                                        string
 	} `json:"-"`
@@ -7380,17 +8007,21 @@ func (r *VaultItemOperationResponseUnionSpecRecurring) UnmarshalJSON(data []byte
 // [VaultItemOperationResponseUnion].
 //
 // If the underlying value is not a json object, one of the following properties
-// will be valid: OfCardVaultItemSpecLinkTotals
+// will be valid: OfCardVaultItemSpecLinkTotals OfShopPayCardVaultItemSpecTotals
 // OfPaymentRequestVaultItemSpecLinkTotals]
 type VaultItemOperationResponseUnionSpecTotals struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkTotal]
 	// instead of an object.
 	OfCardVaultItemSpecLinkTotals []CardVaultItemSpecLinkTotal `json:",inline"`
+	// This field will be present if the value is a [[]ShopPayCardVaultItemSpecTotal]
+	// instead of an object.
+	OfShopPayCardVaultItemSpecTotals []ShopPayCardVaultItemSpecTotal `json:",inline"`
 	// This field will be present if the value is a
 	// [[]PaymentRequestVaultItemSpecLinkTotal] instead of an object.
 	OfPaymentRequestVaultItemSpecLinkTotals []PaymentRequestVaultItemSpecLinkTotal `json:",inline"`
 	JSON                                    struct {
 		OfCardVaultItemSpecLinkTotals           respjson.Field
+		OfShopPayCardVaultItemSpecTotals        respjson.Field
 		OfPaymentRequestVaultItemSpecLinkTotals respjson.Field
 		raw                                     string
 	} `json:"-"`
@@ -7415,7 +8046,7 @@ type VaultItemOperationResponseUnionState struct {
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
-	// [PaymentRequestVaultItemStateLinkMasks]
+	// [ShopPayCardStateMasks], [PaymentRequestVaultItemStateLinkMasks]
 	Masks VaultItemOperationResponseUnionStateMasks `json:"masks"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Aliases VaultCardAliases `json:"aliases"`
@@ -7940,15 +8571,16 @@ func (r *VaultWebmcpBindingParam) UnmarshalJSON(data []byte) error {
 
 // WalletVaultItemSpecUnion contains all possible properties and values from
 // [WalletVaultItemSpecLink], [WalletVaultItemSpecAgentcard],
-// [KernelWalletVaultItemSpec].
+// [KernelWalletVaultItemSpec], [ShopPayWalletVaultItemSpec].
 //
 // Use the [WalletVaultItemSpecUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type WalletVaultItemSpecUnion struct {
-	// This field is from variant [WalletVaultItemSpecLink].
-	Authorization WalletVaultItemSpecLinkAuthorization `json:"authorization"`
-	// Any of "link", "agentcard", "kernel".
+	// This field is a union of [WalletVaultItemSpecLinkAuthorization],
+	// [ShopPayWalletVaultItemSpecAuthorization]
+	Authorization WalletVaultItemSpecUnionAuthorization `json:"authorization"`
+	// Any of "link", "agentcard", "kernel", "shop_pay".
 	Provider string `json:"provider"`
 	// This field is from variant [WalletVaultItemSpecAgentcard].
 	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
@@ -7973,6 +8605,7 @@ type anyWalletVaultItemSpec interface {
 func (WalletVaultItemSpecLink) implWalletVaultItemSpecUnion()      {}
 func (WalletVaultItemSpecAgentcard) implWalletVaultItemSpecUnion() {}
 func (KernelWalletVaultItemSpec) implWalletVaultItemSpecUnion()    {}
+func (ShopPayWalletVaultItemSpec) implWalletVaultItemSpecUnion()   {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -7980,6 +8613,7 @@ func (KernelWalletVaultItemSpec) implWalletVaultItemSpecUnion()    {}
 //	case kernel.WalletVaultItemSpecLink:
 //	case kernel.WalletVaultItemSpecAgentcard:
 //	case kernel.KernelWalletVaultItemSpec:
+//	case kernel.ShopPayWalletVaultItemSpec:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -7991,6 +8625,8 @@ func (u WalletVaultItemSpecUnion) AsAny() anyWalletVaultItemSpec {
 		return u.AsAgentcard()
 	case "kernel":
 		return u.AsKernel()
+	case "shop_pay":
+		return u.AsShopPay()
 	}
 	return nil
 }
@@ -8010,10 +8646,58 @@ func (u WalletVaultItemSpecUnion) AsKernel() (v KernelWalletVaultItemSpec) {
 	return
 }
 
+func (u WalletVaultItemSpecUnion) AsShopPay() (v ShopPayWalletVaultItemSpec) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u WalletVaultItemSpecUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *WalletVaultItemSpecUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// WalletVaultItemSpecUnionAuthorization is an implicit subunion of
+// [WalletVaultItemSpecUnion]. WalletVaultItemSpecUnionAuthorization provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [WalletVaultItemSpecUnion].
+type WalletVaultItemSpecUnionAuthorization struct {
+	// This field is a union of [WalletVaultItemSpecLinkAuthorizationClientUnion],
+	// [ShopPayWalletVaultItemSpecAuthorizationClient]
+	Client WalletVaultItemSpecUnionAuthorizationClient `json:"client"`
+	Method string                                      `json:"method"`
+	JSON   struct {
+		Client respjson.Field
+		Method respjson.Field
+		raw    string
+	} `json:"-"`
+}
+
+func (r *WalletVaultItemSpecUnionAuthorization) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// WalletVaultItemSpecUnionAuthorizationClient is an implicit subunion of
+// [WalletVaultItemSpecUnion]. WalletVaultItemSpecUnionAuthorizationClient provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [WalletVaultItemSpecUnion].
+type WalletVaultItemSpecUnionAuthorizationClient struct {
+	Type string `json:"type"`
+	// This field is from variant [WalletVaultItemSpecLinkAuthorizationClientUnion].
+	ProviderConfig WalletVaultItemSpecLinkAuthorizationClientCustomerManagedProviderConfig `json:"provider_config"`
+	JSON           struct {
+		Type           respjson.Field
+		ProviderConfig respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+func (r *WalletVaultItemSpecUnionAuthorizationClient) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -8242,13 +8926,13 @@ func (r *WalletVaultItemSpecAgentcardProviderConfig) UnmarshalJSON(data []byte) 
 
 // WalletVaultItemStateUnion contains all possible properties and values from
 // [WalletVaultItemStateLink], [WalletVaultItemStateAgentcard],
-// [KernelWalletState].
+// [KernelWalletState], [ShopPayWalletState].
 //
 // Use the [WalletVaultItemStateUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type WalletVaultItemStateUnion struct {
-	// Any of "link", "agentcard", "kernel".
+	// Any of "link", "agentcard", "kernel", "shop_pay".
 	Provider     string `json:"provider"`
 	Status       string `json:"status"`
 	StatusReason string `json:"status_reason"`
@@ -8273,6 +8957,7 @@ type anyWalletVaultItemState interface {
 func (WalletVaultItemStateLink) implWalletVaultItemStateUnion()      {}
 func (WalletVaultItemStateAgentcard) implWalletVaultItemStateUnion() {}
 func (KernelWalletState) implWalletVaultItemStateUnion()             {}
+func (ShopPayWalletState) implWalletVaultItemStateUnion()            {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -8280,6 +8965,7 @@ func (KernelWalletState) implWalletVaultItemStateUnion()             {}
 //	case kernel.WalletVaultItemStateLink:
 //	case kernel.WalletVaultItemStateAgentcard:
 //	case kernel.KernelWalletState:
+//	case kernel.ShopPayWalletState:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -8291,6 +8977,8 @@ func (u WalletVaultItemStateUnion) AsAny() anyWalletVaultItemState {
 		return u.AsAgentcard()
 	case "kernel":
 		return u.AsKernel()
+	case "shop_pay":
+		return u.AsShopPay()
 	}
 	return nil
 }
@@ -8306,6 +8994,11 @@ func (u WalletVaultItemStateUnion) AsAgentcard() (v WalletVaultItemStateAgentcar
 }
 
 func (u WalletVaultItemStateUnion) AsKernel() (v KernelWalletState) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u WalletVaultItemStateUnion) AsShopPay() (v ShopPayWalletState) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -8610,17 +9303,18 @@ type VaultItemPerformOperationParams struct {
 	//
 
 	// This field is a request body variant, only one variant field can be set.
-	// Authorize a Link or Kernel card using its existing purchase specification. Use
-	// only after explicit user approval and when the item advertises authorize; follow
-	// the advertised operation's description. For a Link card, pass browser_id and
-	// page_url together while the browser is on the final checkout page: Kernel
-	// inspects that checkout, chooses how the credential is delivered, and limits fill
-	// to that checkout's origin in any browser with this vault attached. Omitting both
-	// issues a virtual card that fills any page on the merchant origin. Once approval
-	// has been requested, browser_id and page_url are ignored and authorize only
-	// re-checks the request. Browser and checkout inspection errors occur before any
-	// provider request and can be retried once the browser is on the checkout page.
-	// Kernel cards do not accept browser_id or page_url.
+	// Authorize a Link, Kernel or Shop Pay card using its existing purchase
+	// specification. Use only after explicit user approval and when the item
+	// advertises authorize; follow the advertised operation's description. For a Link
+	// card, pass browser_id and page_url together while the browser is on the final
+	// checkout page: Kernel inspects that checkout, chooses how the credential is
+	// delivered, and limits fill to that checkout's origin in any browser with this
+	// vault attached. Omitting both issues a virtual card that fills any page on the
+	// merchant origin. Once approval has been requested, browser_id and page_url are
+	// ignored and authorize only re-checks the request. Browser and checkout
+	// inspection errors occur before any provider request and can be retried once the
+	// browser is on the checkout page. Kernel and Shop Pay cards do not accept
+	// browser_id or page_url.
 	OfAuthorize *AuthorizeVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	// Explicitly prepare a fresh local verification session for the same Kernel Visa
@@ -8634,11 +9328,12 @@ type VaultItemPerformOperationParams struct {
 	// this operation.
 	OfRestartVerification *RestartVerificationVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Report
-	// a real merchant transaction outcome for an issued Kernel Visa credential. Never
-	// infer success from filling checkout or receiving a credential. Supply the
-	// observed status, transaction type, actual amount, currency and timestamp.
-	// Unknown outcomes require manual reconciliation, not retry. Each purchase accepts
-	// one report.
+	// a real merchant transaction outcome for an issued Kernel Visa or Shop Pay
+	// credential. Shop Pay accepts PURCHASE, AUTHORIZATION and CAPTURE. Never infer
+	// success from filling checkout or receiving a credential. Supply the observed
+	// status, transaction type, actual amount, currency and timestamp. Unknown
+	// outcomes require manual reconciliation, not retry. Each purchase accepts one
+	// report.
 	OfConfirmTransaction *ConfirmTransactionVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Return
 	// the credential item with its collection action. Supported for ready and
@@ -8943,11 +9638,12 @@ type VaultItemUpsertParamsBodyWalletSpecUnion struct {
 	OfLink      *VaultItemUpsertParamsBodyWalletSpecLink      `json:",omitzero,inline"`
 	OfAgentcard *VaultItemUpsertParamsBodyWalletSpecAgentcard `json:",omitzero,inline"`
 	OfKernel    *KernelWalletVaultItemSpecParam               `json:",omitzero,inline"`
+	OfShopPay   *ShopPayWalletVaultItemSpecParam              `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u VaultItemUpsertParamsBodyWalletSpecUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfKernel)
+	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfKernel, u.OfShopPay)
 }
 func (u *VaultItemUpsertParamsBodyWalletSpecUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -8960,14 +9656,8 @@ func (u *VaultItemUpsertParamsBodyWalletSpecUnion) asAny() any {
 		return u.OfAgentcard
 	} else if !param.IsOmitted(u.OfKernel) {
 		return u.OfKernel
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u VaultItemUpsertParamsBodyWalletSpecUnion) GetAuthorization() *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion {
-	if vt := u.OfLink; vt != nil {
-		return &vt.Authorization
+	} else if !param.IsOmitted(u.OfShopPay) {
+		return u.OfShopPay
 	}
 	return nil
 }
@@ -8996,6 +9686,109 @@ func (u VaultItemUpsertParamsBodyWalletSpecUnion) GetProvider() *string {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Provider)
+	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Provider)
+	}
+	return nil
+}
+
+// Returns a subunion which exports methods to access subproperties
+//
+// Or use AsAny() to get the underlying value
+func (u VaultItemUpsertParamsBodyWalletSpecUnion) GetAuthorization() (res vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) {
+	if vt := u.OfLink; vt != nil {
+		res.any = vt.Authorization.asAny()
+	} else if vt := u.OfShopPay; vt != nil {
+		res.any = &vt.Authorization
+	}
+	return
+}
+
+// Can have the runtime types
+// [*VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationKernelManagedLinkAuthorizationInput],
+// [*VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInput],
+// [*ShopPayWalletVaultItemSpecAuthorizationParam]
+type vaultItemUpsertParamsBodyWalletSpecUnionAuthorization struct{ any }
+
+// Use the following switch statement to get the type of the union:
+//
+//	switch u.AsAny().(type) {
+//	case *kernel.VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationKernelManagedLinkAuthorizationInput:
+//	case *kernel.VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInput:
+//	case *kernel.ShopPayWalletVaultItemSpecAuthorizationParam:
+//	default:
+//	    fmt.Errorf("not present")
+//	}
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) AsAny() any { return u.any }
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) GetTokens() *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputTokens {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion:
+		return vt.GetTokens()
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) GetMethod() *string {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion:
+		return vt.GetMethod()
+	case *ShopPayWalletVaultItemSpecAuthorizationParam:
+		return (*string)(&vt.Method)
+	}
+	return nil
+}
+
+// Returns a subunion which exports methods to access subproperties
+//
+// Or use AsAny() to get the underlying value
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) GetClient() (res vaultItemUpsertParamsBodyWalletSpecUnionAuthorizationClient) {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion:
+		res.any = vt.GetClient()
+	case *ShopPayWalletVaultItemSpecAuthorizationParam:
+		res.any = &vt.Client
+	}
+	return res
+}
+
+// Can have the runtime types
+// [*VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationKernelManagedLinkAuthorizationInputClient],
+// [*VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputClient],
+// [*ShopPayWalletVaultItemSpecAuthorizationClientParam]
+type vaultItemUpsertParamsBodyWalletSpecUnionAuthorizationClient struct{ any }
+
+// Use the following switch statement to get the type of the union:
+//
+//	switch u.AsAny().(type) {
+//	case *kernel.VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationKernelManagedLinkAuthorizationInputClient:
+//	case *kernel.VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputClient:
+//	case *kernel.ShopPayWalletVaultItemSpecAuthorizationClientParam:
+//	default:
+//	    fmt.Errorf("not present")
+//	}
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorizationClient) AsAny() any { return u.any }
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorizationClient) GetProviderConfig() *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputClientProviderConfig {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputClient:
+		return &vt.ProviderConfig
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorizationClient) GetType() *string {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationKernelManagedLinkAuthorizationInputClient:
+		return (*string)(&vt.Type)
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputClient:
+		return (*string)(&vt.Type)
+	case *ShopPayWalletVaultItemSpecAuthorizationClientParam:
+		return (*string)(&vt.Type)
 	}
 	return nil
 }
@@ -9006,6 +9799,7 @@ func init() {
 		apijson.Discriminator[VaultItemUpsertParamsBodyWalletSpecLink]("link"),
 		apijson.Discriminator[VaultItemUpsertParamsBodyWalletSpecAgentcard]("agentcard"),
 		apijson.Discriminator[KernelWalletVaultItemSpecParam]("kernel"),
+		apijson.Discriminator[ShopPayWalletVaultItemSpecParam]("shop_pay"),
 	)
 }
 

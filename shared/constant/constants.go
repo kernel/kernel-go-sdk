@@ -131,6 +131,7 @@ type Recommendation string                  // Always "recommendation"
 type Screenshot string                      // Always "screenshot"
 type Serpapi string                         // Always "serpapi"
 type ServiceCrashed string                  // Always "service_crashed"
+type ShopPayOAuth string                    // Always "shop_pay_oauth"
 type SpendApproval string                   // Always "spend_approval"
 type SseHeartbeat string                    // Always "sse_heartbeat"
 type System string                          // Always "system"
@@ -283,6 +284,7 @@ func (c Recommendation) Default() Recommendation             { return "recommend
 func (c Screenshot) Default() Screenshot                     { return "screenshot" }
 func (c Serpapi) Default() Serpapi                           { return "serpapi" }
 func (c ServiceCrashed) Default() ServiceCrashed             { return "service_crashed" }
+func (c ShopPayOAuth) Default() ShopPayOAuth                 { return "shop_pay_oauth" }
 func (c SpendApproval) Default() SpendApproval               { return "spend_approval" }
 func (c SseHeartbeat) Default() SseHeartbeat                 { return "sse_heartbeat" }
 func (c System) Default() System                             { return "system" }
@@ -415,6 +417,7 @@ func (c Recommendation) MarshalJSON() ([]byte, error)                  { return 
 func (c Screenshot) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
 func (c Serpapi) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ServiceCrashed) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
+func (c ShopPayOAuth) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c SpendApproval) MarshalJSON() ([]byte, error)                   { return marshalString(c) }
 func (c SseHeartbeat) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c System) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
