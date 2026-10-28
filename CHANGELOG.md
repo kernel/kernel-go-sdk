@@ -5,7 +5,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([727d123](https://github.com/kernel/kernel-go-sdk/commit/727d1230cc94078c5e8ac5d618b7323ee4bc3884))
+* Import approved 1Password logins onto stored-token credentials ([727d123](https://github.com/kernel/kernel-go-sdk/commit/727d1230cc94078c5e8ac5d618b7323ee4bc3884))
 
 ## [0.134.0](https://github.com/kernel/kernel-go-sdk/compare/v0.133.0...v0.134.0) (2026-10-28)
 
@@ -50,7 +50,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([1f0841c](https://github.com/kernel/kernel-go-sdk/commit/1f0841c30810ad2b012024e28b48efe2faa5bfcd))
+* Import approved 1Password logins onto stored-token credentials ([1f0841c](https://github.com/kernel/kernel-go-sdk/commit/1f0841c30810ad2b012024e28b48efe2faa5bfcd))
 
 ## [0.128.0](https://github.com/kernel/kernel-go-sdk/compare/v0.127.0...v0.128.0) (2026-10-19)
 
@@ -58,7 +58,7 @@
 ### Features
 
 * Add browser location session policy ([23f3f65](https://github.com/kernel/kernel-go-sdk/commit/23f3f656d237ff574efa1deda1197afd8c4aa020))
-* chore(stlc): seal custom-code tracking files ([e7ca6df](https://github.com/kernel/kernel-go-sdk/commit/e7ca6df46851167f66df59f3dc7c1bb46d1fca55))
+* Import approved 1Password logins onto stored-token credentials ([e7ca6df](https://github.com/kernel/kernel-go-sdk/commit/e7ca6df46851167f66df59f3dc7c1bb46d1fca55))
 * Fence browser allowlist updates with revision checks ([991f003](https://github.com/kernel/kernel-go-sdk/commit/991f0037874c9a5b96bd694ac5ff67f090be3b70))
 * Support existing-user AgentCard wallet imports ([534bd1a](https://github.com/kernel/kernel-go-sdk/commit/534bd1af4dfed8a64f7cb1d455672cd0d763af6f))
 
@@ -70,7 +70,7 @@
 * Add atomic preconditions to pool network updates ([4ba1a16](https://github.com/kernel/kernel-go-sdk/commit/4ba1a16b77cf49e77fb755de50602e9ceb96f767))
 * Add passkey credential fields and PATCH field add/remove ([5fcd5cb](https://github.com/kernel/kernel-go-sdk/commit/5fcd5cb3d70a57e4eaa55cf9a4e31d8826a0d4bd))
 * Allow replacing vault cards whose provider outcome is unknown ([c29cc0a](https://github.com/kernel/kernel-go-sdk/commit/c29cc0a2acc90a2a8cb85009e0b675795f9fbbde))
-* chore(stlc): seal custom-code tracking files ([83755ea](https://github.com/kernel/kernel-go-sdk/commit/83755ea520bdc77e2d898abfbadac4d9a6d6a43c))
+* Import approved 1Password logins onto stored-token credentials ([83755ea](https://github.com/kernel/kernel-go-sdk/commit/83755ea520bdc77e2d898abfbadac4d9a6d6a43c))
 * Classify text captchas as token tasks and Binance as a provider ([a7500db](https://github.com/kernel/kernel-go-sdk/commit/a7500dba27215b13133ab42299f42720aaefd952))
 * Deliver Kernel card details through fill ([c01e7cb](https://github.com/kernel/kernel-go-sdk/commit/c01e7cb515705a9e8a82a6334b6b88727f649ced))
 * Raise Kernel card amount cap to $10,000 ([c543575](https://github.com/kernel/kernel-go-sdk/commit/c5435759242aaa83f6280dcd3506c8dd185752ae))
@@ -88,7 +88,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([4ecfaa0](https://github.com/kernel/kernel-go-sdk/commit/4ecfaa017984165d5c22b033f5f9a8787e4b5d54))
+* Import approved 1Password logins onto stored-token credentials ([4ecfaa0](https://github.com/kernel/kernel-go-sdk/commit/4ecfaa017984165d5c22b033f5f9a8787e4b5d54))
 
 ## [0.124.0](https://github.com/kernel/kernel-go-sdk/compare/v0.123.0...v0.124.0) (2026-10-13)
 
@@ -171,7 +171,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([10c4031](https://github.com/kernel/kernel-go-sdk/commit/10c4031082d73b41180adeb54a722f89341907ff))
+* Import approved 1Password logins onto stored-token credentials ([10c4031](https://github.com/kernel/kernel-go-sdk/commit/10c4031082d73b41180adeb54a722f89341907ff))
 
 ## [0.115.0](https://github.com/kernel/kernel-go-sdk/compare/v0.114.0...v0.115.0) (2026-09-30)
 
@@ -278,7 +278,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([5839bab](https://github.com/kernel/kernel-go-sdk/commit/5839babda6a9a2fe4788f384665c833a3f41da9f))
+* Import approved 1Password logins onto stored-token credentials ([5839bab](https://github.com/kernel/kernel-go-sdk/commit/5839babda6a9a2fe4788f384665c833a3f41da9f))
 * Expose managed auth field input modes ([55c88c0](https://github.com/kernel/kernel-go-sdk/commit/55c88c0144a0eb00f4e9378a265774b96acf41f0))
 * Return working config registry configurations ([bcf94cc](https://github.com/kernel/kernel-go-sdk/commit/bcf94cc5a1bd1fcc02ff4b2ed749b3e6b0244628))
 
@@ -391,7 +391,7 @@
 
 ### Features
 
-* chore(stlc): seal custom-code tracking files ([0a28735](https://github.com/kernel/kernel-go-sdk/commit/0a287359dcc5b8ba476bfa58579a7e2c783c4cb1))
+* Import approved 1Password logins onto stored-token credentials ([0a28735](https://github.com/kernel/kernel-go-sdk/commit/0a287359dcc5b8ba476bfa58579a7e2c783c4cb1))
 
 ## [0.91.0](https://github.com/kernel/kernel-go-sdk/compare/v0.90.0...v0.91.0) (2026-08-14)
 
