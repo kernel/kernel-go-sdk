@@ -21,9 +21,7 @@ import (
 	"github.com/kernel/kernel-go-sdk/packages/respjson"
 )
 
-// Create and manage projects for resource isolation within an organization. When
-// projects are disabled for the organization, project operations return `404` with
-// code `projects_disabled`.
+// Create and manage projects for resource isolation within an organization.
 //
 // ProjectService contains methods and other services that help with interacting
 // with the kernel API.
@@ -33,9 +31,7 @@ import (
 // the [NewProjectService] method instead.
 type ProjectService struct {
 	Options []option.RequestOption
-	// Create and manage projects for resource isolation within an organization. When
-	// projects are disabled for the organization, project operations return `404` with
-	// code `projects_disabled`.
+	// Create and manage projects for resource isolation within an organization.
 	Limits ProjectLimitService
 }
 

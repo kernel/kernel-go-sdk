@@ -286,6 +286,32 @@ func (r *BrowserAllowlistStateParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Overrides for browser attributes presented to websites.
+//
+// The property Os is required.
+type BrowserFingerprintParam struct {
+	// Operating system the browser reports to websites.
+	//
+	// Any of "macos".
+	Os BrowserFingerprintOs `json:"os,omitzero" api:"required"`
+	paramObj
+}
+
+func (r BrowserFingerprintParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserFingerprintParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserFingerprintParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Operating system the browser reports to websites.
+type BrowserFingerprintOs string
+
+const (
+	BrowserFingerprintOsMacos BrowserFingerprintOs = "macos"
+)
+
 type BrowserLocation struct {
 	// Effective canonical BCP 47 formatting locale selected for the browser session.
 	Locale string `json:"locale" api:"required"`
@@ -1870,6 +1896,11 @@ type BrowserNewParams struct {
 	ChromePolicy map[string]any `json:"chrome_policy,omitzero"`
 	// List of browser extensions to load into the session. Provide each by id or name.
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
+	// Closed beta: contact Kernel to enable fingerprint overrides for your
+	// organization. Overrides browser attributes presented to websites for this
+	// session. Currently supports macos and requires stealth=true, headless=false,
+	// gpu=false, and default memory. Omit to preserve the default browser behavior.
+	Fingerprint BrowserFingerprintParam `json:"fingerprint,omitzero"`
 	// Optional session-only timezone and locale overrides. Each omitted field uses the
 	// default for the browser's region. start_url opens once the location applies.
 	Location BrowserLocationRequestParam `json:"location,omitzero"`

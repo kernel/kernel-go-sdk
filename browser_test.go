@@ -37,6 +37,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 			ID:   kernel.String("id"),
 			Name: kernel.String("name"),
 		}},
+		Fingerprint: kernel.BrowserFingerprintParam{
+			Os: kernel.BrowserFingerprintOsMacos,
+		},
 		GPU:          kernel.Bool(false),
 		Headless:     kernel.Bool(false),
 		InvocationID: kernel.String("rr33xuugxj9h0bkf1rdt2bet"),

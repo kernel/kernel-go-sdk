@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.136.0](https://github.com/kernel/kernel-go-sdk/compare/v0.135.0...v0.136.0) (2026-10-29)
+
+
+### Features
+
+* Add request-only fingerprint beta contract ([3e7917c](https://github.com/kernel/kernel-go-sdk/commit/3e7917c6c3393ccbbe01675df3ae9d36019508ba))
+* Read Shop Pay card status one read at a time and report outcome details ([fb4b8d2](https://github.com/kernel/kernel-go-sdk/commit/fb4b8d2aa10df1f974f01fd90282c0f0563f12bd))
+* Remove the projects_enabled flag from the API ([3914753](https://github.com/kernel/kernel-go-sdk/commit/391475334c9a6460fecdb2f4201e9bcf382a2c03))
+* route browser REPL and WebMCP calls directly to browser VMs ([3e85ff5](https://github.com/kernel/kernel-go-sdk/commit/3e85ff5281a00f24b20301a3bb4fdf15629e8450))
+* Route Evervault alias payment windows through per-window upstreams ([088d69c](https://github.com/kernel/kernel-go-sdk/commit/088d69cb7bd1c04fa3ed490258ed487adc47440f))
+* Wire Shop Pay into the vault API ([4b76fa4](https://github.com/kernel/kernel-go-sdk/commit/4b76fa4a209b26d379f0020790fce1f1414d3d55))
+
 ## [0.135.0](https://github.com/kernel/kernel-go-sdk/compare/v0.134.0...v0.135.0) (2026-10-28)
 
 

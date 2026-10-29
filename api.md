@@ -106,6 +106,7 @@ Methods:
 Params Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserAllowlistStateParam">BrowserAllowlistStateParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserFingerprintParam">BrowserFingerprintParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocationRequestParam">BrowserLocationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocationUpdateRequestParam">BrowserLocationUpdateRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserMemoryRequest">BrowserMemoryRequest</a>
@@ -579,6 +580,8 @@ Params Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RegisterPasskeyVaultItemOperationRequestParam">RegisterPasskeyVaultItemOperationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RemovePaymentMethodVaultItemOperationRequestParam">RemovePaymentMethodVaultItemOperationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RestartVerificationVaultItemOperationRequestParam">RestartVerificationVaultItemOperationRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ShopPayCardVaultItemSpecParam">ShopPayCardVaultItemSpecParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ShopPayWalletVaultItemSpecParam">ShopPayWalletVaultItemSpecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultCheckoutContextParam">VaultCheckoutContextParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultFillFieldParam">VaultFillFieldParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultWebmcpBindingParam">VaultWebmcpBindingParam</a>
@@ -624,6 +627,10 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#PaymentRequestVaultItemSpecUnion">PaymentRequestVaultItemSpecUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#PaymentRequestVaultItemStateUnion">PaymentRequestVaultItemStateUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#RemovePaymentMethodVaultItemOperationResult">RemovePaymentMethodVaultItemOperationResult</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ShopPayCardState">ShopPayCardState</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ShopPayCardVaultItemSpec">ShopPayCardVaultItemSpec</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ShopPayWalletState">ShopPayWalletState</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ShopPayWalletVaultItemSpec">ShopPayWalletVaultItemSpec</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultCardAliases">VaultCardAliases</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultFillFieldResult">VaultFillFieldResult</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultItemUnion">VaultItemUnion</a>
