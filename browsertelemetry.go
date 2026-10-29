@@ -5199,14 +5199,16 @@ type BrowserProxyErrorEventData struct {
 	// network_policy_denied, provider_blacklisted, provider_unreachable,
 	// provider_rejected, origin_tls_timeout, origin_response_incomplete,
 	// proxy_unavailable, restricted_route_unavailable, upstream_timeout,
-	// upstream_dns_failure, upstream_connect_failed. A header value the browser image
-	// does not recognize is reported as unknown, with the header value in raw_code.
+	// upstream_dns_failure, upstream_connect_failed, payment_window_expired. A header
+	// value the browser image does not recognize is reported as unknown, with the
+	// header value in raw_code.
 	//
 	// Any of "destination_blocked", "destination_route_unavailable",
 	// "network_policy_denied", "provider_blacklisted", "provider_unreachable",
 	// "provider_rejected", "origin_tls_timeout", "origin_response_incomplete",
 	// "proxy_unavailable", "restricted_route_unavailable", "upstream_timeout",
-	// "upstream_dns_failure", "upstream_connect_failed", "unknown".
+	// "upstream_dns_failure", "upstream_connect_failed", "payment_window_expired",
+	// "unknown".
 	Code string `json:"code" api:"required"`
 	// CDP request identifier matching the originating request.
 	RequestID string `json:"request_id" api:"required"`
