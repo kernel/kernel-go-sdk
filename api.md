@@ -106,6 +106,7 @@ Methods:
 Params Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserAllowlistStateParam">BrowserAllowlistStateParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserFingerprintParam">BrowserFingerprintParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocationRequestParam">BrowserLocationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocationUpdateRequestParam">BrowserLocationUpdateRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserMemoryRequest">BrowserMemoryRequest</a>
