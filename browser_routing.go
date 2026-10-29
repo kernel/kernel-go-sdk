@@ -87,7 +87,7 @@ func browserRoutingSubresourcesFromEnv() []string {
 		// covers every filesystem endpoint, while "logs/stream" excludes other
 		// current or future logs endpoints. "telemetry/events" is a historical
 		// read served by the control plane (S2), unlike the VM's live stream.
-		return []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream"}
+		return []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream", "repl", "webmcp"}
 	}
 	if strings.TrimSpace(raw) == "" {
 		return []string{}
