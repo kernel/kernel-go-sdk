@@ -79,7 +79,12 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 		{"bare logs -> control plane", "/browsers/sess-1/logs", false},
 		{"logs history -> control plane", "/browsers/sess-1/logs/history", false},
 		{"logs-prefixed segment not matched", "/browsers/sess-1/logstream", false},
+		{"repl -> VM", "/browsers/sess-1/repl", true},
+		{"webmcp tools -> VM", "/browsers/sess-1/webmcp/tools", true},
+		{"webmcp invoke -> VM", "/browsers/sess-1/webmcp/invoke", true},
+		{"webmcp custom tool -> VM", "/browsers/sess-1/webmcp/custom-tools/ct_1", true},
 		{"extensions -> control plane", "/browsers/sess-1/extensions", false},
+		{"bare replays -> control plane", "/browsers/sess-1/replays", false},
 		{"replays -> control plane", "/browsers/sess-1/replays/rec-1", false},
 	}
 
@@ -91,7 +96,7 @@ func TestDirectVMRoutingMiddlewareAllowlistMatching(t *testing.T) {
 				BaseURL:   "https://browser.example/browser/kernel",
 				JWT:       "jwt-123",
 			})
-			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream"})
+			middleware := DirectVMRoutingMiddleware(cache, []string{"curl", "telemetry/stream", "computer", "playwright", "process", "fs", "logs/stream", "repl", "webmcp"})
 
 			reqURL, err := url.Parse("https://api.example" + tc.path)
 			if err != nil {
