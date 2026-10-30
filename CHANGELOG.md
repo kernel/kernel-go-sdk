@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.137.0](https://github.com/kernel/kernel-go-sdk/compare/v0.136.0...v0.137.0) (2026-10-30)
+
+
+### Features
+
+* Pause managed auth logins for human verification on unsolvable captchas ([fd9f4d3](https://github.com/kernel/kernel-go-sdk/commit/fd9f4d3da9e2aec47cdf5468066c89898c18ca7b))
+
 ## [0.136.0](https://github.com/kernel/kernel-go-sdk/compare/v0.135.0...v0.136.0) (2026-10-29)
 
 

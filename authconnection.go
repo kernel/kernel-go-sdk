@@ -250,6 +250,9 @@ type ManagedAuth struct {
 	ID string `json:"id" api:"required"`
 	// Target domain for authentication
 	Domain string `json:"domain" api:"required"`
+	// Whether a login blocked by a CAPTCHA the browser cannot solve pauses at
+	// AWAITING_HUMAN_INTERVENTION so a person can complete it in the live view.
+	Hitl bool `json:"hitl" api:"required"`
 	// Name of the profile associated with this auth connection
 	ProfileName string `json:"profile_name" api:"required"`
 	// Whether to record browser session replays for this connection by default. Useful
@@ -390,7 +393,7 @@ type ManagedAuth struct {
 	// Current step in the flow (null when no flow in progress)
 	//
 	// Any of "DISCOVERING", "AWAITING_INPUT", "AWAITING_EXTERNAL_ACTION",
-	// "SUBMITTING", "COMPLETED".
+	// "AWAITING_HUMAN_INTERVENTION", "SUBMITTING", "COMPLETED".
 	FlowStep ManagedAuthFlowStep `json:"flow_step" api:"nullable"`
 	// Type of the current flow (null when no flow in progress)
 	//
@@ -462,6 +465,7 @@ type ManagedAuth struct {
 	JSON struct {
 		ID                           respjson.Field
 		Domain                       respjson.Field
+		Hitl                         respjson.Field
 		ProfileName                  respjson.Field
 		RecordSession                respjson.Field
 		SaveCredentials              respjson.Field
@@ -716,10 +720,11 @@ type ManagedAuthChoice struct {
 	ID string `json:"id" api:"required"`
 	// Human-readable choice label.
 	Label string `json:"label" api:"required"`
-	// Choice type.
+	// Choice type. A `human_intervention` choice confirms the person finished the
+	// challenge in the live view.
 	//
 	// Any of "mfa_method", "sso_provider", "sign_in_method", "auth_method",
-	// "identifier_method", "account", "other".
+	// "identifier_method", "account", "human_intervention", "other".
 	Type string `json:"type" api:"required"`
 	// Context captured for a choice.
 	Context string `json:"context" api:"nullable"`
@@ -898,11 +903,12 @@ const (
 type ManagedAuthFlowStep string
 
 const (
-	ManagedAuthFlowStepDiscovering            ManagedAuthFlowStep = "DISCOVERING"
-	ManagedAuthFlowStepAwaitingInput          ManagedAuthFlowStep = "AWAITING_INPUT"
-	ManagedAuthFlowStepAwaitingExternalAction ManagedAuthFlowStep = "AWAITING_EXTERNAL_ACTION"
-	ManagedAuthFlowStepSubmitting             ManagedAuthFlowStep = "SUBMITTING"
-	ManagedAuthFlowStepCompleted              ManagedAuthFlowStep = "COMPLETED"
+	ManagedAuthFlowStepDiscovering               ManagedAuthFlowStep = "DISCOVERING"
+	ManagedAuthFlowStepAwaitingInput             ManagedAuthFlowStep = "AWAITING_INPUT"
+	ManagedAuthFlowStepAwaitingExternalAction    ManagedAuthFlowStep = "AWAITING_EXTERNAL_ACTION"
+	ManagedAuthFlowStepAwaitingHumanIntervention ManagedAuthFlowStep = "AWAITING_HUMAN_INTERVENTION"
+	ManagedAuthFlowStepSubmitting                ManagedAuthFlowStep = "SUBMITTING"
+	ManagedAuthFlowStepCompleted                 ManagedAuthFlowStep = "COMPLETED"
 )
 
 // Type of the current flow (null when no flow in progress)
@@ -1356,6 +1362,12 @@ type ManagedAuthCreateRequestParam struct {
 	// the automatic flow (since re-auth is only triggered by a failed scheduled health
 	// check). Defaults to true.
 	HealthChecks param.Opt[bool] `json:"health_checks,omitzero"`
+	// Whether a login blocked by a CAPTCHA the browser cannot solve pauses for a
+	// person instead of failing. The flow moves to AWAITING_HUMAN_INTERVENTION with a
+	// `human_intervention` choice; the person completes the challenge in
+	// `live_view_url`, then submits that choice to resume. Reauthentication never
+	// pauses. Defaults to false.
+	Hitl param.Opt[bool] `json:"hitl,omitzero"`
 	// Optional login page URL to skip discovery
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
 	// Whether to record browser sessions for this connection by default. Useful for
@@ -1710,6 +1722,9 @@ type ManagedAuthUpdateRequestParam struct {
 	// on the automatic flow (since re-auth is only triggered by a failed scheduled
 	// health check).
 	HealthChecks param.Opt[bool] `json:"health_checks,omitzero"`
+	// Whether a login blocked by a CAPTCHA the browser cannot solve pauses for a
+	// person instead of failing
+	Hitl param.Opt[bool] `json:"hitl,omitzero"`
 	// Login page URL. Set to empty string to clear.
 	LoginURL param.Opt[string] `json:"login_url,omitzero" format:"uri"`
 	// Whether to record browser sessions for this connection by default
@@ -2095,7 +2110,7 @@ type AuthConnectionFollowResponseManagedAuthState struct {
 	// Current step in the flow.
 	//
 	// Any of "DISCOVERING", "AWAITING_INPUT", "AWAITING_EXTERNAL_ACTION",
-	// "SUBMITTING", "COMPLETED".
+	// "AWAITING_HUMAN_INTERVENTION", "SUBMITTING", "COMPLETED".
 	FlowStep string `json:"flow_step" api:"required"`
 	// Time the state was reported.
 	Timestamp time.Time `json:"timestamp" api:"required" format:"date-time"`
@@ -2179,10 +2194,11 @@ type AuthConnectionFollowResponseManagedAuthStateChoice struct {
 	ID string `json:"id" api:"required"`
 	// Human-readable choice label.
 	Label string `json:"label" api:"required"`
-	// Choice type.
+	// Choice type. A `human_intervention` choice confirms the person finished the
+	// challenge in the live view.
 	//
 	// Any of "mfa_method", "sso_provider", "sign_in_method", "auth_method",
-	// "identifier_method", "account", "other".
+	// "identifier_method", "account", "human_intervention", "other".
 	Type string `json:"type" api:"required"`
 	// Context captured for a choice.
 	Context string `json:"context" api:"nullable"`

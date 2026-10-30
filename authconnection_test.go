@@ -149,6 +149,7 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 			},
 			HealthCheckInterval: kernel.Int(3600),
 			HealthChecks:        kernel.Bool(true),
+			Hitl:                kernel.Bool(false),
 			LoginURL:            kernel.String("https://netflix.com/login"),
 			Proxy: kernel.ManagedAuthCreateRequestProxyParam{
 				ID:   kernel.String("id"),
@@ -327,6 +328,7 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 				},
 				HealthCheckInterval: kernel.Int(3600),
 				HealthChecks:        kernel.Bool(true),
+				Hitl:                kernel.Bool(false),
 				LoginURL:            kernel.String("https://netflix.com/login"),
 				Proxy: kernel.ManagedAuthUpdateRequestProxyParam{
 					ID:   kernel.String("id"),
