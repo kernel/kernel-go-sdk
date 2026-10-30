@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.138.0](https://github.com/kernel/kernel-go-sdk/compare/v0.137.0...v0.138.0) (2026-10-30)
+
+
+### Features
+
+* Expose leased_at on browser session responses ([ad54f35](https://github.com/kernel/kernel-go-sdk/commit/ad54f35f3e6d0ddd2ace80f98f6871e94ba12957))
+
 ## [0.137.0](https://github.com/kernel/kernel-go-sdk/compare/v0.136.0...v0.137.0) (2026-10-30)
 
 
