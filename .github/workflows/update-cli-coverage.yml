@@ -1,17 +1,15 @@
 name: Update CLI Coverage
 
 on:
-  push:
-    branches: [main]
+  # A push to main can run before release-please tags the release.
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       pr_number:
         description: 'PR number to use for context (leave empty to use most recent merged PR)'
         required: false
         type: string
-  # Or trigger on releases:
-  # release:
-  #   types: [published]
 
 permissions:
   contents: read
@@ -153,9 +151,11 @@ jobs:
 
       - name: Get SDK version info
         id: sdk-version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
-          # Get the latest tag if available, otherwise use commit SHA
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          # Use the published release, else the latest tag, else the commit SHA
+          LATEST_TAG=${RELEASE_TAG:-$(git describe --tags --abbrev=0 2>/dev/null || echo "")}
           if [ -n "$LATEST_TAG" ]; then
             echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
             echo "SDK version: $LATEST_TAG"
@@ -177,18 +177,15 @@ jobs:
             echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Compute SDK diff since CLI's current version
+      - name: Compute SDK diff since CLI main's version
         id: sdk-diff
         run: |
-          # Extract the SDK version currently used by the CLI
-          # Prefer go list (parses go.mod properly); fall back to grep, taking the
-          # first non-conflict-marker match so a merge conflict can't yield a
-          # multi-line value that breaks $GITHUB_OUTPUT.
-          OLD_SDK_VERSION=$(cd /tmp/kernel-cli && go list -m github.com/kernel/kernel-go-sdk 2>/dev/null | awk '{print $2}')
-          if [ -z "$OLD_SDK_VERSION" ]; then
-            OLD_SDK_VERSION=$(grep 'kernel/kernel-go-sdk' /tmp/kernel-cli/go.mod | grep -v '^[<>=]' | head -1 | awk '{print $2}')
-          fi
-          echo "CLI currently uses SDK version: $OLD_SDK_VERSION"
+          # The report replaces the PR description, so audit every release since
+          # the SDK version on CLI main, not only the ones since the last run.
+          git -C /tmp/kernel-cli show origin/main:go.mod > "$RUNNER_TEMP/cli-main-go.mod"
+          OLD_SDK_VERSION=$(go mod edit -json "$RUNNER_TEMP/cli-main-go.mod" \
+            | jq -er '.Require[] | select(.Path == "github.com/kernel/kernel-go-sdk") | .Version')
+          echo "CLI main uses SDK version: $OLD_SDK_VERSION"
           echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
 
           NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
@@ -278,15 +275,16 @@ jobs:
 
           # Background
           The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
-          The CLI was previously on SDK version ${{ steps.sdk-diff.outputs.old_version }}, and we are updating it to ${{ steps.sdk-version.outputs.version }}.
+          The CLI main branch is on SDK version ${{ steps.sdk-diff.outputs.old_version }}, and we are updating it to ${{ steps.sdk-version.outputs.version }}.
+          The update branch may already hold coverage from earlier runs for releases in between; keep it and build on it.
 
           # Source Files
           - SDK api.md: Current directory - READ THIS FILE FIRST. This is the authoritative list of all SDK methods and their signatures.
           - SDK *.go files: Current directory - Contains param structs (e.g., BrowserNewParams, DeploymentListParams) with all available options/fields.
-          - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the CLI's current SDK version (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
+          - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the SDK version on CLI main (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
           - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
           - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
-          - API Spec diff: /tmp/openapi-diff.patch - Spec changes between the CLI's current SDK version and the new one, including endpoint, parameter, and field description changes.
+          - API Spec diff: /tmp/openapi-diff.patch - Spec changes between the SDK version on CLI main and the new one, including endpoint, parameter, and field description changes.
           - CLI: /tmp/kernel-cli - Existing CLI commands
 
           # Task
@@ -299,7 +297,7 @@ jobs:
           - This ensures the CLI always uses the latest SDK, even if no new commands are added
 
           ## Step 2: Review SDK Diff (CRITICAL - DO THIS BEFORE THE FULL ENUMERATION)
-          Read /tmp/sdk-diff.patch to see exactly what changed in the SDK between the CLI's current version and the new version.
+          Read /tmp/sdk-diff.patch to see exactly what changed in the SDK between the version on CLI main and the new version.
           This diff shows new methods, new param fields, and changed signatures — these are the changes most likely to need CLI coverage.
           Treat every addition in this diff as a checklist item: each new method needs a CLI command, each new param field needs a CLI flag.
           After verifying these are covered, proceed to the full enumeration below to catch anything else.
@@ -394,6 +392,7 @@ jobs:
           ## Step 8: Review and Report
           - Read the full diff against origin/main and remove unrelated changes or unnecessary wrappers/casts.
           - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, help text updated to match spec changes (with the spec operation or field each follows), intentional exclusions, and test results or limitations.
+          - The report replaces the PR description, so it must describe every change in the diff against origin/main, including changes earlier runs left on this branch, not only this run's.
           - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
           - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
           - Only go.mod, go.sum, and .go files under cmd/ and pkg/ are published. The workflow discards every other change before validation.
@@ -471,6 +470,7 @@ jobs:
           - ALWAYS perform the full enumeration (Steps 2-4) - this is critical for finding gaps
           - ALL SDK methods in api.md MUST have corresponding CLI commands, EXCEPT those marked with x-cli-skip in openapi.yaml
           - SKIP endpoints marked with x-cli-skip: true in openapi.yaml - these are internal endpoints (e.g., hosted UI auth flows) not suitable for CLI
+          - The API spec is taken from the API's main branch at release time and can be ahead of the released SDK. The SDK defines what exists: never add commands or flags for operations or fields this SDK version does not have. Use the spec only for the meaning of things the SDK has.
           - Streaming methods may have different CLI implementations (e.g., follow flags)
           - Even if no coverage gaps are found, still leave the SDK version bump and write the coverage report
           - Ensure code compiles before finishing
