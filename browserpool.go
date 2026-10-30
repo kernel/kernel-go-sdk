@@ -386,6 +386,9 @@ type BrowserPoolAcquireResponse struct {
 	GPU bool `json:"gpu"`
 	// Whether the browser session is running in kiosk mode.
 	KioskMode bool `json:"kiosk_mode"`
+	// When the pooled browser session was last leased. Only present for leased pooled
+	// sessions.
+	LeasedAt time.Time `json:"leased_at" format:"date-time"`
 	// Effective browser timezone and locale with per-field provenance.
 	Location BrowserLocation `json:"location"`
 	// Human-readable name of the browser session, if one was set at creation.
@@ -461,6 +464,7 @@ type BrowserPoolAcquireResponse struct {
 		DeletedAt          respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
+		LeasedAt           respjson.Field
 		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
