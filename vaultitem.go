@@ -4640,10 +4640,12 @@ func (r *OnePasswordCredentialVaultItemStateAccessRequestResolved) UnmarshalJSON
 }
 
 // Fill and submit an approved 1Password login in the selected browser page. The
-// page must share the selected entry's login origin. Supply entry_id when more
-// than one approved entry matches the page origin, and target_id when more than
-// one open page has page_url. The extension selects fields; callers cannot supply
-// selectors or secret values. Submission does not confirm website authentication.
+// 1Password extension decides whether the approved login matches the page and
+// refuses pages that don't. Supply entry_id when several entries are approved and
+// the page origin does not identify exactly one of them, and target_id when more
+// than one open page has page_url. The extension selects fields; callers cannot
+// supply selectors or secret values. Submission does not confirm website
+// authentication.
 //
 // The properties BrowserID, PageURL, Type are required.
 type OnePasswordFillVaultItemOperationRequestParam struct {
@@ -4654,8 +4656,8 @@ type OnePasswordFillVaultItemOperationRequestParam struct {
 	PageURL string `json:"page_url" api:"required" format:"uri"`
 	// Any of "1pw_fill".
 	Type OnePasswordFillVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
-	// ID of an approved request entry. Required when several approved entries have the
-	// page's origin.
+	// ID of an approved request entry. Required when several entries are approved and
+	// the page's origin does not match exactly one of them.
 	EntryID param.Opt[string] `json:"entry_id,omitzero"`
 	// CDP target ID of the page to fill, such as tab.target_id from
 	// playwright.execute. Use it when several open pages have page_url. The page's
@@ -9450,11 +9452,13 @@ type VaultItemPerformOperationParams struct {
 	// references in state.access_request.resolved.
 	Of1pwAccessRequestStatus *VaultItemPerformOperationParamsBody1pwAccessRequestStatus `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Fill
-	// and submit an approved 1Password login in the selected browser page. The page
-	// must share the selected entry's login origin. Supply entry_id when more than one
-	// approved entry matches the page origin, and target_id when more than one open
-	// page has page_url. The extension selects fields; callers cannot supply selectors
-	// or secret values. Submission does not confirm website authentication.
+	// and submit an approved 1Password login in the selected browser page. The
+	// 1Password extension decides whether the approved login matches the page and
+	// refuses pages that don't. Supply entry_id when several entries are approved and
+	// the page origin does not identify exactly one of them, and target_id when more
+	// than one open page has page_url. The extension selects fields; callers cannot
+	// supply selectors or secret values. Submission does not confirm website
+	// authentication.
 	Of1pwFill *OnePasswordFillVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Kernel
 	// encountered a recoverable error while linking this 1Password account. Use this
