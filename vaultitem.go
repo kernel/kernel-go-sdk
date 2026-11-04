@@ -572,11 +572,15 @@ type CardVaultItemSpecUnion struct {
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	CheckoutOrigin string `json:"checkout_origin"`
 	// This field is from variant [KernelCardVaultItemSpec].
+	ExpiresAt time.Time `json:"expires_at"`
+	// This field is from variant [KernelCardVaultItemSpec].
 	MerchantCategory string `json:"merchant_category"`
 	// This field is from variant [KernelCardVaultItemSpec].
 	MerchantCategoryCode string `json:"merchant_category_code"`
 	MerchantCountry      string `json:"merchant_country"`
-	JSON                 struct {
+	// This field is from variant [KernelCardVaultItemSpec].
+	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
+	JSON          struct {
 		Amount               respjson.Field
 		Context              respjson.Field
 		Currency             respjson.Field
@@ -592,9 +596,11 @@ type CardVaultItemSpecUnion struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
+		SingleUseCard        respjson.Field
 		raw                  string
 	} `json:"-"`
 }
@@ -1006,6 +1012,14 @@ func (u CardVaultItemSpecUnionParam) GetCheckoutOrigin() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetExpiresAt() *time.Time {
+	if vt := u.OfKernel; vt != nil && vt.ExpiresAt.Valid() {
+		return &vt.ExpiresAt.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u CardVaultItemSpecUnionParam) GetMerchantCategory() *string {
 	if vt := u.OfKernel; vt != nil && vt.MerchantCategory.Valid() {
 		return &vt.MerchantCategory.Value
@@ -1017,6 +1031,14 @@ func (u CardVaultItemSpecUnionParam) GetMerchantCategory() *string {
 func (u CardVaultItemSpecUnionParam) GetMerchantCategoryCode() *string {
 	if vt := u.OfKernel; vt != nil && vt.MerchantCategoryCode.Valid() {
 		return &vt.MerchantCategoryCode.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetSingleUseCard() *KernelSingleUseCardParam {
+	if vt := u.OfKernel; vt != nil {
+		return &vt.SingleUseCard
 	}
 	return nil
 }
@@ -1398,6 +1420,8 @@ type CardVaultItemStateUnion struct {
 	// This field is from variant [CardVaultItemStateAgentcard].
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
 	// This field is from variant [KernelCardState].
+	Source KernelCardStateSource `json:"source"`
+	// This field is from variant [KernelCardState].
 	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
 	// This field is from variant [KernelCardState].
 	PaymentMethodID string `json:"payment_method_id"`
@@ -1410,6 +1434,7 @@ type CardVaultItemStateUnion struct {
 		Aliases         respjson.Field
 		Authorization   respjson.Field
 		Preparation     respjson.Field
+		Source          respjson.Field
 		FundingStatus   respjson.Field
 		PaymentMethodID respjson.Field
 		raw             string
@@ -2959,16 +2984,24 @@ const (
 	FillVaultItemOperationResultTypeFill FillVaultItemOperationResultType = "fill"
 )
 
-// A ready Kernel card supports authorize, fill, then submit checkout. Card details
-// are delivered for a few minutes after fill; submit promptly. Repeated fill is
-// safe and never submits checkout. Visa purchases require a spend_approval action
-// before details are issued; Mastercard purchases need no hosted approval.
-// masks.last4 is the enrolled card's last four digits; masks.token_last4, when
-// present, is the token's last four digits shown to the merchant. Kernel does not
-// observe whether the merchant charged the card.
+// A ready Kernel card funded by a payment method supports authorize, fill, then
+// submit checkout. A single-use card (source single_use_card) is ready on
+// creation, supports only fill, and is expired from expires_at; Kernel deletes its
+// stored details shortly after expires_at. It has no payment_method_id or
+// funding_status. Card details are delivered for a few minutes after fill; submit
+// promptly. Repeated fill is safe and never submits checkout. Visa purchases
+// require a spend_approval action before details are issued; Mastercard purchases
+// need no hosted approval. masks.last4 is the enrolled card's last four digits;
+// masks.token_last4, when present, is the token's last four digits shown to the
+// merchant. Kernel does not observe whether the merchant charged the card.
 type KernelCardState struct {
 	// Any of "kernel".
 	Provider KernelCardStateProvider `json:"provider" api:"required"`
+	// payment_method for a purchase funded by a wallet payment method; single_use_card
+	// for a card whose details were supplied with single_use_card.
+	//
+	// Any of "payment_method", "single_use_card".
+	Source KernelCardStateSource `json:"source" api:"required"`
 	// pending_authorization waits for cardholder approval on Visa purchases or fresh
 	// security-code collection on alias-mode purchases through the spend_approval
 	// action; an unused link expires after 30 minutes. Alias-mode cards become ready
@@ -2990,7 +3023,9 @@ type KernelCardState struct {
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
 	Status KernelCardStateStatus `json:"status" api:"required"`
-	// Informational registrable domain. Fill is locked to merchant_url's exact origin.
+	// Informational registrable domain. Fill is locked to merchant_url's exact origin,
+	// except that a single-use card fills on any https page of this registrable
+	// domain.
 	Domains []string `json:"domains"`
 	// Whether payment_method_id can still fund this purchase. unavailable means the
 	// method is being removed or awaits recovery, so authorization, fill and
@@ -3010,6 +3045,7 @@ type KernelCardState struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Provider        respjson.Field
+		Source          respjson.Field
 		Status          respjson.Field
 		Domains         respjson.Field
 		FundingStatus   respjson.Field
@@ -3031,6 +3067,15 @@ type KernelCardStateProvider string
 
 const (
 	KernelCardStateProviderKernel KernelCardStateProvider = "kernel"
+)
+
+// payment_method for a purchase funded by a wallet payment method; single_use_card
+// for a card whose details were supplied with single_use_card.
+type KernelCardStateSource string
+
+const (
+	KernelCardStateSourcePaymentMethod KernelCardStateSource = "payment_method"
+	KernelCardStateSourceSingleUseCard KernelCardStateSource = "single_use_card"
 )
 
 // pending_authorization waits for cardholder approval on Visa purchases or fresh
@@ -3113,7 +3158,18 @@ func (r *KernelCardStateMasks) UnmarshalJSON(data []byte) error {
 // after collection. An expired card requires a new purchase. Fill types those
 // details on merchant_url's origin. The amount, merchant_url and merchant_country
 // are recorded but do not restrict payment requests sent by the browser. Card
-// updates are not supported; delete and create a new item instead.
+// updates are not supported; delete and create a new item instead. With
+// single_use_card the item is instead a single-use card whose details the caller
+// supplies, such as a virtual card from its issuer. It is not funded by a payment
+// method, is ready on creation, and supports only fill: Kernel stores the details
+// encrypted, never returns them, and fills them on any https page whose
+// registrable domain (state.domains) is merchant_url's, including its subdomains.
+// Fill does not consume it. From expires_at it is expired and can no longer be
+// filled; Kernel deletes its stored details shortly after expires_at. Deleting the
+// card, its wallet or its vault deletes them immediately. amount, currency and the
+// merchant fields are recorded but not enforced. Repeating the identical request
+// returns the existing card; any other request with the same key returns 409, as
+// does repeating it once the expired card's details have been deleted.
 type KernelCardVaultItemSpec struct {
 	// Integer amount in minor currency units (at most 1000000), bound to the one-time
 	// code.
@@ -3128,6 +3184,13 @@ type KernelCardVaultItemSpec struct {
 	Provider KernelCardVaultItemSpecProvider `json:"provider" api:"required"`
 	// Key of the Kernel wallet item whose enrolled card pays.
 	Wallet string `json:"wallet" api:"required"`
+	// Single-use cards only. From this time the card is expired and can no longer be
+	// filled; Kernel deletes its stored details shortly after. Deleting the card, its
+	// wallet or its vault deletes them immediately. Defaults to 2 hours after
+	// creation, capped at the end of the card's expiry month; a requested time must be
+	// in the future, at most 24 hours after creation, and not after the end of the
+	// card's expiry month. Returned in UTC.
+	ExpiresAt time.Time `json:"expires_at" format:"date-time"`
 	// Actual merchant category when known. Omit rather than invent a category.
 	MerchantCategory string `json:"merchant_category"`
 	// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not
@@ -3140,8 +3203,16 @@ type KernelCardVaultItemSpec struct {
 	// Omission selects the wallet's default card, ID card, for compatibility with
 	// existing requests; it never falls back to another method, and a wallet without a
 	// default card requires the ID. The purchase is bound to the method's enrolled
-	// card and network token, so later operations cannot switch funding.
+	// card and network token, so later operations cannot switch funding. Not allowed
+	// with single_use_card.
 	PaymentMethodID string `json:"payment_method_id"`
+	// Details of a card the caller supplies, such as a single-use virtual card from
+	// its issuer. Mutually exclusive with payment_method_id. The card details are
+	// stored encrypted for fill and never returned; reads return only reference.
+	// Kernel deletes them shortly after the card's expires_at; deleting the card, its
+	// wallet or its vault deletes them immediately. A card whose expiry month has
+	// ended is rejected.
+	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Amount               respjson.Field
@@ -3150,10 +3221,12 @@ type KernelCardVaultItemSpec struct {
 		MerchantURL          respjson.Field
 		Provider             respjson.Field
 		Wallet               respjson.Field
+		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
 		PaymentMethodID      respjson.Field
+		SingleUseCard        respjson.Field
 		ExtraFields          map[string]respjson.Field
 		raw                  string
 	} `json:"-"`
@@ -3195,7 +3268,18 @@ const (
 // after collection. An expired card requires a new purchase. Fill types those
 // details on merchant_url's origin. The amount, merchant_url and merchant_country
 // are recorded but do not restrict payment requests sent by the browser. Card
-// updates are not supported; delete and create a new item instead.
+// updates are not supported; delete and create a new item instead. With
+// single_use_card the item is instead a single-use card whose details the caller
+// supplies, such as a virtual card from its issuer. It is not funded by a payment
+// method, is ready on creation, and supports only fill: Kernel stores the details
+// encrypted, never returns them, and fills them on any https page whose
+// registrable domain (state.domains) is merchant_url's, including its subdomains.
+// Fill does not consume it. From expires_at it is expired and can no longer be
+// filled; Kernel deletes its stored details shortly after expires_at. Deleting the
+// card, its wallet or its vault deletes them immediately. amount, currency and the
+// merchant fields are recorded but not enforced. Repeating the identical request
+// returns the existing card; any other request with the same key returns 409, as
+// does repeating it once the expired card's details have been deleted.
 //
 // The properties Amount, Currency, MerchantName, MerchantURL, Provider, Wallet are
 // required.
@@ -3213,6 +3297,13 @@ type KernelCardVaultItemSpecParam struct {
 	Provider KernelCardVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
 	// Key of the Kernel wallet item whose enrolled card pays.
 	Wallet string `json:"wallet" api:"required"`
+	// Single-use cards only. From this time the card is expired and can no longer be
+	// filled; Kernel deletes its stored details shortly after. Deleting the card, its
+	// wallet or its vault deletes them immediately. Defaults to 2 hours after
+	// creation, capped at the end of the card's expiry month; a requested time must be
+	// in the future, at most 24 hours after creation, and not after the end of the
+	// card's expiry month. Returned in UTC.
+	ExpiresAt param.Opt[time.Time] `json:"expires_at,omitzero" format:"date-time"`
 	// Actual merchant category when known. Omit rather than invent a category.
 	MerchantCategory param.Opt[string] `json:"merchant_category,omitzero"`
 	// Actual merchant MCC when known. Omit rather than invent a code. 0000 is not
@@ -3225,8 +3316,16 @@ type KernelCardVaultItemSpecParam struct {
 	// Omission selects the wallet's default card, ID card, for compatibility with
 	// existing requests; it never falls back to another method, and a wallet without a
 	// default card requires the ID. The purchase is bound to the method's enrolled
-	// card and network token, so later operations cannot switch funding.
+	// card and network token, so later operations cannot switch funding. Not allowed
+	// with single_use_card.
 	PaymentMethodID param.Opt[string] `json:"payment_method_id,omitzero"`
+	// Details of a card the caller supplies, such as a single-use virtual card from
+	// its issuer. Mutually exclusive with payment_method_id. The card details are
+	// stored encrypted for fill and never returned; reads return only reference.
+	// Kernel deletes them shortly after the card's expires_at; deleting the card, its
+	// wallet or its vault deletes them immediately. A card whose expiry month has
+	// ended is rejected.
+	SingleUseCard KernelSingleUseCardParam `json:"single_use_card,omitzero"`
 	paramObj
 }
 
@@ -3455,6 +3554,86 @@ func (r KernelPaymentRequestVaultItemSpecParam) MarshalJSON() (data []byte, err 
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *KernelPaymentRequestVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Details of a card the caller supplies, such as a single-use virtual card from
+// its issuer. Mutually exclusive with payment_method_id. The card details are
+// stored encrypted for fill and never returned; reads return only reference.
+// Kernel deletes them shortly after the card's expires_at; deleting the card, its
+// wallet or its vault deletes them immediately. A card whose expiry month has
+// ended is rejected.
+type KernelSingleUseCard struct {
+	Cvc      string `json:"cvc" api:"required"`
+	ExpMonth string `json:"exp_month" api:"required"`
+	ExpYear  string `json:"exp_year" api:"required"`
+	// Card number; must pass the Luhn check.
+	Number string `json:"number" api:"required"`
+	// Billing address filled with the billing\_\* fill fields. Never returned.
+	BillingAddress SingleUseCardBillingAddress `json:"billing_address"`
+	// Cardholder name, filled as billing_name.
+	Name string `json:"name"`
+	// The caller's identifier for the card, such as the issuer's card ID. Returned
+	// unchanged on reads.
+	Reference string `json:"reference"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cvc            respjson.Field
+		ExpMonth       respjson.Field
+		ExpYear        respjson.Field
+		Number         respjson.Field
+		BillingAddress respjson.Field
+		Name           respjson.Field
+		Reference      respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r KernelSingleUseCard) RawJSON() string { return r.JSON.raw }
+func (r *KernelSingleUseCard) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this KernelSingleUseCard to a KernelSingleUseCardParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// KernelSingleUseCardParam.Overrides()
+func (r KernelSingleUseCard) ToParam() KernelSingleUseCardParam {
+	return param.Override[KernelSingleUseCardParam](json.RawMessage(r.RawJSON()))
+}
+
+// Details of a card the caller supplies, such as a single-use virtual card from
+// its issuer. Mutually exclusive with payment_method_id. The card details are
+// stored encrypted for fill and never returned; reads return only reference.
+// Kernel deletes them shortly after the card's expires_at; deleting the card, its
+// wallet or its vault deletes them immediately. A card whose expiry month has
+// ended is rejected.
+//
+// The properties Cvc, ExpMonth, ExpYear, Number are required.
+type KernelSingleUseCardParam struct {
+	Cvc      string `json:"cvc" api:"required"`
+	ExpMonth string `json:"exp_month" api:"required"`
+	ExpYear  string `json:"exp_year" api:"required"`
+	// Card number; must pass the Luhn check.
+	Number string `json:"number" api:"required"`
+	// Cardholder name, filled as billing_name.
+	Name param.Opt[string] `json:"name,omitzero"`
+	// The caller's identifier for the card, such as the issuer's card ID. Returned
+	// unchanged on reads.
+	Reference param.Opt[string] `json:"reference,omitzero"`
+	// Billing address filled with the billing\_\* fill fields. Never returned.
+	BillingAddress SingleUseCardBillingAddressParam `json:"billing_address,omitzero"`
+	paramObj
+}
+
+func (r KernelSingleUseCardParam) MarshalJSON() (data []byte, err error) {
+	type shadow KernelSingleUseCardParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *KernelSingleUseCardParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5571,6 +5750,8 @@ type PaymentRequestVaultItemStateUnion struct {
 	Masks        PaymentRequestVaultItemStateUnionMasks `json:"masks"`
 	StatusReason string                                 `json:"status_reason"`
 	// This field is from variant [KernelCardState].
+	Source KernelCardStateSource `json:"source"`
+	// This field is from variant [KernelCardState].
 	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
 	// This field is from variant [KernelCardState].
 	PaymentMethodID string `json:"payment_method_id"`
@@ -5580,6 +5761,7 @@ type PaymentRequestVaultItemStateUnion struct {
 		Domains         respjson.Field
 		Masks           respjson.Field
 		StatusReason    respjson.Field
+		Source          respjson.Field
 		FundingStatus   respjson.Field
 		PaymentMethodID respjson.Field
 		raw             string
@@ -6335,6 +6517,64 @@ func init() {
 	)
 }
 
+// Billing address filled with the billing\_\* fill fields. Never returned.
+type SingleUseCardBillingAddress struct {
+	City string `json:"city"`
+	// ISO 3166-1 alpha-2 code.
+	Country    string `json:"country"`
+	Line1      string `json:"line1"`
+	Line2      string `json:"line2"`
+	PostalCode string `json:"postal_code"`
+	State      string `json:"state"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Line1       respjson.Field
+		Line2       respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SingleUseCardBillingAddress) RawJSON() string { return r.JSON.raw }
+func (r *SingleUseCardBillingAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this SingleUseCardBillingAddress to a
+// SingleUseCardBillingAddressParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// SingleUseCardBillingAddressParam.Overrides()
+func (r SingleUseCardBillingAddress) ToParam() SingleUseCardBillingAddressParam {
+	return param.Override[SingleUseCardBillingAddressParam](json.RawMessage(r.RawJSON()))
+}
+
+// Billing address filled with the billing\_\* fill fields. Never returned.
+type SingleUseCardBillingAddressParam struct {
+	City param.Opt[string] `json:"city,omitzero"`
+	// ISO 3166-1 alpha-2 code.
+	Country    param.Opt[string] `json:"country,omitzero"`
+	Line1      param.Opt[string] `json:"line1,omitzero"`
+	Line2      param.Opt[string] `json:"line2,omitzero"`
+	PostalCode param.Opt[string] `json:"postal_code,omitzero"`
+	State      param.Opt[string] `json:"state,omitzero"`
+	paramObj
+}
+
+func (r SingleUseCardBillingAddressParam) MarshalJSON() (data []byte, err error) {
+	type shadow SingleUseCardBillingAddressParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SingleUseCardBillingAddressParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type VaultCardAliases struct {
 	Cvc      string `json:"cvc" api:"required"`
 	ExpMonth string `json:"exp_month" api:"required"`
@@ -6752,10 +6992,14 @@ type VaultItemUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
-	CheckoutOrigin       string `json:"checkout_origin"`
-	MerchantCategory     string `json:"merchant_category"`
-	MerchantCategoryCode string `json:"merchant_category_code"`
-	MerchantCountry      string `json:"merchant_country"`
+	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	ExpiresAt            time.Time `json:"expires_at"`
+	MerchantCategory     string    `json:"merchant_category"`
+	MerchantCategoryCode string    `json:"merchant_category_code"`
+	MerchantCountry      string    `json:"merchant_country"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -6786,9 +7030,11 @@ type VaultItemUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
+		SingleUseCard        respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -6956,6 +7202,9 @@ type VaultItemUnionState struct {
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
 	// This field is from variant [CardVaultItemStateUnion],
 	// [PaymentRequestVaultItemStateUnion].
+	Source KernelCardStateSource `json:"source"`
+	// This field is from variant [CardVaultItemStateUnion],
+	// [PaymentRequestVaultItemStateUnion].
 	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
 	// This field is from variant [CardVaultItemStateUnion],
 	// [PaymentRequestVaultItemStateUnion].
@@ -6977,6 +7226,7 @@ type VaultItemUnionState struct {
 		Aliases         respjson.Field
 		Authorization   respjson.Field
 		Preparation     respjson.Field
+		Source          respjson.Field
 		FundingStatus   respjson.Field
 		PaymentMethodID respjson.Field
 		Fields          respjson.Field
@@ -7872,10 +8122,14 @@ type VaultItemOperationResponseUnionSpec struct {
 	// This field is from variant [CardVaultItemSpecUnion].
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
-	CheckoutOrigin       string `json:"checkout_origin"`
-	MerchantCategory     string `json:"merchant_category"`
-	MerchantCategoryCode string `json:"merchant_category_code"`
-	MerchantCountry      string `json:"merchant_country"`
+	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	ExpiresAt            time.Time `json:"expires_at"`
+	MerchantCategory     string    `json:"merchant_category"`
+	MerchantCategoryCode string    `json:"merchant_category_code"`
+	MerchantCountry      string    `json:"merchant_country"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -7906,9 +8160,11 @@ type VaultItemOperationResponseUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
+		SingleUseCard        respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -8078,6 +8334,9 @@ type VaultItemOperationResponseUnionState struct {
 	Preparation AgentcardCheckoutPreparation `json:"preparation"`
 	// This field is from variant [CardVaultItemStateUnion],
 	// [PaymentRequestVaultItemStateUnion].
+	Source KernelCardStateSource `json:"source"`
+	// This field is from variant [CardVaultItemStateUnion],
+	// [PaymentRequestVaultItemStateUnion].
 	FundingStatus KernelCardStateFundingStatus `json:"funding_status"`
 	// This field is from variant [CardVaultItemStateUnion],
 	// [PaymentRequestVaultItemStateUnion].
@@ -8099,6 +8358,7 @@ type VaultItemOperationResponseUnionState struct {
 		Aliases         respjson.Field
 		Authorization   respjson.Field
 		Preparation     respjson.Field
+		Source          respjson.Field
 		FundingStatus   respjson.Field
 		PaymentMethodID respjson.Field
 		Fields          respjson.Field
