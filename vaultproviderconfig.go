@@ -121,7 +121,8 @@ func (r *VaultProviderConfigService) Delete(ctx context.Context, idOrName string
 }
 
 // VaultProviderConfigUnion contains all possible properties and values from
-// [VaultProviderConfigLink], [VaultProviderConfigAgentcard].
+// [VaultProviderConfigLink], [VaultProviderConfigAgentcard],
+// [VaultProviderConfigVgs].
 //
 // Use the [VaultProviderConfigUnion.AsAny] method to switch on the variant.
 //
@@ -131,14 +132,18 @@ type VaultProviderConfigUnion struct {
 	ClientID  string    `json:"client_id"`
 	CreatedAt time.Time `json:"created_at"`
 	Name      string    `json:"name"`
-	// Any of "link", "agentcard".
+	// Any of "link", "agentcard", "vgs".
 	Provider  string    `json:"provider"`
 	UpdatedAt time.Time `json:"updated_at"`
 	// This field is from variant [VaultProviderConfigLink].
 	PublishableKey string `json:"publishable_key"`
 	// This field is from variant [VaultProviderConfigAgentcard].
 	TestMode bool `json:"test_mode"`
-	JSON     struct {
+	// This field is from variant [VaultProviderConfigVgs].
+	Environment string `json:"environment"`
+	// This field is from variant [VaultProviderConfigVgs].
+	VaultID string `json:"vault_id"`
+	JSON    struct {
 		ID             respjson.Field
 		ClientID       respjson.Field
 		CreatedAt      respjson.Field
@@ -147,6 +152,8 @@ type VaultProviderConfigUnion struct {
 		UpdatedAt      respjson.Field
 		PublishableKey respjson.Field
 		TestMode       respjson.Field
+		Environment    respjson.Field
+		VaultID        respjson.Field
 		raw            string
 	} `json:"-"`
 }
@@ -160,12 +167,14 @@ type anyVaultProviderConfig interface {
 
 func (VaultProviderConfigLink) implVaultProviderConfigUnion()      {}
 func (VaultProviderConfigAgentcard) implVaultProviderConfigUnion() {}
+func (VaultProviderConfigVgs) implVaultProviderConfigUnion()       {}
 
 // Use the following switch statement to find the correct variant
 //
 //	switch variant := VaultProviderConfigUnion.AsAny().(type) {
 //	case kernel.VaultProviderConfigLink:
 //	case kernel.VaultProviderConfigAgentcard:
+//	case kernel.VaultProviderConfigVgs:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -175,6 +184,8 @@ func (u VaultProviderConfigUnion) AsAny() anyVaultProviderConfig {
 		return u.AsLink()
 	case "agentcard":
 		return u.AsAgentcard()
+	case "vgs":
+		return u.AsVgs()
 	}
 	return nil
 }
@@ -185,6 +196,11 @@ func (u VaultProviderConfigUnion) AsLink() (v VaultProviderConfigLink) {
 }
 
 func (u VaultProviderConfigUnion) AsAgentcard() (v VaultProviderConfigAgentcard) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultProviderConfigUnion) AsVgs() (v VaultProviderConfigVgs) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -263,6 +279,45 @@ func (r *VaultProviderConfigAgentcard) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Response schema for a customer-managed VGS vault configuration, without the
+// client secret. Kernel generates the ID and timestamps. Configuration creation
+// uses VaultVgsProviderConfigRequest.
+type VaultProviderConfigVgs struct {
+	ID string `json:"id" api:"required"`
+	// Service account identity; immutable. The client secret is never returned.
+	ClientID  string    `json:"client_id" api:"required"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// The vault's VGS environment; immutable.
+	//
+	// Any of "sandbox", "live".
+	Environment string `json:"environment" api:"required"`
+	// Unique within the organization.
+	Name      string       `json:"name" api:"required"`
+	Provider  constant.Vgs `json:"provider" default:"vgs"`
+	UpdatedAt time.Time    `json:"updated_at" api:"required" format:"date-time"`
+	// The customer's VGS vault ID; immutable.
+	VaultID string `json:"vault_id" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ClientID    respjson.Field
+		CreatedAt   respjson.Field
+		Environment respjson.Field
+		Name        respjson.Field
+		Provider    respjson.Field
+		UpdatedAt   respjson.Field
+		VaultID     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultProviderConfigVgs) RawJSON() string { return r.JSON.raw }
+func (r *VaultProviderConfigVgs) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type VaultProviderConfigNewParams struct {
 
 	//
@@ -279,12 +334,18 @@ type VaultProviderConfigNewParams struct {
 	// Register application credentials for AgentCard wallet enrollment and checkout
 	// approvals. Kernel obtains application access tokens using client_credentials.
 	OfAgentcard *VaultProviderConfigNewParamsBodyAgentcard `json:",inline"`
+	// This field is a request body variant, only one variant field can be set.
+	// Register a service account for a customer-managed VGS vault. Kernel fetches a
+	// token, requires the aliases:read scope, and then looks up an alias that does not
+	// exist to confirm the account reaches vault_id in environment. If either check
+	// fails, nothing is stored.
+	OfVgs *VaultProviderConfigNewParamsBodyVgs `json:",inline"`
 
 	paramObj
 }
 
 func (u VaultProviderConfigNewParams) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard)
+	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfVgs)
 }
 func (r *VaultProviderConfigNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
@@ -367,6 +428,61 @@ func (r VaultProviderConfigNewParamsBodyAgentcardCredentials) MarshalJSON() (dat
 }
 func (r *VaultProviderConfigNewParamsBodyAgentcardCredentials) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Register a service account for a customer-managed VGS vault. Kernel fetches a
+// token, requires the aliases:read scope, and then looks up an alias that does not
+// exist to confirm the account reaches vault_id in environment. If either check
+// fails, nothing is stored.
+//
+// The properties Credentials, Name, Provider are required.
+type VaultProviderConfigNewParamsBodyVgs struct {
+	// A VGS service account with the aliases:read scope on the customer's vault, which
+	// Kernel uses to reveal the aliases each purchase sends.
+	Credentials VaultProviderConfigNewParamsBodyVgsCredentials `json:"credentials,omitzero" api:"required"`
+	// Unique within the organization.
+	Name string `json:"name" api:"required"`
+	// This field can be elided, and will marshal its zero value as "vgs".
+	Provider constant.Vgs `json:"provider" default:"vgs"`
+	paramObj
+}
+
+func (r VaultProviderConfigNewParamsBodyVgs) MarshalJSON() (data []byte, err error) {
+	type shadow VaultProviderConfigNewParamsBodyVgs
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultProviderConfigNewParamsBodyVgs) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A VGS service account with the aliases:read scope on the customer's vault, which
+// Kernel uses to reveal the aliases each purchase sends.
+//
+// The properties ClientID, ClientSecret, Environment, VaultID are required.
+type VaultProviderConfigNewParamsBodyVgsCredentials struct {
+	ClientID     string `json:"client_id" api:"required"`
+	ClientSecret string `json:"client_secret" api:"required"`
+	// The vault's VGS environment.
+	//
+	// Any of "sandbox", "live".
+	Environment string `json:"environment,omitzero" api:"required"`
+	// The customer's VGS vault ID.
+	VaultID string `json:"vault_id" api:"required"`
+	paramObj
+}
+
+func (r VaultProviderConfigNewParamsBodyVgsCredentials) MarshalJSON() (data []byte, err error) {
+	type shadow VaultProviderConfigNewParamsBodyVgsCredentials
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultProviderConfigNewParamsBodyVgsCredentials) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[VaultProviderConfigNewParamsBodyVgsCredentials](
+		"environment", "sandbox", "live",
+	)
 }
 
 type VaultProviderConfigUpdateParams struct {

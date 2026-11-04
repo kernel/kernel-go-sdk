@@ -143,6 +143,7 @@ type TargetDisposeBrowserContext string     // Always "Target.disposeBrowserCont
 type TargetOpenDevTools string              // Always "Target.openDevTools"
 type Tavily string                          // Always "tavily"
 type UpdateAccessToken string               // Always "update_access_token"
+type Vgs string                             // Always "vgs"
 type Wallet string                          // Always "wallet"
 type You string                             // Always "you"
 
@@ -299,6 +300,7 @@ func (c TargetDisposeBrowserContext) Default() TargetDisposeBrowserContext {
 func (c TargetOpenDevTools) Default() TargetOpenDevTools { return "Target.openDevTools" }
 func (c Tavily) Default() Tavily                         { return "tavily" }
 func (c UpdateAccessToken) Default() UpdateAccessToken   { return "update_access_token" }
+func (c Vgs) Default() Vgs                               { return "vgs" }
 func (c Wallet) Default() Wallet                         { return "wallet" }
 func (c You) Default() You                               { return "you" }
 
@@ -427,6 +429,7 @@ func (c TargetDisposeBrowserContext) MarshalJSON() ([]byte, error)     { return 
 func (c TargetOpenDevTools) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c Tavily) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c UpdateAccessToken) MarshalJSON() ([]byte, error)               { return marshalString(c) }
+func (c Vgs) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
 func (c Wallet) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c You) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
 

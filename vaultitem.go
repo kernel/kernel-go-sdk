@@ -14,6 +14,7 @@ import (
 
 	"github.com/kernel/kernel-go-sdk/internal/apijson"
 	"github.com/kernel/kernel-go-sdk/internal/apiquery"
+	"github.com/kernel/kernel-go-sdk/internal/paramutil"
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/option"
 	"github.com/kernel/kernel-go-sdk/packages/param"
@@ -540,7 +541,7 @@ const (
 
 // CardVaultItemSpecUnion contains all possible properties and values from
 // [CardVaultItemSpecLink], [CardVaultItemSpecAgentcard],
-// [KernelCardVaultItemSpec], [ShopPayCardVaultItemSpec].
+// [KernelCardVaultItemSpec], [ShopPayCardVaultItemSpec], [VgsCardVaultItemSpec].
 //
 // Use the [CardVaultItemSpecUnion.AsAny] method to switch on the variant.
 //
@@ -552,7 +553,7 @@ type CardVaultItemSpecUnion struct {
 	MerchantName    string `json:"merchant_name"`
 	MerchantURL     string `json:"merchant_url"`
 	PaymentMethodID string `json:"payment_method_id"`
-	// Any of "link", "agentcard", "kernel", "shop_pay".
+	// Any of "link", "agentcard", "kernel", "shop_pay", "vgs".
 	Provider string `json:"provider"`
 	Wallet   string `json:"wallet"`
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
@@ -580,7 +581,9 @@ type CardVaultItemSpecUnion struct {
 	MerchantCountry      string `json:"merchant_country"`
 	// This field is from variant [KernelCardVaultItemSpec].
 	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
-	JSON          struct {
+	// This field is from variant [VgsCardVaultItemSpec].
+	Card VgsCardInput `json:"card"`
+	JSON struct {
 		Amount               respjson.Field
 		Context              respjson.Field
 		Currency             respjson.Field
@@ -601,6 +604,7 @@ type CardVaultItemSpecUnion struct {
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
 		SingleUseCard        respjson.Field
+		Card                 respjson.Field
 		raw                  string
 	} `json:"-"`
 }
@@ -615,6 +619,7 @@ func (CardVaultItemSpecLink) implCardVaultItemSpecUnion()      {}
 func (CardVaultItemSpecAgentcard) implCardVaultItemSpecUnion() {}
 func (KernelCardVaultItemSpec) implCardVaultItemSpecUnion()    {}
 func (ShopPayCardVaultItemSpec) implCardVaultItemSpecUnion()   {}
+func (VgsCardVaultItemSpec) implCardVaultItemSpecUnion()       {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -623,6 +628,7 @@ func (ShopPayCardVaultItemSpec) implCardVaultItemSpecUnion()   {}
 //	case kernel.CardVaultItemSpecAgentcard:
 //	case kernel.KernelCardVaultItemSpec:
 //	case kernel.ShopPayCardVaultItemSpec:
+//	case kernel.VgsCardVaultItemSpec:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -636,6 +642,8 @@ func (u CardVaultItemSpecUnion) AsAny() anyCardVaultItemSpec {
 		return u.AsKernel()
 	case "shop_pay":
 		return u.AsShopPay()
+	case "vgs":
+		return u.AsVgs()
 	}
 	return nil
 }
@@ -656,6 +664,11 @@ func (u CardVaultItemSpecUnion) AsKernel() (v KernelCardVaultItemSpec) {
 }
 
 func (u CardVaultItemSpecUnion) AsShopPay() (v ShopPayCardVaultItemSpec) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u CardVaultItemSpecUnion) AsVgs() (v VgsCardVaultItemSpec) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -948,11 +961,16 @@ type CardVaultItemSpecUnionParam struct {
 	OfAgentcard *CardVaultItemSpecAgentcardParam `json:",omitzero,inline"`
 	OfKernel    *KernelCardVaultItemSpecParam    `json:",omitzero,inline"`
 	OfShopPay   *ShopPayCardVaultItemSpecParam   `json:",omitzero,inline"`
+	OfVgs       *VgsCardVaultItemSpecParam       `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u CardVaultItemSpecUnionParam) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfKernel, u.OfShopPay)
+	return param.MarshalUnion(u, u.OfLink,
+		u.OfAgentcard,
+		u.OfKernel,
+		u.OfShopPay,
+		u.OfVgs)
 }
 func (u *CardVaultItemSpecUnionParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -967,6 +985,8 @@ func (u *CardVaultItemSpecUnionParam) asAny() any {
 		return u.OfKernel
 	} else if !param.IsOmitted(u.OfShopPay) {
 		return u.OfShopPay
+	} else if !param.IsOmitted(u.OfVgs) {
+		return u.OfVgs
 	}
 	return nil
 }
@@ -1044,6 +1064,14 @@ func (u CardVaultItemSpecUnionParam) GetSingleUseCard() *KernelSingleUseCardPara
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetCard() *VgsCardInputParam {
+	if vt := u.OfVgs; vt != nil {
+		return &vt.Card
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u CardVaultItemSpecUnionParam) GetAmount() *int64 {
 	if vt := u.OfLink; vt != nil {
 		return (*int64)(&vt.Amount)
@@ -1052,6 +1080,8 @@ func (u CardVaultItemSpecUnionParam) GetAmount() *int64 {
 	} else if vt := u.OfKernel; vt != nil {
 		return (*int64)(&vt.Amount)
 	} else if vt := u.OfShopPay; vt != nil {
+		return (*int64)(&vt.Amount)
+	} else if vt := u.OfVgs; vt != nil {
 		return (*int64)(&vt.Amount)
 	}
 	return nil
@@ -1077,6 +1107,8 @@ func (u CardVaultItemSpecUnionParam) GetCurrency() *string {
 		return (*string)(&vt.Currency)
 	} else if vt := u.OfShopPay; vt != nil {
 		return (*string)(&vt.Currency)
+	} else if vt := u.OfVgs; vt != nil {
+		return (*string)(&vt.Currency)
 	}
 	return nil
 }
@@ -1089,6 +1121,8 @@ func (u CardVaultItemSpecUnionParam) GetMerchantName() *string {
 		return (*string)(&vt.MerchantName)
 	} else if vt := u.OfShopPay; vt != nil {
 		return (*string)(&vt.MerchantName)
+	} else if vt := u.OfVgs; vt != nil {
+		return (*string)(&vt.MerchantName)
 	}
 	return nil
 }
@@ -1100,6 +1134,8 @@ func (u CardVaultItemSpecUnionParam) GetMerchantURL() *string {
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.MerchantURL)
 	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.MerchantURL)
+	} else if vt := u.OfVgs; vt != nil {
 		return (*string)(&vt.MerchantURL)
 	}
 	return nil
@@ -1127,6 +1163,8 @@ func (u CardVaultItemSpecUnionParam) GetProvider() *string {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfShopPay; vt != nil {
 		return (*string)(&vt.Provider)
+	} else if vt := u.OfVgs; vt != nil {
+		return (*string)(&vt.Provider)
 	}
 	return nil
 }
@@ -1140,6 +1178,8 @@ func (u CardVaultItemSpecUnionParam) GetWallet() *string {
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Wallet)
 	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Wallet)
+	} else if vt := u.OfVgs; vt != nil {
 		return (*string)(&vt.Wallet)
 	}
 	return nil
@@ -1214,6 +1254,7 @@ func init() {
 		apijson.Discriminator[CardVaultItemSpecAgentcardParam]("agentcard"),
 		apijson.Discriminator[KernelCardVaultItemSpecParam]("kernel"),
 		apijson.Discriminator[ShopPayCardVaultItemSpecParam]("shop_pay"),
+		apijson.Discriminator[VgsCardVaultItemSpecParam]("vgs"),
 	)
 }
 
@@ -1398,19 +1439,19 @@ func (r *CardVaultItemSpecAgentcardParam) UnmarshalJSON(data []byte) error {
 
 // CardVaultItemStateUnion contains all possible properties and values from
 // [CardVaultItemStateLink], [CardVaultItemStateAgentcard], [KernelCardState],
-// [ShopPayCardState].
+// [ShopPayCardState], [VgsCardState].
 //
 // Use the [CardVaultItemStateUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type CardVaultItemStateUnion struct {
-	// Any of "link", "agentcard", "kernel", "shop_pay".
+	// Any of "link", "agentcard", "kernel", "shop_pay", "vgs".
 	Provider string   `json:"provider"`
 	Status   string   `json:"status"`
 	Domains  []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
-	// [ShopPayCardStateMasks]
+	// [ShopPayCardStateMasks], [VgsCardStateMasks]
 	Masks        CardVaultItemStateUnionMasks `json:"masks"`
 	StatusReason string                       `json:"status_reason"`
 	// This field is from variant [CardVaultItemStateAgentcard].
@@ -1452,6 +1493,7 @@ func (CardVaultItemStateLink) implCardVaultItemStateUnion()      {}
 func (CardVaultItemStateAgentcard) implCardVaultItemStateUnion() {}
 func (KernelCardState) implCardVaultItemStateUnion()             {}
 func (ShopPayCardState) implCardVaultItemStateUnion()            {}
+func (VgsCardState) implCardVaultItemStateUnion()                {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -1460,6 +1502,7 @@ func (ShopPayCardState) implCardVaultItemStateUnion()            {}
 //	case kernel.CardVaultItemStateAgentcard:
 //	case kernel.KernelCardState:
 //	case kernel.ShopPayCardState:
+//	case kernel.VgsCardState:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -1473,6 +1516,8 @@ func (u CardVaultItemStateUnion) AsAny() anyCardVaultItemState {
 		return u.AsKernel()
 	case "shop_pay":
 		return u.AsShopPay()
+	case "vgs":
+		return u.AsVgs()
 	}
 	return nil
 }
@@ -1493,6 +1538,11 @@ func (u CardVaultItemStateUnion) AsKernel() (v KernelCardState) {
 }
 
 func (u CardVaultItemStateUnion) AsShopPay() (v ShopPayCardState) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u CardVaultItemStateUnion) AsVgs() (v VgsCardState) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -6965,8 +7015,9 @@ type VaultItemUnionSpec struct {
 	// [OnePasswordCredentialAccountSpecAuthorization]
 	Authorization VaultItemUnionSpecAuthorization `json:"authorization"`
 	Provider      string                          `json:"provider"`
-	// This field is from variant [WalletVaultItemSpecUnion].
-	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
+	// This field is a union of [WalletVaultItemSpecAgentcardProviderConfig],
+	// [VgsWalletVaultItemSpecProviderConfig]
+	ProviderConfig VaultItemUnionSpecProviderConfig `json:"provider_config"`
 	// This field is from variant [WalletVaultItemSpecUnion].
 	UserID          string `json:"user_id"`
 	Amount          int64  `json:"amount"`
@@ -7000,6 +7051,8 @@ type VaultItemUnionSpec struct {
 	MerchantCountry      string    `json:"merchant_country"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Card VgsCardInput `json:"card"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -7035,6 +7088,7 @@ type VaultItemUnionSpec struct {
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
 		SingleUseCard        respjson.Field
+		Card                 respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -7093,6 +7147,26 @@ type VaultItemUnionSpecAuthorizationClient struct {
 }
 
 func (r *VaultItemUnionSpecAuthorizationClient) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemUnionSpecProviderConfig is an implicit subunion of [VaultItemUnion].
+// VaultItemUnionSpecProviderConfig provides convenient access to the
+// sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemUnion].
+type VaultItemUnionSpecProviderConfig struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	JSON struct {
+		ID   respjson.Field
+		Name respjson.Field
+		raw  string
+	} `json:"-"`
+}
+
+func (r *VaultItemUnionSpecProviderConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -7195,7 +7269,8 @@ type VaultItemUnionState struct {
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
-	// [ShopPayCardStateMasks], [PaymentRequestVaultItemStateLinkMasks]
+	// [ShopPayCardStateMasks], [VgsCardStateMasks],
+	// [PaymentRequestVaultItemStateLinkMasks]
 	Masks VaultItemUnionStateMasks `json:"masks"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Aliases VaultCardAliases `json:"aliases"`
@@ -8098,8 +8173,9 @@ type VaultItemOperationResponseUnionSpec struct {
 	// [OnePasswordCredentialAccountSpecAuthorization]
 	Authorization VaultItemOperationResponseUnionSpecAuthorization `json:"authorization"`
 	Provider      string                                           `json:"provider"`
-	// This field is from variant [WalletVaultItemSpecUnion].
-	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
+	// This field is a union of [WalletVaultItemSpecAgentcardProviderConfig],
+	// [VgsWalletVaultItemSpecProviderConfig]
+	ProviderConfig VaultItemOperationResponseUnionSpecProviderConfig `json:"provider_config"`
 	// This field is from variant [WalletVaultItemSpecUnion].
 	UserID          string `json:"user_id"`
 	Amount          int64  `json:"amount"`
@@ -8133,6 +8209,8 @@ type VaultItemOperationResponseUnionSpec struct {
 	MerchantCountry      string    `json:"merchant_country"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Card VgsCardInput `json:"card"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -8168,6 +8246,7 @@ type VaultItemOperationResponseUnionSpec struct {
 		MerchantCategoryCode respjson.Field
 		MerchantCountry      respjson.Field
 		SingleUseCard        respjson.Field
+		Card                 respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -8228,6 +8307,27 @@ type VaultItemOperationResponseUnionSpecAuthorizationClient struct {
 }
 
 func (r *VaultItemOperationResponseUnionSpecAuthorizationClient) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// VaultItemOperationResponseUnionSpecProviderConfig is an implicit subunion of
+// [VaultItemOperationResponseUnion].
+// VaultItemOperationResponseUnionSpecProviderConfig provides convenient access to
+// the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [VaultItemOperationResponseUnion].
+type VaultItemOperationResponseUnionSpecProviderConfig struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	JSON struct {
+		ID   respjson.Field
+		Name respjson.Field
+		raw  string
+	} `json:"-"`
+}
+
+func (r *VaultItemOperationResponseUnionSpecProviderConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -8330,7 +8430,8 @@ type VaultItemOperationResponseUnionState struct {
 	Domains []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
-	// [ShopPayCardStateMasks], [PaymentRequestVaultItemStateLinkMasks]
+	// [ShopPayCardStateMasks], [VgsCardStateMasks],
+	// [PaymentRequestVaultItemStateLinkMasks]
 	Masks VaultItemOperationResponseUnionStateMasks `json:"masks"`
 	// This field is from variant [CardVaultItemStateUnion].
 	Aliases VaultCardAliases `json:"aliases"`
@@ -8857,9 +8958,414 @@ func (r *VaultWebmcpBindingParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// The card's aliases in the customer's VGS vault, its expiry and last four digits.
+// Write-only: stored encrypted and never returned in the item, its events or logs.
+// A repeated PUT with the same key must send the same card.
+type VgsCardInput struct {
+	// A volatile alias of a freshly collected security code in the customer's vault.
+	// It must still exist when authorize runs.
+	CvcAlias string `json:"cvc_alias" api:"required"`
+	ExpMonth int64  `json:"exp_month" api:"required"`
+	ExpYear  int64  `json:"exp_year" api:"required"`
+	// The card number's last four digits, checked against the revealed alias.
+	Last4 string `json:"last4" api:"required"`
+	// A persistent alias of the card number in the customer's vault.
+	PanAlias string `json:"pan_alias" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CvcAlias    respjson.Field
+		ExpMonth    respjson.Field
+		ExpYear     respjson.Field
+		Last4       respjson.Field
+		PanAlias    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsCardInput) RawJSON() string { return r.JSON.raw }
+func (r *VgsCardInput) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this VgsCardInput to a VgsCardInputParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// VgsCardInputParam.Overrides()
+func (r VgsCardInput) ToParam() VgsCardInputParam {
+	return param.Override[VgsCardInputParam](json.RawMessage(r.RawJSON()))
+}
+
+// The card's aliases in the customer's VGS vault, its expiry and last four digits.
+// Write-only: stored encrypted and never returned in the item, its events or logs.
+// A repeated PUT with the same key must send the same card.
+//
+// The properties CvcAlias, ExpMonth, ExpYear, Last4, PanAlias are required.
+type VgsCardInputParam struct {
+	// A volatile alias of a freshly collected security code in the customer's vault.
+	// It must still exist when authorize runs.
+	CvcAlias string `json:"cvc_alias" api:"required"`
+	ExpMonth int64  `json:"exp_month" api:"required"`
+	ExpYear  int64  `json:"exp_year" api:"required"`
+	// The card number's last four digits, checked against the revealed alias.
+	Last4 string `json:"last4" api:"required"`
+	// A persistent alias of the card number in the customer's vault.
+	PanAlias string `json:"pan_alias" api:"required"`
+	paramObj
+}
+
+func (r VgsCardInputParam) MarshalJSON() (data []byte, err error) {
+	type shadow VgsCardInputParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VgsCardInputParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A ready VGS card supports fill, then submit checkout, until expires_at. Kernel
+// does not observe whether the merchant charged the card. masks.last4 is the
+// card's last four digits.
+type VgsCardState struct {
+	// Any of "vgs".
+	Provider VgsCardStateProvider `json:"provider" api:"required"`
+	// requested until authorize reveals the aliases; if the reveal fails before
+	// anything is stored, authorize returns 503 provider_unavailable and the card
+	// stays requested. declined means authorize was refused: invalid_card for aliases
+	// that do not match the card or a card that has expired (fix the input and create
+	// a new card), alias_not_found when the customer's vault has no such alias,
+	// usually an expired CVC alias (collect the CVC again and create a new card), or
+	// provider_credentials_rejected when VGS refused the configuration's service
+	// account (update the provider configuration and create a new card). ready lasts
+	// until the CVC alias expires, then expired.
+	//
+	// Any of "requested", "pending_authorization", "ready", "expired", "declined",
+	// "recovery_required".
+	Status VgsCardStateStatus `json:"status" api:"required"`
+	// Informational registrable domain. Fill is locked to merchant_url's exact origin.
+	Domains      []string          `json:"domains"`
+	Masks        VgsCardStateMasks `json:"masks"`
+	StatusReason string            `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider     respjson.Field
+		Status       respjson.Field
+		Domains      respjson.Field
+		Masks        respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsCardState) RawJSON() string { return r.JSON.raw }
+func (r *VgsCardState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type VgsCardStateProvider string
+
+const (
+	VgsCardStateProviderVgs VgsCardStateProvider = "vgs"
+)
+
+// requested until authorize reveals the aliases; if the reveal fails before
+// anything is stored, authorize returns 503 provider_unavailable and the card
+// stays requested. declined means authorize was refused: invalid_card for aliases
+// that do not match the card or a card that has expired (fix the input and create
+// a new card), alias_not_found when the customer's vault has no such alias,
+// usually an expired CVC alias (collect the CVC again and create a new card), or
+// provider_credentials_rejected when VGS refused the configuration's service
+// account (update the provider configuration and create a new card). ready lasts
+// until the CVC alias expires, then expired.
+type VgsCardStateStatus string
+
+const (
+	VgsCardStateStatusRequested            VgsCardStateStatus = "requested"
+	VgsCardStateStatusPendingAuthorization VgsCardStateStatus = "pending_authorization"
+	VgsCardStateStatusReady                VgsCardStateStatus = "ready"
+	VgsCardStateStatusExpired              VgsCardStateStatus = "expired"
+	VgsCardStateStatusDeclined             VgsCardStateStatus = "declined"
+	VgsCardStateStatusRecoveryRequired     VgsCardStateStatus = "recovery_required"
+)
+
+type VgsCardStateMasks struct {
+	Brand string `json:"brand"`
+	Last4 string `json:"last4"`
+	// Last four digits of the network token presented to the merchant.
+	TokenLast4  string            `json:"token_last4"`
+	ExtraFields map[string]string `json:"" api:"extrafields"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Brand       respjson.Field
+		Last4       respjson.Field
+		TokenLast4  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsCardStateMasks) RawJSON() string { return r.JSON.raw }
+func (r *VgsCardStateMasks) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// One live purchase with a card in the customer's VGS vault. authorize reveals
+// card.pan_alias and card.cvc_alias through Kernel's VGS outbound proxy, which
+// replaces both with aliases in Kernel's vault before they reach Kernel; Kernel
+// never receives the card number or security code. The card is then ready with no
+// further approval, until expires_at, by default five minutes after authorize.
+// fill types Kernel's aliases on merchant_url's origin, and Kernel's VGS proxy
+// replaces them with the card's details when the browser submits checkout. An
+// expired card requires a new purchase with a freshly collected CVC alias. The
+// amount and merchant are recorded but do not restrict payment requests sent by
+// the browser. Card updates are not supported; delete and create a new item
+// instead.
+type VgsCardVaultItemSpec struct {
+	// Integer amount in minor currency units (at most 1000000).
+	Amount int64 `json:"amount" api:"required"`
+	// The card's aliases in the customer's VGS vault, its expiry and last four digits.
+	// Write-only: stored encrypted and never returned in the item, its events or logs.
+	// A repeated PUT with the same key must send the same card.
+	Card VgsCardInput `json:"card" api:"required"`
+	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
+	// krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	// Merchant checkout URL. Fill is allowed only on this URL's origin.
+	MerchantURL string `json:"merchant_url" api:"required" format:"uri"`
+	// Any of "vgs".
+	Provider VgsCardVaultItemSpecProvider `json:"provider" api:"required"`
+	// Key of the VGS wallet item whose configuration reads the aliases.
+	Wallet string `json:"wallet" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount       respjson.Field
+		Card         respjson.Field
+		Currency     respjson.Field
+		MerchantName respjson.Field
+		MerchantURL  respjson.Field
+		Provider     respjson.Field
+		Wallet       respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsCardVaultItemSpec) RawJSON() string { return r.JSON.raw }
+func (r *VgsCardVaultItemSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this VgsCardVaultItemSpec to a VgsCardVaultItemSpecParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// VgsCardVaultItemSpecParam.Overrides()
+func (r VgsCardVaultItemSpec) ToParam() VgsCardVaultItemSpecParam {
+	return param.Override[VgsCardVaultItemSpecParam](json.RawMessage(r.RawJSON()))
+}
+
+type VgsCardVaultItemSpecProvider string
+
+const (
+	VgsCardVaultItemSpecProviderVgs VgsCardVaultItemSpecProvider = "vgs"
+)
+
+// One live purchase with a card in the customer's VGS vault. authorize reveals
+// card.pan_alias and card.cvc_alias through Kernel's VGS outbound proxy, which
+// replaces both with aliases in Kernel's vault before they reach Kernel; Kernel
+// never receives the card number or security code. The card is then ready with no
+// further approval, until expires_at, by default five minutes after authorize.
+// fill types Kernel's aliases on merchant_url's origin, and Kernel's VGS proxy
+// replaces them with the card's details when the browser submits checkout. An
+// expired card requires a new purchase with a freshly collected CVC alias. The
+// amount and merchant are recorded but do not restrict payment requests sent by
+// the browser. Card updates are not supported; delete and create a new item
+// instead.
+//
+// The properties Amount, Card, Currency, MerchantName, MerchantURL, Provider,
+// Wallet are required.
+type VgsCardVaultItemSpecParam struct {
+	// Integer amount in minor currency units (at most 1000000).
+	Amount int64 `json:"amount" api:"required"`
+	// The card's aliases in the customer's VGS vault, its expiry and last four digits.
+	// Write-only: stored encrypted and never returned in the item, its events or logs.
+	// A repeated PUT with the same key must send the same card.
+	Card VgsCardInputParam `json:"card,omitzero" api:"required"`
+	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
+	// krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
+	Currency     string `json:"currency" api:"required"`
+	MerchantName string `json:"merchant_name" api:"required"`
+	// Merchant checkout URL. Fill is allowed only on this URL's origin.
+	MerchantURL string `json:"merchant_url" api:"required" format:"uri"`
+	// Any of "vgs".
+	Provider VgsCardVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
+	// Key of the VGS wallet item whose configuration reads the aliases.
+	Wallet string `json:"wallet" api:"required"`
+	paramObj
+}
+
+func (r VgsCardVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
+	type shadow VgsCardVaultItemSpecParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VgsCardVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type VgsWalletState struct {
+	// Any of "vgs".
+	Provider VgsWalletStateProvider `json:"provider" api:"required"`
+	// A VGS wallet is connected on creation. pending_authorization or degraded means
+	// its creation did not finish; reading the wallet retries it, and a wallet that
+	// stays degraded can be deleted and created again. Whether its configuration's
+	// credentials still work is checked when a card is authorized.
+	//
+	// Any of "pending_authorization", "connected", "degraded".
+	Status       VgsWalletStateStatus `json:"status" api:"required"`
+	StatusReason string               `json:"status_reason"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider     respjson.Field
+		Status       respjson.Field
+		StatusReason respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsWalletState) RawJSON() string { return r.JSON.raw }
+func (r *VgsWalletState) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type VgsWalletStateProvider string
+
+const (
+	VgsWalletStateProviderVgs VgsWalletStateProvider = "vgs"
+)
+
+// A VGS wallet is connected on creation. pending_authorization or degraded means
+// its creation did not finish; reading the wallet retries it, and a wallet that
+// stays degraded can be deleted and created again. Whether its configuration's
+// credentials still work is checked when a card is authorized.
+type VgsWalletStateStatus string
+
+const (
+	VgsWalletStateStatusPendingAuthorization VgsWalletStateStatus = "pending_authorization"
+	VgsWalletStateStatusConnected            VgsWalletStateStatus = "connected"
+	VgsWalletStateStatusDegraded             VgsWalletStateStatus = "degraded"
+)
+
+// Cards kept in the customer's own VGS vault. The wallet binds a VGS provider
+// configuration and is connected on creation; it holds no cards and has no payment
+// methods. Each purchase is a card item that carries the card's aliases from the
+// customer's vault. The configuration binding cannot be changed after creation.
+type VgsWalletVaultItemSpec struct {
+	// Any of "vgs".
+	Provider VgsWalletVaultItemSpecProvider `json:"provider" api:"required"`
+	// Select a VGS configuration. Required, because there are no Kernel-managed VGS
+	// credentials for this provider.
+	ProviderConfig VgsWalletVaultItemSpecProviderConfig `json:"provider_config" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Provider       respjson.Field
+		ProviderConfig respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsWalletVaultItemSpec) RawJSON() string { return r.JSON.raw }
+func (r *VgsWalletVaultItemSpec) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this VgsWalletVaultItemSpec to a VgsWalletVaultItemSpecParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// VgsWalletVaultItemSpecParam.Overrides()
+func (r VgsWalletVaultItemSpec) ToParam() VgsWalletVaultItemSpecParam {
+	return param.Override[VgsWalletVaultItemSpecParam](json.RawMessage(r.RawJSON()))
+}
+
+type VgsWalletVaultItemSpecProvider string
+
+const (
+	VgsWalletVaultItemSpecProviderVgs VgsWalletVaultItemSpecProvider = "vgs"
+)
+
+// Select a VGS configuration. Required, because there are no Kernel-managed VGS
+// credentials for this provider.
+type VgsWalletVaultItemSpecProviderConfig struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Name        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VgsWalletVaultItemSpecProviderConfig) RawJSON() string { return r.JSON.raw }
+func (r *VgsWalletVaultItemSpecProviderConfig) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Cards kept in the customer's own VGS vault. The wallet binds a VGS provider
+// configuration and is connected on creation; it holds no cards and has no payment
+// methods. Each purchase is a card item that carries the card's aliases from the
+// customer's vault. The configuration binding cannot be changed after creation.
+//
+// The properties Provider, ProviderConfig are required.
+type VgsWalletVaultItemSpecParam struct {
+	// Any of "vgs".
+	Provider VgsWalletVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
+	// Select a VGS configuration. Required, because there are no Kernel-managed VGS
+	// credentials for this provider.
+	ProviderConfig VgsWalletVaultItemSpecProviderConfigParam `json:"provider_config,omitzero" api:"required"`
+	paramObj
+}
+
+func (r VgsWalletVaultItemSpecParam) MarshalJSON() (data []byte, err error) {
+	type shadow VgsWalletVaultItemSpecParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VgsWalletVaultItemSpecParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Select a VGS configuration. Required, because there are no Kernel-managed VGS
+// credentials for this provider.
+type VgsWalletVaultItemSpecProviderConfigParam struct {
+	ID   param.Opt[string] `json:"id,omitzero"`
+	Name param.Opt[string] `json:"name,omitzero"`
+	paramObj
+}
+
+func (r VgsWalletVaultItemSpecProviderConfigParam) MarshalJSON() (data []byte, err error) {
+	type shadow VgsWalletVaultItemSpecProviderConfigParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VgsWalletVaultItemSpecProviderConfigParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // WalletVaultItemSpecUnion contains all possible properties and values from
 // [WalletVaultItemSpecLink], [WalletVaultItemSpecAgentcard],
-// [KernelWalletVaultItemSpec], [ShopPayWalletVaultItemSpec].
+// [KernelWalletVaultItemSpec], [ShopPayWalletVaultItemSpec],
+// [VgsWalletVaultItemSpec].
 //
 // Use the [WalletVaultItemSpecUnion.AsAny] method to switch on the variant.
 //
@@ -8868,10 +9374,11 @@ type WalletVaultItemSpecUnion struct {
 	// This field is a union of [WalletVaultItemSpecLinkAuthorization],
 	// [ShopPayWalletVaultItemSpecAuthorization]
 	Authorization WalletVaultItemSpecUnionAuthorization `json:"authorization"`
-	// Any of "link", "agentcard", "kernel", "shop_pay".
+	// Any of "link", "agentcard", "kernel", "shop_pay", "vgs".
 	Provider string `json:"provider"`
-	// This field is from variant [WalletVaultItemSpecAgentcard].
-	ProviderConfig WalletVaultItemSpecAgentcardProviderConfig `json:"provider_config"`
+	// This field is a union of [WalletVaultItemSpecAgentcardProviderConfig],
+	// [VgsWalletVaultItemSpecProviderConfig]
+	ProviderConfig WalletVaultItemSpecUnionProviderConfig `json:"provider_config"`
 	// This field is from variant [WalletVaultItemSpecAgentcard].
 	UserID string `json:"user_id"`
 	JSON   struct {
@@ -8894,6 +9401,7 @@ func (WalletVaultItemSpecLink) implWalletVaultItemSpecUnion()      {}
 func (WalletVaultItemSpecAgentcard) implWalletVaultItemSpecUnion() {}
 func (KernelWalletVaultItemSpec) implWalletVaultItemSpecUnion()    {}
 func (ShopPayWalletVaultItemSpec) implWalletVaultItemSpecUnion()   {}
+func (VgsWalletVaultItemSpec) implWalletVaultItemSpecUnion()       {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -8902,6 +9410,7 @@ func (ShopPayWalletVaultItemSpec) implWalletVaultItemSpecUnion()   {}
 //	case kernel.WalletVaultItemSpecAgentcard:
 //	case kernel.KernelWalletVaultItemSpec:
 //	case kernel.ShopPayWalletVaultItemSpec:
+//	case kernel.VgsWalletVaultItemSpec:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -8915,6 +9424,8 @@ func (u WalletVaultItemSpecUnion) AsAny() anyWalletVaultItemSpec {
 		return u.AsKernel()
 	case "shop_pay":
 		return u.AsShopPay()
+	case "vgs":
+		return u.AsVgs()
 	}
 	return nil
 }
@@ -8935,6 +9446,11 @@ func (u WalletVaultItemSpecUnion) AsKernel() (v KernelWalletVaultItemSpec) {
 }
 
 func (u WalletVaultItemSpecUnion) AsShopPay() (v ShopPayWalletVaultItemSpec) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u WalletVaultItemSpecUnion) AsVgs() (v VgsWalletVaultItemSpec) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -8989,6 +9505,26 @@ type WalletVaultItemSpecUnionAuthorizationClient struct {
 }
 
 func (r *WalletVaultItemSpecUnionAuthorizationClient) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// WalletVaultItemSpecUnionProviderConfig is an implicit subunion of
+// [WalletVaultItemSpecUnion]. WalletVaultItemSpecUnionProviderConfig provides
+// convenient access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [WalletVaultItemSpecUnion].
+type WalletVaultItemSpecUnionProviderConfig struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+	JSON struct {
+		ID   respjson.Field
+		Name respjson.Field
+		raw  string
+	} `json:"-"`
+}
+
+func (r *WalletVaultItemSpecUnionProviderConfig) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -9225,13 +9761,13 @@ func (r *WalletVaultItemSpecAgentcardProviderConfig) UnmarshalJSON(data []byte) 
 
 // WalletVaultItemStateUnion contains all possible properties and values from
 // [WalletVaultItemStateLink], [WalletVaultItemStateAgentcard],
-// [KernelWalletState], [ShopPayWalletState].
+// [KernelWalletState], [ShopPayWalletState], [VgsWalletState].
 //
 // Use the [WalletVaultItemStateUnion.AsAny] method to switch on the variant.
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type WalletVaultItemStateUnion struct {
-	// Any of "link", "agentcard", "kernel", "shop_pay".
+	// Any of "link", "agentcard", "kernel", "shop_pay", "vgs".
 	Provider     string `json:"provider"`
 	Status       string `json:"status"`
 	StatusReason string `json:"status_reason"`
@@ -9257,6 +9793,7 @@ func (WalletVaultItemStateLink) implWalletVaultItemStateUnion()      {}
 func (WalletVaultItemStateAgentcard) implWalletVaultItemStateUnion() {}
 func (KernelWalletState) implWalletVaultItemStateUnion()             {}
 func (ShopPayWalletState) implWalletVaultItemStateUnion()            {}
+func (VgsWalletState) implWalletVaultItemStateUnion()                {}
 
 // Use the following switch statement to find the correct variant
 //
@@ -9265,6 +9802,7 @@ func (ShopPayWalletState) implWalletVaultItemStateUnion()            {}
 //	case kernel.WalletVaultItemStateAgentcard:
 //	case kernel.KernelWalletState:
 //	case kernel.ShopPayWalletState:
+//	case kernel.VgsWalletState:
 //	default:
 //	  fmt.Errorf("no variant present")
 //	}
@@ -9278,6 +9816,8 @@ func (u WalletVaultItemStateUnion) AsAny() anyWalletVaultItemState {
 		return u.AsKernel()
 	case "shop_pay":
 		return u.AsShopPay()
+	case "vgs":
+		return u.AsVgs()
 	}
 	return nil
 }
@@ -9298,6 +9838,11 @@ func (u WalletVaultItemStateUnion) AsKernel() (v KernelWalletState) {
 }
 
 func (u WalletVaultItemStateUnion) AsShopPay() (v ShopPayWalletState) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u WalletVaultItemStateUnion) AsVgs() (v VgsWalletState) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -9978,11 +10523,16 @@ type VaultItemUpsertParamsBodyWalletSpecUnion struct {
 	OfAgentcard *VaultItemUpsertParamsBodyWalletSpecAgentcard `json:",omitzero,inline"`
 	OfKernel    *KernelWalletVaultItemSpecParam               `json:",omitzero,inline"`
 	OfShopPay   *ShopPayWalletVaultItemSpecParam              `json:",omitzero,inline"`
+	OfVgs       *VgsWalletVaultItemSpecParam                  `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u VaultItemUpsertParamsBodyWalletSpecUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfLink, u.OfAgentcard, u.OfKernel, u.OfShopPay)
+	return param.MarshalUnion(u, u.OfLink,
+		u.OfAgentcard,
+		u.OfKernel,
+		u.OfShopPay,
+		u.OfVgs)
 }
 func (u *VaultItemUpsertParamsBodyWalletSpecUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -9997,14 +10547,8 @@ func (u *VaultItemUpsertParamsBodyWalletSpecUnion) asAny() any {
 		return u.OfKernel
 	} else if !param.IsOmitted(u.OfShopPay) {
 		return u.OfShopPay
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u VaultItemUpsertParamsBodyWalletSpecUnion) GetProviderConfig() *VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig {
-	if vt := u.OfAgentcard; vt != nil {
-		return &vt.ProviderConfig
+	} else if !param.IsOmitted(u.OfVgs) {
+		return u.OfVgs
 	}
 	return nil
 }
@@ -10026,6 +10570,8 @@ func (u VaultItemUpsertParamsBodyWalletSpecUnion) GetProvider() *string {
 	} else if vt := u.OfKernel; vt != nil {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfShopPay; vt != nil {
+		return (*string)(&vt.Provider)
+	} else if vt := u.OfVgs; vt != nil {
 		return (*string)(&vt.Provider)
 	}
 	return nil
@@ -10141,6 +10687,55 @@ func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorizationClient) GetType() *
 	return nil
 }
 
+// Returns a subunion which exports methods to access subproperties
+//
+// Or use AsAny() to get the underlying value
+func (u VaultItemUpsertParamsBodyWalletSpecUnion) GetProviderConfig() (res vaultItemUpsertParamsBodyWalletSpecUnionProviderConfig) {
+	if vt := u.OfAgentcard; vt != nil {
+		res.any = &vt.ProviderConfig
+	} else if vt := u.OfVgs; vt != nil {
+		res.any = &vt.ProviderConfig
+	}
+	return
+}
+
+// Can have the runtime types
+// [*VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig],
+// [*VgsWalletVaultItemSpecProviderConfigParam]
+type vaultItemUpsertParamsBodyWalletSpecUnionProviderConfig struct{ any }
+
+// Use the following switch statement to get the type of the union:
+//
+//	switch u.AsAny().(type) {
+//	case *kernel.VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig:
+//	case *kernel.VgsWalletVaultItemSpecProviderConfigParam:
+//	default:
+//	    fmt.Errorf("not present")
+//	}
+func (u vaultItemUpsertParamsBodyWalletSpecUnionProviderConfig) AsAny() any { return u.any }
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionProviderConfig) GetID() *string {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig:
+		return paramutil.AddrIfPresent(vt.ID)
+	case *VgsWalletVaultItemSpecProviderConfigParam:
+		return paramutil.AddrIfPresent(vt.ID)
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionProviderConfig) GetName() *string {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecAgentcardProviderConfig:
+		return paramutil.AddrIfPresent(vt.Name)
+	case *VgsWalletVaultItemSpecProviderConfigParam:
+		return paramutil.AddrIfPresent(vt.Name)
+	}
+	return nil
+}
+
 func init() {
 	apijson.RegisterUnion[VaultItemUpsertParamsBodyWalletSpecUnion](
 		"provider",
@@ -10148,6 +10743,7 @@ func init() {
 		apijson.Discriminator[VaultItemUpsertParamsBodyWalletSpecAgentcard]("agentcard"),
 		apijson.Discriminator[KernelWalletVaultItemSpecParam]("kernel"),
 		apijson.Discriminator[ShopPayWalletVaultItemSpecParam]("shop_pay"),
+		apijson.Discriminator[VgsWalletVaultItemSpecParam]("vgs"),
 	)
 }
 
