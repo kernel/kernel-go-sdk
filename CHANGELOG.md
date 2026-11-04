@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.139.0](https://github.com/kernel/kernel-go-sdk/compare/v0.138.0...v0.139.0) (2026-11-04)
+
+
+### Features
+
+* Add single-use Kernel cards to vaults ([f1dab10](https://github.com/kernel/kernel-go-sdk/commit/f1dab109b5d4dc03674d56394f866a87b81ad60d))
+* Drop Kernel's origin gate from 1Password fill ([34a9b40](https://github.com/kernel/kernel-go-sdk/commit/34a9b40c4f814388551374fbd6b5df259e57113a))
+* Let customers keep refreshing imported Link wallet grants ([4195b87](https://github.com/kernel/kernel-go-sdk/commit/4195b87409c60f67e1333e46ed1d85f2e4a33ad9))
+* Pass through tool_page_unloaded and disable SDK retries for WebMCP invoke failures ([a665adc](https://github.com/kernel/kernel-go-sdk/commit/a665adcb96641db34148f14e15c891458a30fa59))
+
 ## [0.138.0](https://github.com/kernel/kernel-go-sdk/compare/v0.137.0...v0.138.0) (2026-10-30)
 
 
