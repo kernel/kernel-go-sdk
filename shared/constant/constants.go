@@ -129,7 +129,6 @@ type ProxyError string                      // Always "proxy_error"
 type PushApproval string                    // Always "push_approval"
 type Recommendation string                  // Always "recommendation"
 type Screenshot string                      // Always "screenshot"
-type Serpapi string                         // Always "serpapi"
 type ServiceCrashed string                  // Always "service_crashed"
 type ShopPayOAuth string                    // Always "shop_pay_oauth"
 type SpendApproval string                   // Always "spend_approval"
@@ -144,7 +143,6 @@ type TargetDisposeBrowserContext string     // Always "Target.disposeBrowserCont
 type TargetOpenDevTools string              // Always "Target.openDevTools"
 type Tavily string                          // Always "tavily"
 type UpdateAccessToken string               // Always "update_access_token"
-type Valyu string                           // Always "valyu"
 type Wallet string                          // Always "wallet"
 type You string                             // Always "you"
 
@@ -283,7 +281,6 @@ func (c ProxyError) Default() ProxyError                     { return "proxy_err
 func (c PushApproval) Default() PushApproval                 { return "push_approval" }
 func (c Recommendation) Default() Recommendation             { return "recommendation" }
 func (c Screenshot) Default() Screenshot                     { return "screenshot" }
-func (c Serpapi) Default() Serpapi                           { return "serpapi" }
 func (c ServiceCrashed) Default() ServiceCrashed             { return "service_crashed" }
 func (c ShopPayOAuth) Default() ShopPayOAuth                 { return "shop_pay_oauth" }
 func (c SpendApproval) Default() SpendApproval               { return "spend_approval" }
@@ -302,7 +299,6 @@ func (c TargetDisposeBrowserContext) Default() TargetDisposeBrowserContext {
 func (c TargetOpenDevTools) Default() TargetOpenDevTools { return "Target.openDevTools" }
 func (c Tavily) Default() Tavily                         { return "tavily" }
 func (c UpdateAccessToken) Default() UpdateAccessToken   { return "update_access_token" }
-func (c Valyu) Default() Valyu                           { return "valyu" }
 func (c Wallet) Default() Wallet                         { return "wallet" }
 func (c You) Default() You                               { return "you" }
 
@@ -417,7 +413,6 @@ func (c ProxyError) MarshalJSON() ([]byte, error)                      { return 
 func (c PushApproval) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c Recommendation) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c Screenshot) MarshalJSON() ([]byte, error)                      { return marshalString(c) }
-func (c Serpapi) MarshalJSON() ([]byte, error)                         { return marshalString(c) }
 func (c ServiceCrashed) MarshalJSON() ([]byte, error)                  { return marshalString(c) }
 func (c ShopPayOAuth) MarshalJSON() ([]byte, error)                    { return marshalString(c) }
 func (c SpendApproval) MarshalJSON() ([]byte, error)                   { return marshalString(c) }
@@ -432,7 +427,6 @@ func (c TargetDisposeBrowserContext) MarshalJSON() ([]byte, error)     { return 
 func (c TargetOpenDevTools) MarshalJSON() ([]byte, error)              { return marshalString(c) }
 func (c Tavily) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c UpdateAccessToken) MarshalJSON() ([]byte, error)               { return marshalString(c) }
-func (c Valyu) MarshalJSON() ([]byte, error)                           { return marshalString(c) }
 func (c Wallet) MarshalJSON() ([]byte, error)                          { return marshalString(c) }
 func (c You) MarshalJSON() ([]byte, error)                             { return marshalString(c) }
 
