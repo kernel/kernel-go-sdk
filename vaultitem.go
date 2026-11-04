@@ -1829,8 +1829,8 @@ type CredentialAccountVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2269,8 +2269,8 @@ type CredentialVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -5133,8 +5133,8 @@ type PaymentRequestVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -7061,10 +7061,13 @@ type VaultItemUnionSpecAuthorization struct {
 	// [OnePasswordCredentialAccountSpecAuthorizationClient]
 	Client VaultItemUnionSpecAuthorizationClient `json:"client"`
 	Method string                                `json:"method"`
-	JSON   struct {
-		Client respjson.Field
-		Method respjson.Field
-		raw    string
+	// This field is from variant [WalletVaultItemSpecLinkAuthorization].
+	TokenRefresh string `json:"token_refresh"`
+	JSON         struct {
+		Client       respjson.Field
+		Method       respjson.Field
+		TokenRefresh respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
@@ -7401,8 +7404,8 @@ type VaultItemWalletAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -7519,8 +7522,8 @@ type VaultItemCardAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8192,10 +8195,13 @@ type VaultItemOperationResponseUnionSpecAuthorization struct {
 	// [OnePasswordCredentialAccountSpecAuthorizationClient]
 	Client VaultItemOperationResponseUnionSpecAuthorizationClient `json:"client"`
 	Method string                                                 `json:"method"`
-	JSON   struct {
-		Client respjson.Field
-		Method respjson.Field
-		raw    string
+	// This field is from variant [WalletVaultItemSpecLinkAuthorization].
+	TokenRefresh string `json:"token_refresh"`
+	JSON         struct {
+		Client       respjson.Field
+		Method       respjson.Field
+		TokenRefresh respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
@@ -8536,8 +8542,8 @@ type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8659,8 +8665,8 @@ type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "1pw_recover", "1pw_update_access_token", "update_access_token",
+	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8951,10 +8957,13 @@ type WalletVaultItemSpecUnionAuthorization struct {
 	// [ShopPayWalletVaultItemSpecAuthorizationClient]
 	Client WalletVaultItemSpecUnionAuthorizationClient `json:"client"`
 	Method string                                      `json:"method"`
-	JSON   struct {
-		Client respjson.Field
-		Method respjson.Field
-		raw    string
+	// This field is from variant [WalletVaultItemSpecLinkAuthorization].
+	TokenRefresh string `json:"token_refresh"`
+	JSON         struct {
+		Client       respjson.Field
+		Method       respjson.Field
+		TokenRefresh respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
@@ -9005,12 +9014,20 @@ type WalletVaultItemSpecLinkAuthorization struct {
 	Client WalletVaultItemSpecLinkAuthorizationClientUnion `json:"client" api:"required"`
 	// Any of "oauth".
 	Method string `json:"method" api:"required"`
+	// Who refreshes an imported Link grant. kernel (default) means Kernel holds and
+	// rotates the refresh token. customer means your backend keeps the refresh token
+	// and replaces the access token with update_access_token; Kernel never refreshes
+	// or revokes the grant. Fixed at wallet creation.
+	//
+	// Any of "kernel", "customer".
+	TokenRefresh string `json:"token_refresh"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Client      respjson.Field
-		Method      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Client       respjson.Field
+		Method       respjson.Field
+		TokenRefresh respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
 	} `json:"-"`
 }
 
@@ -9728,8 +9745,17 @@ type VaultItemPerformOperationParams struct {
 	// This field is a request body variant, only one variant field can be set. Replace
 	// only the access token on a stored-token 1Password credential. Preserves its
 	// integration key, request and approved references. Does not invoke 1Password or
-	// retry a pending/uncertain operation.
+	// retry a pending/uncertain operation. For a wallet whose grant your backend
+	// refreshes, use update_access_token instead.
 	Of1pwUpdateAccessToken *VaultItemPerformOperationParamsBody1pwUpdateAccessToken `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Replace
+	// the stored access token on a wallet whose grant your backend refreshes, such as
+	// a Link wallet imported with token_refresh=customer. The token must come from the
+	// grant the wallet was imported with. Kernel stores it without contacting the
+	// provider and never refreshes or revokes the grant. Existing cards and pending
+	// spend requests keep their state. Requires vault write access. For a stored-token
+	// 1Password credential, use 1pw_update_access_token instead.
+	OfUpdateAccessToken *VaultItemPerformOperationParamsBodyUpdateAccessToken `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Invoke
 	// a WebMCP tool using values from a vaulted item. The browser must be attached to
 	// the item's vault. Discover the tool_ref, inputSchema, and source with GET
@@ -9780,6 +9806,7 @@ func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 		u.Of1pwFill,
 		u.Of1pwRecover,
 		u.Of1pwUpdateAccessToken,
+		u.OfUpdateAccessToken,
 		u.OfWebmcpInvoke,
 		u.OfAddPaymentMethod,
 		u.OfRemovePaymentMethod)
@@ -9814,7 +9841,8 @@ func (r *VaultItemPerformOperationParamsBody1pwAccessRequestStatus) UnmarshalJSO
 
 // Replace only the access token on a stored-token 1Password credential. Preserves
 // its integration key, request and approved references. Does not invoke 1Password
-// or retry a pending/uncertain operation.
+// or retry a pending/uncertain operation. For a wallet whose grant your backend
+// refreshes, use update_access_token instead.
 //
 // The properties AccessToken, Type are required.
 type VaultItemPerformOperationParamsBody1pwUpdateAccessToken struct {
@@ -9832,6 +9860,30 @@ func (r VaultItemPerformOperationParamsBody1pwUpdateAccessToken) MarshalJSON() (
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *VaultItemPerformOperationParamsBody1pwUpdateAccessToken) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Replace the stored access token on a wallet whose grant your backend refreshes,
+// such as a Link wallet imported with token_refresh=customer. The token must come
+// from the grant the wallet was imported with. Kernel stores it without contacting
+// the provider and never refreshes or revokes the grant. Existing cards and
+// pending spend requests keep their state. Requires vault write access. For a
+// stored-token 1Password credential, use 1pw_update_access_token instead.
+//
+// The properties AccessToken, Type are required.
+type VaultItemPerformOperationParamsBodyUpdateAccessToken struct {
+	AccessToken string `json:"access_token" api:"required"`
+	// This field can be elided, and will marshal its zero value as
+	// "update_access_token".
+	Type constant.UpdateAccessToken `json:"type" default:"update_access_token"`
+	paramObj
+}
+
+func (r VaultItemPerformOperationParamsBodyUpdateAccessToken) MarshalJSON() (data []byte, err error) {
+	type shadow VaultItemPerformOperationParamsBodyUpdateAccessToken
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultItemPerformOperationParamsBodyUpdateAccessToken) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -10016,6 +10068,15 @@ func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) GetTokens() *Vaul
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) GetTokenRefresh() *string {
+	switch vt := u.any.(type) {
+	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion:
+		return vt.GetTokenRefresh()
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u vaultItemUpsertParamsBodyWalletSpecUnionAuthorization) GetMethod() *string {
 	switch vt := u.any.(type) {
 	case *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion:
@@ -10139,6 +10200,14 @@ func (u VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion) GetTokens() *
 }
 
 // Returns a pointer to the underlying variant's property, if present.
+func (u VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion) GetTokenRefresh() *string {
+	if vt := u.OfVaultItemUpsertsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInput; vt != nil {
+		return &vt.TokenRefresh
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
 func (u VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationUnion) GetMethod() *string {
 	if vt := u.OfVaultItemUpsertsBodyWalletSpecLinkAuthorizationKernelManagedLinkAuthorizationInput; vt != nil {
 		return (*string)(&vt.Method)
@@ -10246,38 +10315,54 @@ func init() {
 // wallet with state.status=connected. An expired, invalid, revoked, or
 // insufficiently scoped access token returns 400 and no wallet is created. Refresh
 // expired tokens in your backend before importing them. A failed import does not
-// modify existing wallets. After successful import, Kernel owns subsequent
-// refresh-token rotation; the customer must stop refreshing this grant. Import
-// does not verify the refresh token: if it or the configured client credentials
-// are rejected during a later refresh, the imported wallet becomes degraded. An
-// unknown refresh outcome also leaves it degraded; Kernel does not retry a refresh
-// token that may already have been consumed. There is no in-place reauthorization
-// operation for an imported wallet. If this imported wallet's credentials become
-// unusable, obtain a fresh Link OAuth grant in your backend and create a wallet
-// under a NEW wallet key. Use the new wallet for NEW cards and payments, not to
-// retry an old payment whose outcome is uncertain. This does not replace the old
-// grant, rebind existing cards, or resolve their payment outcomes. Retain the old
-// wallet and its cards while reconciling any uncertain payments with the provider
-// or support. Do not repeat an uncertain payment on the new wallet, and do not
-// treat deletion as evidence that it did not execute. Deletion of the old wallet
-// can remain blocked by unresolved child cards. Repeating a create for the same
-// item key and non-secret spec returns the existing wallet without replacing
-// tokens, even if they have rotated or the wallet needs reconnection. ID and name
-// references resolving to the same config are equivalent. A different config or
-// non-secret spec returns 409. This create operation does not replace an existing
-// grant.
+// modify existing wallets. By default (token_refresh=kernel), Kernel owns
+// subsequent refresh-token rotation after a successful import; the customer must
+// stop refreshing this grant. With token_refresh=customer, send only the access
+// token: your backend keeps the refresh token and rotates the grant, and Kernel
+// never refreshes or revokes it. Replace the stored access token with the wallet's
+// update_access_token operation before each step that reaches Link, such as
+// creating, authorizing or filling a card. When Link rejects the stored access
+// token, operations return 409 without contacting Link again; update the token and
+// retry. The remainder of this description applies to token_refresh=kernel. With
+// token_refresh=kernel, Kernel owns subsequent refresh-token rotation; the
+// customer must stop refreshing this grant. Import does not verify the refresh
+// token: if it or the configured client credentials are rejected during a later
+// refresh, the imported wallet becomes degraded. An unknown refresh outcome also
+// leaves it degraded; Kernel does not retry a refresh token that may already have
+// been consumed. There is no in-place reauthorization operation for an imported
+// wallet. If this imported wallet's credentials become unusable, obtain a fresh
+// Link OAuth grant in your backend and create a wallet under a NEW wallet key. Use
+// the new wallet for NEW cards and payments, not to retry an old payment whose
+// outcome is uncertain. This does not replace the old grant, rebind existing
+// cards, or resolve their payment outcomes. Retain the old wallet and its cards
+// while reconciling any uncertain payments with the provider or support. Do not
+// repeat an uncertain payment on the new wallet, and do not treat deletion as
+// evidence that it did not execute. Deletion of the old wallet can remain blocked
+// by unresolved child cards. Repeating a create for the same item key and
+// non-secret spec returns the existing wallet without replacing tokens, even if
+// they have rotated or the wallet needs reconnection. ID and name references
+// resolving to the same config are equivalent. A different config or non-secret
+// spec returns 409. This create operation does not replace an existing grant.
 //
 // The properties Client, Method, Tokens are required.
 type VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInput struct {
 	Client VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputClient `json:"client,omitzero" api:"required"`
 	// Any of "oauth".
 	Method string `json:"method,omitzero" api:"required"`
-	// Send the token pair from your backend. Both tokens must be from the same Link
-	// grant under the referenced client. Supply a currently valid access token. Kernel
-	// refreshes when needed after import and uses the expiry returned by Link for
-	// subsequent tokens. Tokens are never returned in wallet responses, events, or
+	// Send the tokens from your backend. Supply a currently valid access token. With
+	// token_refresh=kernel, also send the refresh token from the same Link grant under
+	// the referenced client; Kernel refreshes when needed after import and uses the
+	// expiry returned by Link for subsequent tokens. With token_refresh=customer, omit
+	// the refresh token. Tokens are never returned in wallet responses, events, or
 	// logs.
 	Tokens VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputTokens `json:"tokens,omitzero" api:"required"`
+	// Who refreshes an imported Link grant. kernel (default) means Kernel holds and
+	// rotates the refresh token. customer means your backend keeps the refresh token
+	// and replaces the access token with update_access_token; Kernel never refreshes
+	// or revokes the grant. Fixed at wallet creation.
+	//
+	// Any of "kernel", "customer".
+	TokenRefresh string `json:"token_refresh,omitzero"`
 	paramObj
 }
 
@@ -10292,6 +10377,9 @@ func (r *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthori
 func init() {
 	apijson.RegisterFieldValidator[VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInput](
 		"method", "oauth",
+	)
+	apijson.RegisterFieldValidator[VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInput](
+		"token_refresh", "kernel", "customer",
 	)
 }
 
@@ -10337,16 +10425,18 @@ func (r *VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthori
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Send the token pair from your backend. Both tokens must be from the same Link
-// grant under the referenced client. Supply a currently valid access token. Kernel
-// refreshes when needed after import and uses the expiry returned by Link for
-// subsequent tokens. Tokens are never returned in wallet responses, events, or
+// Send the tokens from your backend. Supply a currently valid access token. With
+// token_refresh=kernel, also send the refresh token from the same Link grant under
+// the referenced client; Kernel refreshes when needed after import and uses the
+// expiry returned by Link for subsequent tokens. With token_refresh=customer, omit
+// the refresh token. Tokens are never returned in wallet responses, events, or
 // logs.
 //
-// The properties AccessToken, RefreshToken are required.
+// The property AccessToken is required.
 type VaultItemUpsertParamsBodyWalletSpecLinkAuthorizationImportedLinkAuthorizationInputTokens struct {
-	AccessToken  string `json:"access_token" api:"required"`
-	RefreshToken string `json:"refresh_token" api:"required"`
+	AccessToken string `json:"access_token" api:"required"`
+	// Required with token_refresh=kernel; rejected with token_refresh=customer.
+	RefreshToken param.Opt[string] `json:"refresh_token,omitzero"`
 	paramObj
 }
 
