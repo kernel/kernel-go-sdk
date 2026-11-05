@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.141.0](https://github.com/kernel/kernel-go-sdk/compare/v0.139.0...v0.141.0) (2026-11-05)
+
+
+### Features
+
+* Add customer-managed VGS vault card payments ([d69dac9](https://github.com/kernel/kernel-go-sdk/commit/d69dac9d399e40e8507be704d5fa398057b45dc8))
+* Move GPU browsers to L40S-3Q and 6Q vGPU profiles ([b8127bb](https://github.com/kernel/kernel-go-sdk/commit/b8127bb73c9e285da4c302aa2550c6b96c90ad86))
+* Remove SerpApi and Valyu search providers ([fe17b9f](https://github.com/kernel/kernel-go-sdk/commit/fe17b9f1e2768056f9fa6a93cdd59b7c145e0225))
+* Return access_token_rejected code when Link rejects a customer-supplied token ([8607e4b](https://github.com/kernel/kernel-go-sdk/commit/8607e4b35b1d357e83d6823c4d37512a69581eb1))
+
+
+### Bug Fixes
+
+* generate VGS card aliases in the TypeScript SDK ([5a8e273](https://github.com/kernel/kernel-go-sdk/commit/5a8e2731fa9271329014f38941cba882dfac83ef))
+
+
+### Chores
+
+* align version with the Python and Node SDKs ([d28534b](https://github.com/kernel/kernel-go-sdk/commit/d28534b5424d97442d8d27134d3fe57b9c24dc1e))
+
 ## [0.139.0](https://github.com/kernel/kernel-go-sdk/compare/v0.138.0...v0.139.0) (2026-11-04)
 
 
