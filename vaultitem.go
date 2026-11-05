@@ -9127,10 +9127,6 @@ func (r *VgsCardStateMasks) UnmarshalJSON(data []byte) error {
 type VgsCardVaultItemSpec struct {
 	// Integer amount in minor currency units (at most 1000000).
 	Amount int64 `json:"amount" api:"required"`
-	// The card's aliases in the customer's VGS vault, its expiry and last four digits.
-	// Write-only: stored encrypted and never returned in the item, its events or logs.
-	// A repeated PUT with the same key must send the same card.
-	Card VgsCardInput `json:"card" api:"required"`
 	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
 	// krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
 	Currency     string `json:"currency" api:"required"`
@@ -9141,15 +9137,17 @@ type VgsCardVaultItemSpec struct {
 	Provider VgsCardVaultItemSpecProvider `json:"provider" api:"required"`
 	// Key of the VGS wallet item whose configuration reads the aliases.
 	Wallet string `json:"wallet" api:"required"`
+	// Required when creating the card. Never returned.
+	Card VgsCardInput `json:"card"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Amount       respjson.Field
-		Card         respjson.Field
 		Currency     respjson.Field
 		MerchantName respjson.Field
 		MerchantURL  respjson.Field
 		Provider     respjson.Field
 		Wallet       respjson.Field
+		Card         respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -9188,15 +9186,11 @@ const (
 // the browser. Card updates are not supported; delete and create a new item
 // instead.
 //
-// The properties Amount, Card, Currency, MerchantName, MerchantURL, Provider,
-// Wallet are required.
+// The properties Amount, Currency, MerchantName, MerchantURL, Provider, Wallet are
+// required.
 type VgsCardVaultItemSpecParam struct {
 	// Integer amount in minor currency units (at most 1000000).
 	Amount int64 `json:"amount" api:"required"`
-	// The card's aliases in the customer's VGS vault, its expiry and last four digits.
-	// Write-only: stored encrypted and never returned in the item, its events or logs.
-	// A repeated PUT with the same key must send the same card.
-	Card VgsCardInputParam `json:"card,omitzero" api:"required"`
 	// ISO 4217 code. Supported: aud, brl, cad, chf, czk, dkk, eur, gbp, hkd, inr, jpy,
 	// krw, mxn, nok, nzd, pln, sek, sgd, usd, zar.
 	Currency     string `json:"currency" api:"required"`
@@ -9207,6 +9201,8 @@ type VgsCardVaultItemSpecParam struct {
 	Provider VgsCardVaultItemSpecProvider `json:"provider,omitzero" api:"required"`
 	// Key of the VGS wallet item whose configuration reads the aliases.
 	Wallet string `json:"wallet" api:"required"`
+	// Required when creating the card. Never returned.
+	Card VgsCardInputParam `json:"card,omitzero"`
 	paramObj
 }
 
