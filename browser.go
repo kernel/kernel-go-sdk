@@ -1078,11 +1078,14 @@ func (r *BrowserUsage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Video memory (VRAM) of a GPU browser session. 2GiB sessions have 4 vCPU and 6GiB
-// memory. 4GiB sessions have 8 vCPU and 12GiB memory.
+// Video memory (VRAM) of a GPU browser session. 3GiB sessions have 4 vCPU and 6GiB
+// memory. 6GiB sessions have 8 vCPU and 12GiB memory. 2GiB and 4GiB are deprecated
+// aliases for 3GiB and 6GiB: they are accepted on create and never returned.
 type BrowserVideoMemory string
 
 const (
+	BrowserVideoMemory3GiB BrowserVideoMemory = "3GiB"
+	BrowserVideoMemory6GiB BrowserVideoMemory = "6GiB"
 	BrowserVideoMemory2GiB BrowserVideoMemory = "2GiB"
 	BrowserVideoMemory4GiB BrowserVideoMemory = "4GiB"
 )
@@ -1266,7 +1269,7 @@ type BrowserNewResponse struct {
 	Vaults []VaultReference `json:"vaults"`
 	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
 	//
-	// Any of "2GiB", "4GiB".
+	// Any of "3GiB", "6GiB", "2GiB", "4GiB".
 	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -1430,7 +1433,7 @@ type BrowserGetResponse struct {
 	Vaults []VaultReference `json:"vaults"`
 	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
 	//
-	// Any of "2GiB", "4GiB".
+	// Any of "3GiB", "6GiB", "2GiB", "4GiB".
 	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -1594,7 +1597,7 @@ type BrowserUpdateResponse struct {
 	Vaults []VaultReference `json:"vaults"`
 	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
 	//
-	// Any of "2GiB", "4GiB".
+	// Any of "3GiB", "6GiB", "2GiB", "4GiB".
 	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -1758,7 +1761,7 @@ type BrowserListResponse struct {
 	Vaults []VaultReference `json:"vaults"`
 	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
 	//
-	// Any of "2GiB", "4GiB".
+	// Any of "3GiB", "6GiB", "2GiB", "4GiB".
 	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
@@ -1954,10 +1957,10 @@ type BrowserNewParams struct {
 	// creation.
 	Vaults []VaultReferenceParam `json:"vaults,omitzero"`
 	// Video memory (VRAM) for a GPU browser session. Requires gpu=true. Defaults to
-	// 2GiB, which comes with 4 vCPU and 6GiB memory. 4GiB comes with 8 vCPU and 12GiB
-	// memory.
+	// 3GiB, which comes with 4 vCPU and 6GiB memory. 6GiB comes with 8 vCPU and 12GiB
+	// memory. 2GiB and 4GiB are deprecated aliases for 3GiB and 6GiB.
 	//
-	// Any of "2GiB", "4GiB".
+	// Any of "3GiB", "6GiB", "2GiB", "4GiB".
 	VideoMemory BrowserVideoMemory `json:"video_memory,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is

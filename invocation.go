@@ -651,7 +651,7 @@ type InvocationListBrowsersResponseBrowser struct {
 	Vaults []VaultReference `json:"vaults"`
 	// Video memory (VRAM) of the GPU browser session. Only present when gpu is true.
 	//
-	// Any of "2GiB", "4GiB".
+	// Any of "3GiB", "6GiB", "2GiB", "4GiB".
 	VideoMemory BrowserVideoMemory `json:"video_memory"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
