@@ -31,7 +31,8 @@ func TestProxyNewWithOptionalParams(t *testing.T) {
 		BypassHosts: []string{"string"},
 		Config: kernel.ProxyNewParamsConfigUnion{
 			OfIsp: &kernel.ProxyNewParamsConfigIsp{
-				Country: kernel.String("US"),
+				Country:   kernel.String("US"),
+				IPAddress: kernel.String("203.0.113.10"),
 			},
 		},
 		Name:     kernel.String("name"),
@@ -69,7 +70,7 @@ func TestProxyGet(t *testing.T) {
 	}
 }
 
-func TestProxyUpdate(t *testing.T) {
+func TestProxyUpdateWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -86,7 +87,10 @@ func TestProxyUpdate(t *testing.T) {
 		context.TODO(),
 		"id_or_name",
 		kernel.ProxyUpdateParams{
-			Name: "my-renamed-proxy",
+			Config: kernel.ProxyUpdateParamsConfig{
+				IPAddress: "203.0.113.10",
+			},
+			Name: kernel.String("my-renamed-proxy"),
 		},
 	)
 	if err != nil {
@@ -112,10 +116,11 @@ func TestProxyListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Proxies.List(context.TODO(), kernel.ProxyListParams{
-		Limit:  kernel.Int(1),
-		Name:   kernel.String("name"),
-		Offset: kernel.Int(0),
-		Query:  kernel.String("query"),
+		IPAddress: kernel.String("ip_address"),
+		Limit:     kernel.Int(1),
+		Name:      kernel.String("name"),
+		Offset:    kernel.Int(0),
+		Query:     kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error

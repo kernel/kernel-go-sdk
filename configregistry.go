@@ -507,6 +507,8 @@ func (r *ProxyManagedCreate) UnmarshalJSON(data []byte) error {
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type ProxyManagedCreateConfigUnion struct {
 	Country string `json:"country"`
+	// This field is from variant [ProxyManagedCreateConfigIsp].
+	IPAddress string `json:"ip_address"`
 	// This field is from variant [ProxyManagedCreateConfigResidential].
 	Asn  string `json:"asn"`
 	City string `json:"city"`
@@ -526,18 +528,19 @@ type ProxyManagedCreateConfigUnion struct {
 	// This field is from variant [ProxyManagedCreateConfigCustom].
 	Username string `json:"username"`
 	JSON     struct {
-		Country  respjson.Field
-		Asn      respjson.Field
-		City     respjson.Field
-		Os       respjson.Field
-		State    respjson.Field
-		Zip      respjson.Field
-		Host     respjson.Field
-		Port     respjson.Field
-		CaBundle respjson.Field
-		Password respjson.Field
-		Username respjson.Field
-		raw      string
+		Country   respjson.Field
+		IPAddress respjson.Field
+		Asn       respjson.Field
+		City      respjson.Field
+		Os        respjson.Field
+		State     respjson.Field
+		Zip       respjson.Field
+		Host      respjson.Field
+		Port      respjson.Field
+		CaBundle  respjson.Field
+		Password  respjson.Field
+		Username  respjson.Field
+		raw       string
 	} `json:"-"`
 }
 
@@ -571,11 +574,21 @@ func (r *ProxyManagedCreateConfigUnion) UnmarshalJSON(data []byte) error {
 // Configuration for an ISP proxy.
 type ProxyManagedCreateConfigIsp struct {
 	// ISO 3166 country code. Supported countries are US, GB, FR, DE, SG, and KR.
-	// Defaults to US if not provided.
+	// Defaults to US if not provided, or to the country of ip_address when that is
+	// set.
 	Country string `json:"country"`
+	// Reserved exit IP to pin the proxy to. Available only to organizations with a
+	// reserved ISP allocation; the IP must be active in it (see GET /proxy_ips) and,
+	// when country is also set, in that country. Omit to let Kernel choose an IP. A
+	// proxy read includes it only when the proxy's primary exit IP is one of the
+	// organization's reserved IPs; every ISP proxy's exit IP is on the top-level
+	// ip_address. An IP outside the allocation is rejected with code ip_not_reserved;
+	// one that cannot currently be assigned, with 409 ip_unavailable.
+	IPAddress string `json:"ip_address"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Country     respjson.Field
+		IPAddress   respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`

@@ -36,6 +36,8 @@ type Client struct {
 	Telemetry TelemetryService
 	// Create and manage proxy configurations for routing browser traffic.
 	Proxies ProxyService
+	// Create and manage proxy configurations for routing browser traffic.
+	ProxyIPs ProxyIPService
 	// Create, list, retrieve, and delete browser extensions.
 	Extensions ExtensionService
 	// Create and manage browser pools for acquiring and releasing browsers.
@@ -101,6 +103,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Auth = NewAuthService(opts...)
 	r.Telemetry = NewTelemetryService(opts...)
 	r.Proxies = NewProxyService(opts...)
+	r.ProxyIPs = NewProxyIPService(opts...)
 	r.Extensions = NewExtensionService(opts...)
 	r.BrowserPools = NewBrowserPoolService(opts...)
 	r.VaultProviderConfigs = NewVaultProviderConfigService(opts...)

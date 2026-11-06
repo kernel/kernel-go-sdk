@@ -131,9 +131,11 @@ func (r *BrowserProfileParam) UnmarshalJSON(data []byte) error {
 // determined based on the resolution (higher resolutions use lower refresh rates
 // to keep bandwidth reasonable).
 type BrowserViewport struct {
-	// Browser window height in pixels. Any positive integer is accepted.
+	// Browser window height in pixels. Any positive integer is accepted; headful
+	// browsers require at least 64.
 	Height int64 `json:"height" api:"required"`
-	// Browser window width in pixels. Any positive integer is accepted.
+	// Browser window width in pixels. Any positive integer is accepted; headful
+	// browsers require at least 64.
 	Width int64 `json:"width" api:"required"`
 	// Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU
 	// browsers default to 60 and other browsers derive it from width and height.
@@ -178,9 +180,11 @@ func (r BrowserViewport) ToParam() BrowserViewportParam {
 //
 // The properties Height, Width are required.
 type BrowserViewportParam struct {
-	// Browser window height in pixels. Any positive integer is accepted.
+	// Browser window height in pixels. Any positive integer is accepted; headful
+	// browsers require at least 64.
 	Height int64 `json:"height" api:"required"`
-	// Browser window width in pixels. Any positive integer is accepted.
+	// Browser window width in pixels. Any positive integer is accepted; headful
+	// browsers require at least 64.
 	Width int64 `json:"width" api:"required"`
 	// Display refresh rate in Hz. Any positive integer is accepted; if omitted, GPU
 	// browsers default to 60 and other browsers derive it from width and height.
