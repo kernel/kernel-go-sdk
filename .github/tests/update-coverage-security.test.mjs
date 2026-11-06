@@ -203,10 +203,62 @@ test('private spec content is only uploaded encrypted, briefly retained, and del
   assert.ok(jobs.generate.indexOf(decrypt) < jobs.generate.indexOf(step('generate', 'Update CLI coverage')));
   assert.match(decrypt, /rm "\$key"\n/);
   const cleanup = jobTexts.cleanup;
-  assert.match(cleanup, /needs: \[prefetch, generate, publish\]\n    if: always\(\) && needs\.prefetch\.outputs\.context_artifact_id != ''\n/);
+  assert.match(cleanup, /needs: \[prefetch, generate, publish\]\n/);
   assert.match(cleanup, /permissions:\n      actions: write\n    steps:/);
   assert.match(cleanup, /gh api --method DELETE "repos\/\$GITHUB_REPOSITORY\/actions\/artifacts\/\$ARTIFACT_ID"/);
   assert.doesNotMatch(cleanup, /secrets\.|checkout/);
+});
+
+// Evaluates the cleanup job's if: condition for the given upstream job results.
+const cleanupRuns = ({ generate, publish, artifactId = '42' }) => {
+  const condition = jobTexts.cleanup.match(/^    if: (.+)$/m)[1];
+  const js = condition
+    .replaceAll('always()', 'true')
+    .replaceAll('needs.generate.result', JSON.stringify(generate))
+    .replaceAll('needs.publish.result', JSON.stringify(publish))
+    .replaceAll('needs.prefetch.outputs.context_artifact_id', JSON.stringify(artifactId))
+    .replaceAll(/ (==|!=) /g, ' $1= ')
+    .replaceAll("'", '"');
+  assert.doesNotMatch(js, /needs\.|\w+\(/, `unhandled expression: ${condition}`);
+  // Without a status function, GitHub only runs the job when every need succeeded.
+  const implicitSuccess = !/\b(always|success|failure|cancelled)\(\)/.test(condition);
+  if (implicitSuccess && (generate !== 'success' || publish !== 'success')) return false;
+  return Function(`return ${js};`)();
+};
+
+test('the context survives a failed generate so failed jobs can be re-run', () => {
+  // "Re-run failed jobs" keeps prefetch's result, so a re-run generate needs the
+  // artifact prefetch already uploaded.
+  assert.equal(cleanupRuns({ generate: 'failure', publish: 'skipped' }), false);
+  assert.equal(cleanupRuns({ generate: 'cancelled', publish: 'skipped' }), false);
+  assert.equal(cleanupRuns({ generate: 'skipped', publish: 'skipped', artifactId: '' }), false);
+  // After a successful generate nothing downloads it again, publish retries included.
+  assert.equal(cleanupRuns({ generate: 'success', publish: 'success' }), true);
+  assert.equal(cleanupRuns({ generate: 'success', publish: 'skipped' }), true);
+  assert.equal(cleanupRuns({ generate: 'success', publish: 'failure' }), true);
+  assert.doesNotMatch(jobTexts.publish, /name: cli-coverage-context\n/);
+  assert.match(step('generate', 'Download CLI coverage context'), /name: cli-coverage-context\n/);
+});
+
+test('cleanup tolerates a context deleted by an earlier attempt', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'cli-cleanup-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  write(root, 'bin/gh', '#!/bin/sh\necho "$GH_STUB_OUTPUT"\nexit "$GH_STUB_STATUS"\n', 0o755);
+  const remove = (output, status) =>
+    runStep(step('cleanup', 'Delete CLI coverage context'), root, {
+      PATH: `${join(root, 'bin')}:${process.env.PATH}`,
+      GITHUB_REPOSITORY: 'kernel/kernel-go-sdk',
+      ARTIFACT_ID: '42',
+      GH_STUB_OUTPUT: output,
+      GH_STUB_STATUS: String(status),
+    });
+  assert.equal(remove('', 0).status, 0);
+  const missing = remove('{"message":"Not Found"}gh: Not Found (HTTP 404)', 1);
+  assert.equal(missing.status, 0);
+  assert.match(missing.stdout, /already deleted/);
+  const failed = remove('gh: Server Error (HTTP 500)', 1);
+  assert.equal(failed.status, 1);
+  assert.match(failed.stderr, /HTTP 500/);
 });
 
 test('the context round-trips through encryption and the ciphertext hides it', (t) => {
@@ -258,6 +310,10 @@ test('changes are restricted to the allowlist and validated against published mo
   assert.ok(jobs.generate.indexOf(snapshot) < jobs.generate.indexOf(verify));
   assert.doesNotMatch(agent, /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/);
   assert.match(agent, /Do not commit, push, open, or merge PRs/);
+  // Publishing rebuilds the branch on the recorded main, so Pi compares against it too.
+  assert.match(agent, /diff against \$\{\{ steps\.cli-clone\.outputs\.main_sha \}\}/);
+  assert.match(agent, /Do not fetch,/);
+  assert.doesNotMatch(agent, /origin\/main/);
   assert.match(agent, /cli-scratch/);
   assert.match(snapshot, /updater\/\.github\/scripts\/cli-update-disallowed-paths\.sh/);
   assert.match(step('generate', 'Checkout updater scripts'), /sparse-checkout: \.github\/scripts/);

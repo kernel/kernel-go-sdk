@@ -471,11 +471,11 @@ jobs:
           7d. If you added no new commands or flags (SDK version bump only), skip this step.
 
           ## Step 8: Review and Report
-          - Read the full diff against origin/main and remove unrelated changes or unnecessary wrappers/casts.
+          - Read the full diff against ${{ steps.cli-clone.outputs.main_sha }} (CLI main as of this run) and remove unrelated changes or unnecessary wrappers/casts.
           - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, help text updated to match spec changes (with the spec operation or field each follows), intentional exclusions, and test results or limitations.
-          - The report replaces the PR description, so it must describe every change in the diff against origin/main, including changes earlier runs left on this branch, not only this run's.
+          - The report replaces the PR description, so it must describe every change in the diff against ${{ steps.cli-clone.outputs.main_sha }}, including changes earlier runs left on this branch, not only this run's.
           - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
-          - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
+          - Do not fetch, commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
           - Only go.mod, go.sum, and .go files under cmd/ and pkg/ are published. The workflow discards every other change before validation.
 
           # SDK Method -> CLI Command Mapping Guide
@@ -710,7 +710,9 @@ jobs:
 
   cleanup:
     needs: [prefetch, generate, publish]
-    if: always() && needs.prefetch.outputs.context_artifact_id != ''
+    # After a failed or cancelled generate, the context stays until it expires
+    # so "Re-run failed jobs" can download it again.
+    if: always() && needs.generate.result == 'success' && needs.prefetch.outputs.context_artifact_id != ''
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -720,4 +722,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           ARTIFACT_ID: ${{ needs.prefetch.outputs.context_artifact_id }}
-        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"
+        run: |
+          if ! output=$(gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" 2>&1); then
+            # An earlier attempt of this run may already have deleted it.
+            if [[ "$output" != *"HTTP 404"* ]]; then
+              echo "$output" >&2
+              exit 1
+            fi
+            echo "The CLI coverage context was already deleted."
+          fi
