@@ -121,11 +121,9 @@ type ProviderTargetUnionParam struct {
 	OfPerplexity *ProviderTargetPerplexityParam `json:",omitzero,inline"`
 	OfContext    *ProviderTargetContextParam    `json:",omitzero,inline"`
 	OfParallel   *ProviderTargetParallelParam   `json:",omitzero,inline"`
-	OfValyu      *ProviderTargetValyuParam      `json:",omitzero,inline"`
 	OfOcten      *ProviderTargetOctenParam      `json:",omitzero,inline"`
 	OfYou        *ProviderTargetYouParam        `json:",omitzero,inline"`
 	OfTavily     *ProviderTargetTavilyParam     `json:",omitzero,inline"`
-	OfSerpapi    *ProviderTargetSerpapiParam    `json:",omitzero,inline"`
 	paramUnion
 }
 
@@ -135,11 +133,9 @@ func (u ProviderTargetUnionParam) MarshalJSON() ([]byte, error) {
 		u.OfPerplexity,
 		u.OfContext,
 		u.OfParallel,
-		u.OfValyu,
 		u.OfOcten,
 		u.OfYou,
-		u.OfTavily,
-		u.OfSerpapi)
+		u.OfTavily)
 }
 func (u *ProviderTargetUnionParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -156,16 +152,12 @@ func (u *ProviderTargetUnionParam) asAny() any {
 		return u.OfContext
 	} else if !param.IsOmitted(u.OfParallel) {
 		return u.OfParallel
-	} else if !param.IsOmitted(u.OfValyu) {
-		return u.OfValyu
 	} else if !param.IsOmitted(u.OfOcten) {
 		return u.OfOcten
 	} else if !param.IsOmitted(u.OfYou) {
 		return u.OfYou
 	} else if !param.IsOmitted(u.OfTavily) {
 		return u.OfTavily
-	} else if !param.IsOmitted(u.OfSerpapi) {
-		return u.OfSerpapi
 	}
 	return nil
 }
@@ -182,15 +174,11 @@ func (u ProviderTargetUnionParam) GetProvider() *string {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfParallel; vt != nil {
 		return (*string)(&vt.Provider)
-	} else if vt := u.OfValyu; vt != nil {
-		return (*string)(&vt.Provider)
 	} else if vt := u.OfOcten; vt != nil {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfYou; vt != nil {
 		return (*string)(&vt.Provider)
 	} else if vt := u.OfTavily; vt != nil {
-		return (*string)(&vt.Provider)
-	} else if vt := u.OfSerpapi; vt != nil {
 		return (*string)(&vt.Provider)
 	}
 	return nil
@@ -210,15 +198,11 @@ func (u ProviderTargetUnionParam) GetOptions() (res providerTargetUnionParamOpti
 		res.any = &vt.Options
 	} else if vt := u.OfParallel; vt != nil {
 		res.any = &vt.Options
-	} else if vt := u.OfValyu; vt != nil {
-		res.any = &vt.Options
 	} else if vt := u.OfOcten; vt != nil {
 		res.any = &vt.Options
 	} else if vt := u.OfYou; vt != nil {
 		res.any = &vt.Options
 	} else if vt := u.OfTavily; vt != nil {
-		res.any = &vt.Options
-	} else if vt := u.OfSerpapi; vt != nil {
 		res.any = &vt.Options
 	}
 	return
@@ -227,9 +211,8 @@ func (u ProviderTargetUnionParam) GetOptions() (res providerTargetUnionParamOpti
 // Can have the runtime types [*ProviderTargetBraveOptionsParam],
 // [*ProviderTargetExaOptionsParam], [*ProviderTargetPerplexityOptionsParam],
 // [*ProviderTargetContextOptionsParam], [*ProviderTargetParallelOptionsParam],
-// [*ProviderTargetValyuOptionsParam], [*ProviderTargetOctenOptionsParam],
-// [*ProviderTargetYouOptionsParam], [*ProviderTargetTavilyOptionsParam],
-// [*ProviderTargetSerpapiOptionsParam]
+// [*ProviderTargetOctenOptionsParam], [*ProviderTargetYouOptionsParam],
+// [*ProviderTargetTavilyOptionsParam]
 type providerTargetUnionParamOptions struct{ any }
 
 // Use the following switch statement to get the type of the union:
@@ -240,11 +223,9 @@ type providerTargetUnionParamOptions struct{ any }
 //	case *kernel.ProviderTargetPerplexityOptionsParam:
 //	case *kernel.ProviderTargetContextOptionsParam:
 //	case *kernel.ProviderTargetParallelOptionsParam:
-//	case *kernel.ProviderTargetValyuOptionsParam:
 //	case *kernel.ProviderTargetOctenOptionsParam:
 //	case *kernel.ProviderTargetYouOptionsParam:
 //	case *kernel.ProviderTargetTavilyOptionsParam:
-//	case *kernel.ProviderTargetSerpapiOptionsParam:
 //	default:
 //	    fmt.Errorf("not present")
 //	}
@@ -566,114 +547,6 @@ func (u providerTargetUnionParamOptions) GetSessionID() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetFastMode() *bool {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.FastMode)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetHistoricalCache() *bool {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.HistoricalCache)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetIncludeAbstracts() *bool {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.IncludeAbstracts)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetInstructions() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.Instructions)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetIsToolCall() *bool {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.IsToolCall)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetMaxNumResults() *int64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.MaxNumResults)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetMaxPrice() *float64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.MaxPrice)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetRelevanceThreshold() *float64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.RelevanceThreshold)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetResponseLength() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return &vt.ResponseLength
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetSearchType() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.SearchType)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetSourceBiases() []string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return vt.SourceBiases
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetURLOnly() *bool {
-	switch vt := u.any.(type) {
-	case *ProviderTargetValyuOptionsParam:
-		return paramutil.AddrIfPresent(vt.URLOnly)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
 func (u providerTargetUnionParamOptions) GetEndTime() *time.Time {
 	switch vt := u.any.(type) {
 	case *ProviderTargetOctenOptionsParam:
@@ -890,132 +763,6 @@ func (u providerTargetUnionParamOptions) GetSearchDepth() *string {
 }
 
 // Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetEngine() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return &vt.Engine
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetDevice() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return &vt.Device
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetFilter() *int64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return &vt.Filter
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetGl() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Gl)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetGoogleDomain() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.GoogleDomain)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetHl() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Hl)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetLocation() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Location)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetNfpr() *int64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return &vt.Nfpr
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetNoCache() *bool {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.NoCache)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetNum() *int64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Num)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetSafe() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return &vt.Safe
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetStart() *int64 {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Start)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetTbm() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Tbm)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
-func (u providerTargetUnionParamOptions) GetTbs() *string {
-	switch vt := u.any.(type) {
-	case *ProviderTargetSerpapiOptionsParam:
-		return paramutil.AddrIfPresent(vt.Tbs)
-	}
-	return nil
-}
-
-// Returns a pointer to the underlying variant's property, if present.
 func (u providerTargetUnionParamOptions) GetCount() *int64 {
 	switch vt := u.any.(type) {
 	case *ProviderTargetBraveOptionsParam:
@@ -1143,11 +890,9 @@ func init() {
 		apijson.Discriminator[ProviderTargetPerplexityParam]("perplexity"),
 		apijson.Discriminator[ProviderTargetContextParam]("context"),
 		apijson.Discriminator[ProviderTargetParallelParam]("parallel"),
-		apijson.Discriminator[ProviderTargetValyuParam]("valyu"),
 		apijson.Discriminator[ProviderTargetOctenParam]("octen"),
 		apijson.Discriminator[ProviderTargetYouParam]("you"),
 		apijson.Discriminator[ProviderTargetTavilyParam]("tavily"),
-		apijson.Discriminator[ProviderTargetSerpapiParam]("serpapi"),
 	)
 }
 
@@ -1554,68 +1299,6 @@ func (r *ProviderTargetParallelOptionsAdvancedSettingsSourcePolicyParam) Unmarsh
 }
 
 // The property Provider is required.
-type ProviderTargetValyuParam struct {
-	Options ProviderTargetValyuOptionsParam `json:"options,omitzero"`
-	// This field can be elided, and will marshal its zero value as "valyu".
-	Provider constant.Valyu `json:"provider" default:"valyu"`
-	paramObj
-}
-
-func (r ProviderTargetValyuParam) MarshalJSON() (data []byte, err error) {
-	type shadow ProviderTargetValyuParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ProviderTargetValyuParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ProviderTargetValyuOptionsParam struct {
-	// Trade depth for latency.
-	FastMode param.Opt[bool] `json:"fast_mode,omitzero"`
-	// Allow historical cached results.
-	HistoricalCache param.Opt[bool] `json:"historical_cache,omitzero"`
-	// Include abstracts for academic sources.
-	IncludeAbstracts param.Opt[bool] `json:"include_abstracts,omitzero"`
-	// Natural-language retrieval guidance.
-	Instructions param.Opt[string] `json:"instructions,omitzero"`
-	// Mark the search as an agent tool call.
-	IsToolCall param.Opt[bool] `json:"is_tool_call,omitzero"`
-	// Provider-native count. Lower-only alias for max_results.
-	MaxNumResults param.Opt[int64] `json:"max_num_results,omitzero"`
-	// Provider-native USD-per-thousand-results price ceiling. Forwarded to Valyu.
-	MaxPrice param.Opt[float64] `json:"max_price,omitzero"`
-	// Provider-native minimum relevance threshold. Not a normalized cross-provider
-	// score.
-	RelevanceThreshold param.Opt[float64] `json:"relevance_threshold,omitzero"`
-	// Corpus selector, including all, web, proprietary, and news. Provider corpus
-	// choice may change billing; Kernel does not force web-only searches.
-	SearchType param.Opt[string] `json:"search_type,omitzero"`
-	// Return URLs without content.
-	URLOnly param.Opt[bool] `json:"url_only,omitzero"`
-	// Provider result-content length preset.
-	//
-	// Any of "short", "medium", "large", "max".
-	ResponseLength string `json:"response_length,omitzero"`
-	// Bias retrieval toward these sources.
-	SourceBiases []string `json:"source_biases,omitzero"`
-	paramObj
-}
-
-func (r ProviderTargetValyuOptionsParam) MarshalJSON() (data []byte, err error) {
-	type shadow ProviderTargetValyuOptionsParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ProviderTargetValyuOptionsParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[ProviderTargetValyuOptionsParam](
-		"response_length", "short", "medium", "large", "max",
-	)
-}
-
-// The property Provider is required.
 type ProviderTargetOctenParam struct {
 	Options ProviderTargetOctenOptionsParam `json:"options,omitzero"`
 	// This field can be elided, and will marshal its zero value as "octen".
@@ -1953,87 +1636,6 @@ const (
 	ProviderTargetTavilyOptionsIncludeRawContentStringMarkdown ProviderTargetTavilyOptionsIncludeRawContentString = "markdown"
 	ProviderTargetTavilyOptionsIncludeRawContentStringText     ProviderTargetTavilyOptionsIncludeRawContentString = "text"
 )
-
-// The property Provider is required.
-type ProviderTargetSerpapiParam struct {
-	Options ProviderTargetSerpapiOptionsParam `json:"options,omitzero"`
-	// This field can be elided, and will marshal its zero value as "serpapi".
-	Provider constant.Serpapi `json:"provider" default:"serpapi"`
-	paramObj
-}
-
-func (r ProviderTargetSerpapiParam) MarshalJSON() (data []byte, err error) {
-	type shadow ProviderTargetSerpapiParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ProviderTargetSerpapiParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// The property Engine is required.
-type ProviderTargetSerpapiOptionsParam struct {
-	// SerpApi engine identifier. The Kernel integration currently supports google
-	// only.
-	Engine string `json:"engine" api:"required"`
-	// Two-letter Google country code.
-	Gl param.Opt[string] `json:"gl,omitzero"`
-	// Google domain to search when using the google engine.
-	GoogleDomain param.Opt[string] `json:"google_domain,omitzero"`
-	// Interface language code.
-	Hl param.Opt[string] `json:"hl,omitzero"`
-	// Free-form geographic location used for localized results.
-	Location param.Opt[string] `json:"location,omitzero"`
-	// When true, bypass SerpApi cached results when supported.
-	NoCache param.Opt[bool] `json:"no_cache,omitzero"`
-	// Number of results requested from the search engine.
-	Num param.Opt[int64] `json:"num,omitzero"`
-	// Zero-based result offset for pagination.
-	Start param.Opt[int64] `json:"start,omitzero"`
-	// Google vertical search selector, such as images, video, news, or shopping.
-	Tbm param.Opt[string] `json:"tbm,omitzero"`
-	// Google time and search modifiers, including freshness filters.
-	Tbs param.Opt[string] `json:"tbs,omitzero"`
-	// Device profile used for the search.
-	//
-	// Any of "desktop", "mobile", "tablet".
-	Device string `json:"device,omitzero"`
-	// Google duplicate-content filter.
-	//
-	// Any of 0, 1.
-	Filter int64 `json:"filter,omitzero"`
-	// Google auto-correction filter.
-	//
-	// Any of 0, 1.
-	Nfpr int64 `json:"nfpr,omitzero"`
-	// Safe-search setting for engines that support it.
-	//
-	// Any of "active", "off".
-	Safe string `json:"safe,omitzero"`
-	paramObj
-}
-
-func (r ProviderTargetSerpapiOptionsParam) MarshalJSON() (data []byte, err error) {
-	type shadow ProviderTargetSerpapiOptionsParam
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ProviderTargetSerpapiOptionsParam) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[ProviderTargetSerpapiOptionsParam](
-		"device", "desktop", "mobile", "tablet",
-	)
-	apijson.RegisterFieldValidator[ProviderTargetSerpapiOptionsParam](
-		"filter", 0, 1,
-	)
-	apijson.RegisterFieldValidator[ProviderTargetSerpapiOptionsParam](
-		"nfpr", 0, 1,
-	)
-	apijson.RegisterFieldValidator[ProviderTargetSerpapiOptionsParam](
-		"safe", "active", "off",
-	)
-}
 
 // The property Query is required.
 type RequestParam struct {
@@ -2443,7 +2045,7 @@ func (r *Search) UnmarshalJSON(data []byte) error {
 }
 
 func StrategyParamOfPinned[
-	T ProviderTargetBraveParam | ProviderTargetExaParam | ProviderTargetPerplexityParam | ProviderTargetContextParam | ProviderTargetParallelParam | ProviderTargetValyuParam | ProviderTargetOctenParam | ProviderTargetYouParam | ProviderTargetTavilyParam | ProviderTargetSerpapiParam,
+	T ProviderTargetBraveParam | ProviderTargetExaParam | ProviderTargetPerplexityParam | ProviderTargetContextParam | ProviderTargetParallelParam | ProviderTargetOctenParam | ProviderTargetYouParam | ProviderTargetTavilyParam,
 ](provider T) StrategyUnionParam {
 	var pinned StrategyPinnedParam
 	switch v := any(provider).(type) {
@@ -2457,16 +2059,12 @@ func StrategyParamOfPinned[
 		pinned.Provider.OfContext = &v
 	case ProviderTargetParallelParam:
 		pinned.Provider.OfParallel = &v
-	case ProviderTargetValyuParam:
-		pinned.Provider.OfValyu = &v
 	case ProviderTargetOctenParam:
 		pinned.Provider.OfOcten = &v
 	case ProviderTargetYouParam:
 		pinned.Provider.OfYou = &v
 	case ProviderTargetTavilyParam:
 		pinned.Provider.OfTavily = &v
-	case ProviderTargetSerpapiParam:
-		pinned.Provider.OfSerpapi = &v
 	}
 	return StrategyUnionParam{OfPinned: &pinned}
 }
