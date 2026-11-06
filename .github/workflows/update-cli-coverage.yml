@@ -32,6 +32,7 @@ jobs:
       module: ${{ steps.sdk-version.outputs.module }}
       author: ${{ steps.sdk-version.outputs.author }}
       old_version: ${{ steps.sdk-diff.outputs.old_version }}
+      context_artifact_id: ${{ steps.upload-context.outputs.artifact-id }}
     steps:
       - name: Generate API read token
         id: api-read-token
@@ -87,6 +88,13 @@ jobs:
           fetch-depth: 0
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
+
+      - name: Checkout context encryption certificate
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          path: updater
+          sparse-checkout: .github/keys
+          persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
@@ -190,13 +198,28 @@ jobs:
           fi
           gh api --method DELETE /installation/token
 
+      - name: Encrypt CLI coverage context
+        run: |
+          # This repository is public and its artifacts are downloadable, but the
+          # spec comes from a private repository, so only ciphertext is uploaded.
+          cert=updater/.github/keys/cli-coverage-context.crt
+          if [[ ! -s "$cert" ]]; then
+            echo "::error::Missing $cert. Create the context key pair and the CLI_COVERAGE_CONTEXT_KEY secret first."
+            exit 1
+          fi
+          tar -C "$RUNNER_TEMP/cli-coverage-context" -czf "$RUNNER_TEMP/cli-coverage-context.tar.gz" .
+          openssl cms -encrypt -binary -aes-256-gcm -recip "$cert" -keyopt rsa_padding_mode:oaep \
+            -outform DER -in "$RUNNER_TEMP/cli-coverage-context.tar.gz" -out "$RUNNER_TEMP/cli-coverage-context.cms"
+          rm -rf "$RUNNER_TEMP/cli-coverage-context" "$RUNNER_TEMP/cli-coverage-context.tar.gz"
+
       - name: Upload CLI coverage context
+        id: upload-context
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cli-coverage-context
-          path: ${{ runner.temp }}/cli-coverage-context
+          path: ${{ runner.temp }}/cli-coverage-context.cms
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 1
 
   generate:
     needs: prefetch
@@ -227,7 +250,22 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           name: cli-coverage-context
-          path: /tmp/cli-coverage-context
+          path: ${{ runner.temp }}/encrypted-context
+
+      - name: Decrypt CLI coverage context
+        env:
+          CONTEXT_KEY: ${{ secrets.CLI_COVERAGE_CONTEXT_KEY }}
+        run: |
+          : "${CONTEXT_KEY:?Set the CLI_COVERAGE_CONTEXT_KEY repository secret}"
+          umask 077
+          key="$RUNNER_TEMP/cli-coverage-context-key.pem"
+          base64 -d <<< "$CONTEXT_KEY" > "$key"
+          openssl cms -decrypt -binary -inform DER -inkey "$key" \
+            -in "$RUNNER_TEMP/encrypted-context/cli-coverage-context.cms" -out "$RUNNER_TEMP/cli-coverage-context.tar.gz"
+          rm "$key"
+          mkdir -p /tmp/cli-coverage-context
+          tar -C /tmp/cli-coverage-context -xzf "$RUNNER_TEMP/cli-coverage-context.tar.gz"
+          rm -r "$RUNNER_TEMP/cli-coverage-context.tar.gz" "$RUNNER_TEMP/encrypted-context"
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -669,3 +707,17 @@ jobs:
             gh pr create --repo kernel/cli --head cli-coverage-update --base main \
               --title "$title" --body-file "$body"
           fi
+
+  cleanup:
+    needs: [prefetch, generate, publish]
+    if: always() && needs.prefetch.outputs.context_artifact_id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Delete CLI coverage context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.prefetch.outputs.context_artifact_id }}
+        run: gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID"

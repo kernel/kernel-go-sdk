@@ -1,6 +1,17 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  renameSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -128,7 +139,8 @@ test('credentialed steps only run in the production SDK repository', () => {
 test('the Pi job references no secrets other than the ones Pi uses', () => {
   // Every secret a job references is loaded into the runner at job start, and
   // Pi could read it from runner memory with passwordless sudo. Pi uses the
-  // model API keys and the Kernel API key for its smoke tests.
+  // model API keys and the Kernel API key for its smoke tests. The context key
+  // only decrypts the context Pi reads in plaintext anyway.
   const piJobs = Object.keys(jobTexts).filter((name) => /^\s*pi --print\b/m.test(jobTexts[name]));
   assert.deepEqual(piJobs, ['generate']);
   const referenced = (text) => [...text.matchAll(/\bsecrets\b(?:\.([\w-]+))?/g)].map((match) => match[1] ?? '<all>');
@@ -136,8 +148,12 @@ test('the Pi job references no secrets other than the ones Pi uses', () => {
   for (const name of piJobs) {
     assert.deepEqual(
       [...new Set(referenced(jobTexts[name]))].sort(),
-      ['ANTHROPIC_API_KEY', 'KERNEL_API_KEY', 'OPENAI_API_KEY'],
+      ['ANTHROPIC_API_KEY', 'CLI_COVERAGE_CONTEXT_KEY', 'KERNEL_API_KEY', 'OPENAI_API_KEY'],
       `${name} may only reference the secrets Pi uses`,
+    );
+    assert.deepEqual(
+      jobs[name].filter((entry) => entry.includes('secrets.CLI_COVERAGE_CONTEXT_KEY')),
+      [step(name, 'Decrypt CLI coverage context')],
     );
     assert.doesNotMatch(jobTexts[name], /github\.token|create-github-app-token|^    permissions:/m);
   }
@@ -156,15 +172,82 @@ test('API source access is read-only, revoked, and kept out of the Pi job', () =
   assert.doesNotMatch(fetch, /gh repo clone/);
   const tokenUses = steps.filter((entry) => entry.includes('steps.api-read-token.outputs.token'));
   assert.deepEqual(tokenUses, [fetch]);
-  // Pi only receives the fetched files.
-  assert.match(step('prefetch', 'Upload CLI coverage context'), /name: cli-coverage-context\n/);
-  assert.match(step('generate', 'Download CLI coverage context'), /name: cli-coverage-context\n/);
   assert.doesNotMatch(
     step('generate', 'Clone CLI repo'),
     /GH_TOKEN:|GITHUB_TOKEN:|steps\.[\w-]+\.outputs\.token/,
   );
   // Pi can write to the Go caches, so they must never be saved for other runs.
   assert.match(step('generate', 'Setup Go'), /cache: false/);
+});
+
+test('private spec content is only uploaded encrypted, briefly retained, and deleted', () => {
+  // This repository is public, so anyone signed in can download its artifacts.
+  const uploads = steps.filter((entry) => entry.includes('uses: actions/upload-artifact@'));
+  const context = step('prefetch', 'Upload CLI coverage context');
+  assert.ok(uploads.includes(context));
+  assert.match(context, /path: \$\{\{ runner\.temp \}\}\/cli-coverage-context\.cms\n/);
+  assert.match(context, /retention-days: 1\n/);
+  for (const entry of uploads) {
+    const paths = entry.slice(entry.indexOf('path: ')).split(/\n {10}(?=[\w-]+:)/)[0];
+    assert.doesNotMatch(paths, /cli-coverage-context(?!\.cms\b)|openapi|stainless|\.patch(?!\b)|\/tmp\//);
+  }
+  const encrypt = step('prefetch', 'Encrypt CLI coverage context');
+  assert.ok(jobs.prefetch.indexOf(step('prefetch', 'Fetch API spec')) < jobs.prefetch.indexOf(encrypt));
+  assert.ok(jobs.prefetch.indexOf(encrypt) < jobs.prefetch.indexOf(context));
+  assert.match(encrypt, /openssl cms -encrypt -binary -aes-256-gcm/);
+  // Only ciphertext and the public certificate cross jobs.
+  for (const entry of jobs.generate) assert.doesNotMatch(entry, /GITHUB_ENV|GITHUB_OUTPUT.*KEY/);
+  assert.doesNotMatch(jobTexts.prefetch, /outputs:[\s\S]*KEY[\s\S]*steps:/);
+  const decrypt = step('generate', 'Decrypt CLI coverage context');
+  assert.ok(jobs.generate.indexOf(step('generate', 'Download CLI coverage context')) < jobs.generate.indexOf(decrypt));
+  assert.ok(jobs.generate.indexOf(decrypt) < jobs.generate.indexOf(step('generate', 'Update CLI coverage')));
+  assert.match(decrypt, /rm "\$key"\n/);
+  const cleanup = jobTexts.cleanup;
+  assert.match(cleanup, /needs: \[prefetch, generate, publish\]\n    if: always\(\) && needs\.prefetch\.outputs\.context_artifact_id != ''\n/);
+  assert.match(cleanup, /permissions:\n      actions: write\n    steps:/);
+  assert.match(cleanup, /gh api --method DELETE "repos\/\$GITHUB_REPOSITORY\/actions\/artifacts\/\$ARTIFACT_ID"/);
+  assert.doesNotMatch(cleanup, /secrets\.|checkout/);
+});
+
+test('the context round-trips through encryption and the ciphertext hides it', (t) => {
+  const root = mkdtempSync(join(tmpdir(), 'cli-context-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  const runnerTemp = join(root, 'runner-temp');
+  const keys = join(root, 'updater/.github/keys');
+  mkdirSync(keys, { recursive: true });
+  const openssl = (...args) => {
+    const result = spawnSync('openssl', args, { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+  };
+  openssl('req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=test',
+    '-keyout', 'key.pem', '-out', join(keys, 'cli-coverage-context.crt'));
+  const secret = 'x-cli-skip: private-endpoint-marker';
+  write(runnerTemp, 'cli-coverage-context/api/openapi.yaml', `${secret}\n`);
+  write(runnerTemp, 'cli-coverage-context/sdk-diff.patch', 'diff\n');
+
+  const encrypt = runStep(step('prefetch', 'Encrypt CLI coverage context'), root, { RUNNER_TEMP: runnerTemp });
+  assert.equal(encrypt.status, 0, encrypt.stdout + encrypt.stderr);
+  assert.deepEqual(readdirSync(runnerTemp), ['cli-coverage-context.cms']);
+  const ciphertext = readFileSync(join(runnerTemp, 'cli-coverage-context.cms'));
+  assert.ok(!ciphertext.includes('private-endpoint-marker'));
+  openssl('cms', '-cmsout', '-inform', 'DER', '-in', join(runnerTemp, 'cli-coverage-context.cms'), '-out', 'cms.txt', '-print');
+  assert.match(readFileSync(join(root, 'cms.txt'), 'utf8'), /authEnvelopedData/);
+
+  mkdirSync(join(runnerTemp, 'encrypted-context'));
+  renameSync(join(runnerTemp, 'cli-coverage-context.cms'), join(runnerTemp, 'encrypted-context/cli-coverage-context.cms'));
+  const target = join(root, 'decrypted');
+  const decrypt = step('generate', 'Decrypt CLI coverage context').replaceAll('/tmp/cli-coverage-context', target);
+  const wrongKey = spawnSync('openssl', ['genpkey', '-algorithm', 'RSA', '-pkeyopt', 'rsa_keygen_bits:2048'], { encoding: 'utf8' }).stdout;
+  const failed = runStep(decrypt, root, { RUNNER_TEMP: runnerTemp, CONTEXT_KEY: Buffer.from(wrongKey).toString('base64') });
+  assert.notEqual(failed.status, 0);
+  const result = runStep(decrypt, root, {
+    RUNNER_TEMP: runnerTemp,
+    CONTEXT_KEY: readFileSync(join(root, 'key.pem')).toString('base64'),
+  });
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.equal(readFileSync(join(target, 'api/openapi.yaml'), 'utf8'), `${secret}\n`);
+  assert.equal(readFileSync(join(target, 'sdk-diff.patch'), 'utf8'), 'diff\n');
+  assert.deepEqual(readdirSync(runnerTemp), []);
 });
 
 test('changes are restricted to the allowlist and validated against published modules', () => {
