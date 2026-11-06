@@ -49,10 +49,15 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER_INPUT: ${{ inputs.pr_number }}
         run: |
-          if [ -n "${{ inputs.pr_number }}" ]; then
+          if [ -n "$PR_NUMBER_INPUT" ]; then
+            if [[ ! "$PR_NUMBER_INPUT" =~ ^[0-9]+$ ]]; then
+              echo "::error::pr_number must be a pull request number."
+              exit 1
+            fi
             # Use provided PR number
-            PR_NUMBER="${{ inputs.pr_number }}"
+            PR_NUMBER="$PR_NUMBER_INPUT"
             echo "Using provided PR number: $PR_NUMBER"
           else
             # Get most recent merged PR
@@ -335,6 +340,7 @@ jobs:
           PI_SKIP_VERSION_CHECK: '1'
           PI_TELEMETRY: '0'
           KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
+          TRIGGER: "${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}"
           BRANCH_PREFIX: cli-coverage-update
         run: |
           : "${PI_PREFERRED_MODEL:?Set the PI_PREFERRED_MODEL organization variable}"
@@ -352,7 +358,7 @@ jobs:
           - SDK Version: ${{ needs.prefetch.outputs.version }}
           - Commit SHA: ${{ needs.prefetch.outputs.sha }}
           - Commit Author: ${{ needs.prefetch.outputs.author }}
-          - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
+          - Trigger: $TRIGGER
           - API Spec Location: /tmp/cli-coverage-context/api (openapi.yaml and stainless.yaml as of this SDK release)
           - CLI Repo Location: /tmp/kernel-cli
           - Update Branch Prefix: cli-coverage-update

@@ -130,6 +130,17 @@ test('actions are pinned and checkouts do not persist credentials', () => {
   }
 });
 
+test('dispatch inputs reach scripts only through env and are validated', () => {
+  // Expressions are substituted into the script before bash parses it.
+  for (const entry of steps.filter((entry) => entry.includes('        run: |'))) {
+    assert.doesNotMatch(runScript(entry), /\$\{\{[^}]*\binputs\./);
+  }
+  const prInfo = step('prefetch', 'Get PR info for manual dispatch');
+  assert.match(prInfo, /PR_NUMBER_INPUT: \$\{\{ inputs\.pr_number \}\}\n/);
+  assert.match(prInfo, /\[\[ ! "\$PR_NUMBER_INPUT" =~ \^\[0-9\]\+\$ \]\][\s\S]*exit 1/);
+  assert.ok(jobTexts.generate.includes('needs: prefetch\n'));
+});
+
 test('credentialed steps only run in the production SDK repository', () => {
   // The staging mirror shares this file and must not publish unreleased SDK versions.
   assert.match(workflow, /\n  prefetch:\n    if: github\.repository == 'kernel\/kernel-go-sdk'\n/);
