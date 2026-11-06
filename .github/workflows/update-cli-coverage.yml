@@ -13,24 +13,26 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
 
 concurrency:
   group: update-cli-coverage
   cancel-in-progress: false
 
 jobs:
-  generate:
+  prefetch:
     if: github.repository == 'kernel/kernel-go-sdk'
     runs-on: ubuntu-latest
-    timeout-minutes: 55
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
     outputs:
-      changed: ${{ steps.snapshot.outputs.changed }}
-      main_sha: ${{ steps.cli-clone.outputs.main_sha }}
-      update_sha: ${{ steps.cli-clone.outputs.update_sha }}
-      rebased: ${{ steps.cli-clone.outputs.rebased }}
-      agent_base_tree: ${{ steps.cli-clone.outputs.agent_base_tree }}
+      sha: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
       version: ${{ steps.sdk-version.outputs.version }}
+      module: ${{ steps.sdk-version.outputs.module }}
+      author: ${{ steps.sdk-version.outputs.author }}
+      old_version: ${{ steps.sdk-diff.outputs.old_version }}
+      context_artifact_id: ${{ steps.upload-context.outputs.artifact-id }}
     steps:
       - name: Generate API read token
         id: api-read-token
@@ -47,10 +49,15 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
+          PR_NUMBER_INPUT: ${{ inputs.pr_number }}
         run: |
-          if [ -n "${{ inputs.pr_number }}" ]; then
+          if [ -n "$PR_NUMBER_INPUT" ]; then
+            if [[ ! "$PR_NUMBER_INPUT" =~ ^[0-9]+$ ]]; then
+              echo "::error::pr_number must be a pull request number."
+              exit 1
+            fi
             # Use provided PR number
-            PR_NUMBER="${{ inputs.pr_number }}"
+            PR_NUMBER="$PR_NUMBER_INPUT"
             echo "Using provided PR number: $PR_NUMBER"
           else
             # Get most recent merged PR
@@ -87,12 +94,186 @@ jobs:
           # For manual dispatch with a specific PR, checkout the merge commit
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
+      - name: Checkout context encryption certificate
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          path: updater
+          sparse-checkout: .github/keys
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version: 'stable'
+          cache: false
+
+      - name: Get SDK version info
+        id: sdk-version
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          # Use the published release, else the latest tag, else the commit SHA
+          LATEST_TAG=${RELEASE_TAG:-$(git describe --tags --abbrev=0 2>/dev/null || echo "")}
+          if [ -n "$LATEST_TAG" ]; then
+            echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
+            echo "SDK version: $LATEST_TAG"
+          else
+            CURRENT_SHA="${{ steps.pr-info.outputs.merge_sha || github.sha }}"
+            echo "version=$CURRENT_SHA" >> $GITHUB_OUTPUT
+            echo "SDK version: $CURRENT_SHA (no tag)"
+          fi
+          
+          # Get the module path from go.mod
+          MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
+          echo "module=$MODULE_PATH" >> $GITHUB_OUTPUT
+          echo "SDK module: $MODULE_PATH"
+          
+          # Determine the commit author (from PR info for manual dispatch, or from push event)
+          if [ -n "${{ steps.pr-info.outputs.pr_author }}" ]; then
+            echo "author=${{ steps.pr-info.outputs.pr_author }}" >> $GITHUB_OUTPUT
+          else
+            echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute SDK diff since CLI main's version
+        id: sdk-diff
+        run: |
+          context="$RUNNER_TEMP/cli-coverage-context"
+          mkdir -p "$context/api"
+          # The report replaces the PR description, so audit every release since
+          # the SDK version on CLI main, not only the ones since the last run.
+          git clone -q --depth=1 https://github.com/kernel/cli.git "$RUNNER_TEMP/cli-main"
+          OLD_SDK_VERSION=$(go mod edit -json "$RUNNER_TEMP/cli-main/go.mod" \
+            | jq -er '.Require[] | select(.Path == "github.com/kernel/kernel-go-sdk") | .Version')
+          echo "CLI main uses SDK version: $OLD_SDK_VERSION"
+          echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
+
+          NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
+          echo "New SDK version: $NEW_SDK_VERSION"
+
+          # Compute the diff between old and new SDK versions
+          # This gives the agent a focused view of what changed
+          if git diff "$OLD_SDK_VERSION".."$NEW_SDK_VERSION" -- api.md '*.go' ':!*_test.go' ':!internal/*' > "$context/sdk-diff.patch" 2>/dev/null; then
+            DIFF_LINES=$(wc -l < "$context/sdk-diff.patch")
+            echo "SDK diff: $DIFF_LINES lines"
+            if [ "$DIFF_LINES" -eq 0 ]; then
+              echo "No SDK changes between versions (diff is empty)"
+            fi
+          else
+            echo "Could not compute SDK diff (old version tag may not exist), creating empty diff"
+            echo "" > "$context/sdk-diff.patch"
+          fi
+
+          utc_date() {
+            TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd "$1"
+          }
+          echo "old_date=$(utc_date "$OLD_SDK_VERSION" 2>/dev/null || true)" >> $GITHUB_OUTPUT
+          echo "new_date=$(utc_date HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Fetch API spec
+        env:
+          GH_TOKEN: ${{ steps.api-read-token.outputs.token }}
+          OLD_DATE: ${{ steps.sdk-diff.outputs.old_date }}
+          NEW_DATE: ${{ steps.sdk-diff.outputs.new_date }}
+        run: |
+          context="$RUNNER_TEMP/cli-coverage-context"
+          main_at() {
+            gh api -X GET repos/kernel/kernel/commits -f sha=main -f until="$1" -f per_page=1 --jq '.[0].sha // empty'
+          }
+          file_at() {
+            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$1?ref=$2"
+          }
+          head=$(main_at "$NEW_DATE")
+          test -n "$head"
+          for file in openapi.yaml stainless.yaml; do
+            file_at "packages/api/$file" "$head" > "$context/api/$file"
+          done
+          base=""
+          if [[ -n "$OLD_DATE" ]]; then
+            base=$(main_at "$OLD_DATE")
+          fi
+          if [[ -n "$base" ]]; then
+            file_at packages/api/openapi.yaml "$base" > "$RUNNER_TEMP/openapi-base.yaml"
+            diff -u --label "openapi.yaml@$base" --label "openapi.yaml@$head" \
+              "$RUNNER_TEMP/openapi-base.yaml" "$context/api/openapi.yaml" \
+              > "$context/openapi-diff.patch" || [[ $? -eq 1 ]]
+            rm "$RUNNER_TEMP/openapi-base.yaml"
+          else
+            printf 'Spec baseline unavailable; compare all relevant descriptions in openapi.yaml.\n' > "$context/openapi-diff.patch"
+          fi
+          gh api --method DELETE /installation/token
+
+      - name: Encrypt CLI coverage context
+        run: |
+          # This repository is public and its artifacts are downloadable, but the
+          # spec comes from a private repository, so only ciphertext is uploaded.
+          cert=updater/.github/keys/cli-coverage-context.crt
+          if [[ ! -s "$cert" ]]; then
+            echo "::error::Missing $cert. Create the context key pair and the CLI_COVERAGE_CONTEXT_KEY secret first."
+            exit 1
+          fi
+          tar -C "$RUNNER_TEMP/cli-coverage-context" -czf "$RUNNER_TEMP/cli-coverage-context.tar.gz" .
+          openssl cms -encrypt -binary -aes-256-gcm -recip "$cert" -keyopt rsa_padding_mode:oaep \
+            -outform DER -in "$RUNNER_TEMP/cli-coverage-context.tar.gz" -out "$RUNNER_TEMP/cli-coverage-context.cms"
+          rm -rf "$RUNNER_TEMP/cli-coverage-context" "$RUNNER_TEMP/cli-coverage-context.tar.gz"
+
+      - name: Upload CLI coverage context
+        id: upload-context
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cli-coverage-context
+          path: ${{ runner.temp }}/cli-coverage-context.cms
+          if-no-files-found: error
+          retention-days: 1
+          # A failed generate keeps the context for retries, and "Re-run all
+          # jobs" uploads it again under the same name.
+          overwrite: true
+
+  generate:
+    needs: prefetch
+    if: github.repository == 'kernel/kernel-go-sdk'
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    outputs:
+      changed: ${{ steps.snapshot.outputs.changed }}
+      main_sha: ${{ steps.cli-clone.outputs.main_sha }}
+      update_sha: ${{ steps.cli-clone.outputs.update_sha }}
+      rebased: ${{ steps.cli-clone.outputs.rebased }}
+      agent_base_tree: ${{ steps.cli-clone.outputs.agent_base_tree }}
+    steps:
+      - name: Checkout SDK repo
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          persist-credentials: false
+          ref: ${{ needs.prefetch.outputs.sha }}
+
       - name: Checkout updater scripts
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           path: updater
           sparse-checkout: .github/scripts
           persist-credentials: false
+
+      - name: Download CLI coverage context
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cli-coverage-context
+          path: ${{ runner.temp }}/encrypted-context
+
+      - name: Decrypt CLI coverage context
+        env:
+          CONTEXT_KEY: ${{ secrets.CLI_COVERAGE_CONTEXT_KEY }}
+        run: |
+          : "${CONTEXT_KEY:?Set the CLI_COVERAGE_CONTEXT_KEY repository secret}"
+          umask 077
+          key="$RUNNER_TEMP/cli-coverage-context-key.pem"
+          base64 -d <<< "$CONTEXT_KEY" > "$key"
+          openssl cms -decrypt -binary -inform DER -inkey "$key" \
+            -in "$RUNNER_TEMP/encrypted-context/cli-coverage-context.cms" -out "$RUNNER_TEMP/cli-coverage-context.tar.gz"
+          rm "$key"
+          mkdir -p /tmp/cli-coverage-context
+          tar -C /tmp/cli-coverage-context -xzf "$RUNNER_TEMP/cli-coverage-context.tar.gz"
+          rm -r "$RUNNER_TEMP/cli-coverage-context.tar.gz" "$RUNNER_TEMP/encrypted-context"
 
       - name: Setup Node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
@@ -115,6 +296,8 @@ jobs:
         uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version: 'stable'
+          # Pi can write to the Go caches, so they must never be saved for other runs.
+          cache: false
 
       - name: Clone CLI repo
         id: cli-clone
@@ -149,100 +332,6 @@ jobs:
           echo "agent_base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "agent_base_tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
 
-      - name: Get SDK version info
-        id: sdk-version
-        env:
-          RELEASE_TAG: ${{ github.event.release.tag_name }}
-        run: |
-          # Use the published release, else the latest tag, else the commit SHA
-          LATEST_TAG=${RELEASE_TAG:-$(git describe --tags --abbrev=0 2>/dev/null || echo "")}
-          if [ -n "$LATEST_TAG" ]; then
-            echo "version=$LATEST_TAG" >> $GITHUB_OUTPUT
-            echo "SDK version: $LATEST_TAG"
-          else
-            CURRENT_SHA="${{ steps.pr-info.outputs.merge_sha || github.sha }}"
-            echo "version=$CURRENT_SHA" >> $GITHUB_OUTPUT
-            echo "SDK version: $CURRENT_SHA (no tag)"
-          fi
-          
-          # Get the module path from go.mod
-          MODULE_PATH=$(head -1 go.mod | awk '{print $2}')
-          echo "module=$MODULE_PATH" >> $GITHUB_OUTPUT
-          echo "SDK module: $MODULE_PATH"
-          
-          # Determine the commit author (from PR info for manual dispatch, or from push event)
-          if [ -n "${{ steps.pr-info.outputs.pr_author }}" ]; then
-            echo "author=${{ steps.pr-info.outputs.pr_author }}" >> $GITHUB_OUTPUT
-          else
-            echo "author=${{ github.event.head_commit.author.username || github.actor }}" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Compute SDK diff since CLI main's version
-        id: sdk-diff
-        run: |
-          # The report replaces the PR description, so audit every release since
-          # the SDK version on CLI main, not only the ones since the last run.
-          git -C /tmp/kernel-cli show origin/main:go.mod > "$RUNNER_TEMP/cli-main-go.mod"
-          OLD_SDK_VERSION=$(go mod edit -json "$RUNNER_TEMP/cli-main-go.mod" \
-            | jq -er '.Require[] | select(.Path == "github.com/kernel/kernel-go-sdk") | .Version')
-          echo "CLI main uses SDK version: $OLD_SDK_VERSION"
-          echo "old_version=$OLD_SDK_VERSION" >> $GITHUB_OUTPUT
-
-          NEW_SDK_VERSION="${{ steps.sdk-version.outputs.version }}"
-          echo "New SDK version: $NEW_SDK_VERSION"
-
-          # Compute the diff between old and new SDK versions
-          # This gives the agent a focused view of what changed
-          if git diff "$OLD_SDK_VERSION".."$NEW_SDK_VERSION" -- api.md '*.go' ':!*_test.go' ':!internal/*' > /tmp/sdk-diff.patch 2>/dev/null; then
-            DIFF_LINES=$(wc -l < /tmp/sdk-diff.patch)
-            echo "SDK diff: $DIFF_LINES lines"
-            if [ "$DIFF_LINES" -eq 0 ]; then
-              echo "No SDK changes between versions (diff is empty)"
-            fi
-          else
-            echo "Could not compute SDK diff (old version tag may not exist), creating empty diff"
-            echo "" > /tmp/sdk-diff.patch
-          fi
-
-          utc_date() {
-            TZ=UTC git log -1 --date=format-local:%Y-%m-%dT%H:%M:%SZ --format=%cd "$1"
-          }
-          echo "old_date=$(utc_date "$OLD_SDK_VERSION" 2>/dev/null || true)" >> $GITHUB_OUTPUT
-          echo "new_date=$(utc_date HEAD)" >> $GITHUB_OUTPUT
-
-      - name: Fetch API spec
-        env:
-          GH_TOKEN: ${{ steps.api-read-token.outputs.token }}
-          OLD_DATE: ${{ steps.sdk-diff.outputs.old_date }}
-          NEW_DATE: ${{ steps.sdk-diff.outputs.new_date }}
-        run: |
-          main_at() {
-            gh api -X GET repos/kernel/kernel/commits -f sha=main -f until="$1" -f per_page=1 --jq '.[0].sha // empty'
-          }
-          file_at() {
-            gh api -H 'Accept: application/vnd.github.raw' "repos/kernel/kernel/contents/$1?ref=$2"
-          }
-          head=$(main_at "$NEW_DATE")
-          test -n "$head"
-          mkdir -p /tmp/kernel-api/packages/api
-          for file in openapi.yaml stainless.yaml; do
-            file_at "packages/api/$file" "$head" > "/tmp/kernel-api/packages/api/$file"
-          done
-          base=""
-          if [[ -n "$OLD_DATE" ]]; then
-            base=$(main_at "$OLD_DATE")
-          fi
-          if [[ -n "$base" ]]; then
-            file_at packages/api/openapi.yaml "$base" > "$RUNNER_TEMP/openapi-base.yaml"
-            diff -u --label "openapi.yaml@$base" --label "openapi.yaml@$head" \
-              "$RUNNER_TEMP/openapi-base.yaml" /tmp/kernel-api/packages/api/openapi.yaml \
-              > /tmp/openapi-diff.patch || [[ $? -eq 1 ]]
-            rm "$RUNNER_TEMP/openapi-base.yaml"
-          else
-            printf 'Spec baseline unavailable; compare all relevant descriptions in openapi.yaml.\n' > /tmp/openapi-diff.patch
-          fi
-          gh api --method DELETE /installation/token
-
       - name: Update CLI coverage
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -251,6 +340,7 @@ jobs:
           PI_SKIP_VERSION_CHECK: '1'
           PI_TELEMETRY: '0'
           KERNEL_API_KEY: ${{ secrets.KERNEL_API_KEY }}
+          TRIGGER: "${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}"
           BRANCH_PREFIX: cli-coverage-update
         run: |
           : "${PI_PREFERRED_MODEL:?Set the PI_PREFERRED_MODEL organization variable}"
@@ -264,40 +354,40 @@ jobs:
 
           # Context
           - SDK Repo: ${{ github.repository }} (current directory)
-          - SDK Module: ${{ steps.sdk-version.outputs.module }}
-          - SDK Version: ${{ steps.sdk-version.outputs.version }}
-          - Commit SHA: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
-          - Commit Author: ${{ steps.sdk-version.outputs.author }}
-          - Trigger: ${{ github.event_name }} ${{ inputs.pr_number && format('(PR #{0})', inputs.pr_number) || '' }}
-          - API Spec Location: /tmp/kernel-api/packages/api (openapi.yaml and stainless.yaml as of this SDK release)
+          - SDK Module: ${{ needs.prefetch.outputs.module }}
+          - SDK Version: ${{ needs.prefetch.outputs.version }}
+          - Commit SHA: ${{ needs.prefetch.outputs.sha }}
+          - Commit Author: ${{ needs.prefetch.outputs.author }}
+          - Trigger: $TRIGGER
+          - API Spec Location: /tmp/cli-coverage-context/api (openapi.yaml and stainless.yaml as of this SDK release)
           - CLI Repo Location: /tmp/kernel-cli
           - Update Branch Prefix: cli-coverage-update
 
           # Background
           The Go SDK (this repo) was just updated by Stainless, and may contain new API methods. The CLI (kernel/cli) needs to be updated to expose these new methods as CLI commands.
-          The CLI main branch is on SDK version ${{ steps.sdk-diff.outputs.old_version }}, and we are updating it to ${{ steps.sdk-version.outputs.version }}.
+          The CLI main branch is on SDK version ${{ needs.prefetch.outputs.old_version }}, and we are updating it to ${{ needs.prefetch.outputs.version }}.
           The update branch may already hold coverage from earlier runs for releases in between; keep it and build on it.
 
           # Source Files
           - SDK api.md: Current directory - READ THIS FILE FIRST. This is the authoritative list of all SDK methods and their signatures.
           - SDK *.go files: Current directory - Contains param structs (e.g., BrowserNewParams, DeploymentListParams) with all available options/fields.
-          - SDK diff: /tmp/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the SDK version on CLI main (${{ steps.sdk-diff.outputs.old_version }}) and the new version (${{ steps.sdk-version.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
-          - API Spec: /tmp/kernel-api/packages/api/stainless.yaml - SDK configuration with resources and methods
-          - API Spec: /tmp/kernel-api/packages/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
-          - API Spec diff: /tmp/openapi-diff.patch - Spec changes between the SDK version on CLI main and the new one, including endpoint, parameter, and field description changes.
+          - SDK diff: /tmp/cli-coverage-context/sdk-diff.patch - IMPORTANT: This is the diff of api.md and Go source files between the SDK version on CLI main (${{ needs.prefetch.outputs.old_version }}) and the new version (${{ needs.prefetch.outputs.version }}). Read this file to see exactly what methods, params, and fields were added or changed. Any additions here MUST be reflected in the CLI.
+          - API Spec: /tmp/cli-coverage-context/api/stainless.yaml - SDK configuration with resources and methods
+          - API Spec: /tmp/cli-coverage-context/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
+          - API Spec diff: /tmp/cli-coverage-context/openapi-diff.patch - Spec changes between the SDK version on CLI main and the new one, including endpoint, parameter, and field description changes.
           - CLI: /tmp/kernel-cli - Existing CLI commands
 
           # Task
 
           ## Step 1: Update SDK Version (ALWAYS DO THIS FIRST)
           - Go to /tmp/kernel-cli
-          - Update go.mod to require the latest SDK: ${{ steps.sdk-version.outputs.module }}@${{ steps.sdk-version.outputs.version }}
-          - Run: go get ${{ steps.sdk-version.outputs.module }}@${{ steps.sdk-version.outputs.version }}
+          - Update go.mod to require the latest SDK: ${{ needs.prefetch.outputs.module }}@${{ needs.prefetch.outputs.version }}
+          - Run: go get ${{ needs.prefetch.outputs.module }}@${{ needs.prefetch.outputs.version }}
           - Run: go mod tidy
           - This ensures the CLI always uses the latest SDK, even if no new commands are added
 
           ## Step 2: Review SDK Diff (CRITICAL - DO THIS BEFORE THE FULL ENUMERATION)
-          Read /tmp/sdk-diff.patch to see exactly what changed in the SDK between the version on CLI main and the new version.
+          Read /tmp/cli-coverage-context/sdk-diff.patch to see exactly what changed in the SDK between the version on CLI main and the new version.
           This diff shows new methods, new param fields, and changed signatures — these are the changes most likely to need CLI coverage.
           Treat every addition in this diff as a checklist item: each new method needs a CLI command, each new param field needs a CLI flag.
           After verifying these are covered, proceed to the full enumeration below to catch anything else.
@@ -342,7 +432,7 @@ jobs:
 
           5a. Missing commands: SDK methods with NO corresponding CLI command
           5b. Missing flags: SDK param fields with NO corresponding CLI flag
-          5c. Cross-check against the SDK diff from Step 2: every addition in /tmp/sdk-diff.patch MUST appear as a gap to address (new method = missing command, new param field = missing flag) unless it already exists in the CLI.
+          5c. Cross-check against the SDK diff from Step 2: every addition in /tmp/cli-coverage-context/sdk-diff.patch MUST appear as a gap to address (new method = missing command, new param field = missing flag) unless it already exists in the CLI.
           5d. Create a gap report:
               ## Missing Commands
               - client.Browsers.LoadExtensions -> needs \`kernel browser load-extensions\`
@@ -360,7 +450,7 @@ jobs:
 
           ## Step 6b: Sync Help Text With the API Spec
           The SDK is generated from openapi.yaml, so its endpoint, parameter, and schema descriptions are the source of truth for what the API does.
-          - For every changed summary or description in /tmp/openapi-diff.patch that belongs to an endpoint, parameter, or field the CLI exposes, update the matching command Short/Long text and flag usage string. Use the spec text for anything you add in this run too.
+          - For every changed summary or description in /tmp/cli-coverage-context/openapi-diff.patch that belongs to an endpoint, parameter, or field the CLI exposes, update the matching command Short/Long text and flag usage string. Use the spec text for anything you add in this run too.
           - Adapt the text; do not copy it verbatim. API descriptions are written for HTTP callers and often reference other endpoints, HTTP methods, status codes, headers, or JSON body paths that mean nothing to a CLI user. Rewrite those references in CLI terms: name the kernel command and flags that do the equivalent. For example, \"List connections with \`GET /auth/connections\`\" becomes \"List connections with \`kernel auth connections list\`\", and a body field like \`max_concurrent_sessions\` becomes its flag, \`--max-concurrent-sessions\`. Drop API details that do not apply to the command.
           - Follow existing help text style: keep Short to one concise line and put caveats in Long.
           - Preserve meaning exactly: limits, defaults, units, accepted values, deprecations, and caveats must match the spec. Do not invent behavior the spec does not state.
@@ -390,11 +480,11 @@ jobs:
           7d. If you added no new commands or flags (SDK version bump only), skip this step.
 
           ## Step 8: Review and Report
-          - Read the full diff against origin/main and remove unrelated changes or unnecessary wrappers/casts.
+          - Read the full diff against ${{ steps.cli-clone.outputs.main_sha }} (CLI main as of this run) and remove unrelated changes or unnecessary wrappers/casts.
           - Write $RUNNER_TEMP/cli-coverage-report.md with the new commands/flags, help text updated to match spec changes (with the spec operation or field each follows), intentional exclusions, and test results or limitations.
-          - The report replaces the PR description, so it must describe every change in the diff against origin/main, including changes earlier runs left on this branch, not only this run's.
+          - The report replaces the PR description, so it must describe every change in the diff against ${{ steps.cli-clone.outputs.main_sha }}, including changes earlier runs left on this branch, not only this run's.
           - The report becomes part of a public PR. Include no credentials, customer information, private discussions, or internal URLs.
-          - Do not commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
+          - Do not fetch, commit, push, change git authentication, or open PRs. Leave the changes for the workflow to validate and publish.
           - Only go.mod, go.sum, and .go files under cmd/ and pkg/ are published. The workflow discards every other change before validation.
 
           # SDK Method -> CLI Command Mapping Guide
@@ -502,8 +592,8 @@ jobs:
       - name: Verify CLI changes
         working-directory: /tmp/kernel-cli
         env:
-          SDK_MODULE: ${{ steps.sdk-version.outputs.module }}
-          SDK_VERSION: ${{ steps.sdk-version.outputs.version }}
+          SDK_MODULE: ${{ needs.prefetch.outputs.module }}
+          SDK_VERSION: ${{ needs.prefetch.outputs.version }}
         run: |
           test -s "$RUNNER_TEMP/cli-coverage-report.md"
           expected=$(go list -m -f '{{.Version}}' "$SDK_MODULE@$SDK_VERSION")
@@ -528,12 +618,12 @@ jobs:
           retention-days: 7
 
   publish:
-    needs: generate
+    needs: [prefetch, generate]
     if: needs.generate.outputs.changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      SDK_VERSION: ${{ needs.generate.outputs.version }}
+      SDK_VERSION: ${{ needs.prefetch.outputs.version }}
       MAIN_SHA: ${{ needs.generate.outputs.main_sha }}
       UPDATE_SHA: ${{ needs.generate.outputs.update_sha }}
       REBASED: ${{ needs.generate.outputs.rebased }}
@@ -625,4 +715,28 @@ jobs:
           else
             gh pr create --repo kernel/cli --head cli-coverage-update --base main \
               --title "$title" --body-file "$body"
+          fi
+
+  cleanup:
+    needs: [prefetch, generate, publish]
+    # After a failed or cancelled generate, the context stays until it expires
+    # so "Re-run failed jobs" can download it again.
+    if: always() && needs.generate.result == 'success' && needs.prefetch.outputs.context_artifact_id != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - name: Delete CLI coverage context
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ARTIFACT_ID: ${{ needs.prefetch.outputs.context_artifact_id }}
+        run: |
+          if ! output=$(gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/artifacts/$ARTIFACT_ID" 2>&1); then
+            # An earlier attempt of this run may already have deleted it.
+            if [[ "$output" != *"HTTP 404"* ]]; then
+              echo "$output" >&2
+              exit 1
+            fi
+            echo "The CLI coverage context was already deleted."
           fi
