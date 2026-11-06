@@ -479,6 +479,18 @@ Methods:
 - <code title="delete /proxies/{id_or_name}">client.Proxies.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="post /proxies/{id_or_name}/check">client.Proxies.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyService.Check">Check</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyCheckParams">ProxyCheckParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyCheckResponse">ProxyCheckResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# ProxyIPs
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIP">ProxyIP</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIPDetail">ProxyIPDetail</a>
+
+Methods:
+
+- <code title="get /proxy_ips/{ip_address}">client.ProxyIPs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIPService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, ipAddress <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIPDetail">ProxyIPDetail</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /proxy_ips">client.ProxyIPs.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIPService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIPListParams">ProxyIPListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProxyIP">ProxyIP</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Extensions
 
 Response Types:
