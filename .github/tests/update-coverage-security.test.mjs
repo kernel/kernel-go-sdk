@@ -187,6 +187,8 @@ test('private spec content is only uploaded encrypted, briefly retained, and del
   assert.ok(uploads.includes(context));
   assert.match(context, /path: \$\{\{ runner\.temp \}\}\/cli-coverage-context\.cms\n/);
   assert.match(context, /retention-days: 1\n/);
+  // A kept context from a failed attempt must not block "Re-run all jobs".
+  assert.match(context, /\n          overwrite: true\n/);
   for (const entry of uploads) {
     const paths = entry.slice(entry.indexOf('path: ')).split(/\n {10}(?=[\w-]+:)/)[0];
     assert.doesNotMatch(paths, /cli-coverage-context(?!\.cms\b)|openapi|stainless|\.patch(?!\b)|\/tmp\//);

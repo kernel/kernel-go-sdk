@@ -220,6 +220,9 @@ jobs:
           path: ${{ runner.temp }}/cli-coverage-context.cms
           if-no-files-found: error
           retention-days: 1
+          # A failed generate keeps the context for retries, and "Re-run all
+          # jobs" uploads it again under the same name.
+          overwrite: true
 
   generate:
     needs: prefetch
