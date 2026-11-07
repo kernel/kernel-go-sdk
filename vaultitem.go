@@ -583,7 +583,9 @@ type CardVaultItemSpecUnion struct {
 	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
 	// This field is from variant [VgsCardVaultItemSpec].
 	Card VgsCardInput `json:"card"`
-	JSON struct {
+	// This field is from variant [VgsCardVaultItemSpec].
+	CardMode VgsCardVaultItemSpecCardMode `json:"card_mode"`
+	JSON     struct {
 		Amount               respjson.Field
 		Context              respjson.Field
 		Currency             respjson.Field
@@ -605,6 +607,7 @@ type CardVaultItemSpecUnion struct {
 		MerchantCountry      respjson.Field
 		SingleUseCard        respjson.Field
 		Card                 respjson.Field
+		CardMode             respjson.Field
 		raw                  string
 	} `json:"-"`
 }
@@ -1067,6 +1070,14 @@ func (u CardVaultItemSpecUnionParam) GetSingleUseCard() *KernelSingleUseCardPara
 func (u CardVaultItemSpecUnionParam) GetCard() *VgsCardInputParam {
 	if vt := u.OfVgs; vt != nil {
 		return &vt.Card
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetCardMode() *string {
+	if vt := u.OfVgs; vt != nil {
+		return (*string)(&vt.CardMode)
 	}
 	return nil
 }
@@ -7053,6 +7064,8 @@ type VaultItemUnionSpec struct {
 	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Card VgsCardInput `json:"card"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	CardMode VgsCardVaultItemSpecCardMode `json:"card_mode"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -7089,6 +7102,7 @@ type VaultItemUnionSpec struct {
 		MerchantCountry      respjson.Field
 		SingleUseCard        respjson.Field
 		Card                 respjson.Field
+		CardMode             respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -8211,6 +8225,8 @@ type VaultItemOperationResponseUnionSpec struct {
 	SingleUseCard KernelSingleUseCard `json:"single_use_card"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	Card VgsCardInput `json:"card"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	CardMode VgsCardVaultItemSpecCardMode `json:"card_mode"`
 	// This field is from variant [CredentialVaultItemSpecUnion].
 	Fields      []CredentialVaultFieldDefinition `json:"fields"`
 	Description string                           `json:"description"`
@@ -8247,6 +8263,7 @@ type VaultItemOperationResponseUnionSpec struct {
 		MerchantCountry      respjson.Field
 		SingleUseCard        respjson.Field
 		Card                 respjson.Field
+		CardMode             respjson.Field
 		Fields               respjson.Field
 		Description          respjson.Field
 		Requests             respjson.Field
@@ -8958,19 +8975,28 @@ func (r *VaultWebmcpBindingParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The card's aliases in the customer's VGS vault, its expiry and last four digits.
-// Write-only: stored encrypted and never returned in the item, its events or logs.
-// A repeated PUT with the same key must send the same card.
+// The card supplied to a purchase, as aliases in the customer's VGS vault. With
+// card_mode full it is a whole card: a persistent alias of its number, a freshly
+// collected volatile alias of its security code, its expiry and its last four
+// digits. With card_mode cvc_only it is a CVC alias alone, because the merchant
+// holds the rest on file. pan_alias, exp_month, exp_year and last4 are required
+// with card_mode full and rejected with card_mode cvc_only. Write-only: stored
+// encrypted and never returned in the item, its events or logs. A repeated PUT
+// with the same key must send the same card.
 type VgsCardInput struct {
 	// A volatile alias of a freshly collected security code in the customer's vault.
-	// It must still exist when authorize runs.
+	// It must still exist when authorize runs. Required in both modes.
 	CvcAlias string `json:"cvc_alias" api:"required"`
-	ExpMonth int64  `json:"exp_month" api:"required"`
-	ExpYear  int64  `json:"exp_year" api:"required"`
-	// The card number's last four digits, checked against the revealed alias.
-	Last4 string `json:"last4" api:"required"`
-	// A persistent alias of the card number in the customer's vault.
-	PanAlias string `json:"pan_alias" api:"required"`
+	// Required with card_mode full, rejected with card_mode cvc_only.
+	ExpMonth int64 `json:"exp_month"`
+	// Required with card_mode full, rejected with card_mode cvc_only.
+	ExpYear int64 `json:"exp_year"`
+	// The card number's last four digits, checked against the revealed alias. Required
+	// with card_mode full, rejected with card_mode cvc_only.
+	Last4 string `json:"last4"`
+	// A persistent alias of the card number in the customer's vault. Required with
+	// card_mode full, rejected with card_mode cvc_only.
+	PanAlias string `json:"pan_alias"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		CvcAlias    respjson.Field
@@ -8998,21 +9024,30 @@ func (r VgsCardInput) ToParam() VgsCardInputParam {
 	return param.Override[VgsCardInputParam](json.RawMessage(r.RawJSON()))
 }
 
-// The card's aliases in the customer's VGS vault, its expiry and last four digits.
-// Write-only: stored encrypted and never returned in the item, its events or logs.
-// A repeated PUT with the same key must send the same card.
+// The card supplied to a purchase, as aliases in the customer's VGS vault. With
+// card_mode full it is a whole card: a persistent alias of its number, a freshly
+// collected volatile alias of its security code, its expiry and its last four
+// digits. With card_mode cvc_only it is a CVC alias alone, because the merchant
+// holds the rest on file. pan_alias, exp_month, exp_year and last4 are required
+// with card_mode full and rejected with card_mode cvc_only. Write-only: stored
+// encrypted and never returned in the item, its events or logs. A repeated PUT
+// with the same key must send the same card.
 //
-// The properties CvcAlias, ExpMonth, ExpYear, Last4, PanAlias are required.
+// The property CvcAlias is required.
 type VgsCardInputParam struct {
 	// A volatile alias of a freshly collected security code in the customer's vault.
-	// It must still exist when authorize runs.
+	// It must still exist when authorize runs. Required in both modes.
 	CvcAlias string `json:"cvc_alias" api:"required"`
-	ExpMonth int64  `json:"exp_month" api:"required"`
-	ExpYear  int64  `json:"exp_year" api:"required"`
-	// The card number's last four digits, checked against the revealed alias.
-	Last4 string `json:"last4" api:"required"`
-	// A persistent alias of the card number in the customer's vault.
-	PanAlias string `json:"pan_alias" api:"required"`
+	// Required with card_mode full, rejected with card_mode cvc_only.
+	ExpMonth param.Opt[int64] `json:"exp_month,omitzero"`
+	// Required with card_mode full, rejected with card_mode cvc_only.
+	ExpYear param.Opt[int64] `json:"exp_year,omitzero"`
+	// The card number's last four digits, checked against the revealed alias. Required
+	// with card_mode full, rejected with card_mode cvc_only.
+	Last4 param.Opt[string] `json:"last4,omitzero"`
+	// A persistent alias of the card number in the customer's vault. Required with
+	// card_mode full, rejected with card_mode cvc_only.
+	PanAlias param.Opt[string] `json:"pan_alias,omitzero"`
 	paramObj
 }
 
@@ -9113,17 +9148,24 @@ func (r *VgsCardStateMasks) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// One live purchase with a card in the customer's VGS vault. authorize reveals
-// card.pan_alias and card.cvc_alias through Kernel's VGS outbound proxy, which
-// replaces both with aliases in Kernel's vault before they reach Kernel; Kernel
-// never receives the card number or security code. The card is then ready with no
-// further approval, until expires_at, by default five minutes after authorize.
-// fill types Kernel's aliases on merchant_url's origin, and Kernel's VGS proxy
-// replaces them with the card's details when the browser submits checkout. An
-// expired card requires a new purchase with a freshly collected CVC alias. The
-// amount and merchant are recorded but do not restrict payment requests sent by
-// the browser. Card updates are not supported; delete and create a new item
-// instead.
+// One live purchase with a card in the customer's VGS vault. With card_mode full,
+// authorize reveals card.pan_alias and card.cvc_alias through Kernel's VGS
+// outbound proxy; with card_mode cvc_only, for a card the merchant already holds
+// on file whose checkout page asks only for the security code, it reveals
+// card.cvc_alias alone. The proxy replaces each revealed value with an alias in
+// Kernel's vault before it reaches Kernel; Kernel never receives the card number
+// or security code. The card is then ready with no further approval, until
+// expires_at, by default five minutes after authorize. fill types Kernel's aliases
+// on merchant_url's origin, and Kernel's VGS proxy replaces them with the card's
+// details when the browser submits checkout; a cvc_only card fills only the cvc
+// field, and reports no masks because it has no last4 to verify. A cvc_only card's
+// payment window routes all of the browser's egress through Kernel's VGS outbound
+// proxy, exactly as widely as a full card's: while it is open the proxy reveals
+// the card's aliases to any destination the browser sends them to, not only the
+// security code. An expired card requires a new purchase with a freshly collected
+// CVC alias. The amount and merchant are recorded but do not restrict payment
+// requests sent by the browser. Card updates are not supported; delete and create
+// a new item instead.
 type VgsCardVaultItemSpec struct {
 	// Integer amount in minor currency units (at most 1000000).
 	Amount int64 `json:"amount" api:"required"`
@@ -9139,6 +9181,14 @@ type VgsCardVaultItemSpec struct {
 	Wallet string `json:"wallet" api:"required"`
 	// Required when creating the card. Never returned.
 	Card VgsCardInput `json:"card"`
+	// Which card this purchase supplies, and the only part of it a read returns. full
+	// is a whole card from the customer's vault. cvc_only is a card the merchant
+	// already holds on file, whose checkout page asks for nothing but the security
+	// code. It must match spec.card: a full card that is missing pan_alias is rejected
+	// rather than treated as cvc_only. Omit it for full, which a read also omits.
+	//
+	// Any of "full", "cvc_only".
+	CardMode VgsCardVaultItemSpecCardMode `json:"card_mode"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Amount       respjson.Field
@@ -9148,6 +9198,7 @@ type VgsCardVaultItemSpec struct {
 		Provider     respjson.Field
 		Wallet       respjson.Field
 		Card         respjson.Field
+		CardMode     respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -9174,17 +9225,36 @@ const (
 	VgsCardVaultItemSpecProviderVgs VgsCardVaultItemSpecProvider = "vgs"
 )
 
-// One live purchase with a card in the customer's VGS vault. authorize reveals
-// card.pan_alias and card.cvc_alias through Kernel's VGS outbound proxy, which
-// replaces both with aliases in Kernel's vault before they reach Kernel; Kernel
-// never receives the card number or security code. The card is then ready with no
-// further approval, until expires_at, by default five minutes after authorize.
-// fill types Kernel's aliases on merchant_url's origin, and Kernel's VGS proxy
-// replaces them with the card's details when the browser submits checkout. An
-// expired card requires a new purchase with a freshly collected CVC alias. The
-// amount and merchant are recorded but do not restrict payment requests sent by
-// the browser. Card updates are not supported; delete and create a new item
-// instead.
+// Which card this purchase supplies, and the only part of it a read returns. full
+// is a whole card from the customer's vault. cvc_only is a card the merchant
+// already holds on file, whose checkout page asks for nothing but the security
+// code. It must match spec.card: a full card that is missing pan_alias is rejected
+// rather than treated as cvc_only. Omit it for full, which a read also omits.
+type VgsCardVaultItemSpecCardMode string
+
+const (
+	VgsCardVaultItemSpecCardModeFull    VgsCardVaultItemSpecCardMode = "full"
+	VgsCardVaultItemSpecCardModeCvcOnly VgsCardVaultItemSpecCardMode = "cvc_only"
+)
+
+// One live purchase with a card in the customer's VGS vault. With card_mode full,
+// authorize reveals card.pan_alias and card.cvc_alias through Kernel's VGS
+// outbound proxy; with card_mode cvc_only, for a card the merchant already holds
+// on file whose checkout page asks only for the security code, it reveals
+// card.cvc_alias alone. The proxy replaces each revealed value with an alias in
+// Kernel's vault before it reaches Kernel; Kernel never receives the card number
+// or security code. The card is then ready with no further approval, until
+// expires_at, by default five minutes after authorize. fill types Kernel's aliases
+// on merchant_url's origin, and Kernel's VGS proxy replaces them with the card's
+// details when the browser submits checkout; a cvc_only card fills only the cvc
+// field, and reports no masks because it has no last4 to verify. A cvc_only card's
+// payment window routes all of the browser's egress through Kernel's VGS outbound
+// proxy, exactly as widely as a full card's: while it is open the proxy reveals
+// the card's aliases to any destination the browser sends them to, not only the
+// security code. An expired card requires a new purchase with a freshly collected
+// CVC alias. The amount and merchant are recorded but do not restrict payment
+// requests sent by the browser. Card updates are not supported; delete and create
+// a new item instead.
 //
 // The properties Amount, Currency, MerchantName, MerchantURL, Provider, Wallet are
 // required.
@@ -9203,6 +9273,14 @@ type VgsCardVaultItemSpecParam struct {
 	Wallet string `json:"wallet" api:"required"`
 	// Required when creating the card. Never returned.
 	Card VgsCardInputParam `json:"card,omitzero"`
+	// Which card this purchase supplies, and the only part of it a read returns. full
+	// is a whole card from the customer's vault. cvc_only is a card the merchant
+	// already holds on file, whose checkout page asks for nothing but the security
+	// code. It must match spec.card: a full card that is missing pan_alias is rejected
+	// rather than treated as cvc_only. Omit it for full, which a read also omits.
+	//
+	// Any of "full", "cvc_only".
+	CardMode VgsCardVaultItemSpecCardMode `json:"card_mode,omitzero"`
 	paramObj
 }
 
