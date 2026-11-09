@@ -176,7 +176,8 @@ func (r *VaultItemService) Events(ctx context.Context, key string, params VaultI
 // a failure, an `unknown` outcome, or a transport error.
 //
 // Connected Kernel wallets may advertise add_payment_method, which returns a
-// single-use hosted card_enrollment link for a card, and remove_payment_method,
+// single-use hosted card_enrollment link for a card, or with enrollment server a
+// single-use card_ingest URL for the card's issuer, and remove_payment_method,
 // which removes one card without affecting the others. Both operations require
 // vaults:write in addition to vaults:use on the vault for scoped API keys, and
 // return 403 without both permissions.
@@ -221,19 +222,27 @@ func (r *VaultItemService) Upsert(ctx context.Context, key string, params VaultI
 	return res, err
 }
 
-// Start hosted enrollment of a card in a connected Kernel wallet, including its
-// first card, only when the wallet advertises add_payment_method. Returns a new
-// payment method in pending_enrollment with a single-use card_enrollment URL for
-// the cardholder. Card details go directly to the card vault and are never
-// accepted by this API. Each call creates a separate link that expires after 30
-// minutes; a failed or expired enrollment does not affect the wallet's other
-// payment methods. Scoped API keys require vaults:write in addition to vaults:use
-// on this vault; otherwise the operation returns 403.
+// Start enrollment of a card in a connected Kernel wallet, including its first
+// card, only when the wallet advertises add_payment_method. Returns a new payment
+// method in pending_enrollment with a single-use action. Card details go directly
+// to the card vault and are never accepted by this API. With enrollment hosted
+// (the default) the action is a card_enrollment URL for the cardholder, which
+// expires after 30 minutes. With enrollment server the action is a card_ingest URL
+// that the card's issuer posts the card to from its backend, which expires after 5
+// minutes; server enrollment returns 409 when it is not configured for the
+// organization's card backend. A failed or expired enrollment does not affect the
+// wallet's other payment methods. Scoped API keys require vaults:write in addition
+// to vaults:use on this vault; otherwise the operation returns 403.
 //
 // The property Type is required.
 type AddPaymentMethodVaultItemOperationRequestParam struct {
 	// Any of "add_payment_method".
 	Type AddPaymentMethodVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// hosted returns a card_enrollment link for the cardholder. server returns a
+	// card_ingest URL for the card's issuer to post the card to server to server.
+	//
+	// Any of "hosted", "server".
+	Enrollment AddPaymentMethodVaultItemOperationRequestEnrollment `json:"enrollment,omitzero"`
 	paramObj
 }
 
@@ -251,8 +260,18 @@ const (
 	AddPaymentMethodVaultItemOperationRequestTypeAddPaymentMethod AddPaymentMethodVaultItemOperationRequestType = "add_payment_method"
 )
 
-// The payment method created in pending_enrollment. Deliver action.url to the
-// cardholder; it is a single-use capability and must not be logged. Observe
+// hosted returns a card_enrollment link for the cardholder. server returns a
+// card_ingest URL for the card's issuer to post the card to server to server.
+type AddPaymentMethodVaultItemOperationRequestEnrollment string
+
+const (
+	AddPaymentMethodVaultItemOperationRequestEnrollmentHosted AddPaymentMethodVaultItemOperationRequestEnrollment = "hosted"
+	AddPaymentMethodVaultItemOperationRequestEnrollmentServer AddPaymentMethodVaultItemOperationRequestEnrollment = "server"
+)
+
+// The payment method created in pending_enrollment. Deliver a card_enrollment
+// action.url to the cardholder; it is a single-use capability and must not be
+// logged. A card_ingest action.url is posted to by the card's issuer. Observe
 // completion through the wallet's payment_methods expansion.
 type AddPaymentMethodVaultItemOperationResult struct {
 	PaymentMethod VaultPaymentMethod `json:"payment_method" api:"required"`
@@ -8816,12 +8835,19 @@ type VaultPaymentMethod struct {
 	// Provider that issued this payment-method ID.
 	Provider string `json:"provider" api:"required"`
 	// Provider-neutral payment-method type normalized to lowercase.
-	Type   string                   `json:"type" api:"required"`
+	Type string `json:"type" api:"required"`
+	// The open enrollment of a pending payment method. card_enrollment is a single-use
+	// hosted link for the cardholder. card_ingest is a single-use URL on a Kernel
+	// ingest hostname served by the card vault, which the card's issuer posts the card
+	// to from its backend; Kernel never receives the card number or CVC.
 	Action VaultPaymentMethodAction `json:"action"`
-	// Expiry of a pending enrollment link.
+	// Expiry of a pending enrollment link or ingest URL.
 	ExpiresAt time.Time `json:"expires_at" format:"date-time"`
-	// Kernel wallets only. pending_enrollment means a card_enrollment link is open;
-	// active means the card is stored and can pay when
+	// Kernel wallets only. The issuer's reference for a card it pushed with a
+	// card_ingest URL.
+	IssuerReference string `json:"issuer_reference"`
+	// Kernel wallets only. pending_enrollment means a card_enrollment link or
+	// card_ingest URL is open; active means the card is stored and can pay when
 	// capabilities.single_use_card.eligible is true; removal_pending means removal
 	// started but the provider outcome is unknown, so retry remove_payment_method;
 	// recovery_required means either an enrollment outcome is unknown (remove the
@@ -8832,20 +8858,25 @@ type VaultPaymentMethod struct {
 	// Any of "pending_enrollment", "active", "removal_pending", "recovery_required".
 	Status       VaultPaymentMethodStatus `json:"status"`
 	StatusReason string                   `json:"status_reason"`
+	// Kernel wallets only. When a card pushed with a card_ingest URL stops being
+	// usable, as its issuer set.
+	ValidUntil time.Time `json:"valid_until" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID           respjson.Field
-		Capabilities respjson.Field
-		Display      respjson.Field
-		IsDefault    respjson.Field
-		Provider     respjson.Field
-		Type         respjson.Field
-		Action       respjson.Field
-		ExpiresAt    respjson.Field
-		Status       respjson.Field
-		StatusReason respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		ID              respjson.Field
+		Capabilities    respjson.Field
+		Display         respjson.Field
+		IsDefault       respjson.Field
+		Provider        respjson.Field
+		Type            respjson.Field
+		Action          respjson.Field
+		ExpiresAt       respjson.Field
+		IssuerReference respjson.Field
+		Status          respjson.Field
+		StatusReason    respjson.Field
+		ValidUntil      respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
 	} `json:"-"`
 }
 
@@ -8911,13 +8942,17 @@ func (r *VaultPaymentMethodDisplay) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// The open enrollment of a pending payment method. card_enrollment is a single-use
+// hosted link for the cardholder. card_ingest is a single-use URL on a Kernel
+// ingest hostname served by the card vault, which the card's issuer posts the card
+// to from its backend; Kernel never receives the card number or CVC.
 type VaultPaymentMethodAction struct {
-	// Any of "card_enrollment".
+	// Any of "card_enrollment", "card_ingest".
 	Name string `json:"name" api:"required"`
 	URL  string `json:"url" api:"required" format:"uri"`
 	// Secret bearer capability for embedded card capture with @onkernel/vault-react.
-	// Present only for Kernel wallets; never for AgentCard. Treat it like the
-	// enrollment URL and do not log or persist it in browser storage.
+	// Present only on card_enrollment for Kernel wallets; never for AgentCard. Treat
+	// it like the enrollment URL and do not log or persist it in browser storage.
 	CaptureToken string `json:"capture_token"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8935,8 +8970,8 @@ func (r *VaultPaymentMethodAction) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Kernel wallets only. pending_enrollment means a card_enrollment link is open;
-// active means the card is stored and can pay when
+// Kernel wallets only. pending_enrollment means a card_enrollment link or
+// card_ingest URL is open; active means the card is stored and can pay when
 // capabilities.single_use_card.eligible is true; removal_pending means removal
 // started but the provider outcome is unknown, so retry remove_payment_method;
 // recovery_required means either an enrollment outcome is unknown (remove the
@@ -10387,14 +10422,17 @@ type VaultItemPerformOperationParams struct {
 	// registering frame (if any).
 	OfWebmcpInvoke *WebmcpInvokeVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Start
-	// hosted enrollment of a card in a connected Kernel wallet, including its first
-	// card, only when the wallet advertises add_payment_method. Returns a new payment
-	// method in pending_enrollment with a single-use card_enrollment URL for the
-	// cardholder. Card details go directly to the card vault and are never accepted by
-	// this API. Each call creates a separate link that expires after 30 minutes; a
-	// failed or expired enrollment does not affect the wallet's other payment methods.
-	// Scoped API keys require vaults:write in addition to vaults:use on this vault;
-	// otherwise the operation returns 403.
+	// enrollment of a card in a connected Kernel wallet, including its first card,
+	// only when the wallet advertises add_payment_method. Returns a new payment method
+	// in pending_enrollment with a single-use action. Card details go directly to the
+	// card vault and are never accepted by this API. With enrollment hosted (the
+	// default) the action is a card_enrollment URL for the cardholder, which expires
+	// after 30 minutes. With enrollment server the action is a card_ingest URL that
+	// the card's issuer posts the card to from its backend, which expires after 5
+	// minutes; server enrollment returns 409 when it is not configured for the
+	// organization's card backend. A failed or expired enrollment does not affect the
+	// wallet's other payment methods. Scoped API keys require vaults:write in addition
+	// to vaults:use on this vault; otherwise the operation returns 403.
 	OfAddPaymentMethod *AddPaymentMethodVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Remove
 	// one payment method from a Kernel wallet, only when the wallet advertises

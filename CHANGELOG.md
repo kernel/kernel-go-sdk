@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.144.0](https://github.com/kernel/kernel-go-sdk/compare/v0.143.0...v0.144.0) (2026-11-09)
+
+
+### Features
+
+* Add server-to-server card ingest for Kernel wallets ([40b687d](https://github.com/kernel/kernel-go-sdk/commit/40b687d9e5450cbadcf6c4243beeb3de295e71f9))
+
 ## [0.143.0](https://github.com/kernel/kernel-go-sdk/compare/v0.142.0...v0.143.0) (2026-11-07)
 
 
