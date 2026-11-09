@@ -98,8 +98,9 @@ func (r *APIKeyService) ListAutoPaging(ctx context.Context, query APIKeyListPara
 	return pagination.NewOffsetPaginationAutoPager(r.List(ctx, query, opts...))
 }
 
-// Delete an API key. A key cannot delete itself; use a different key to delete
-// this one.
+// Delete an API key and asynchronously end browser sessions attributed to it,
+// discarding unsaved profile changes. A key cannot delete itself; use a different
+// key to delete this one. If cleanup cannot be registered, the key is not deleted.
 func (r *APIKeyService) Delete(ctx context.Context, id string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -114,7 +115,11 @@ func (r *APIKeyService) Delete(ctx context.Context, id string, opts ...option.Re
 
 // Rotate an API key. Issues a new key that copies the name and project of the
 // rotated key, and schedules the rotated key to expire after a grace period so
-// in-flight callers can swap over. The new plaintext key is returned once.
+// in-flight callers can swap over. The new plaintext key is returned once. With
+// expire_in_days set to 0, browser sessions attributed to the old key are ended
+// asynchronously and unsaved profile changes are discarded. Grace-period and
+// natural expiry do not end existing browsers. If cleanup cannot be registered, an
+// immediate rotation is not committed.
 func (r *APIKeyService) Rotate(ctx context.Context, id string, body APIKeyRotateParams, opts ...option.RequestOption) (res *CreatedAPIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
