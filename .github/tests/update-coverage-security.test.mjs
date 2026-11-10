@@ -120,9 +120,11 @@ const applyChanges = (fx, env = {}) =>
     ...env,
   });
 
+const llmCredentials = 'uses: kernel/security-workflows/.github/actions/llm-credentials@';
+
 test('actions are pinned and checkouts do not persist credentials', () => {
   for (const entry of steps.filter((entry) => entry.includes('uses: '))) {
-    assert.match(entry, /uses: [\w/-]+@[a-f0-9]{40}(?:\s|$)/);
+    assert.match(entry, /uses: [\w./-]+@[a-f0-9]{40}(?:\s|$)/);
     if (entry.includes('uses: actions/checkout@')) {
       assert.match(entry, /persist-credentials: false/);
       assert.doesNotMatch(entry, /token:/);
@@ -150,8 +152,9 @@ test('credentialed steps only run in the production SDK repository', () => {
 test('the Pi job references no secrets other than the ones Pi uses', () => {
   // Every secret a job references is loaded into the runner at job start, and
   // Pi could read it from runner memory with passwordless sudo. Pi uses the
-  // model API keys and the Kernel API key for its smoke tests. The context key
-  // only decrypts the context Pi reads in plaintext anyway.
+  // Kernel API key for its smoke tests and gets model access from federated
+  // credentials, not secrets. The context key only decrypts the context Pi
+  // reads in plaintext anyway.
   const piJobs = Object.keys(jobTexts).filter((name) => /^\s*pi --print\b/m.test(jobTexts[name]));
   assert.deepEqual(piJobs, ['generate']);
   const referenced = (text) => [...text.matchAll(/\bsecrets\b(?:\.([\w-]+))?/g)].map((match) => match[1] ?? '<all>');
@@ -159,14 +162,23 @@ test('the Pi job references no secrets other than the ones Pi uses', () => {
   for (const name of piJobs) {
     assert.deepEqual(
       [...new Set(referenced(jobTexts[name]))].sort(),
-      ['ANTHROPIC_API_KEY', 'CLI_COVERAGE_CONTEXT_KEY', 'KERNEL_API_KEY', 'OPENAI_API_KEY'],
+      ['CLI_COVERAGE_CONTEXT_KEY', 'KERNEL_API_KEY'],
       `${name} may only reference the secrets Pi uses`,
     );
     assert.deepEqual(
       jobs[name].filter((entry) => entry.includes('secrets.CLI_COVERAGE_CONTEXT_KEY')),
       [step(name, 'Decrypt CLI coverage context')],
     );
-    assert.doesNotMatch(jobTexts[name], /github\.token|create-github-app-token|^    permissions:/m);
+    assert.doesNotMatch(jobTexts[name], /github\.token|create-github-app-token/);
+    // The only permission beyond reading the repository is the OIDC token for model credentials.
+    assert.match(jobTexts[name], /\n    permissions:\n      contents: read\n(?:      #.*\n)?      id-token: write\n    outputs:/);
+    // Model credentials exist only while Pi runs.
+    const pi = jobs[name].indexOf(step(name, 'Update CLI coverage'));
+    assert.equal(jobs[name][pi - 1], step(name, 'Model credentials'));
+    const stop = jobs[name][pi + 1];
+    assert.equal(stop, step(name, 'Stop model credentials'));
+    assert.match(stop, /if: always\(\)\n[\s\S]*stop: true/);
+    assert.ok(jobs[name][pi - 1].includes(llmCredentials) && stop.includes(llmCredentials));
   }
   assert.match(workflow, /^permissions:\n  contents: read\n\n/m);
 });
