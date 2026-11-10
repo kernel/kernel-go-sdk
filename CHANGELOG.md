@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.145.0](https://github.com/kernel/kernel-go-sdk/compare/v0.144.0...v0.145.0) (2026-11-10)
+
+
+### Features
+
+* Discard browser sessions on immediate API key revocation ([#5272](https://github.com/kernel/kernel-go-sdk/issues/5272)) ([88ae60c](https://github.com/kernel/kernel-go-sdk/commit/88ae60c6ebd6479df4019d3d88bd7ec5cb8ae571))
+* Expose Link card credential_type and explain pay token fill rejections ([812ff8e](https://github.com/kernel/kernel-go-sdk/commit/812ff8e625b47bcdc109ee5c84b265210c9d4075))
+
 ## [0.144.0](https://github.com/kernel/kernel-go-sdk/compare/v0.143.0...v0.144.0) (2026-11-09)
 
 
