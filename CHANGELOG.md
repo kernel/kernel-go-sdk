@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.146.0](https://github.com/kernel/kernel-go-sdk/compare/v0.145.0...v0.146.0) (2026-11-10)
+
+
+### Features
+
+* Allow auto-starting replays during browser creation and pool acquire ([f220d1a](https://github.com/kernel/kernel-go-sdk/commit/f220d1a1385c2b9e5656ee8eb104e386bb3facea))
+
 ## [0.145.0](https://github.com/kernel/kernel-go-sdk/compare/v0.144.0...v0.145.0) (2026-11-10)
 
 
