@@ -770,8 +770,8 @@ func (r CardVaultItemSpecUnion) ToParam() CardVaultItemSpecUnionParam {
 // be changed with PATCH until the card is authorized at a checkout. Authorize it
 // with the browser at final checkout: Kernel inspects the checkout through WebMCP
 // and internally chooses a merchant-bound Link Pay Token when supported or a
-// virtual card otherwise. Callers never receive or choose how the credential is
-// delivered.
+// virtual card otherwise. Callers do not choose how the credential is delivered;
+// after authorize, state.credential_type reports it.
 type CardVaultItemSpecLink struct {
 	// Integer amount in minor currency units, at most 50000. With recurring, the
 	// spending limit per period, not a lifetime total.
@@ -1292,8 +1292,8 @@ func init() {
 // be changed with PATCH until the card is authorized at a checkout. Authorize it
 // with the browser at final checkout: Kernel inspects the checkout through WebMCP
 // and internally chooses a merchant-bound Link Pay Token when supported or a
-// virtual card otherwise. Callers never receive or choose how the credential is
-// delivered.
+// virtual card otherwise. Callers do not choose how the credential is delivered;
+// after authorize, state.credential_type reports it.
 //
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
@@ -1476,9 +1476,11 @@ func (r *CardVaultItemSpecAgentcardParam) UnmarshalJSON(data []byte) error {
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type CardVaultItemStateUnion struct {
 	// Any of "link", "agentcard", "kernel", "shop_pay", "vgs".
-	Provider string   `json:"provider"`
-	Status   string   `json:"status"`
-	Domains  []string `json:"domains"`
+	Provider string `json:"provider"`
+	Status   string `json:"status"`
+	// This field is from variant [CardVaultItemStateLink].
+	CredentialType string   `json:"credential_type"`
+	Domains        []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
 	// [ShopPayCardStateMasks], [VgsCardStateMasks]
@@ -1499,6 +1501,7 @@ type CardVaultItemStateUnion struct {
 	JSON            struct {
 		Provider        respjson.Field
 		Status          respjson.Field
+		CredentialType  respjson.Field
 		Domains         respjson.Field
 		Masks           respjson.Field
 		StatusReason    respjson.Field
@@ -1619,19 +1622,28 @@ type CardVaultItemStateLink struct {
 	//
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
-	Status       string                      `json:"status" api:"required"`
-	Domains      []string                    `json:"domains"`
-	Masks        CardVaultItemStateLinkMasks `json:"masks"`
-	StatusReason string                      `json:"status_reason"`
+	Status string `json:"status" api:"required"`
+	// The Link spend request's credential_type, set when authorize sends the request
+	// to Link. Absent before authorize and after Link rejects the request; a ready
+	// card without it fills like card. card is a Link virtual card; fill it with field
+	// bindings. link_pay_token is a Link Pay Token that Kernel supplies through the
+	// checkout's Link WebMCP tool; fill it without fields.
+	//
+	// Any of "card", "link_pay_token".
+	CredentialType string                      `json:"credential_type"`
+	Domains        []string                    `json:"domains"`
+	Masks          CardVaultItemStateLinkMasks `json:"masks"`
+	StatusReason   string                      `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Provider     respjson.Field
-		Status       respjson.Field
-		Domains      respjson.Field
-		Masks        respjson.Field
-		StatusReason respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		Provider       respjson.Field
+		Status         respjson.Field
+		CredentialType respjson.Field
+		Domains        respjson.Field
+		Masks          respjson.Field
+		StatusReason   respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -5150,8 +5162,8 @@ type PaymentRequestVaultItem struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec PaymentRequestVaultItemSpecUnion `json:"spec" api:"required"`
 	// Issued Link cards retain encrypted card material for the fill operation. Link
 	// cards do not expose aliases or support egress substitution.
@@ -5348,8 +5360,8 @@ func (r PaymentRequestVaultItemSpecUnion) ToParam() PaymentRequestVaultItemSpecU
 // be changed with PATCH until the card is authorized at a checkout. Authorize it
 // with the browser at final checkout: Kernel inspects the checkout through WebMCP
 // and internally chooses a merchant-bound Link Pay Token when supported or a
-// virtual card otherwise. Callers never receive or choose how the credential is
-// delivered.
+// virtual card otherwise. Callers do not choose how the credential is delivered;
+// after authorize, state.credential_type reports it.
 type PaymentRequestVaultItemSpecLink struct {
 	// Integer amount in minor currency units, at most 50000. With recurring, the
 	// spending limit per period, not a lifetime total.
@@ -5678,8 +5690,8 @@ func init() {
 // be changed with PATCH until the card is authorized at a checkout. Authorize it
 // with the browser at final checkout: Kernel inspects the checkout through WebMCP
 // and internally chooses a merchant-bound Link Pay Token when supported or a
-// virtual card otherwise. Callers never receive or choose how the credential is
-// delivered.
+// virtual card otherwise. Callers do not choose how the credential is delivered;
+// after authorize, state.credential_type reports it.
 //
 // The properties Amount, Context, Currency, MerchantName, MerchantURL,
 // PaymentMethodID, Provider, Wallet are required.
@@ -5822,9 +5834,11 @@ func (r *PaymentRequestVaultItemSpecLinkTotalParam) UnmarshalJSON(data []byte) e
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type PaymentRequestVaultItemStateUnion struct {
 	// Any of "link", "kernel".
-	Provider string   `json:"provider"`
-	Status   string   `json:"status"`
-	Domains  []string `json:"domains"`
+	Provider string `json:"provider"`
+	Status   string `json:"status"`
+	// This field is from variant [PaymentRequestVaultItemStateLink].
+	CredentialType string   `json:"credential_type"`
+	Domains        []string `json:"domains"`
 	// This field is a union of [PaymentRequestVaultItemStateLinkMasks],
 	// [KernelCardStateMasks]
 	Masks        PaymentRequestVaultItemStateUnionMasks `json:"masks"`
@@ -5838,6 +5852,7 @@ type PaymentRequestVaultItemStateUnion struct {
 	JSON            struct {
 		Provider        respjson.Field
 		Status          respjson.Field
+		CredentialType  respjson.Field
 		Domains         respjson.Field
 		Masks           respjson.Field
 		StatusReason    respjson.Field
@@ -5928,19 +5943,28 @@ type PaymentRequestVaultItemStateLink struct {
 	//
 	// Any of "requested", "pending_authorization", "ready", "consumed", "expired",
 	// "declined", "recovery_required".
-	Status       string                                `json:"status" api:"required"`
-	Domains      []string                              `json:"domains"`
-	Masks        PaymentRequestVaultItemStateLinkMasks `json:"masks"`
-	StatusReason string                                `json:"status_reason"`
+	Status string `json:"status" api:"required"`
+	// The Link spend request's credential_type, set when authorize sends the request
+	// to Link. Absent before authorize and after Link rejects the request; a ready
+	// card without it fills like card. card is a Link virtual card; fill it with field
+	// bindings. link_pay_token is a Link Pay Token that Kernel supplies through the
+	// checkout's Link WebMCP tool; fill it without fields.
+	//
+	// Any of "card", "link_pay_token".
+	CredentialType string                                `json:"credential_type"`
+	Domains        []string                              `json:"domains"`
+	Masks          PaymentRequestVaultItemStateLinkMasks `json:"masks"`
+	StatusReason   string                                `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Provider     respjson.Field
-		Status       respjson.Field
-		Domains      respjson.Field
-		Masks        respjson.Field
-		StatusReason respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		Provider       respjson.Field
+		Status         respjson.Field
+		CredentialType respjson.Field
+		Domains        respjson.Field
+		Masks          respjson.Field
+		StatusReason   respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -7298,8 +7322,9 @@ type VaultItemUnionState struct {
 	Status       string `json:"status"`
 	StatusReason string `json:"status_reason"`
 	// This field is from variant [WalletVaultItemStateUnion].
-	UserID  string   `json:"user_id"`
-	Domains []string `json:"domains"`
+	UserID         string   `json:"user_id"`
+	CredentialType string   `json:"credential_type"`
+	Domains        []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
 	// [ShopPayCardStateMasks], [VgsCardStateMasks],
@@ -7332,6 +7357,7 @@ type VaultItemUnionState struct {
 		Status          respjson.Field
 		StatusReason    respjson.Field
 		UserID          respjson.Field
+		CredentialType  respjson.Field
 		Domains         respjson.Field
 		Masks           respjson.Field
 		Aliases         respjson.Field
@@ -7568,8 +7594,8 @@ type VaultItemCard struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
 	// Issued Link cards retain encrypted card material for the fill operation. Link
 	// cards do not expose aliases or support egress substitution.
@@ -8462,8 +8488,9 @@ type VaultItemOperationResponseUnionState struct {
 	Status       string `json:"status"`
 	StatusReason string `json:"status_reason"`
 	// This field is from variant [WalletVaultItemStateUnion].
-	UserID  string   `json:"user_id"`
-	Domains []string `json:"domains"`
+	UserID         string   `json:"user_id"`
+	CredentialType string   `json:"credential_type"`
+	Domains        []string `json:"domains"`
 	// This field is a union of [CardVaultItemStateLinkMasks],
 	// [CardVaultItemStateAgentcardMasks], [KernelCardStateMasks],
 	// [ShopPayCardStateMasks], [VgsCardStateMasks],
@@ -8496,6 +8523,7 @@ type VaultItemOperationResponseUnionState struct {
 		Status          respjson.Field
 		StatusReason    respjson.Field
 		UserID          respjson.Field
+		CredentialType  respjson.Field
 		Domains         respjson.Field
 		Masks           respjson.Field
 		Aliases         respjson.Field
@@ -8737,8 +8765,8 @@ type VaultItemOperationResponseCardVaultItem struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec CardVaultItemSpecUnion `json:"spec" api:"required"`
 	// Issued Link cards retain encrypted card material for the fill operation. Link
 	// cards do not expose aliases or support egress substitution.
@@ -10176,8 +10204,8 @@ type VaultItemUpdateParamsBodyCardVaultItemUpdateRequest struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec CardVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// Any of "card".
 	Type string `json:"type,omitzero"`
@@ -10204,8 +10232,8 @@ type VaultItemUpdateParamsBodyPaymentRequestVaultItemUpdateRequest struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec PaymentRequestVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// Any of "payment_request".
 	Type string `json:"type,omitzero" api:"required"`
@@ -11219,8 +11247,8 @@ type VaultItemUpsertParamsBodyCard struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec CardVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// This field can be elided, and will marshal its zero value as "card".
 	Type constant.Card `json:"type" default:"card"`
@@ -11245,8 +11273,8 @@ type VaultItemUpsertParamsBodyPaymentRequest struct {
 	// be changed with PATCH until the card is authorized at a checkout. Authorize it
 	// with the browser at final checkout: Kernel inspects the checkout through WebMCP
 	// and internally chooses a merchant-bound Link Pay Token when supported or a
-	// virtual card otherwise. Callers never receive or choose how the credential is
-	// delivered.
+	// virtual card otherwise. Callers do not choose how the credential is delivered;
+	// after authorize, state.credential_type reports it.
 	Spec PaymentRequestVaultItemSpecUnionParam `json:"spec,omitzero" api:"required"`
 	// This field can be elided, and will marshal its zero value as "payment_request".
 	Type constant.PaymentRequest `json:"type" default:"payment_request"`
