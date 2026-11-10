@@ -1886,6 +1886,8 @@ type BrowserNewParams struct {
 	// Optional proxy to associate to the browser session. Must reference a proxy in
 	// the same project as the browser session. Deprecated in favor of proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Start replay recording as part of creating this browser session.
+	StartReplay param.Opt[bool] `json:"start_replay,omitzero"`
 	// Optional URL to open when the browser session is created. Navigation is
 	// best-effort, so navigation failures do not prevent the session from being
 	// created.

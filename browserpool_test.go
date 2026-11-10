@@ -59,6 +59,7 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 		ProxyID:                kernel.String("proxy_id"),
 		RefreshOnProfileUpdate: kernel.Bool(true),
 		Region:                 kernel.BrowserPoolNewParamsRegionUsEast,
+		StartReplay:            kernel.Bool(true),
 		StartURL:               kernel.String("https://example.com"),
 		Stealth:                kernel.Bool(true),
 		Telemetry: kernel.BrowserPoolNewParamsTelemetry{
@@ -209,6 +210,7 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			ProxyID:                kernel.String("proxy_id"),
 			RefreshOnProfileUpdate: kernel.Bool(true),
 			Size:                   kernel.Int(10),
+			StartReplay:            kernel.Bool(true),
 			StartURL:               kernel.String("https://example.com"),
 			Stealth:                kernel.Bool(true),
 			Telemetry: kernel.BrowserPoolUpdateParamsTelemetry{
@@ -360,7 +362,8 @@ func TestBrowserPoolAcquireWithOptionalParams(t *testing.T) {
 				Name:        kernel.String("name"),
 				SaveChanges: kernel.Bool(true),
 			},
-			StartURL: kernel.String("https://example.com"),
+			StartReplay: kernel.Bool(true),
+			StartURL:    kernel.String("https://example.com"),
 			Tags: kernel.Tags{
 				"team": "backend",
 				"env":  "staging",

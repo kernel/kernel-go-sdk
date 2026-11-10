@@ -253,6 +253,8 @@ type BrowserPoolBrowserPoolConfig struct {
 	// pool browsers pick up the latest profile data. When a profile is provided during
 	// creation, this defaults to true. Requires a profile to be set on the pool.
 	RefreshOnProfileUpdate bool `json:"refresh_on_profile_update"`
+	// Start replay recording automatically when a browser is acquired from this pool.
+	StartReplay bool `json:"start_replay"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
 	// newly-warmed browsers; browsers reused via release/acquire keep whatever URL the
@@ -295,6 +297,7 @@ type BrowserPoolBrowserPoolConfig struct {
 		Profile                respjson.Field
 		ProxyID                respjson.Field
 		RefreshOnProfileUpdate respjson.Field
+		StartReplay            respjson.Field
 		StartURL               respjson.Field
 		Stealth                respjson.Field
 		Telemetry              respjson.Field
@@ -534,6 +537,8 @@ type BrowserPoolNewParams struct {
 	// pool browsers pick up the latest profile data. When a profile is provided during
 	// creation, this defaults to true. Requires a profile to be set on the pool.
 	RefreshOnProfileUpdate param.Opt[bool] `json:"refresh_on_profile_update,omitzero"`
+	// Start replay recording automatically when a browser is acquired from this pool.
+	StartReplay param.Opt[bool] `json:"start_replay,omitzero"`
 	// Optional URL to navigate to when a new browser is warmed into the pool.
 	// Best-effort: failures to navigate do not fail pool fill. Only applied to
 	// newly-warmed browsers; browsers reused via release/acquire keep whatever URL the
@@ -787,6 +792,9 @@ type BrowserPoolUpdateParams struct {
 	// maximum size is determined by your organization's pooled sessions limit (the sum
 	// of all pool sizes cannot exceed your limit).
 	Size param.Opt[int64] `json:"size,omitzero"`
+	// If provided, replaces whether replay recording starts automatically for future
+	// acquired browsers.
+	StartReplay param.Opt[bool] `json:"start_replay,omitzero"`
 	// If provided, replaces the URL to navigate to when a new browser is warmed into
 	// the pool. Empty string clears the previously-set URL. Omit this field to leave
 	// it unchanged.
@@ -1081,6 +1089,9 @@ type BrowserPoolAcquireParams struct {
 	// project. Applies to this lease only and is cleared when the browser is released
 	// back to the pool.
 	Name param.Opt[string] `json:"name,omitzero"`
+	// Start replay recording immediately for the acquired browser. Omit to use the
+	// pool's configured default.
+	StartReplay param.Opt[bool] `json:"start_replay,omitzero"`
 	// Optional URL to navigate the acquired browser to. Overrides the pool's start_url
 	// for this acquire only. Best-effort: failures to navigate do not fail the
 	// acquire.
