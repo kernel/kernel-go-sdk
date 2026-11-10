@@ -234,6 +234,10 @@ jobs:
     if: github.repository == 'kernel/kernel-go-sdk'
     runs-on: ubuntu-latest
     timeout-minutes: 55
+    permissions:
+      contents: read
+      # The model credentials step exchanges the job's OIDC token for short-lived model credentials.
+      id-token: write
     outputs:
       changed: ${{ steps.snapshot.outputs.changed }}
       main_sha: ${{ steps.cli-clone.outputs.main_sha }}
@@ -332,10 +336,19 @@ jobs:
           echo "agent_base=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
           echo "agent_base_tree=$(git rev-parse 'HEAD^{tree}')" >> "$GITHUB_OUTPUT"
 
+      - name: Model credentials
+        uses: kernel/security-workflows/.github/actions/llm-credentials@4144994f1d6977e07ef5a5832599ee4faaae9550 # main
+        with:
+          model: ${{ vars.PI_PREFERRED_MODEL }}
+          anthropic-federation-rule-id: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
+          anthropic-organization-id: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
+          anthropic-service-account-id: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
+          openai-identity-provider-id: ${{ vars.OPENAI_IDENTITY_PROVIDER_ID }}
+          openai-service-account-id: ${{ vars.OPENAI_SERVICE_ACCOUNT_ID }}
+          openai-audience: ${{ vars.OPENAI_WIF_AUDIENCE }}
+
       - name: Update CLI coverage
         env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           PI_PREFERRED_MODEL: ${{ vars.PI_PREFERRED_MODEL }}
           PI_SKIP_VERSION_CHECK: '1'
           PI_TELEMETRY: '0'
@@ -565,6 +578,12 @@ jobs:
           - Even if no coverage gaps are found, still leave the SDK version bump and write the coverage report
           - Ensure code compiles before finishing
           "
+
+      - name: Stop model credentials
+        if: always()
+        uses: kernel/security-workflows/.github/actions/llm-credentials@4144994f1d6977e07ef5a5832599ee4faaae9550 # main
+        with:
+          stop: true
 
       - name: Snapshot publishable changes
         id: snapshot
