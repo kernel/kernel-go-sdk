@@ -629,6 +629,10 @@ type InvocationListBrowsersResponseBrowser struct {
 	//
 	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
+	// Replay recording started by `start_replay` when this browser was created or
+	// acquired. Omitted otherwise; list replays with
+	// `GET /browsers/{id_or_name}/replays`.
+	Replay InvocationListBrowsersResponseBrowserReplay `json:"replay"`
 	// URL the session was most recently asked to navigate to, if any. Recorded for
 	// debugging. Navigation is fire-and-forget — the URL is dispatched to the browser
 	// without waiting for it to load, and any errors (DNS failure, bad status,
@@ -692,6 +696,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		ProfileSaveChanges respjson.Field
 		Proxy              respjson.Field
 		ProxyID            respjson.Field
+		Replay             respjson.Field
 		StartURL           respjson.Field
 		Tags               respjson.Field
 		Telemetry          respjson.Field
@@ -708,6 +713,35 @@ type InvocationListBrowsersResponseBrowser struct {
 // Returns the unmodified JSON received from the API
 func (r InvocationListBrowsersResponseBrowser) RawJSON() string { return r.JSON.raw }
 func (r *InvocationListBrowsersResponseBrowser) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Replay recording started by `start_replay` when this browser was created or
+// acquired. Omitted otherwise; list replays with
+// `GET /browsers/{id_or_name}/replays`.
+type InvocationListBrowsersResponseBrowserReplay struct {
+	// Unique identifier for the replay recording.
+	ReplayID string `json:"replay_id" api:"required"`
+	// Timestamp when replay finished
+	FinishedAt time.Time `json:"finished_at" api:"nullable" format:"date-time"`
+	// URL for viewing the replay recording.
+	ReplayViewURL string `json:"replay_view_url"`
+	// Timestamp when replay started
+	StartedAt time.Time `json:"started_at" api:"nullable" format:"date-time"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ReplayID      respjson.Field
+		FinishedAt    respjson.Field
+		ReplayViewURL respjson.Field
+		StartedAt     respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r InvocationListBrowsersResponseBrowserReplay) RawJSON() string { return r.JSON.raw }
+func (r *InvocationListBrowsersResponseBrowserReplay) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

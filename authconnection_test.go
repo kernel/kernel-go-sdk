@@ -33,6 +33,9 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 			AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 			AutoReauth:     kernel.Bool(true),
 			Browser: kernel.ManagedAuthBrowserConfigParam{
+				Location: kernel.ManagedAuthBrowserLocationParam{
+					Locale: kernel.String("sv-SE"),
+				},
 				Proxy: kernel.BrowserProxyConfigParam{
 					ID:   kernel.String("x"),
 					Mode: kernel.BrowserProxyModeDirect,
@@ -212,6 +215,9 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 				AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 				AutoReauth:     kernel.Bool(true),
 				Browser: kernel.ManagedAuthBrowserConfigParam{
+					Location: kernel.ManagedAuthBrowserLocationParam{
+						Locale: kernel.String("sv-SE"),
+					},
 					Proxy: kernel.BrowserProxyConfigParam{
 						ID:   kernel.String("x"),
 						Mode: kernel.BrowserProxyModeDirect,
@@ -418,6 +424,9 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 		"id",
 		kernel.AuthConnectionLoginParams{
 			Browser: kernel.ManagedAuthBrowserConfigParam{
+				Location: kernel.ManagedAuthBrowserLocationParam{
+					Locale: kernel.String("sv-SE"),
+				},
 				Proxy: kernel.BrowserProxyConfigParam{
 					ID:   kernel.String("x"),
 					Mode: kernel.BrowserProxyModeDirect,

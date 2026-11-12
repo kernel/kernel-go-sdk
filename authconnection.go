@@ -1012,6 +1012,9 @@ func (r *ManagedAuthSignInOption) UnmarshalJSON(data []byte) error {
 // connection. Managed auth controls the profile, headless mode, timeout, start
 // URL, kiosk mode, and viewport.
 type ManagedAuthBrowserConfig struct {
+	// Browser locale for the connection's login, reauthentication, and health-check
+	// sessions. Set on create or update; not supported on login.
+	Location ManagedAuthBrowserLocation `json:"location"`
 	// Proxy configuration for managed auth browser sessions. Omit on create to derive
 	// the default from stealth, or on update and login to preserve or inherit the
 	// connection default.
@@ -1029,6 +1032,7 @@ type ManagedAuthBrowserConfig struct {
 	Telemetry ManagedAuthBrowserConfigTelemetry `json:"telemetry" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Location    respjson.Field
 		Proxy       respjson.Field
 		Region      respjson.Field
 		Stealth     respjson.Field
@@ -1203,6 +1207,9 @@ type ManagedAuthBrowserConfigParam struct {
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// Browser telemetry configuration using the same semantics as browser create.
 	Telemetry ManagedAuthBrowserConfigTelemetryParam `json:"telemetry,omitzero"`
+	// Browser locale for the connection's login, reauthentication, and health-check
+	// sessions. Set on create or update; not supported on login.
+	Location ManagedAuthBrowserLocationParam `json:"location,omitzero"`
 	// Proxy configuration for managed auth browser sessions. Omit on create to derive
 	// the default from stealth, or on update and login to preserve or inherit the
 	// connection default.
@@ -1329,6 +1336,55 @@ func (r ManagedAuthBrowserConfigTelemetryStorageParam) MarshalJSON() (data []byt
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *ManagedAuthBrowserConfigTelemetryStorageParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Browser locale applied to browser sessions created for a managed auth
+// connection.
+type ManagedAuthBrowserLocation struct {
+	// Supported canonical BCP 47 locale for the browser's language and Accept-Language
+	// header. Omit to use the default for the browser's region, or omit on update to
+	// keep the current locale. Null clears it on update.
+	Locale string `json:"locale" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Locale      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ManagedAuthBrowserLocation) RawJSON() string { return r.JSON.raw }
+func (r *ManagedAuthBrowserLocation) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this ManagedAuthBrowserLocation to a
+// ManagedAuthBrowserLocationParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// ManagedAuthBrowserLocationParam.Overrides()
+func (r ManagedAuthBrowserLocation) ToParam() ManagedAuthBrowserLocationParam {
+	return param.Override[ManagedAuthBrowserLocationParam](json.RawMessage(r.RawJSON()))
+}
+
+// Browser locale applied to browser sessions created for a managed auth
+// connection.
+type ManagedAuthBrowserLocationParam struct {
+	// Supported canonical BCP 47 locale for the browser's language and Accept-Language
+	// header. Omit to use the default for the browser's region, or omit on update to
+	// keep the current locale. Null clears it on update.
+	Locale param.Opt[string] `json:"locale,omitzero"`
+	paramObj
+}
+
+func (r ManagedAuthBrowserLocationParam) MarshalJSON() (data []byte, err error) {
+	type shadow ManagedAuthBrowserLocationParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ManagedAuthBrowserLocationParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
