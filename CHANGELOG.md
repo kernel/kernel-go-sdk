@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.147.0](https://github.com/kernel/kernel-go-sdk/compare/v0.146.0...v0.147.0) (2026-11-12)
+
+
+### Features
+
+* Prepare native OAuth for MCP: path resource, exchange targets, static exchange client, retention, Clerk OAuth cutoff ([13a30a6](https://github.com/kernel/kernel-go-sdk/commit/13a30a650ea08fdcdaaebb3f7a75e6f4a6b4fb34))
+
 ## [0.146.0](https://github.com/kernel/kernel-go-sdk/compare/v0.145.0...v0.146.0) (2026-11-10)
 
 
