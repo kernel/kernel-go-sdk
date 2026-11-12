@@ -38,6 +38,8 @@ type BrowserService struct {
 	// Stream live telemetry events from a browser session, and manage the destinations
 	// sessions export them to.
 	Telemetry BrowserTelemetryService
+	// Create and manage browser sessions.
+	LiveView BrowserLiveViewService
 	// Record and manage browser session video replays.
 	Replays BrowserReplayService
 	// Read, write, and manage files on the browser instance.
@@ -62,6 +64,7 @@ func NewBrowserService(opts ...option.RequestOption) (r BrowserService) {
 	r = BrowserService{}
 	r.Options = opts
 	r.Telemetry = NewBrowserTelemetryService(opts...)
+	r.LiveView = NewBrowserLiveViewService(opts...)
 	r.Replays = NewBrowserReplayService(opts...)
 	r.Fs = NewBrowserFService(opts...)
 	r.Process = NewBrowserProcessService(opts...)

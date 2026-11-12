@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.148.0](https://github.com/kernel/kernel-go-sdk/compare/v0.147.0...v0.148.0) (2026-11-12)
+
+
+### Features
+
+* Add scoped live view URLs ([af02011](https://github.com/kernel/kernel-go-sdk/commit/af02011057b49e8e3f4899c43ecba7f6a18b27b2))
+* Pace 1Password status checks on the partner schedule ([af02011](https://github.com/kernel/kernel-go-sdk/commit/af02011057b49e8e3f4899c43ecba7f6a18b27b2))
+* Return the 1Password access request reference on the approval action ([af02011](https://github.com/kernel/kernel-go-sdk/commit/af02011057b49e8e3f4899c43ecba7f6a18b27b2))
+
 ## [0.147.0](https://github.com/kernel/kernel-go-sdk/compare/v0.146.0...v0.147.0) (2026-11-12)
 
 
