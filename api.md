@@ -228,6 +228,22 @@ Methods:
 - <code title="get /browsers/{id_or_name}/telemetry/events">client.Browsers.Telemetry.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryService.Events">Events</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryEventsParams">BrowserTelemetryEventsParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryEventsResponse">BrowserTelemetryEventsResponse</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /browsers/{id_or_name}/telemetry/stream">client.Browsers.Telemetry.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryService.Stream">Stream</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, params <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryStreamParams">BrowserTelemetryStreamParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserTelemetryStreamResponse">BrowserTelemetryStreamResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+## LiveView
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveViewRequestParam">BrowserLiveViewRequestParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveViewScope">BrowserLiveViewScope</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveView">BrowserLiveView</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveViewScope">BrowserLiveViewScope</a>
+
+Methods:
+
+- <code title="post /browsers/{id_or_name}/live_view">client.Browsers.LiveView.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveViewService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveViewNewParams">BrowserLiveViewNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLiveView">BrowserLiveView</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 ## Replays
 
 Response Types:

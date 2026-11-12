@@ -2264,9 +2264,10 @@ type CredentialVaultItem struct {
 	AvailableExpansions []CredentialVaultItemAvailableExpansion `json:"available_expansions" api:"required"`
 	// Kernel credentials advertise collect and fill when eligible. 1Password
 	// credentials advertise 1pw_create_access_request until a request is made,
-	// 1pw_access_request_status while its approval is pending, and 1pw_fill after
-	// access is granted. Managed auth credentials advertise fill while ready and
-	// nothing otherwise.
+	// 1pw_access_request_status while its approval is pending (and
+	// 1pw_create_access_request again once the 3-minute status-check window has
+	// passed), and 1pw_fill after access is granted. Managed auth credentials
+	// advertise fill while ready and nothing otherwise.
 	AvailableOperations []CredentialVaultItemAvailableOperation `json:"available_operations" api:"required"`
 	CreatedAt           time.Time                               `json:"created_at" api:"required" format:"date-time"`
 	// Immutable item key assigned when the item is created.
@@ -2399,13 +2400,16 @@ type CredentialVaultItemActionUnion struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
 	// This field is from variant [CredentialVaultItemAction1passwordAccessApproval].
+	AccessRequestReference string `json:"access_request_reference"`
+	// This field is from variant [CredentialVaultItemAction1passwordAccessApproval].
 	Instructions string `json:"instructions"`
 	JSON         struct {
-		ExpiresAt    respjson.Field
-		Name         respjson.Field
-		URL          respjson.Field
-		Instructions respjson.Field
-		raw          string
+		ExpiresAt              respjson.Field
+		Name                   respjson.Field
+		URL                    respjson.Field
+		AccessRequestReference respjson.Field
+		Instructions           respjson.Field
+		raw                    string
 	} `json:"-"`
 }
 
@@ -2455,20 +2459,29 @@ func (r *CredentialVaultItemActionUnion) UnmarshalJSON(data []byte) error {
 }
 
 type CredentialVaultItemAction1passwordAccessApproval struct {
+	// The access_request_reference value from url, for approving inside your own iOS
+	// or Android app with 1Password's action extension or authorization activity. Pass
+	// it unchanged; the grant comes back to your app, and 1pw_access_request_status
+	// records it in Kernel. Treat it like url, which carries the same request text,
+	// and keep it out of logs.
+	AccessRequestReference string `json:"access_request_reference" api:"required"`
 	// Steps for the agent to hand approval to the human and poll the resulting
 	// decision.
 	Instructions string                                 `json:"instructions" api:"required"`
 	Name         constant.String1passwordAccessApproval `json:"name" default:"1password_access_approval"`
-	// Native 1Password approval link. Present it to the account owner without
-	// modifying it; it does not grant access until they approve in their app.
+	// Native 1Password approval link. Present it to the account owner unchanged,
+	// except that you may append `&return_url=<URL-encoded URL>` so 1Password sends
+	// them back to your app after they decide (1Password 8.12.46 or later on iOS,
+	// Android and desktop). It does not grant access until they approve in their app.
 	URL string `json:"url" api:"required" format:"uri"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Instructions respjson.Field
-		Name         respjson.Field
-		URL          respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		AccessRequestReference respjson.Field
+		Instructions           respjson.Field
+		Name                   respjson.Field
+		URL                    respjson.Field
+		ExtraFields            map[string]respjson.Field
+		raw                    string
 	} `json:"-"`
 }
 
@@ -4735,7 +4748,9 @@ const (
 type OnePasswordCredentialVaultItemStateAccessRequest struct {
 	ID               string `json:"id" api:"required"`
 	HasAutofillToken bool   `json:"has_autofill_token" api:"required"`
-	// One of pending, resolved, denied, or failed.
+	// One of pending, resolved, denied, failed, expired, or unknown. expired returns
+	// the item to pending_authorization so access can be requested again; unknown is a
+	// state 1Password added later and is treated as failed.
 	State string `json:"state" api:"required"`
 	// Provider-created timestamp as returned by the broker.
 	CreatedAt string `json:"createdAt"`
@@ -7438,14 +7453,17 @@ type VaultItemUnionAction struct {
 	// This field is from variant [CredentialVaultItemActionUnion].
 	ExpiresAt time.Time `json:"expires_at"`
 	// This field is from variant [CredentialVaultItemActionUnion].
+	AccessRequestReference string `json:"access_request_reference"`
+	// This field is from variant [CredentialVaultItemActionUnion].
 	Instructions string `json:"instructions"`
 	JSON         struct {
-		Name         respjson.Field
-		URL          respjson.Field
-		CaptureToken respjson.Field
-		ExpiresAt    respjson.Field
-		Instructions respjson.Field
-		raw          string
+		Name                   respjson.Field
+		URL                    respjson.Field
+		CaptureToken           respjson.Field
+		ExpiresAt              respjson.Field
+		AccessRequestReference respjson.Field
+		Instructions           respjson.Field
+		raw                    string
 	} `json:"-"`
 }
 
@@ -8604,14 +8622,17 @@ type VaultItemOperationResponseUnionAction struct {
 	// This field is from variant [CredentialVaultItemActionUnion].
 	ExpiresAt time.Time `json:"expires_at"`
 	// This field is from variant [CredentialVaultItemActionUnion].
+	AccessRequestReference string `json:"access_request_reference"`
+	// This field is from variant [CredentialVaultItemActionUnion].
 	Instructions string `json:"instructions"`
 	JSON         struct {
-		Name         respjson.Field
-		URL          respjson.Field
-		CaptureToken respjson.Field
-		ExpiresAt    respjson.Field
-		Instructions respjson.Field
-		raw          string
+		Name                   respjson.Field
+		URL                    respjson.Field
+		CaptureToken           respjson.Field
+		ExpiresAt              respjson.Field
+		AccessRequestReference respjson.Field
+		Instructions           respjson.Field
+		raw                    string
 	} `json:"-"`
 }
 
@@ -10404,6 +10425,12 @@ type VaultItemPerformOperationParams struct {
 	Of1pwCreateAccessRequest *OnePasswordRequestAccessVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	// Retrieve the status of a 1Password access request after presenting the approval
+	// link. Kernel paces checks on 1Password's schedule, timed from the first status
+	// check (at once, then every 2 seconds, slowing to every 10 and 20 seconds). Each
+	// call reads a fresh status, waiting up to 20 seconds for its first scheduled
+	// check. If 1Password rate limits the account, it returns 429 with Retry-After.
+	// After 3 minutes the approval prompt has closed; ask the owner whether they
+	// approved and check once more, or invoke 1pw_create_access_request for a new
 	// link. On a confirmed failed status, ask the end-user before deleting and
 	// recreating the credential item for at most one new request. Do not retry an
 	// uncertain dispatched request. The response contains no secret values.
@@ -10502,6 +10529,12 @@ func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 }
 
 // Retrieve the status of a 1Password access request after presenting the approval
+// link. Kernel paces checks on 1Password's schedule, timed from the first status
+// check (at once, then every 2 seconds, slowing to every 10 and 20 seconds). Each
+// call reads a fresh status, waiting up to 20 seconds for its first scheduled
+// check. If 1Password rate limits the account, it returns 429 with Retry-After.
+// After 3 minutes the approval prompt has closed; ask the owner whether they
+// approved and check once more, or invoke 1pw_create_access_request for a new
 // link. On a confirmed failed status, ask the end-user before deleting and
 // recreating the credential item for at most one new request. Do not retry an
 // uncertain dispatched request. The response contains no secret values.
@@ -10510,6 +10543,8 @@ func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 //
 // The property Type is required.
 type VaultItemPerformOperationParamsBody1pwAccessRequestStatus struct {
+	// How long to keep checking on the schedule. The call still waits for its first
+	// scheduled check, at most 20 seconds, when that comes later.
 	TimeoutSeconds param.Opt[int64] `json:"timeout_seconds,omitzero"`
 	// This field can be elided, and will marshal its zero value as
 	// "1pw_access_request_status".
