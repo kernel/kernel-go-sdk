@@ -36,7 +36,7 @@ jobs:
     steps:
       - name: Generate API read token
         id: api-read-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        uses: actions/create-github-app-token@v1.12.0
         with:
           app-id: ${{ secrets.ADMIN_APP_ID }}
           private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
@@ -86,7 +86,7 @@ jobs:
           fi
 
       - name: Checkout SDK repo
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4.3.1
         with:
           persist-credentials: false
           # The SDK diff starts at CLI main's version, which can be several tags back.
@@ -95,14 +95,14 @@ jobs:
           ref: ${{ steps.pr-info.outputs.merge_sha || github.sha }}
 
       - name: Checkout context encryption certificate
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4.3.1
         with:
           path: updater
           sparse-checkout: .github/keys
           persist-credentials: false
 
       - name: Setup Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@v6.5.0
         with:
           go-version: 'stable'
           cache: false
@@ -219,7 +219,7 @@ jobs:
 
       - name: Upload CLI coverage context
         id: upload-context
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: cli-coverage-context
           path: ${{ runner.temp }}/cli-coverage-context.cms
@@ -246,20 +246,20 @@ jobs:
       agent_base_tree: ${{ steps.cli-clone.outputs.agent_base_tree }}
     steps:
       - name: Checkout SDK repo
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4.3.1
         with:
           persist-credentials: false
           ref: ${{ needs.prefetch.outputs.sha }}
 
       - name: Checkout updater scripts
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4.3.1
         with:
           path: updater
           sparse-checkout: .github/scripts
           persist-credentials: false
 
       - name: Download CLI coverage context
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@v4.3.0
         with:
           name: cli-coverage-context
           path: ${{ runner.temp }}/encrypted-context
@@ -280,7 +280,7 @@ jobs:
           rm -r "$RUNNER_TEMP/cli-coverage-context.tar.gz" "$RUNNER_TEMP/encrypted-context"
 
       - name: Setup Node
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        uses: actions/setup-node@v4.4.0
         with:
           node-version: '22'
 
@@ -297,7 +297,7 @@ jobs:
           git config --global user.email "260533166+kernel-internal[bot]@users.noreply.github.com"
 
       - name: Setup Go
-        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        uses: actions/setup-go@v6.5.0
         with:
           go-version: 'stable'
           # Pi can write to the Go caches, so they must never be saved for other runs.
@@ -627,7 +627,7 @@ jobs:
 
       - name: Upload validated changes
         if: steps.snapshot.outputs.changed == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: cli-coverage-update
           path: |
@@ -649,18 +649,18 @@ jobs:
       AGENT_BASE_TREE: ${{ needs.generate.outputs.agent_base_tree }}
     steps:
       - name: Checkout updater scripts
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4.3.1
         with:
           persist-credentials: false
 
       - name: Download validated changes
-        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        uses: actions/download-artifact@v4.3.0
         with:
           name: cli-coverage-update
           path: ${{ runner.temp }}/cli-coverage-update
 
       - name: Checkout CLI
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        uses: actions/checkout@v4.3.1
         with:
           repository: kernel/cli
           path: cli
@@ -698,7 +698,7 @@ jobs:
 
       - name: Generate CLI publishing token
         id: publish-token
-        uses: actions/create-github-app-token@d72941d797fd3113feb6b93fd0dec494b13a2547 # v1
+        uses: actions/create-github-app-token@v1.12.0
         with:
           app-id: ${{ secrets.ADMIN_APP_ID }}
           private-key: ${{ secrets.ADMIN_APP_PRIVATE_KEY }}
