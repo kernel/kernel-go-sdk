@@ -312,14 +312,31 @@ type AgentcardCheckoutAuthorization struct {
 	ActualCents int64                                `json:"actual_cents"`
 	// Display amount shown on the approval screen.
 	Amount string `json:"amount"`
-	// Any of "display_only", "stripe_payment_intent".
+	// Source of the approved amount. `processor` is read from the processor request or
+	// payment; `agent` is the item's declared amount; `page` is the checkout page
+	// total; `none` means no amount was named. `display_only` appears only on
+	// authorizations recovered without a provider read. `agent` and `display_only`
+	// don't prove what the processor charged.
+	//
+	// Any of "processor", "agent", "page", "none", "display_only".
 	AmountAuthority AgentcardCheckoutAuthorizationAmountAuthority `json:"amount_authority"`
-	AmountVerified  bool                                          `json:"amount_verified"`
-	ApprovalURL     string                                        `json:"approval_url" format:"uri"`
+	// Whether the processor charged the approved amount. Absent when there was no
+	// charge to compare, including tokenization checkouts.
+	AmountVerified bool   `json:"amount_verified"`
+	ApprovalURL    string `json:"approval_url" format:"uri"`
 	// Browser session that submitted the checkout.
-	BrowserID          string `json:"browser_id"`
-	ChargedAmountCents int64  `json:"charged_amount_cents"`
-	ChargedCurrency    string `json:"charged_currency"`
+	BrowserID string `json:"browser_id"`
+	// Amount the processor reported collecting. Absent when the provider didn't
+	// observe a charge.
+	ChargedAmountCents int64 `json:"charged_amount_cents"`
+	// Currency of `charged_amount_cents`. Absent when the provider didn't observe a
+	// charge.
+	ChargedCurrency string `json:"charged_currency"`
+	// What the processor collected. `none` means the checkout produced a token or
+	// payment method that the merchant charges later. Absent when the provider
+	// reported nothing, which is common for tokenization checkouts; use item events
+	// and the merchant's order record instead.
+	//
 	// Any of "captured", "authorized", "none".
 	ChargedKind     AgentcardCheckoutAuthorizationChargedKind `json:"charged_kind"`
 	ExpectedCents   int64                                     `json:"expected_cents"`
@@ -376,13 +393,25 @@ const (
 	AgentcardCheckoutAuthorizationStatusExpired          AgentcardCheckoutAuthorizationStatus = "expired"
 )
 
+// Source of the approved amount. `processor` is read from the processor request or
+// payment; `agent` is the item's declared amount; `page` is the checkout page
+// total; `none` means no amount was named. `display_only` appears only on
+// authorizations recovered without a provider read. `agent` and `display_only`
+// don't prove what the processor charged.
 type AgentcardCheckoutAuthorizationAmountAuthority string
 
 const (
-	AgentcardCheckoutAuthorizationAmountAuthorityDisplayOnly         AgentcardCheckoutAuthorizationAmountAuthority = "display_only"
-	AgentcardCheckoutAuthorizationAmountAuthorityStripePaymentIntent AgentcardCheckoutAuthorizationAmountAuthority = "stripe_payment_intent"
+	AgentcardCheckoutAuthorizationAmountAuthorityProcessor   AgentcardCheckoutAuthorizationAmountAuthority = "processor"
+	AgentcardCheckoutAuthorizationAmountAuthorityAgent       AgentcardCheckoutAuthorizationAmountAuthority = "agent"
+	AgentcardCheckoutAuthorizationAmountAuthorityPage        AgentcardCheckoutAuthorizationAmountAuthority = "page"
+	AgentcardCheckoutAuthorizationAmountAuthorityNone        AgentcardCheckoutAuthorizationAmountAuthority = "none"
+	AgentcardCheckoutAuthorizationAmountAuthorityDisplayOnly AgentcardCheckoutAuthorizationAmountAuthority = "display_only"
 )
 
+// What the processor collected. `none` means the checkout produced a token or
+// payment method that the merchant charges later. Absent when the provider
+// reported nothing, which is common for tokenization checkouts; use item events
+// and the merchant's order record instead.
 type AgentcardCheckoutAuthorizationChargedKind string
 
 const (
