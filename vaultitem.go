@@ -10313,6 +10313,11 @@ type VaultItemEventsParams struct {
 	IDOrName string `path:"id_or_name" api:"required" json:"-"`
 	// Return events after this event ID.
 	After param.Opt[string] `query:"after,omitzero" json:"-"`
+	// When true, also finds deleted items, and deleted vaults by ID only. `key` then
+	// also accepts an item ID, which takes precedence over a key with the same value;
+	// the lookup order is the item ID, then the live item with that key, then the most
+	// recently deleted one. `wait` is ignored for a deleted item or vault.
+	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	// Long-poll for new events for up to this many seconds.
 	Wait param.Opt[int64] `query:"wait,omitzero" json:"-"`
 	paramObj
