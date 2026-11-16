@@ -436,6 +436,41 @@ Methods:
 - <code title="get /tasks">client.Tasks.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskListParams">TaskListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="post /tasks/{id}/browsers">client.Tasks.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskService.LinkBrowsers">LinkBrowsers</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskLinkBrowsersParams">TaskLinkBrowsersParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# Reports
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Report">Report</a>
+
+Methods:
+
+- <code title="post /reports">client.Reports.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportNewParams">ReportNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Report">Report</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /reports/{id}">client.Reports.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Report">Report</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /reports">client.Reports.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportListParams">ReportListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Report">Report</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# ReportTypes
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportType">ReportType</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeSummary">ReportTypeSummary</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeVersionSummary">ReportTypeVersionSummary</a>
+
+Methods:
+
+- <code title="get /report_types/{type}">client.ReportTypes.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, type\_ <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportType">ReportType</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /report_types">client.ReportTypes.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeListParams">ReportTypeListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeSummary">ReportTypeSummary</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+## Versions
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeVersion">ReportTypeVersion</a>
+
+Methods:
+
+- <code title="get /report_types/{type}/versions/{version}">client.ReportTypes.Versions.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeVersionService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, version <a href="https://pkg.go.dev/builtin#int64">int64</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeVersionGetParams">ReportTypeVersionGetParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ReportTypeVersion">ReportTypeVersion</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Auth
 
 ## Context
