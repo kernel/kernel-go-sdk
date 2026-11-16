@@ -418,6 +418,24 @@ Methods:
 - <code title="delete /profiles/{id_or_name}">client.Profiles.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProfileService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="get /profiles/{id_or_name}/download">client.Profiles.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProfileService.Download">Download</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, idOrName <a href="https://pkg.go.dev/builtin#string">string</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ProfileDownloadParams">ProfileDownloadParams</a>) (\*http.Response, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
+# Tasks
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskMetadata">TaskMetadata</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskMetadata">TaskMetadata</a>
+
+Methods:
+
+- <code title="post /tasks">client.Tasks.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskNewParams">TaskNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /tasks/{id}">client.Tasks.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /tasks">client.Tasks.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskListParams">TaskListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="post /tasks/{id}/browsers">client.Tasks.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskService.LinkBrowsers">LinkBrowsers</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#TaskLinkBrowsersParams">TaskLinkBrowsersParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#Task">Task</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Auth
 
 ## Context

@@ -31,7 +31,9 @@ type Client struct {
 	ConfigRegistry ConfigRegistryService
 	Browsers       BrowserService
 	// Create, list, retrieve, and delete browser profiles.
-	Profiles  ProfileService
+	Profiles ProfileService
+	// Define tasks that agents work toward and link the browsers they use.
+	Tasks     TaskService
 	Auth      AuthService
 	Telemetry TelemetryService
 	// Create and manage proxy configurations for routing browser traffic.
@@ -100,6 +102,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.ConfigRegistry = NewConfigRegistryService(opts...)
 	r.Browsers = NewBrowserService(opts...)
 	r.Profiles = NewProfileService(opts...)
+	r.Tasks = NewTaskService(opts...)
 	r.Auth = NewAuthService(opts...)
 	r.Telemetry = NewTelemetryService(opts...)
 	r.Proxies = NewProxyService(opts...)
