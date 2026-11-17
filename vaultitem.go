@@ -1954,8 +1954,9 @@ type CredentialAccountVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2395,8 +2396,9 @@ type CredentialVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4461,8 +4463,8 @@ func init() {
 type OnePasswordCredentialAccountState struct {
 	// Any of "1password".
 	Provider OnePasswordCredentialAccountStateProvider `json:"provider" api:"required"`
-	// revoking means the account was deleted and Kernel is waiting for 1Password to
-	// confirm the revoke; it cannot be used and Kernel keeps retrying.
+	// revoking means the account was deleted or disconnected and Kernel is waiting for
+	// 1Password to confirm the revoke; it cannot be used and Kernel keeps retrying.
 	//
 	// Any of "pending_authorization", "connected", "reconnect_required", "declined",
 	// "revoking".
@@ -4490,8 +4492,8 @@ const (
 	OnePasswordCredentialAccountStateProvider1password OnePasswordCredentialAccountStateProvider = "1password"
 )
 
-// revoking means the account was deleted and Kernel is waiting for 1Password to
-// confirm the revoke; it cannot be used and Kernel keeps retrying.
+// revoking means the account was deleted or disconnected and Kernel is waiting for
+// 1Password to confirm the revoke; it cannot be used and Kernel keeps retrying.
 type OnePasswordCredentialAccountStateStatus string
 
 const (
@@ -5280,8 +5282,9 @@ type PaymentRequestVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -7596,8 +7599,9 @@ type VaultItemWalletAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -7714,8 +7718,9 @@ type VaultItemCardAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8768,8 +8773,9 @@ type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8891,8 +8897,9 @@ type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	// Any of "authorize", "restart_verification", "confirm_transaction", "collect",
 	// "prepare_checkout", "fill", "arm_passkey", "register_passkey", "disarm_passkey",
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
-	// "1pw_recover", "1pw_update_access_token", "update_access_token",
-	// "webmcp_invoke", "add_payment_method", "remove_payment_method".
+	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
+	// "update_access_token", "webmcp_invoke", "add_payment_method",
+	// "remove_payment_method".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -10496,6 +10503,13 @@ type VaultItemPerformOperationParams struct {
 	// action to get a new link to recover the connection. After recovery completes,
 	// start a new authorization on the same item.
 	Of1pwRecover *OnePasswordRecoverVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. End
+	// this account's 1Password connection and keep the item so it can be linked again.
+	// Fills stop at once. When no other vault uses the person's connection, Kernel
+	// revokes it at 1Password; if 1Password has not confirmed yet, this returns 409
+	// provider_revocation_pending and Kernel keeps retrying. The account's credentials
+	// stop working until it is linked again.
+	Of1pwDisconnect *VaultItemPerformOperationParamsBody1pwDisconnect `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Replace
 	// only the access token on a stored-token 1Password credential. Preserves its
 	// integration key, request and approved references. Does not invoke 1Password or
@@ -10563,6 +10577,7 @@ func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 		u.Of1pwAccessRequestStatus,
 		u.Of1pwFill,
 		u.Of1pwRecover,
+		u.Of1pwDisconnect,
 		u.Of1pwUpdateAccessToken,
 		u.OfUpdateAccessToken,
 		u.OfWebmcpInvoke,
@@ -10602,6 +10617,33 @@ func (r VaultItemPerformOperationParamsBody1pwAccessRequestStatus) MarshalJSON()
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *VaultItemPerformOperationParamsBody1pwAccessRequestStatus) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func NewVaultItemPerformOperationParamsBody1pwDisconnect() VaultItemPerformOperationParamsBody1pwDisconnect {
+	return VaultItemPerformOperationParamsBody1pwDisconnect{
+		Type: "1pw_disconnect",
+	}
+}
+
+// End this account's 1Password connection and keep the item so it can be linked
+// again. Fills stop at once. When no other vault uses the person's connection,
+// Kernel revokes it at 1Password; if 1Password has not confirmed yet, this returns
+// 409 provider_revocation_pending and Kernel keeps retrying. The account's
+// credentials stop working until it is linked again.
+//
+// This struct has a constant value, construct it with
+// [NewVaultItemPerformOperationParamsBody1pwDisconnect].
+type VaultItemPerformOperationParamsBody1pwDisconnect struct {
+	Type constant.String1pwDisconnect `json:"type" default:"1pw_disconnect"`
+	paramObj
+}
+
+func (r VaultItemPerformOperationParamsBody1pwDisconnect) MarshalJSON() (data []byte, err error) {
+	type shadow VaultItemPerformOperationParamsBody1pwDisconnect
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *VaultItemPerformOperationParamsBody1pwDisconnect) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
