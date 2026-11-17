@@ -20,6 +20,7 @@ func ValueOf[T Constant[T]]() T {
 
 type String1passwordAccessApproval string   // Always "1password_access_approval"
 type String1pwAccessRequestStatus string    // Always "1pw_access_request_status"
+type String1pwDisconnect string             // Always "1pw_disconnect"
 type String1pwUpdateAccessToken string      // Always "1pw_update_access_token"
 type Agentcard string                       // Always "agentcard"
 type APICall string                         // Always "api_call"
@@ -153,6 +154,7 @@ func (c String1passwordAccessApproval) Default() String1passwordAccessApproval {
 func (c String1pwAccessRequestStatus) Default() String1pwAccessRequestStatus {
 	return "1pw_access_request_status"
 }
+func (c String1pwDisconnect) Default() String1pwDisconnect { return "1pw_disconnect" }
 func (c String1pwUpdateAccessToken) Default() String1pwUpdateAccessToken {
 	return "1pw_update_access_token"
 }
@@ -306,6 +308,7 @@ func (c You) Default() You                               { return "you" }
 
 func (c String1passwordAccessApproval) MarshalJSON() ([]byte, error)   { return marshalString(c) }
 func (c String1pwAccessRequestStatus) MarshalJSON() ([]byte, error)    { return marshalString(c) }
+func (c String1pwDisconnect) MarshalJSON() ([]byte, error)             { return marshalString(c) }
 func (c String1pwUpdateAccessToken) MarshalJSON() ([]byte, error)      { return marshalString(c) }
 func (c Agentcard) MarshalJSON() ([]byte, error)                       { return marshalString(c) }
 func (c APICall) MarshalJSON() ([]byte, error)                         { return marshalString(c) }

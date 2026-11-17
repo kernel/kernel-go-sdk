@@ -183,9 +183,10 @@ func TestVaultItemEventsWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"key",
 		kernel.VaultItemEventsParams{
-			IDOrName: "id_or_name",
-			After:    kernel.String("after"),
-			Wait:     kernel.Int(0),
+			IDOrName:       "id_or_name",
+			After:          kernel.String("after"),
+			IncludeDeleted: kernel.Bool(true),
+			Wait:           kernel.Int(0),
 		},
 	)
 	if err != nil {
