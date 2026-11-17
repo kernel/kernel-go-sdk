@@ -118,6 +118,10 @@ func (r *VaultItemService) List(ctx context.Context, idOrName string, opts ...op
 // or vault remains blocked until the card is deleted. Deleting or recreating an
 // item is not proof that a payment did not occur. Deleting a managed auth
 // credential item leaves the connection and its saved credential unchanged.
+// Deleting a 1Password credential_account stops its fills at once and, when no
+// other vault uses the person's connection, revokes it at 1Password; until
+// 1Password confirms, this returns 409 provider_revocation_pending and Kernel
+// keeps retrying.
 func (r *VaultItemService) Delete(ctx context.Context, key string, body VaultItemDeleteParams, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -4457,7 +4461,11 @@ func init() {
 type OnePasswordCredentialAccountState struct {
 	// Any of "1password".
 	Provider OnePasswordCredentialAccountStateProvider `json:"provider" api:"required"`
-	// Any of "pending_authorization", "connected", "reconnect_required", "declined".
+	// revoking means the account was deleted and Kernel is waiting for 1Password to
+	// confirm the revoke; it cannot be used and Kernel keeps retrying.
+	//
+	// Any of "pending_authorization", "connected", "reconnect_required", "declined",
+	// "revoking".
 	Status       OnePasswordCredentialAccountStateStatus `json:"status" api:"required"`
 	StatusReason string                                  `json:"status_reason"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -4482,6 +4490,8 @@ const (
 	OnePasswordCredentialAccountStateProvider1password OnePasswordCredentialAccountStateProvider = "1password"
 )
 
+// revoking means the account was deleted and Kernel is waiting for 1Password to
+// confirm the revoke; it cannot be used and Kernel keeps retrying.
 type OnePasswordCredentialAccountStateStatus string
 
 const (
@@ -4489,6 +4499,7 @@ const (
 	OnePasswordCredentialAccountStateStatusConnected            OnePasswordCredentialAccountStateStatus = "connected"
 	OnePasswordCredentialAccountStateStatusReconnectRequired    OnePasswordCredentialAccountStateStatus = "reconnect_required"
 	OnePasswordCredentialAccountStateStatusDeclined             OnePasswordCredentialAccountStateStatus = "declined"
+	OnePasswordCredentialAccountStateStatusRevoking             OnePasswordCredentialAccountStateStatus = "revoking"
 )
 
 // Stored-token credentials omit account and never return access_token or
