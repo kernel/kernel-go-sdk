@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.149.0](https://github.com/kernel/kernel-go-sdk/compare/v0.148.0...v0.149.0) (2026-11-17)
+
+
+### Features
+
+* Add reports API and report type discovery ([77a104f](https://github.com/kernel/kernel-go-sdk/commit/77a104ffd9c3af0e5b0875e0b5a0fe20c47eaacf))
+* Add tasks API: create, list, get, and link browsers ([63f6f0e](https://github.com/kernel/kernel-go-sdk/commit/63f6f0e14f7cbece270e006b2d3c873204c8d488))
+* Add the 1pw_disconnect operation ([88667f5](https://github.com/kernel/kernel-go-sdk/commit/88667f563baa650f72f663283eaed12c2d721a25))
+* Let vault item events be read after the item or vault is deleted ([cd6b59f](https://github.com/kernel/kernel-go-sdk/commit/cd6b59f4bd6780220c123a2813e4b20ac0f9c072))
+* Revoke 1Password connections on account and vault delete ([5eb9a00](https://github.com/kernel/kernel-go-sdk/commit/5eb9a003827084c5d17cd8f87f719b9797675923))
+
 ## [0.148.0](https://github.com/kernel/kernel-go-sdk/compare/v0.147.0...v0.148.0) (2026-11-12)
 
 
