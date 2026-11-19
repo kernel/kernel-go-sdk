@@ -43,7 +43,11 @@ func NewAPIKeyService(opts ...option.RequestOption) (r APIKeyService) {
 
 // Create a personal API key, or link a key to an organization-owned service
 // account. Service-account keys require an organization administrator, explicit
-// project and nonempty policy.
+// project and nonempty policy. An optional `policy` scopes the key to its listed
+// actions and resources, and each statement may carry a `condition`. A `source_ip`
+// condition restricts the statement to requests whose client address falls inside
+// its CIDR networks, so a key limited to your egress IP ranges only works from
+// your network, even if its secret leaks.
 func (r *APIKeyService) New(ctx context.Context, body APIKeyNewParams, opts ...option.RequestOption) (res *CreatedAPIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "org/api_keys"
@@ -66,9 +70,12 @@ func (r *APIKeyService) Get(ctx context.Context, id string, query APIKeyGetParam
 
 // Update an API key's name, or replace its permissions by attaching a new policy
 // in place: the key's credential never changes, so consumers keep the same secret.
-// A present `policy` fully replaces the key's policy and takes effect for new
-// requests within the authorization cache. Requires api_keys:write to rename;
-// api_keys:set_policy to replace permissions.
+// The replacement policy may carry `source_ip` conditions, so you can add, change,
+// or remove IP allowlisting on an existing key without rotating its credential. A
+// present `policy` fully replaces the key's policy and takes effect for new
+// requests within the authorization cache; requests from outside a condition's
+// networks get `403` and are recorded in the audit log with the client address.
+// Requires api_keys:write to rename; api_keys:set_policy to replace permissions.
 func (r *APIKeyService) Update(ctx context.Context, id string, body APIKeyUpdateParams, opts ...option.RequestOption) (res *APIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -350,7 +357,8 @@ type APIKeyNewParams struct {
 	// administrator, explicit project and nonempty policy. Omit for a personal key.
 	ServiceAccountID param.Opt[string] `json:"service_account_id,omitzero"`
 	// Issue a scoped key that may only perform the listed actions on the listed
-	// resources.
+	// resources. A statement may carry a condition; a `source_ip` condition restricts
+	// the statement to requests from inside its CIDR networks.
 	Policy APIKeyNewParamsPolicy `json:"policy,omitzero"`
 	paramObj
 }
@@ -364,7 +372,8 @@ func (r *APIKeyNewParams) UnmarshalJSON(data []byte) error {
 }
 
 // Issue a scoped key that may only perform the listed actions on the listed
-// resources.
+// resources. A statement may carry a condition; a `source_ip` condition restricts
+// the statement to requests from inside its CIDR networks.
 //
 // The property Statements is required.
 type APIKeyNewParamsPolicy struct {
@@ -461,8 +470,9 @@ type APIKeyUpdateParams struct {
 	// Permissions that fully replace the key's policy. Attaching a policy to a key
 	// without one makes the key scoped: every action and resource the policy does not
 	// list is denied. The key's credential, name, project, and expiry are unchanged,
-	// so consumers never need the key redistributed. Requires api_keys:set_policy on
-	// the key.
+	// so consumers never need the key redistributed. A `source_ip` condition adds or
+	// changes IP allowlisting without rotating the credential. Requires
+	// api_keys:set_policy on the key.
 	Policy APIKeyUpdateParamsPolicy `json:"policy,omitzero"`
 	paramObj
 }
@@ -478,8 +488,9 @@ func (r *APIKeyUpdateParams) UnmarshalJSON(data []byte) error {
 // Permissions that fully replace the key's policy. Attaching a policy to a key
 // without one makes the key scoped: every action and resource the policy does not
 // list is denied. The key's credential, name, project, and expiry are unchanged,
-// so consumers never need the key redistributed. Requires api_keys:set_policy on
-// the key.
+// so consumers never need the key redistributed. A `source_ip` condition adds or
+// changes IP allowlisting without rotating the credential. Requires
+// api_keys:set_policy on the key.
 //
 // The property Statements is required.
 type APIKeyUpdateParamsPolicy struct {
