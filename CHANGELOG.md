@@ -3,9 +3,20 @@
 ## [0.150.0](https://github.com/kernel/kernel-go-sdk/compare/v0.149.0...v0.150.0) (2026-11-19)
 
 
+### ⚠ BREAKING CHANGES
+
+* `APIKeyUpdateParams.Name` is now `param.Opt[string]`; set it with `kernel.String(...)`
+
 ### Features
 
-* chore(stlc): re-anchor Go and TypeScript custom-code tracking ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Accept `browser_id` when authorizing a Kernel card: Evervault alias cards route that browser through the card vault's proxy as soon as the cardholder enters a fresh CVC ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Add `captcha_solver` to browser creation; `stealth` is deprecated in favor of `captcha_solver` and `proxy` ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Add `BrowserFingerprint` records to browsers, applied at claim time ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Add `line_items` to AgentCard card specs, passed through to checkout authorizations ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Add workload identity, the effective policy and the service account principal to the auth context ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Add the `source_ip` condition to API key policies ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Replace an API key's permissions in place with `PATCH /org/api_keys/{id}`, and link API keys to service accounts ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* add workload identity federation credentials ([5ae89f2](https://github.com/kernel/kernel-go-sdk/commit/5ae89f2aa0))
 * Document conditions in the API key reference descriptions ([11d3ab0](https://github.com/kernel/kernel-go-sdk/commit/11d3ab0fd5ba5aa9579fd5201d55e07bdb2c811f))
 * Route VGS reveal-session payment windows through their own session in egress ([3f7442f](https://github.com/kernel/kernel-go-sdk/commit/3f7442f1ecdc0ad9996d6381ae4d511fcc97c83c))
 
