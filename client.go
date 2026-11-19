@@ -11,6 +11,7 @@ import (
 
 	"github.com/kernel/kernel-go-sdk/internal/requestconfig"
 	"github.com/kernel/kernel-go-sdk/lib/browserrouting"
+	"github.com/kernel/kernel-go-sdk/lib/credentials"
 	"github.com/kernel/kernel-go-sdk/option"
 )
 
@@ -75,6 +76,7 @@ func DefaultClientOptions() []option.RequestOption {
 	if o, ok := os.LookupEnv("KERNEL_API_KEY"); ok {
 		defaults = append(defaults, option.WithAPIKey(o))
 	}
+	defaults = append(defaults, credentials.EnvClientOption())
 	if o, ok := os.LookupEnv("KERNEL_CUSTOM_HEADERS"); ok {
 		for _, line := range strings.Split(o, "\n") {
 			colon := strings.Index(line, ":")

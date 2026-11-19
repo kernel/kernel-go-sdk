@@ -49,17 +49,19 @@ type AuthContext struct {
 	Authentication AuthContextAuthentication `json:"authentication" api:"required"`
 	// The credential's maximum scope and the effective scope selected for this
 	// request. Future permission data can be added without changing scope semantics.
-	Authorization AuthContextAuthorization `json:"authorization" api:"required"`
-	Organization  AuthContextOrganization  `json:"organization" api:"required"`
-	Principal     AuthContextPrincipal     `json:"principal" api:"required"`
+	Authorization    AuthContextAuthorization    `json:"authorization" api:"required"`
+	Organization     AuthContextOrganization     `json:"organization" api:"required"`
+	Principal        AuthContextPrincipal        `json:"principal" api:"required"`
+	WorkloadIdentity AuthContextWorkloadIdentity `json:"workload_identity"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Authentication respjson.Field
-		Authorization  respjson.Field
-		Organization   respjson.Field
-		Principal      respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
+		Authentication   respjson.Field
+		Authorization    respjson.Field
+		Organization     respjson.Field
+		Principal        respjson.Field
+		WorkloadIdentity respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
 	} `json:"-"`
 }
 
@@ -105,10 +107,14 @@ type AuthContextAuthorization struct {
 	// A scope within the authenticated organization. A null project_id represents
 	// organization-wide scope.
 	EffectiveScope AuthContextAuthorizationEffectiveScope `json:"effective_scope" api:"required"`
+	// Current effective paired policy for a service-account principal. Omitted for
+	// legacy human/client identities.
+	EffectivePolicy AuthContextAuthorizationEffectivePolicy `json:"effective_policy"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		CredentialScope respjson.Field
 		EffectiveScope  respjson.Field
+		EffectivePolicy respjson.Field
 		ExtraFields     map[string]respjson.Field
 		raw             string
 	} `json:"-"`
@@ -158,6 +164,84 @@ func (r *AuthContextAuthorizationEffectiveScope) UnmarshalJSON(data []byte) erro
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Current effective paired policy for a service-account principal. Omitted for
+// legacy human/client identities.
+type AuthContextAuthorizationEffectivePolicy struct {
+	// Allow statements. Every action and resource not listed is denied.
+	Statements []AuthContextAuthorizationEffectivePolicyStatement `json:"statements" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Statements  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthContextAuthorizationEffectivePolicy) RawJSON() string { return r.JSON.raw }
+func (r *AuthContextAuthorizationEffectivePolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AuthContextAuthorizationEffectivePolicyStatement struct {
+	// Permitted action, such as browsers:use or vaults:read.
+	Action string `json:"action" api:"required"`
+	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
+	// Wildcards are supported.
+	Resource string `json:"resource" api:"required"`
+	// A condition narrows a policy statement to requests matching its constraint: the
+	// request attribute, a comparison operator, and that operator's values.
+	Condition AuthContextAuthorizationEffectivePolicyStatementCondition `json:"condition"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Action      respjson.Field
+		Resource    respjson.Field
+		Condition   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthContextAuthorizationEffectivePolicyStatement) RawJSON() string { return r.JSON.raw }
+func (r *AuthContextAuthorizationEffectivePolicyStatement) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A condition narrows a policy statement to requests matching its constraint: the
+// request attribute, a comparison operator, and that operator's values.
+type AuthContextAuthorizationEffectivePolicyStatementCondition struct {
+	// Request attribute the condition constrains. `source_ip` restricts the statement
+	// to requests whose client address falls inside one of `values`.
+	//
+	// Any of "source_ip".
+	Key string `json:"key" api:"required"`
+	// Comparison the condition applies between the request attribute and values.
+	//
+	// Any of "in".
+	Operator string `json:"operator" api:"required"`
+	// Values the request attribute must match. For `source_ip`, CIDR networks: a bare
+	// address without a mask is rejected, and so are an entry with host bits set and
+	// an IPv4 network written in IPv6 notation.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Key         respjson.Field
+		Operator    respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthContextAuthorizationEffectivePolicyStatementCondition) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AuthContextAuthorizationEffectivePolicyStatementCondition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type AuthContextOrganization struct {
 	// The authenticated Kernel organization ID.
 	ID string `json:"id" api:"required"`
@@ -176,11 +260,11 @@ func (r *AuthContextOrganization) UnmarshalJSON(data []byte) error {
 }
 
 type AuthContextPrincipal struct {
-	// The API key ID for API-key principals or user ID for user principals.
+	// The authenticated API key, user or organization-owned service-account ID.
 	ID string `json:"id" api:"required"`
 	// The kind of principal authenticated for the request.
 	//
-	// Any of "api_key", "user".
+	// Any of "api_key", "user", "service_account".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -194,5 +278,27 @@ type AuthContextPrincipal struct {
 // Returns the unmodified JSON received from the API
 func (r AuthContextPrincipal) RawJSON() string { return r.JSON.raw }
 func (r *AuthContextPrincipal) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AuthContextWorkloadIdentity struct {
+	// Digest of the verified external subject. Never the original assertion or
+	// arbitrary claims.
+	ExternalSubjectDigest string `json:"external_subject_digest" api:"required"`
+	FederationRuleID      string `json:"federation_rule_id" api:"required"`
+	IssuerID              string `json:"issuer_id" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ExternalSubjectDigest respjson.Field
+		FederationRuleID      respjson.Field
+		IssuerID              respjson.Field
+		ExtraFields           map[string]respjson.Field
+		raw                   string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AuthContextWorkloadIdentity) RawJSON() string { return r.JSON.raw }
+func (r *AuthContextWorkloadIdentity) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }

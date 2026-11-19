@@ -567,6 +567,8 @@ func (r *InvocationListBrowsersResponse) UnmarshalJSON(data []byte) error {
 }
 
 type InvocationListBrowsersResponseBrowser struct {
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver" api:"required"`
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
@@ -583,7 +585,12 @@ type InvocationListBrowsersResponseBrowser struct {
 	Region string `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
-	// Whether the browser session is running in stealth mode.
+	// Whether the browser session has CAPTCHA solving enabled, in which case
+	// proxy.mode=default uses Kernel's default stealth proxy. A browser created with
+	// only captcha_solver reports true with proxy.mode=direct. Deprecated in favor of
+	// captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
@@ -600,6 +607,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Fingerprint applied to this browser session. Omitted when the session was
+	// created without one.
+	Fingerprint BrowserFingerprint `json:"fingerprint"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
 	// headful sessions).
 	GPU bool `json:"gpu"`
@@ -672,6 +682,7 @@ type InvocationListBrowsersResponseBrowser struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		CaptchaSolver      respjson.Field
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
@@ -685,6 +696,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
+		Fingerprint        respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		LeasedAt           respjson.Field

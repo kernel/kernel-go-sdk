@@ -41,8 +41,13 @@ func NewAPIKeyService(opts ...option.RequestOption) (r APIKeyService) {
 	return
 }
 
-// Create a new API key. API keys may be scoped by project and may include a
-// policy.
+// Create a personal API key, or link a key to an organization-owned service
+// account. Service-account keys require an organization administrator, explicit
+// project and nonempty policy. An optional `policy` scopes the key to its listed
+// actions and resources, and each statement may carry a `condition`. A `source_ip`
+// condition restricts the statement to requests whose client address falls inside
+// its CIDR networks, so a key limited to your egress IP ranges only works from
+// your network, even if its secret leaks.
 func (r *APIKeyService) New(ctx context.Context, body APIKeyNewParams, opts ...option.RequestOption) (res *CreatedAPIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "org/api_keys"
@@ -63,7 +68,14 @@ func (r *APIKeyService) Get(ctx context.Context, id string, query APIKeyGetParam
 	return res, err
 }
 
-// Update an API key's name.
+// Update an API key's name, or replace its permissions by attaching a new policy
+// in place: the key's credential never changes, so consumers keep the same secret.
+// The replacement policy may carry `source_ip` conditions, so you can add, change,
+// or remove IP allowlisting on an existing key without rotating its credential. A
+// present `policy` fully replaces the key's policy and takes effect for new
+// requests within the authorization cache; requests from outside a condition's
+// networks get `403` and are recorded in the audit log with the client address.
+// Requires api_keys:write to rename; api_keys:set_policy to replace permissions.
 func (r *APIKeyService) Update(ctx context.Context, id string, body APIKeyUpdateParams, opts ...option.RequestOption) (res *APIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -119,7 +131,9 @@ func (r *APIKeyService) Delete(ctx context.Context, id string, opts ...option.Re
 // expire_in_days set to 0, browser sessions attributed to the old key are ended
 // asynchronously and unsaved profile changes are discarded. Grace-period and
 // natural expiry do not end existing browsers. If cleanup cannot be registered, an
-// immediate rotation is not committed.
+// immediate rotation is not committed. Service-account keys retain their service
+// principal and policy; the rotating administrator is recorded separately for
+// audit.
 func (r *APIKeyService) Rotate(ctx context.Context, id string, body APIKeyRotateParams, opts ...option.RequestOption) (res *CreatedAPIKey, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -135,7 +149,9 @@ type APIKey struct {
 	// Unique API key identifier
 	ID string `json:"id" api:"required"`
 	// When the API key was created
-	CreatedAt time.Time       `json:"created_at" api:"required" format:"date-time"`
+	CreatedAt time.Time `json:"created_at" api:"required" format:"date-time"`
+	// Human audit creator, or null after creator deletion. Not the service
+	// credential's principal.
 	CreatedBy APIKeyCreatedBy `json:"created_by" api:"required"`
 	// When the API key was deleted (soft-deleted). Null for keys that have not been
 	// deleted.
@@ -157,22 +173,27 @@ type APIKey struct {
 	ProjectName string `json:"project_name" api:"required"`
 	// Permissions granted to a scoped API key. Absent for an ordinary key, which keeps
 	// unrestricted access within its organization or project.
-	Policy APIKeyPolicy `json:"policy" api:"nullable"`
+	Policy    APIKeyPolicy    `json:"policy" api:"nullable"`
+	Principal APIKeyPrincipal `json:"principal"`
+	// Organization-owned service principal, when linked.
+	ServiceAccountID string `json:"service_account_id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		CreatedAt   respjson.Field
-		CreatedBy   respjson.Field
-		DeletedAt   respjson.Field
-		ExpiresAt   respjson.Field
-		LastUsedAt  respjson.Field
-		MaskedKey   respjson.Field
-		Name        respjson.Field
-		ProjectID   respjson.Field
-		ProjectName respjson.Field
-		Policy      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID               respjson.Field
+		CreatedAt        respjson.Field
+		CreatedBy        respjson.Field
+		DeletedAt        respjson.Field
+		ExpiresAt        respjson.Field
+		LastUsedAt       respjson.Field
+		MaskedKey        respjson.Field
+		Name             respjson.Field
+		ProjectID        respjson.Field
+		ProjectName      respjson.Field
+		Policy           respjson.Field
+		Principal        respjson.Field
+		ServiceAccountID respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
 	} `json:"-"`
 }
 
@@ -182,6 +203,8 @@ func (r *APIKey) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Human audit creator, or null after creator deletion. Not the service
+// credential's principal.
 type APIKeyCreatedBy struct {
 	// Kernel user ID of the creator.
 	ID string `json:"id" api:"required"`
@@ -230,10 +253,14 @@ type APIKeyPolicyStatement struct {
 	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
 	// Wildcards are supported.
 	Resource string `json:"resource" api:"required"`
+	// A condition narrows a policy statement to requests matching its constraint: the
+	// request attribute, a comparison operator, and that operator's values.
+	Condition APIKeyPolicyStatementCondition `json:"condition"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Action      respjson.Field
 		Resource    respjson.Field
+		Condition   respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -242,6 +269,57 @@ type APIKeyPolicyStatement struct {
 // Returns the unmodified JSON received from the API
 func (r APIKeyPolicyStatement) RawJSON() string { return r.JSON.raw }
 func (r *APIKeyPolicyStatement) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A condition narrows a policy statement to requests matching its constraint: the
+// request attribute, a comparison operator, and that operator's values.
+type APIKeyPolicyStatementCondition struct {
+	// Request attribute the condition constrains. `source_ip` restricts the statement
+	// to requests whose client address falls inside one of `values`.
+	//
+	// Any of "source_ip".
+	Key string `json:"key" api:"required"`
+	// Comparison the condition applies between the request attribute and values.
+	//
+	// Any of "in".
+	Operator string `json:"operator" api:"required"`
+	// Values the request attribute must match. For `source_ip`, CIDR networks: a bare
+	// address without a mask is rejected, and so are an entry with host bits set and
+	// an IPv4 network written in IPv6 notation.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Key         respjson.Field
+		Operator    respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r APIKeyPolicyStatementCondition) RawJSON() string { return r.JSON.raw }
+func (r *APIKeyPolicyStatementCondition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type APIKeyPrincipal struct {
+	ID string `json:"id" api:"required"`
+	// Any of "user", "service_account".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r APIKeyPrincipal) RawJSON() string { return r.JSON.raw }
+func (r *APIKeyPrincipal) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -275,8 +353,12 @@ type APIKeyNewParams struct {
 	ExpiresAt param.Opt[time.Time] `json:"expires_at,omitzero" format:"date-time"`
 	// Unique project identifier
 	ProjectID param.Opt[string] `json:"project_id,omitzero"`
+	// Link to an active same-organization service account. Requires an organization
+	// administrator, explicit project and nonempty policy. Omit for a personal key.
+	ServiceAccountID param.Opt[string] `json:"service_account_id,omitzero"`
 	// Issue a scoped key that may only perform the listed actions on the listed
-	// resources.
+	// resources. A statement may carry a condition; a `source_ip` condition restricts
+	// the statement to requests from inside its CIDR networks.
 	Policy APIKeyNewParamsPolicy `json:"policy,omitzero"`
 	paramObj
 }
@@ -290,7 +372,8 @@ func (r *APIKeyNewParams) UnmarshalJSON(data []byte) error {
 }
 
 // Issue a scoped key that may only perform the listed actions on the listed
-// resources.
+// resources. A statement may carry a condition; a `source_ip` condition restricts
+// the statement to requests from inside its CIDR networks.
 //
 // The property Statements is required.
 type APIKeyNewParamsPolicy struct {
@@ -314,6 +397,9 @@ type APIKeyNewParamsPolicyStatement struct {
 	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
 	// Wildcards are supported.
 	Resource string `json:"resource" api:"required"`
+	// A condition narrows a policy statement to requests matching its constraint: the
+	// request attribute, a comparison operator, and that operator's values.
+	Condition APIKeyNewParamsPolicyStatementCondition `json:"condition,omitzero"`
 	paramObj
 }
 
@@ -323,6 +409,44 @@ func (r APIKeyNewParamsPolicyStatement) MarshalJSON() (data []byte, err error) {
 }
 func (r *APIKeyNewParamsPolicyStatement) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// A condition narrows a policy statement to requests matching its constraint: the
+// request attribute, a comparison operator, and that operator's values.
+//
+// The properties Key, Operator, Values are required.
+type APIKeyNewParamsPolicyStatementCondition struct {
+	// Request attribute the condition constrains. `source_ip` restricts the statement
+	// to requests whose client address falls inside one of `values`.
+	//
+	// Any of "source_ip".
+	Key string `json:"key,omitzero" api:"required"`
+	// Comparison the condition applies between the request attribute and values.
+	//
+	// Any of "in".
+	Operator string `json:"operator,omitzero" api:"required"`
+	// Values the request attribute must match. For `source_ip`, CIDR networks: a bare
+	// address without a mask is rejected, and so are an entry with host bits set and
+	// an IPv4 network written in IPv6 notation.
+	Values []string `json:"values,omitzero" api:"required"`
+	paramObj
+}
+
+func (r APIKeyNewParamsPolicyStatementCondition) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyNewParamsPolicyStatementCondition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyNewParamsPolicyStatementCondition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[APIKeyNewParamsPolicyStatementCondition](
+		"key", "source_ip",
+	)
+	apijson.RegisterFieldValidator[APIKeyNewParamsPolicyStatementCondition](
+		"operator", "in",
+	)
 }
 
 type APIKeyGetParams struct {
@@ -342,7 +466,14 @@ func (r APIKeyGetParams) URLQuery() (v url.Values, err error) {
 
 type APIKeyUpdateParams struct {
 	// New API key name
-	Name string `json:"name" api:"required"`
+	Name param.Opt[string] `json:"name,omitzero"`
+	// Permissions that fully replace the key's policy. Attaching a policy to a key
+	// without one makes the key scoped: every action and resource the policy does not
+	// list is denied. The key's credential, name, project, and expiry are unchanged,
+	// so consumers never need the key redistributed. A `source_ip` condition adds or
+	// changes IP allowlisting without rotating the credential. Requires
+	// api_keys:set_policy on the key.
+	Policy APIKeyUpdateParamsPolicy `json:"policy,omitzero"`
 	paramObj
 }
 
@@ -352,6 +483,87 @@ func (r APIKeyUpdateParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *APIKeyUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Permissions that fully replace the key's policy. Attaching a policy to a key
+// without one makes the key scoped: every action and resource the policy does not
+// list is denied. The key's credential, name, project, and expiry are unchanged,
+// so consumers never need the key redistributed. A `source_ip` condition adds or
+// changes IP allowlisting without rotating the credential. Requires
+// api_keys:set_policy on the key.
+//
+// The property Statements is required.
+type APIKeyUpdateParamsPolicy struct {
+	// Allow statements. Every action and resource not listed is denied.
+	Statements []APIKeyUpdateParamsPolicyStatement `json:"statements,omitzero" api:"required"`
+	paramObj
+}
+
+func (r APIKeyUpdateParamsPolicy) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyUpdateParamsPolicy
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyUpdateParamsPolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Action, Resource are required.
+type APIKeyUpdateParamsPolicyStatement struct {
+	// Permitted action, such as browsers:use or vaults:read.
+	Action string `json:"action" api:"required"`
+	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
+	// Wildcards are supported.
+	Resource string `json:"resource" api:"required"`
+	// A condition narrows a policy statement to requests matching its constraint: the
+	// request attribute, a comparison operator, and that operator's values.
+	Condition APIKeyUpdateParamsPolicyStatementCondition `json:"condition,omitzero"`
+	paramObj
+}
+
+func (r APIKeyUpdateParamsPolicyStatement) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyUpdateParamsPolicyStatement
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyUpdateParamsPolicyStatement) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A condition narrows a policy statement to requests matching its constraint: the
+// request attribute, a comparison operator, and that operator's values.
+//
+// The properties Key, Operator, Values are required.
+type APIKeyUpdateParamsPolicyStatementCondition struct {
+	// Request attribute the condition constrains. `source_ip` restricts the statement
+	// to requests whose client address falls inside one of `values`.
+	//
+	// Any of "source_ip".
+	Key string `json:"key,omitzero" api:"required"`
+	// Comparison the condition applies between the request attribute and values.
+	//
+	// Any of "in".
+	Operator string `json:"operator,omitzero" api:"required"`
+	// Values the request attribute must match. For `source_ip`, CIDR networks: a bare
+	// address without a mask is rejected, and so are an entry with host bits set and
+	// an IPv4 network written in IPv6 notation.
+	Values []string `json:"values,omitzero" api:"required"`
+	paramObj
+}
+
+func (r APIKeyUpdateParamsPolicyStatementCondition) MarshalJSON() (data []byte, err error) {
+	type shadow APIKeyUpdateParamsPolicyStatementCondition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *APIKeyUpdateParamsPolicyStatementCondition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[APIKeyUpdateParamsPolicyStatementCondition](
+		"key", "source_ip",
+	)
+	apijson.RegisterFieldValidator[APIKeyUpdateParamsPolicyStatementCondition](
+		"operator", "in",
+	)
 }
 
 type APIKeyListParams struct {

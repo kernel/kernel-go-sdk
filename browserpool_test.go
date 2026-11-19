@@ -29,6 +29,9 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.BrowserPools.New(context.TODO(), kernel.BrowserPoolNewParams{
 		Size: 10,
+		CaptchaSolver: kernel.BrowserCaptchaSolverParam{
+			Enabled: true,
+		},
 		ChromePolicy: map[string]any{
 			"foo": "bar",
 		},
@@ -168,6 +171,9 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id_or_name",
 		kernel.BrowserPoolUpdateParams{
+			CaptchaSolver: kernel.BrowserCaptchaSolverParam{
+				Enabled: true,
+			},
 			ChromePolicy: map[string]any{
 				"foo": "bar",
 			},

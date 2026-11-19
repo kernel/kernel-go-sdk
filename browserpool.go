@@ -215,6 +215,8 @@ type BrowserPoolBrowserPoolConfig struct {
 	// your organization's pooled sessions limit (the sum of all pool sizes cannot
 	// exceed your limit).
 	Size int64 `json:"size" api:"required"`
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver"`
 	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
 	// Keys are Chrome enterprise policy names; values must match their expected types.
 	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
@@ -261,8 +263,12 @@ type BrowserPoolBrowserPoolConfig struct {
 	// previous lease left them on. Accepts any URL Chromium can resolve, including
 	// chrome:// pages.
 	StartURL string `json:"start_url"`
-	// If true, launches the browser in stealth mode to reduce detection by anti-bot
-	// mechanisms.
+	// Whether browsers in this pool use stealth mode, which is CAPTCHA solving with
+	// Kernel's default stealth proxy unless proxy_id is set. A pool with only
+	// captcha_solver enabled reports false. Deprecated in favor of captcha_solver and
+	// proxy_id.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth"`
 	// Active telemetry configuration applied to browsers warmed into this pool, if
 	// any.
@@ -286,6 +292,7 @@ type BrowserPoolBrowserPoolConfig struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Size                   respjson.Field
+		CaptchaSolver          respjson.Field
 		ChromePolicy           respjson.Field
 		Extensions             respjson.Field
 		FillRatePerMinute      respjson.Field
@@ -351,6 +358,8 @@ const (
 )
 
 type BrowserPoolAcquireResponse struct {
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver" api:"required"`
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
@@ -367,7 +376,12 @@ type BrowserPoolAcquireResponse struct {
 	Region BrowserPoolAcquireResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
-	// Whether the browser session is running in stealth mode.
+	// Whether the browser session has CAPTCHA solving enabled, in which case
+	// proxy.mode=default uses Kernel's default stealth proxy. A browser created with
+	// only captcha_solver reports true with proxy.mode=direct. Deprecated in favor of
+	// captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
@@ -384,6 +398,9 @@ type BrowserPoolAcquireResponse struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Fingerprint applied to this browser session. Omitted when the session was
+	// created without one.
+	Fingerprint BrowserFingerprint `json:"fingerprint"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
 	// headful sessions).
 	GPU bool `json:"gpu"`
@@ -456,6 +473,7 @@ type BrowserPoolAcquireResponse struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		CaptchaSolver      respjson.Field
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
@@ -469,6 +487,7 @@ type BrowserPoolAcquireResponse struct {
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
+		Fingerprint        respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		LeasedAt           respjson.Field
@@ -579,8 +598,10 @@ type BrowserPoolNewParams struct {
 	// previous lease left them on. Accepts any URL Chromium can resolve, including
 	// chrome:// pages.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
-	// If true, launches the browser in stealth mode to reduce detection by anti-bot
-	// mechanisms. Defaults to false.
+	// If true, enables the CAPTCHA solver and, when proxy_id is omitted, uses Kernel's
+	// default stealth proxy. Defaults to false. Cannot be combined with
+	// captcha_solver.enabled=false. Deprecated in favor of captcha_solver and
+	// proxy_id.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// Default idle timeout in seconds for browsers acquired from this pool before they
 	// are destroyed. Defaults to 600 seconds. Minimum 10, maximum 259200 (72 hours).
@@ -592,6 +613,10 @@ type BrowserPoolNewParams struct {
 	// disabled, no telemetry is configured on the pool. Only applied to newly-warmed
 	// browsers.
 	Telemetry BrowserPoolNewParamsTelemetry `json:"telemetry,omitzero"`
+	// Automatic CAPTCHA solving for browsers in this pool. Disabled by default.
+	// Enabling it does not select a proxy: when proxy_id is omitted, browsers use
+	// direct egress unless stealth=true.
+	CaptchaSolver BrowserCaptchaSolverParam `json:"captcha_solver,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
 	// Keys are Chrome enterprise policy names; values must match their expected types.
 	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
@@ -833,7 +858,10 @@ type BrowserPoolUpdateParams struct {
 	// the pool. Empty string clears the previously-set URL. Omit this field to leave
 	// it unchanged.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
-	// If provided, replaces whether browsers launch in stealth mode.
+	// If provided, replaces whether browsers launch in stealth mode. stealth=true
+	// without proxy_id moves a pool on direct egress to Kernel's default stealth
+	// proxy. Cannot be combined with captcha_solver.enabled=false. Deprecated in favor
+	// of captcha_solver and proxy_id.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// If provided, replaces the default idle timeout in seconds for browsers acquired
 	// from this pool before they are destroyed. Minimum 10, maximum 259200 (72 hours).
@@ -846,6 +874,10 @@ type BrowserPoolUpdateParams struct {
 	// warmed after the update; browsers already in the pool keep their configuration
 	// until discarded.
 	Telemetry BrowserPoolUpdateParamsTelemetry `json:"telemetry,omitzero"`
+	// If provided, replaces whether browsers in this pool automatically solve
+	// CAPTCHAs. Enabling it on a pool with direct egress keeps direct egress unless
+	// proxy_id or stealth=true is also set.
+	CaptchaSolver BrowserCaptchaSolverParam `json:"captcha_solver,omitzero"`
 	// If provided, replaces the custom Chrome enterprise policy overrides applied to
 	// all browsers in this pool. Empty object clears any previously-set policy. Keys
 	// are Chrome enterprise policy names; values must match their expected types.
