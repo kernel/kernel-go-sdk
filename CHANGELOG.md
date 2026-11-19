@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.151.0](https://github.com/kernel/kernel-go-sdk/compare/v0.150.0...v0.151.0) (2026-11-19)
+
+
+### Features
+
+* Implement workload identity federation and service account credentials ([10f570a](https://github.com/kernel/kernel-go-sdk/commit/10f570a40039088d872b17ffb1a59f7e341931db))
+
 ## [0.150.0](https://github.com/kernel/kernel-go-sdk/compare/v0.149.0...v0.150.0) (2026-11-19)
 
 
