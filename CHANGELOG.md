@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.150.0](https://github.com/kernel/kernel-go-sdk/compare/v0.149.0...v0.150.0) (2026-11-19)
+
+
+### Features
+
+* chore(stlc): re-anchor Go and TypeScript custom-code tracking ([6e25f79](https://github.com/kernel/kernel-go-sdk/commit/6e25f79b314c28cb716ef5c214fff09cd580fd12))
+* Document conditions in the API key reference descriptions ([11d3ab0](https://github.com/kernel/kernel-go-sdk/commit/11d3ab0fd5ba5aa9579fd5201d55e07bdb2c811f))
+* Route VGS reveal-session payment windows through their own session in egress ([3f7442f](https://github.com/kernel/kernel-go-sdk/commit/3f7442f1ecdc0ad9996d6381ae4d511fcc97c83c))
+
 ## [0.149.0](https://github.com/kernel/kernel-go-sdk/compare/v0.148.0...v0.149.0) (2026-11-17)
 
 
