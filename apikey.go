@@ -307,7 +307,7 @@ func (r *APIKeyPolicyStatementCondition) UnmarshalJSON(data []byte) error {
 type APIKeyPrincipal struct {
 	ID string `json:"id" api:"required"`
 	// Any of "user", "service_account".
-	Type string `json:"type" api:"required"`
+	Type APIKeyPrincipalType `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -322,6 +322,13 @@ func (r APIKeyPrincipal) RawJSON() string { return r.JSON.raw }
 func (r *APIKeyPrincipal) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type APIKeyPrincipalType string
+
+const (
+	APIKeyPrincipalTypeUser           APIKeyPrincipalType = "user"
+	APIKeyPrincipalTypeServiceAccount APIKeyPrincipalType = "service_account"
+)
 
 // API key returned immediately after creation. Includes the plaintext key once.
 type CreatedAPIKey struct {
@@ -567,6 +574,9 @@ func init() {
 }
 
 type APIKeyListParams struct {
+	// Return only keys created by this user ID. This is the same person the key's
+	// created_by field describes.
+	CreatedBy param.Opt[string] `query:"created_by,omitzero" json:"-"`
 	// Deprecated: use status=all instead. When true, include deleted (soft-deleted)
 	// API keys in the results for audit purposes.
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
@@ -579,9 +589,18 @@ type APIKeyListParams struct {
 	Name param.Opt[string] `query:"name,omitzero" json:"-"`
 	// Number of results to skip
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Return only keys scoped to this project ID. The value "org" returns keys that
+	// are not scoped to a project.
+	ProjectID param.Opt[string] `query:"project_id,omitzero" json:"-"`
 	// Case-insensitive substring match against API key name, creator, and project. API
 	// key identifiers and masked keys match by exact value or prefix.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
+	// Return only keys that belong to this service account.
+	ServiceAccountID param.Opt[string] `query:"service_account_id,omitzero" json:"-"`
+	// Return only keys that act as a user, or only keys that act as a service account.
+	//
+	// Any of "user", "service_account".
+	PrincipalType APIKeyListParamsPrincipalType `query:"principal_type,omitzero" json:"-"`
 	// Field to sort API keys by. Keys with no expiry or no recorded use sort last for
 	// expires_at and last_used_at in either direction.
 	//
@@ -591,11 +610,11 @@ type APIKeyListParams struct {
 	//
 	// Any of "asc", "desc".
 	SortDirection APIKeyListParamsSortDirection `query:"sort_direction,omitzero" json:"-"`
-	// Filter API keys by status. "active" returns keys that are not deleted (default;
-	// expired-but-not-deleted keys are still included), "deleted" returns only
-	// soft-deleted keys, "all" returns both.
+	// Filter API keys by status. "active" returns keys that are neither deleted nor
+	// expired (default), "expired" returns keys that are not deleted and whose expiry
+	// has passed, "deleted" returns only soft-deleted keys, "all" returns every key.
 	//
-	// Any of "active", "deleted", "all".
+	// Any of "active", "expired", "deleted", "all".
 	Status APIKeyListParamsStatus `query:"status,omitzero" json:"-"`
 	paramObj
 }
@@ -607,6 +626,14 @@ func (r APIKeyListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Return only keys that act as a user, or only keys that act as a service account.
+type APIKeyListParamsPrincipalType string
+
+const (
+	APIKeyListParamsPrincipalTypeUser           APIKeyListParamsPrincipalType = "user"
+	APIKeyListParamsPrincipalTypeServiceAccount APIKeyListParamsPrincipalType = "service_account"
+)
 
 // Field to sort API keys by. Keys with no expiry or no recorded use sort last for
 // expires_at and last_used_at in either direction.
@@ -627,13 +654,14 @@ const (
 	APIKeyListParamsSortDirectionDesc APIKeyListParamsSortDirection = "desc"
 )
 
-// Filter API keys by status. "active" returns keys that are not deleted (default;
-// expired-but-not-deleted keys are still included), "deleted" returns only
-// soft-deleted keys, "all" returns both.
+// Filter API keys by status. "active" returns keys that are neither deleted nor
+// expired (default), "expired" returns keys that are not deleted and whose expiry
+// has passed, "deleted" returns only soft-deleted keys, "all" returns every key.
 type APIKeyListParamsStatus string
 
 const (
 	APIKeyListParamsStatusActive  APIKeyListParamsStatus = "active"
+	APIKeyListParamsStatusExpired APIKeyListParamsStatus = "expired"
 	APIKeyListParamsStatusDeleted APIKeyListParamsStatus = "deleted"
 	APIKeyListParamsStatusAll     APIKeyListParamsStatus = "all"
 )
