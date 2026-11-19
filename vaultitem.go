@@ -5248,10 +5248,20 @@ type OnePasswordOAuthAction struct {
 	Name OnePasswordOAuthActionName `json:"name" api:"required"`
 	// 1Password-hosted OAuth authorization URL for the human to open.
 	URL string `json:"url" api:"required" format:"uri"`
+	// 1Password connect link for the same authorization, for the person to open on
+	// their own device. In 1Password for iOS or Android it opens the app to approve
+	// the connection. Anywhere else it opens 1Password in the browser, where someone
+	// without 1Password can sign up; if the account is still pending afterwards, they
+	// connect with url. Also offer url to people who already use 1Password on a
+	// computer. Whichever link the person answers first settles the authorization and
+	// the other stops working. Expires with the account's expires_at; repeat the
+	// upsert for fresh links. Absent on a recovery link.
+	ConnectURL string `json:"connect_url" format:"uri"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Name        respjson.Field
 		URL         respjson.Field
+		ConnectURL  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -7671,6 +7681,8 @@ func (r *VaultItemUnionStateFields) UnmarshalJSON(data []byte) error {
 type VaultItemUnionAction struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+	// This field is from variant [VaultItemActionUnion], [OnePasswordOAuthAction].
+	ConnectURL string `json:"connect_url"`
 	// This field is from variant [VaultItemActionUnion].
 	CaptureToken string `json:"capture_token"`
 	// This field is from variant [CredentialVaultItemActionUnion].
@@ -7682,6 +7694,7 @@ type VaultItemUnionAction struct {
 	JSON         struct {
 		Name                   respjson.Field
 		URL                    respjson.Field
+		ConnectURL             respjson.Field
 		CaptureToken           respjson.Field
 		ExpiresAt              respjson.Field
 		AccessRequestReference respjson.Field
@@ -7931,11 +7944,14 @@ type VaultItemActionUnion struct {
 	// "push_approval", "collect", "mfa", "embedded_ceremony", "card_enrollment".
 	Name string `json:"name"`
 	URL  string `json:"url"`
+	// This field is from variant [OnePasswordOAuthAction].
+	ConnectURL string `json:"connect_url"`
 	// This field is from variant [VaultItemActionCardEnrollment].
 	CaptureToken string `json:"capture_token"`
 	JSON         struct {
 		Name         respjson.Field
 		URL          respjson.Field
+		ConnectURL   respjson.Field
 		CaptureToken respjson.Field
 		raw          string
 	} `json:"-"`
@@ -8859,6 +8875,8 @@ func (r *VaultItemOperationResponseUnionStateFields) UnmarshalJSON(data []byte) 
 type VaultItemOperationResponseUnionAction struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
+	// This field is from variant [VaultItemActionUnion], [OnePasswordOAuthAction].
+	ConnectURL string `json:"connect_url"`
 	// This field is from variant [VaultItemActionUnion].
 	CaptureToken string `json:"capture_token"`
 	// This field is from variant [CredentialVaultItemActionUnion].
@@ -8870,6 +8888,7 @@ type VaultItemOperationResponseUnionAction struct {
 	JSON         struct {
 		Name                   respjson.Field
 		URL                    respjson.Field
+		ConnectURL             respjson.Field
 		CaptureToken           respjson.Field
 		ExpiresAt              respjson.Field
 		AccessRequestReference respjson.Field
