@@ -30,6 +30,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Browsers.New(context.TODO(), kernel.BrowserNewParams{
+		CaptchaSolver: kernel.BrowserCaptchaSolverParam{
+			Enabled: true,
+		},
 		ChromePolicy: map[string]any{
 			"foo": "bar",
 		},

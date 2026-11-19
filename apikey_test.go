@@ -35,9 +35,15 @@ func TestAPIKeyNewWithOptionalParams(t *testing.T) {
 			Statements: []kernel.APIKeyNewParamsPolicyStatement{{
 				Action:   "browsers:use",
 				Resource: "projects/proj_abc123/browsers/br_abc123",
+				Condition: kernel.APIKeyNewParamsPolicyStatementCondition{
+					Key:      "source_ip",
+					Operator: "in",
+					Values:   []string{"203.0.113.0/24"},
+				},
 			}},
 		},
-		ProjectID: kernel.String("proj_abc123"),
+		ProjectID:        kernel.String("proj_abc123"),
+		ServiceAccountID: kernel.String("x"),
 	})
 	if err != nil {
 		var apierr *kernel.Error
@@ -77,7 +83,7 @@ func TestAPIKeyGetWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestAPIKeyUpdate(t *testing.T) {
+func TestAPIKeyUpdateWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -94,7 +100,18 @@ func TestAPIKeyUpdate(t *testing.T) {
 		context.TODO(),
 		"id",
 		kernel.APIKeyUpdateParams{
-			Name: "new-api-name",
+			Name: kernel.String("new-api-name"),
+			Policy: kernel.APIKeyUpdateParamsPolicy{
+				Statements: []kernel.APIKeyUpdateParamsPolicyStatement{{
+					Action:   "browsers:use",
+					Resource: "projects/proj_abc123/browsers/br_abc123",
+					Condition: kernel.APIKeyUpdateParamsPolicyStatementCondition{
+						Key:      "source_ip",
+						Operator: "in",
+						Values:   []string{"203.0.113.0/24"},
+					},
+				}},
+			},
 		},
 	)
 	if err != nil {

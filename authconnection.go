@@ -1012,6 +1012,13 @@ func (r *ManagedAuthSignInOption) UnmarshalJSON(data []byte) error {
 // connection. Managed auth controls the profile, headless mode, timeout, start
 // URL, kiosk mode, and viewport.
 type ManagedAuthBrowserConfig struct {
+	// Automatic CAPTCHA solving for managed auth browser sessions. When provided
+	// without stealth, stealth no longer defaults to true. Enabling it does not select
+	// a proxy: a connection on direct egress stays there; set proxy.mode=default for
+	// Kernel's default stealth proxy. Turning it off on a connection that uses
+	// Kernel's default stealth proxy moves it to direct egress. Omit on update to keep
+	// the current setting, or on login to inherit it.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver"`
 	// Browser locale for the connection's login, reauthentication, and health-check
 	// sessions. Set on create or update; not supported on login.
 	Location ManagedAuthBrowserLocation `json:"location"`
@@ -1025,20 +1032,28 @@ type ManagedAuthBrowserConfig struct {
 	//
 	// Any of "us-east", "us-west", "eu-west", "ap-southeast".
 	Region ManagedAuthBrowserConfigRegion `json:"region"`
-	// Whether managed auth browser sessions use stealth mode. Defaults to true when
-	// omitted.
+	// Whether managed auth browser sessions use stealth mode: CAPTCHA solving with
+	// Kernel's default stealth proxy unless proxy is set. Defaults to true when
+	// neither stealth nor captcha_solver is provided. Cannot be combined with
+	// captcha_solver.enabled=false. Setting it does not change an existing proxy,
+	// including direct egress; use proxy.mode=default for Kernel's default stealth
+	// proxy. Reports true for a connection with only captcha_solver enabled; proxy
+	// shows its egress. Deprecated in favor of captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth"`
 	// Browser telemetry configuration using the same semantics as browser create.
 	Telemetry ManagedAuthBrowserConfigTelemetry `json:"telemetry" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Location    respjson.Field
-		Proxy       respjson.Field
-		Region      respjson.Field
-		Stealth     respjson.Field
-		Telemetry   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		CaptchaSolver respjson.Field
+		Location      respjson.Field
+		Proxy         respjson.Field
+		Region        respjson.Field
+		Stealth       respjson.Field
+		Telemetry     respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
 	} `json:"-"`
 }
 
@@ -1202,11 +1217,25 @@ func (r *ManagedAuthBrowserConfigTelemetryStorage) UnmarshalJSON(data []byte) er
 // connection. Managed auth controls the profile, headless mode, timeout, start
 // URL, kiosk mode, and viewport.
 type ManagedAuthBrowserConfigParam struct {
-	// Whether managed auth browser sessions use stealth mode. Defaults to true when
-	// omitted.
+	// Whether managed auth browser sessions use stealth mode: CAPTCHA solving with
+	// Kernel's default stealth proxy unless proxy is set. Defaults to true when
+	// neither stealth nor captcha_solver is provided. Cannot be combined with
+	// captcha_solver.enabled=false. Setting it does not change an existing proxy,
+	// including direct egress; use proxy.mode=default for Kernel's default stealth
+	// proxy. Reports true for a connection with only captcha_solver enabled; proxy
+	// shows its egress. Deprecated in favor of captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// Browser telemetry configuration using the same semantics as browser create.
 	Telemetry ManagedAuthBrowserConfigTelemetryParam `json:"telemetry,omitzero"`
+	// Automatic CAPTCHA solving for managed auth browser sessions. When provided
+	// without stealth, stealth no longer defaults to true. Enabling it does not select
+	// a proxy: a connection on direct egress stays there; set proxy.mode=default for
+	// Kernel's default stealth proxy. Turning it off on a connection that uses
+	// Kernel's default stealth proxy moves it to direct egress. Omit on update to keep
+	// the current setting, or on login to inherit it.
+	CaptchaSolver BrowserCaptchaSolverParam `json:"captcha_solver,omitzero"`
 	// Browser locale for the connection's login, reauthentication, and health-check
 	// sessions. Set on create or update; not supported on login.
 	Location ManagedAuthBrowserLocationParam `json:"location,omitzero"`

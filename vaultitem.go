@@ -562,8 +562,13 @@ const (
 // merchant origin. Once approval has been requested, browser_id and page_url are
 // ignored and authorize only re-checks the request. Browser and checkout
 // inspection errors occur before any provider request and can be retried once the
-// browser is on the checkout page. Kernel cards do not accept browser_id or
-// page_url.
+// browser is on the checkout page. Kernel cards accept browser_id but not
+// page_url: browser_id names the browser that will pay, which must have this vault
+// attached. For cards whose cardholder enters a fresh CVC on an encrypting card
+// form, Kernel tries to route that browser through the card vault's proxy as soon
+// as the CVC is entered, so authorize before the browser opens the payment step
+// and retrieve the card until fill is advertised before opening it. Other cards,
+// and any card whose routing fails, are routed at their first fill.
 //
 // The property Type is required.
 type AuthorizeVaultItemOperationRequestParam struct {
@@ -609,7 +614,7 @@ type CardVaultItemSpecUnion struct {
 	Provider string `json:"provider"`
 	Wallet   string `json:"wallet"`
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
-	// [[]ShopPayCardVaultItemSpecLineItem]
+	// [[]CardVaultItemSpecAgentcardLineItem], [[]ShopPayCardVaultItemSpecLineItem]
 	LineItems CardVaultItemSpecUnionLineItems `json:"line_items"`
 	// This field is from variant [CardVaultItemSpecLink].
 	Metadata map[string]string `json:"metadata"`
@@ -624,6 +629,14 @@ type CardVaultItemSpecUnion struct {
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecAgentcard].
 	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecAgentcard].
+	Discount int64 `json:"discount"`
+	// This field is from variant [CardVaultItemSpecAgentcard].
+	Shipping int64 `json:"shipping"`
+	// This field is from variant [CardVaultItemSpecAgentcard].
+	Subtotal int64 `json:"subtotal"`
+	// This field is from variant [CardVaultItemSpecAgentcard].
+	Tax int64 `json:"tax"`
 	// This field is from variant [KernelCardVaultItemSpec].
 	ExpiresAt time.Time `json:"expires_at"`
 	// This field is from variant [KernelCardVaultItemSpec].
@@ -653,6 +666,10 @@ type CardVaultItemSpecUnion struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		Discount             respjson.Field
+		Shipping             respjson.Field
+		Subtotal             respjson.Field
+		Tax                  respjson.Field
 		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
@@ -744,18 +761,22 @@ func (r *CardVaultItemSpecUnion) UnmarshalJSON(data []byte) error {
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfCardVaultItemSpecLinkLineItems
-// OfShopPayCardVaultItemSpecLineItems]
+// OfCardVaultItemSpecAgentcardLineItems OfShopPayCardVaultItemSpecLineItems]
 type CardVaultItemSpecUnionLineItems struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
 	// instead of an object.
 	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
 	// This field will be present if the value is a
+	// [[]CardVaultItemSpecAgentcardLineItem] instead of an object.
+	OfCardVaultItemSpecAgentcardLineItems []CardVaultItemSpecAgentcardLineItem `json:",inline"`
+	// This field will be present if the value is a
 	// [[]ShopPayCardVaultItemSpecLineItem] instead of an object.
 	OfShopPayCardVaultItemSpecLineItems []ShopPayCardVaultItemSpecLineItem `json:",inline"`
 	JSON                                struct {
-		OfCardVaultItemSpecLinkLineItems    respjson.Field
-		OfShopPayCardVaultItemSpecLineItems respjson.Field
-		raw                                 string
+		OfCardVaultItemSpecLinkLineItems      respjson.Field
+		OfCardVaultItemSpecAgentcardLineItems respjson.Field
+		OfShopPayCardVaultItemSpecLineItems   respjson.Field
+		raw                                   string
 	} `json:"-"`
 }
 
@@ -988,6 +1009,22 @@ type CardVaultItemSpecAgentcard struct {
 	// Omitted, those checkouts ask the cardholder to approve. Card updates replace the
 	// whole spec, so an update that omits it removes it.
 	CheckoutOrigin string `json:"checkout_origin"`
+	// Discount as a positive number of minor currency units; 500 takes 5.00 off.
+	// Requires line_items.
+	Discount int64 `json:"discount"`
+	// What the next checkout buys, listed on the cardholder's approval screen above
+	// the total. Display only: the cardholder approves amount, or the amount the
+	// processor charges, and a line total that disagrees with it changes nothing they
+	// pay. Amounts are in minor units of currency. Sent only for checkouts without a
+	// preparation; omitted, the approval screen shows the merchant and amount alone.
+	// Card updates replace the whole spec, so set the cart again for each checkout.
+	LineItems []CardVaultItemSpecAgentcardLineItem `json:"line_items"`
+	// Shipping charge in minor currency units. Requires line_items.
+	Shipping int64 `json:"shipping"`
+	// Cart subtotal in minor currency units. Requires line_items.
+	Subtotal int64 `json:"subtotal"`
+	// Tax in minor currency units. Requires line_items.
+	Tax int64 `json:"tax"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Amount         respjson.Field
@@ -997,6 +1034,11 @@ type CardVaultItemSpecAgentcard struct {
 		Wallet         respjson.Field
 		CardID         respjson.Field
 		CheckoutOrigin respjson.Field
+		Discount       respjson.Field
+		LineItems      respjson.Field
+		Shipping       respjson.Field
+		Subtotal       respjson.Field
+		Tax            respjson.Field
 		ExtraFields    map[string]respjson.Field
 		raw            string
 	} `json:"-"`
@@ -1005,6 +1047,44 @@ type CardVaultItemSpecAgentcard struct {
 // Returns the unmodified JSON received from the API
 func (r CardVaultItemSpecAgentcard) RawJSON() string { return r.JSON.raw }
 func (r *CardVaultItemSpecAgentcard) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// One product on the AgentCard approval screen.
+type CardVaultItemSpecAgentcardLineItem struct {
+	Quantity int64 `json:"quantity" api:"required"`
+	// The product's name as the store shows it.
+	Title string `json:"title" api:"required"`
+	// The line's total in minor currency units. Shown instead of unit_amount times
+	// quantity when both are set; a line with neither shows without a price.
+	Amount int64 `json:"amount"`
+	// Shown beside the title.
+	Brand string `json:"brand"`
+	// https URL of the product's picture. AgentCard shows pictures only from the image
+	// hosts it allows and shows the line without one otherwise.
+	ImageURL string `json:"image_url" format:"uri"`
+	// The options the shopper chose, such as "Size S · Pink".
+	Options string `json:"options"`
+	// Price of one, in minor currency units. The line shows unit_amount times
+	// quantity.
+	UnitAmount int64 `json:"unit_amount"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Quantity    respjson.Field
+		Title       respjson.Field
+		Amount      respjson.Field
+		Brand       respjson.Field
+		ImageURL    respjson.Field
+		Options     respjson.Field
+		UnitAmount  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r CardVaultItemSpecAgentcardLineItem) RawJSON() string { return r.JSON.raw }
+func (r *CardVaultItemSpecAgentcardLineItem) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1082,6 +1162,38 @@ func (u CardVaultItemSpecUnionParam) GetCardID() *string {
 func (u CardVaultItemSpecUnionParam) GetCheckoutOrigin() *string {
 	if vt := u.OfAgentcard; vt != nil && vt.CheckoutOrigin.Valid() {
 		return &vt.CheckoutOrigin.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetDiscount() *int64 {
+	if vt := u.OfAgentcard; vt != nil && vt.Discount.Valid() {
+		return &vt.Discount.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetShipping() *int64 {
+	if vt := u.OfAgentcard; vt != nil && vt.Shipping.Valid() {
+		return &vt.Shipping.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetSubtotal() *int64 {
+	if vt := u.OfAgentcard; vt != nil && vt.Subtotal.Valid() {
+		return &vt.Subtotal.Value
+	}
+	return nil
+}
+
+// Returns a pointer to the underlying variant's property, if present.
+func (u CardVaultItemSpecUnionParam) GetTax() *int64 {
+	if vt := u.OfAgentcard; vt != nil && vt.Tax.Valid() {
+		return &vt.Tax.Value
 	}
 	return nil
 }
@@ -1264,6 +1376,8 @@ func (u CardVaultItemSpecUnionParam) GetMerchantCountry() *string {
 func (u CardVaultItemSpecUnionParam) GetLineItems() (res cardVaultItemSpecUnionParamLineItems) {
 	if vt := u.OfLink; vt != nil {
 		res.any = &vt.LineItems
+	} else if vt := u.OfAgentcard; vt != nil {
+		res.any = &vt.LineItems
 	} else if vt := u.OfShopPay; vt != nil {
 		res.any = &vt.LineItems
 	}
@@ -1271,13 +1385,15 @@ func (u CardVaultItemSpecUnionParam) GetLineItems() (res cardVaultItemSpecUnionP
 }
 
 // Can have the runtime types [_[]CardVaultItemSpecLinkLineItemParam],
-// [_[]ShopPayCardVaultItemSpecLineItemParam]
+// [_[]CardVaultItemSpecAgentcardLineItemParam],
+// [\*[]ShopPayCardVaultItemSpecLineItemParam]
 type cardVaultItemSpecUnionParamLineItems struct{ any }
 
 // Use the following switch statement to get the type of the union:
 //
 //	switch u.AsAny().(type) {
 //	case *[]kernel.CardVaultItemSpecLinkLineItemParam:
+//	case *[]kernel.CardVaultItemSpecAgentcardLineItemParam:
 //	case *[]kernel.ShopPayCardVaultItemSpecLineItemParam:
 //	default:
 //	    fmt.Errorf("not present")
@@ -1487,6 +1603,22 @@ type CardVaultItemSpecAgentcardParam struct {
 	// Omitted, those checkouts ask the cardholder to approve. Card updates replace the
 	// whole spec, so an update that omits it removes it.
 	CheckoutOrigin param.Opt[string] `json:"checkout_origin,omitzero"`
+	// Discount as a positive number of minor currency units; 500 takes 5.00 off.
+	// Requires line_items.
+	Discount param.Opt[int64] `json:"discount,omitzero"`
+	// Shipping charge in minor currency units. Requires line_items.
+	Shipping param.Opt[int64] `json:"shipping,omitzero"`
+	// Cart subtotal in minor currency units. Requires line_items.
+	Subtotal param.Opt[int64] `json:"subtotal,omitzero"`
+	// Tax in minor currency units. Requires line_items.
+	Tax param.Opt[int64] `json:"tax,omitzero"`
+	// What the next checkout buys, listed on the cardholder's approval screen above
+	// the total. Display only: the cardholder approves amount, or the amount the
+	// processor charges, and a line total that disagrees with it changes nothing they
+	// pay. Amounts are in minor units of currency. Sent only for checkouts without a
+	// preparation; omitted, the approval screen shows the merchant and amount alone.
+	// Card updates replace the whole spec, so set the cart again for each checkout.
+	LineItems []CardVaultItemSpecAgentcardLineItemParam `json:"line_items,omitzero"`
 	// This field can be elided, and will marshal its zero value as "agentcard".
 	Provider constant.Agentcard `json:"provider" default:"agentcard"`
 	paramObj
@@ -1497,6 +1629,37 @@ func (r CardVaultItemSpecAgentcardParam) MarshalJSON() (data []byte, err error) 
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *CardVaultItemSpecAgentcardParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// One product on the AgentCard approval screen.
+//
+// The properties Quantity, Title are required.
+type CardVaultItemSpecAgentcardLineItemParam struct {
+	Quantity int64 `json:"quantity" api:"required"`
+	// The product's name as the store shows it.
+	Title string `json:"title" api:"required"`
+	// The line's total in minor currency units. Shown instead of unit_amount times
+	// quantity when both are set; a line with neither shows without a price.
+	Amount param.Opt[int64] `json:"amount,omitzero"`
+	// Shown beside the title.
+	Brand param.Opt[string] `json:"brand,omitzero"`
+	// https URL of the product's picture. AgentCard shows pictures only from the image
+	// hosts it allows and shows the line without one otherwise.
+	ImageURL param.Opt[string] `json:"image_url,omitzero" format:"uri"`
+	// The options the shopper chose, such as "Size S · Pink".
+	Options param.Opt[string] `json:"options,omitzero"`
+	// Price of one, in minor currency units. The line shows unit_amount times
+	// quantity.
+	UnitAmount param.Opt[int64] `json:"unit_amount,omitzero"`
+	paramObj
+}
+
+func (r CardVaultItemSpecAgentcardLineItemParam) MarshalJSON() (data []byte, err error) {
+	type shadow CardVaultItemSpecAgentcardLineItemParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *CardVaultItemSpecAgentcardLineItemParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -7140,7 +7303,7 @@ type VaultItemUnionSpec struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
-	// [[]ShopPayCardVaultItemSpecLineItem],
+	// [[]CardVaultItemSpecAgentcardLineItem], [[]ShopPayCardVaultItemSpecLineItem],
 	// [[]PaymentRequestVaultItemSpecLinkLineItem]
 	LineItems VaultItemUnionSpecLineItems `json:"line_items"`
 	Metadata  map[string]string           `json:"metadata"`
@@ -7156,6 +7319,14 @@ type VaultItemUnionSpec struct {
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Discount int64 `json:"discount"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Shipping int64 `json:"shipping"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Subtotal int64 `json:"subtotal"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Tax int64 `json:"tax"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	ExpiresAt            time.Time `json:"expires_at"`
 	MerchantCategory     string    `json:"merchant_category"`
@@ -7197,6 +7368,10 @@ type VaultItemUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		Discount             respjson.Field
+		Shipping             respjson.Field
+		Subtotal             respjson.Field
+		Tax                  respjson.Field
 		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
@@ -7294,11 +7469,15 @@ func (r *VaultItemUnionSpecProviderConfig) UnmarshalJSON(data []byte) error {
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfCardVaultItemSpecLinkLineItems
-// OfShopPayCardVaultItemSpecLineItems OfPaymentRequestVaultItemSpecLinkLineItems]
+// OfCardVaultItemSpecAgentcardLineItems OfShopPayCardVaultItemSpecLineItems
+// OfPaymentRequestVaultItemSpecLinkLineItems]
 type VaultItemUnionSpecLineItems struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
 	// instead of an object.
 	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
+	// This field will be present if the value is a
+	// [[]CardVaultItemSpecAgentcardLineItem] instead of an object.
+	OfCardVaultItemSpecAgentcardLineItems []CardVaultItemSpecAgentcardLineItem `json:",inline"`
 	// This field will be present if the value is a
 	// [[]ShopPayCardVaultItemSpecLineItem] instead of an object.
 	OfShopPayCardVaultItemSpecLineItems []ShopPayCardVaultItemSpecLineItem `json:",inline"`
@@ -7307,6 +7486,7 @@ type VaultItemUnionSpecLineItems struct {
 	OfPaymentRequestVaultItemSpecLinkLineItems []PaymentRequestVaultItemSpecLinkLineItem `json:",inline"`
 	JSON                                       struct {
 		OfCardVaultItemSpecLinkLineItems           respjson.Field
+		OfCardVaultItemSpecAgentcardLineItems      respjson.Field
 		OfShopPayCardVaultItemSpecLineItems        respjson.Field
 		OfPaymentRequestVaultItemSpecLinkLineItems respjson.Field
 		raw                                        string
@@ -8308,7 +8488,7 @@ type VaultItemOperationResponseUnionSpec struct {
 	PaymentMethodID string `json:"payment_method_id"`
 	Wallet          string `json:"wallet"`
 	// This field is a union of [[]CardVaultItemSpecLinkLineItem],
-	// [[]ShopPayCardVaultItemSpecLineItem],
+	// [[]CardVaultItemSpecAgentcardLineItem], [[]ShopPayCardVaultItemSpecLineItem],
 	// [[]PaymentRequestVaultItemSpecLinkLineItem]
 	LineItems VaultItemOperationResponseUnionSpecLineItems `json:"line_items"`
 	Metadata  map[string]string                            `json:"metadata"`
@@ -8324,6 +8504,14 @@ type VaultItemOperationResponseUnionSpec struct {
 	CardID string `json:"card_id"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	CheckoutOrigin string `json:"checkout_origin"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Discount int64 `json:"discount"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Shipping int64 `json:"shipping"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Subtotal int64 `json:"subtotal"`
+	// This field is from variant [CardVaultItemSpecUnion].
+	Tax int64 `json:"tax"`
 	// This field is from variant [CardVaultItemSpecUnion].
 	ExpiresAt            time.Time `json:"expires_at"`
 	MerchantCategory     string    `json:"merchant_category"`
@@ -8365,6 +8553,10 @@ type VaultItemOperationResponseUnionSpec struct {
 		Merchant             respjson.Field
 		CardID               respjson.Field
 		CheckoutOrigin       respjson.Field
+		Discount             respjson.Field
+		Shipping             respjson.Field
+		Subtotal             respjson.Field
+		Tax                  respjson.Field
 		ExpiresAt            respjson.Field
 		MerchantCategory     respjson.Field
 		MerchantCategoryCode respjson.Field
@@ -8465,11 +8657,15 @@ func (r *VaultItemOperationResponseUnionSpecProviderConfig) UnmarshalJSON(data [
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfCardVaultItemSpecLinkLineItems
-// OfShopPayCardVaultItemSpecLineItems OfPaymentRequestVaultItemSpecLinkLineItems]
+// OfCardVaultItemSpecAgentcardLineItems OfShopPayCardVaultItemSpecLineItems
+// OfPaymentRequestVaultItemSpecLinkLineItems]
 type VaultItemOperationResponseUnionSpecLineItems struct {
 	// This field will be present if the value is a [[]CardVaultItemSpecLinkLineItem]
 	// instead of an object.
 	OfCardVaultItemSpecLinkLineItems []CardVaultItemSpecLinkLineItem `json:",inline"`
+	// This field will be present if the value is a
+	// [[]CardVaultItemSpecAgentcardLineItem] instead of an object.
+	OfCardVaultItemSpecAgentcardLineItems []CardVaultItemSpecAgentcardLineItem `json:",inline"`
 	// This field will be present if the value is a
 	// [[]ShopPayCardVaultItemSpecLineItem] instead of an object.
 	OfShopPayCardVaultItemSpecLineItems []ShopPayCardVaultItemSpecLineItem `json:",inline"`
@@ -8478,6 +8674,7 @@ type VaultItemOperationResponseUnionSpecLineItems struct {
 	OfPaymentRequestVaultItemSpecLinkLineItems []PaymentRequestVaultItemSpecLinkLineItem `json:",inline"`
 	JSON                                       struct {
 		OfCardVaultItemSpecLinkLineItems           respjson.Field
+		OfCardVaultItemSpecAgentcardLineItems      respjson.Field
 		OfShopPayCardVaultItemSpecLineItems        respjson.Field
 		OfPaymentRequestVaultItemSpecLinkLineItems respjson.Field
 		raw                                        string
@@ -10368,8 +10565,13 @@ type VaultItemPerformOperationParams struct {
 	// merchant origin. Once approval has been requested, browser_id and page_url are
 	// ignored and authorize only re-checks the request. Browser and checkout
 	// inspection errors occur before any provider request and can be retried once the
-	// browser is on the checkout page. Kernel cards do not accept browser_id or
-	// page_url.
+	// browser is on the checkout page. Kernel cards accept browser_id but not
+	// page_url: browser_id names the browser that will pay, which must have this vault
+	// attached. For cards whose cardholder enters a fresh CVC on an encrypting card
+	// form, Kernel tries to route that browser through the card vault's proxy as soon
+	// as the CVC is entered, so authorize before the browser opens the payment step
+	// and retrieve the card until fill is advertised before opening it. Other cards,
+	// and any card whose routing fails, are routed at their first fill.
 	OfAuthorize *AuthorizeVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set.
 	// Explicitly prepare a fresh local verification session for the same Kernel Visa

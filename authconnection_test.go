@@ -33,6 +33,9 @@ func TestAuthConnectionNewWithOptionalParams(t *testing.T) {
 			AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 			AutoReauth:     kernel.Bool(true),
 			Browser: kernel.ManagedAuthBrowserConfigParam{
+				CaptchaSolver: kernel.BrowserCaptchaSolverParam{
+					Enabled: true,
+				},
 				Location: kernel.ManagedAuthBrowserLocationParam{
 					Locale: kernel.String("sv-SE"),
 				},
@@ -215,6 +218,9 @@ func TestAuthConnectionUpdateWithOptionalParams(t *testing.T) {
 				AllowedDomains: []string{"login.netflix.com", "auth.netflix.com"},
 				AutoReauth:     kernel.Bool(true),
 				Browser: kernel.ManagedAuthBrowserConfigParam{
+					CaptchaSolver: kernel.BrowserCaptchaSolverParam{
+						Enabled: true,
+					},
 					Location: kernel.ManagedAuthBrowserLocationParam{
 						Locale: kernel.String("sv-SE"),
 					},
@@ -424,6 +430,9 @@ func TestAuthConnectionLoginWithOptionalParams(t *testing.T) {
 		"id",
 		kernel.AuthConnectionLoginParams{
 			Browser: kernel.ManagedAuthBrowserConfigParam{
+				CaptchaSolver: kernel.BrowserCaptchaSolverParam{
+					Enabled: true,
+				},
 				Location: kernel.ManagedAuthBrowserLocationParam{
 					Locale: kernel.String("sv-SE"),
 				},

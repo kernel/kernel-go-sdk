@@ -289,13 +289,94 @@ func (r *BrowserAllowlistStateParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Automatic CAPTCHA solving configuration.
+type BrowserCaptchaSolver struct {
+	// Whether the browser automatically solves CAPTCHAs.
+	Enabled bool `json:"enabled" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Enabled     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCaptchaSolver) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCaptchaSolver) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserCaptchaSolver to a BrowserCaptchaSolverParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserCaptchaSolverParam.Overrides()
+func (r BrowserCaptchaSolver) ToParam() BrowserCaptchaSolverParam {
+	return param.Override[BrowserCaptchaSolverParam](json.RawMessage(r.RawJSON()))
+}
+
+// Automatic CAPTCHA solving configuration.
+//
+// The property Enabled is required.
+type BrowserCaptchaSolverParam struct {
+	// Whether the browser automatically solves CAPTCHAs.
+	Enabled bool `json:"enabled" api:"required"`
+	paramObj
+}
+
+func (r BrowserCaptchaSolverParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserCaptchaSolverParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserCaptchaSolverParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Overrides for browser attributes presented to websites.
+type BrowserFingerprint struct {
+	// Operating system the browser reports to websites.
+	//
+	// Any of "linux", "macos".
+	Os BrowserFingerprintOs `json:"os" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Os          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserFingerprint) RawJSON() string { return r.JSON.raw }
+func (r *BrowserFingerprint) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserFingerprint to a BrowserFingerprintParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserFingerprintParam.Overrides()
+func (r BrowserFingerprint) ToParam() BrowserFingerprintParam {
+	return param.Override[BrowserFingerprintParam](json.RawMessage(r.RawJSON()))
+}
+
+// Operating system the browser reports to websites.
+type BrowserFingerprintOs string
+
+const (
+	BrowserFingerprintOsLinux BrowserFingerprintOs = "linux"
+	BrowserFingerprintOsMacos BrowserFingerprintOs = "macos"
+)
+
 // Overrides for browser attributes presented to websites.
 //
 // The property Os is required.
 type BrowserFingerprintParam struct {
 	// Operating system the browser reports to websites.
 	//
-	// Any of "macos".
+	// Any of "linux", "macos".
 	Os BrowserFingerprintOs `json:"os,omitzero" api:"required"`
 	paramObj
 }
@@ -307,13 +388,6 @@ func (r BrowserFingerprintParam) MarshalJSON() (data []byte, err error) {
 func (r *BrowserFingerprintParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
-
-// Operating system the browser reports to websites.
-type BrowserFingerprintOs string
-
-const (
-	BrowserFingerprintOsMacos BrowserFingerprintOs = "macos"
-)
 
 type BrowserLocation struct {
 	// Effective canonical BCP 47 formatting locale selected for the browser session.
@@ -735,10 +809,10 @@ func (r *BrowserPoolRef) UnmarshalJSON(data []byte) error {
 type BrowserProxy struct {
 	// Selected proxy ID.
 	ID string `json:"id"`
-	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
-	// the browser's stealth-derived default: Kernel's default stealth proxy when
-	// stealth=true, or direct egress when stealth=false. default is primarily useful
-	// on browser update to restore the browser default after selected-proxy egress.
+	// Proxy egress mode. direct forces no proxy. default uses Kernel's default stealth
+	// proxy for browsers with CAPTCHA solving enabled, including stealth browsers, or
+	// direct egress otherwise. default is primarily useful on browser update to
+	// restore the browser default after selected-proxy egress.
 	//
 	// Any of "direct", "default".
 	Mode BrowserProxyMode `json:"mode"`
@@ -761,24 +835,23 @@ func (r *BrowserProxy) UnmarshalJSON(data []byte) error {
 }
 
 // Browser proxy configuration. Provide exactly one of mode, id, or name; an empty
-// object is invalid. Set mode to direct for no proxy regardless of stealth. Set
-// mode to default to use the browser's stealth-derived default: Kernel's default
-// stealth proxy when stealth=true, or direct egress when stealth=false. Select id
-// or name to use that proxy regardless of stealth. The selected proxy must be in
-// the same project as the browser. Names must match exactly one active proxy; use
-// id for stable references. Proxy configuration changes only egress and does not
-// change stealth or CAPTCHA solver behavior. A stealth browser using mode=direct
-// still runs in stealth mode with the CAPTCHA solver enabled. When proxy is
-// omitted on browser creation, stealth browsers use Kernel's default stealth proxy
-// and non-stealth browsers use direct egress. When omitted on update, the current
+// object is invalid. Set mode to direct for no proxy. Set mode to default to use
+// Kernel's default stealth proxy for browsers with CAPTCHA solving enabled,
+// including stealth browsers, or direct egress otherwise. Select id or name to use
+// that proxy. The selected proxy must be in the same project as the browser. Names
+// must match exactly one active proxy; use id for stable references. Proxy
+// configuration changes only egress and does not change CAPTCHA solver behavior. A
+// browser using mode=direct keeps the CAPTCHA solver if it was enabled. When proxy
+// is omitted on browser creation, stealth browsers use Kernel's default stealth
+// proxy and other browsers use direct egress. When omitted on update, the current
 // configuration is unchanged.
 type BrowserProxyConfig struct {
 	// Proxy ID.
 	ID string `json:"id"`
-	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
-	// the browser's stealth-derived default: Kernel's default stealth proxy when
-	// stealth=true, or direct egress when stealth=false. default is primarily useful
-	// on browser update to restore the browser default after selected-proxy egress.
+	// Proxy egress mode. direct forces no proxy. default uses Kernel's default stealth
+	// proxy for browsers with CAPTCHA solving enabled, including stealth browsers, or
+	// direct egress otherwise. default is primarily useful on browser update to
+	// restore the browser default after selected-proxy egress.
 	//
 	// Any of "direct", "default".
 	Mode BrowserProxyMode `json:"mode"`
@@ -810,26 +883,25 @@ func (r BrowserProxyConfig) ToParam() BrowserProxyConfigParam {
 }
 
 // Browser proxy configuration. Provide exactly one of mode, id, or name; an empty
-// object is invalid. Set mode to direct for no proxy regardless of stealth. Set
-// mode to default to use the browser's stealth-derived default: Kernel's default
-// stealth proxy when stealth=true, or direct egress when stealth=false. Select id
-// or name to use that proxy regardless of stealth. The selected proxy must be in
-// the same project as the browser. Names must match exactly one active proxy; use
-// id for stable references. Proxy configuration changes only egress and does not
-// change stealth or CAPTCHA solver behavior. A stealth browser using mode=direct
-// still runs in stealth mode with the CAPTCHA solver enabled. When proxy is
-// omitted on browser creation, stealth browsers use Kernel's default stealth proxy
-// and non-stealth browsers use direct egress. When omitted on update, the current
+// object is invalid. Set mode to direct for no proxy. Set mode to default to use
+// Kernel's default stealth proxy for browsers with CAPTCHA solving enabled,
+// including stealth browsers, or direct egress otherwise. Select id or name to use
+// that proxy. The selected proxy must be in the same project as the browser. Names
+// must match exactly one active proxy; use id for stable references. Proxy
+// configuration changes only egress and does not change CAPTCHA solver behavior. A
+// browser using mode=direct keeps the CAPTCHA solver if it was enabled. When proxy
+// is omitted on browser creation, stealth browsers use Kernel's default stealth
+// proxy and other browsers use direct egress. When omitted on update, the current
 // configuration is unchanged.
 type BrowserProxyConfigParam struct {
 	// Proxy ID.
 	ID param.Opt[string] `json:"id,omitzero"`
 	// Proxy name. Must match exactly one active proxy in the project.
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
-	// the browser's stealth-derived default: Kernel's default stealth proxy when
-	// stealth=true, or direct egress when stealth=false. default is primarily useful
-	// on browser update to restore the browser default after selected-proxy egress.
+	// Proxy egress mode. direct forces no proxy. default uses Kernel's default stealth
+	// proxy for browsers with CAPTCHA solving enabled, including stealth browsers, or
+	// direct egress otherwise. default is primarily useful on browser update to
+	// restore the browser default after selected-proxy egress.
 	//
 	// Any of "direct", "default".
 	Mode BrowserProxyMode `json:"mode,omitzero"`
@@ -844,10 +916,10 @@ func (r *BrowserProxyConfigParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Proxy egress mode. direct forces no proxy regardless of stealth. default uses
-// the browser's stealth-derived default: Kernel's default stealth proxy when
-// stealth=true, or direct egress when stealth=false. default is primarily useful
-// on browser update to restore the browser default after selected-proxy egress.
+// Proxy egress mode. direct forces no proxy. default uses Kernel's default stealth
+// proxy for browsers with CAPTCHA solving enabled, including stealth browsers, or
+// direct egress otherwise. default is primarily useful on browser update to
+// restore the browser default after selected-proxy egress.
 type BrowserProxyMode string
 
 const (
@@ -1188,6 +1260,8 @@ func (r *VaultReferenceParam) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserNewResponse struct {
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver" api:"required"`
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
@@ -1204,7 +1278,12 @@ type BrowserNewResponse struct {
 	Region BrowserNewResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
-	// Whether the browser session is running in stealth mode.
+	// Whether the browser session has CAPTCHA solving enabled, in which case
+	// proxy.mode=default uses Kernel's default stealth proxy. A browser created with
+	// only captcha_solver reports true with proxy.mode=direct. Deprecated in favor of
+	// captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
@@ -1221,6 +1300,9 @@ type BrowserNewResponse struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Fingerprint applied to this browser session. Omitted when the session was
+	// created without one.
+	Fingerprint BrowserFingerprint `json:"fingerprint"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
 	// headful sessions).
 	GPU bool `json:"gpu"`
@@ -1293,6 +1375,7 @@ type BrowserNewResponse struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		CaptchaSolver      respjson.Field
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
@@ -1306,6 +1389,7 @@ type BrowserNewResponse struct {
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
+		Fingerprint        respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		LeasedAt           respjson.Field
@@ -1386,6 +1470,8 @@ const (
 )
 
 type BrowserGetResponse struct {
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver" api:"required"`
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
@@ -1402,7 +1488,12 @@ type BrowserGetResponse struct {
 	Region BrowserGetResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
-	// Whether the browser session is running in stealth mode.
+	// Whether the browser session has CAPTCHA solving enabled, in which case
+	// proxy.mode=default uses Kernel's default stealth proxy. A browser created with
+	// only captcha_solver reports true with proxy.mode=direct. Deprecated in favor of
+	// captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
@@ -1419,6 +1510,9 @@ type BrowserGetResponse struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Fingerprint applied to this browser session. Omitted when the session was
+	// created without one.
+	Fingerprint BrowserFingerprint `json:"fingerprint"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
 	// headful sessions).
 	GPU bool `json:"gpu"`
@@ -1491,6 +1585,7 @@ type BrowserGetResponse struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		CaptchaSolver      respjson.Field
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
@@ -1504,6 +1599,7 @@ type BrowserGetResponse struct {
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
+		Fingerprint        respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		LeasedAt           respjson.Field
@@ -1584,6 +1680,8 @@ const (
 )
 
 type BrowserUpdateResponse struct {
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver" api:"required"`
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
@@ -1600,7 +1698,12 @@ type BrowserUpdateResponse struct {
 	Region BrowserUpdateResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
-	// Whether the browser session is running in stealth mode.
+	// Whether the browser session has CAPTCHA solving enabled, in which case
+	// proxy.mode=default uses Kernel's default stealth proxy. A browser created with
+	// only captcha_solver reports true with proxy.mode=direct. Deprecated in favor of
+	// captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
@@ -1617,6 +1720,9 @@ type BrowserUpdateResponse struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Fingerprint applied to this browser session. Omitted when the session was
+	// created without one.
+	Fingerprint BrowserFingerprint `json:"fingerprint"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
 	// headful sessions).
 	GPU bool `json:"gpu"`
@@ -1689,6 +1795,7 @@ type BrowserUpdateResponse struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		CaptchaSolver      respjson.Field
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
@@ -1702,6 +1809,7 @@ type BrowserUpdateResponse struct {
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
+		Fingerprint        respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		LeasedAt           respjson.Field
@@ -1782,6 +1890,8 @@ const (
 )
 
 type BrowserListResponse struct {
+	// Automatic CAPTCHA solving configuration.
+	CaptchaSolver BrowserCaptchaSolver `json:"captcha_solver" api:"required"`
 	// Websocket URL for Chrome DevTools Protocol connections to the browser session
 	CdpWsURL string `json:"cdp_ws_url" api:"required"`
 	// When the browser session was created.
@@ -1798,7 +1908,12 @@ type BrowserListResponse struct {
 	Region BrowserListResponseRegion `json:"region" api:"required"`
 	// Unique identifier for the browser session
 	SessionID string `json:"session_id" api:"required"`
-	// Whether the browser session is running in stealth mode.
+	// Whether the browser session has CAPTCHA solving enabled, in which case
+	// proxy.mode=default uses Kernel's default stealth proxy. A browser created with
+	// only captcha_solver reports true with proxy.mode=direct. Deprecated in favor of
+	// captcha_solver and proxy.
+	//
+	// Deprecated: deprecated
 	Stealth bool `json:"stealth" api:"required"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	TimeoutSeconds int64 `json:"timeout_seconds" api:"required"`
@@ -1815,6 +1930,9 @@ type BrowserListResponse struct {
 	ChromePolicy map[string]any `json:"chrome_policy"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
+	// Fingerprint applied to this browser session. Omitted when the session was
+	// created without one.
+	Fingerprint BrowserFingerprint `json:"fingerprint"`
 	// Whether GPU acceleration is enabled for the browser session (only supported for
 	// headful sessions).
 	GPU bool `json:"gpu"`
@@ -1887,6 +2005,7 @@ type BrowserListResponse struct {
 	Viewport shared.BrowserViewport `json:"viewport"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		CaptchaSolver      respjson.Field
 		CdpWsURL           respjson.Field
 		CreatedAt          respjson.Field
 		Headless           respjson.Field
@@ -1900,6 +2019,7 @@ type BrowserListResponse struct {
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
 		DeletedAt          respjson.Field
+		Fingerprint        respjson.Field
 		GPU                respjson.Field
 		KioskMode          respjson.Field
 		LeasedAt           respjson.Field
@@ -2031,11 +2151,10 @@ type BrowserNewParams struct {
 	// best-effort, so navigation failures do not prevent the session from being
 	// created.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
-	// If true, launches the browser in stealth mode and enables the CAPTCHA solver.
-	// Defaults to false. When proxy is omitted, stealth browsers use Kernel's default
-	// stealth proxy and non-stealth browsers use direct egress. An explicit proxy
-	// configuration changes only egress; it does not enable or disable stealth or the
-	// CAPTCHA solver.
+	// If true, enables the CAPTCHA solver and, when proxy is omitted, uses Kernel's
+	// default stealth proxy. Defaults to false. Equivalent to
+	// captcha_solver.enabled=true with proxy.mode=default. Cannot be combined with
+	// captcha_solver.enabled=false. Deprecated in favor of captcha_solver and proxy.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// The number of seconds of inactivity before the browser session is terminated.
 	// Activity includes CDP connections and live view connections. Defaults to 60
@@ -2049,6 +2168,10 @@ type BrowserNewParams struct {
 	// category settings, or all four categories are explicitly disabled, capture is
 	// not started.
 	Telemetry BrowserNewParamsTelemetry `json:"telemetry,omitzero"`
+	// Automatic CAPTCHA solving. Disabled by default. Enabling it does not select a
+	// proxy: when proxy is omitted, the browser uses direct egress unless
+	// stealth=true.
+	CaptchaSolver BrowserCaptchaSolverParam `json:"captcha_solver,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to this browser session. Keys
 	// are Chrome enterprise policy names; values must match their expected types.
 	// Blocked: kernel-managed policies (extensions, proxy, CDP/automation). See
@@ -2058,8 +2181,9 @@ type BrowserNewParams struct {
 	Extensions []shared.BrowserExtensionParam `json:"extensions,omitzero"`
 	// Closed beta: contact Kernel to enable fingerprint overrides for your
 	// organization. Overrides browser attributes presented to websites for this
-	// session. Currently supports macos and requires stealth=true, headless=false,
-	// gpu=false, and default memory. Omit to preserve the default browser behavior.
+	// session. Supports linux and macos and requires captcha_solver.enabled=true,
+	// headless=false, gpu=false, and default memory. Omit to preserve the default
+	// browser behavior.
 	Fingerprint BrowserFingerprintParam `json:"fingerprint,omitzero"`
 	// Optional session-only timezone and locale overrides. Each omitted field uses the
 	// default for the browser's region. start_url opens once the location applies.
@@ -2077,12 +2201,11 @@ type BrowserNewParams struct {
 	// Profiles must be created beforehand.
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Proxy configuration for the browser session. Cannot be combined with proxy_id.
-	// Omit to use the browser default: stealth browsers use Kernel's default stealth
-	// proxy, while non-stealth browsers use direct egress. Set mode to direct to force
-	// direct egress regardless of stealth. Set mode to default to explicitly use the
-	// browser default: Kernel's default stealth proxy when stealth=true, or direct
-	// egress when stealth=false. Select id or name to use that proxy regardless of
-	// stealth. Proxy selection does not change stealth or CAPTCHA solver behavior.
+	// Omit to use direct egress, or Kernel's default stealth proxy when stealth=true.
+	// Set mode to direct to force direct egress. Set mode to default to use Kernel's
+	// default stealth proxy when captcha_solver.enabled=true, or direct egress
+	// otherwise. Select id or name to use that proxy. Proxy selection does not change
+	// CAPTCHA solver behavior.
 	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
 	// Geographic region for the browser session. It is fixed once the session is
 	// created. Region selection requires a Start-Up or Enterprise plan, defaults to
@@ -2302,10 +2425,9 @@ type BrowserUpdateParams struct {
 	Profile shared.BrowserProfileParam `json:"profile,omitzero"`
 	// Proxy configuration to apply. Omit to leave the current configuration unchanged.
 	// Cannot be combined with proxy_id or disable_default_proxy. Set mode to direct to
-	// switch to direct egress regardless of stealth. Set mode to default to restore
-	// the browser default after using a selected proxy: Kernel's default stealth proxy
-	// for a stealth browser, or direct egress for a non-stealth browser. Updating
-	// proxy does not change stealth or CAPTCHA solver behavior.
+	// switch to direct egress. Set mode to default to use Kernel's default stealth
+	// proxy for a browser with CAPTCHA solving enabled, or direct egress otherwise.
+	// Updating proxy does not change CAPTCHA solver behavior.
 	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
 	// User-defined key-value tags for the browser session. Omit to leave unchanged.
 	// Provide a map to replace the entire tag set (full replace, not a merge). Set to
