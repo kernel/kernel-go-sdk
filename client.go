@@ -59,7 +59,11 @@ type Client struct {
 	// Read audit log records for the authenticated organization.
 	AuditLogs AuditLogService
 	// Create and manage API keys for organization and project-scoped access.
-	APIKeys APIKeyService
+	APIKeys                              APIKeyService
+	ServiceAccounts                      ServiceAccountService
+	WorkloadIdentityIssuers              WorkloadIdentityIssuerService
+	WorkloadIdentityFederationRules      WorkloadIdentityFederationRuleService
+	WorkloadIdentityAuthenticationEvents WorkloadIdentityAuthenticationEventService
 	// Configure external credential providers like 1Password.
 	CredentialProviders CredentialProviderService
 	// Search the web and retrieve content for selected results.
@@ -124,6 +128,10 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Organization = NewOrganizationService(opts...)
 	r.AuditLogs = NewAuditLogService(opts...)
 	r.APIKeys = NewAPIKeyService(opts...)
+	r.ServiceAccounts = NewServiceAccountService(opts...)
+	r.WorkloadIdentityIssuers = NewWorkloadIdentityIssuerService(opts...)
+	r.WorkloadIdentityFederationRules = NewWorkloadIdentityFederationRuleService(opts...)
+	r.WorkloadIdentityAuthenticationEvents = NewWorkloadIdentityAuthenticationEventService(opts...)
 	r.CredentialProviders = NewCredentialProviderService(opts...)
 	r.Search = NewSearchService(opts...)
 

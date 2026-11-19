@@ -137,14 +137,18 @@ func TestAPIKeyListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.APIKeys.List(context.TODO(), kernel.APIKeyListParams{
-		IncludeDeleted: kernel.Bool(true),
-		Limit:          kernel.Int(100),
-		Name:           kernel.String("name"),
-		Offset:         kernel.Int(0),
-		Query:          kernel.String("query"),
-		SortBy:         kernel.APIKeyListParamsSortByCreatedAt,
-		SortDirection:  kernel.APIKeyListParamsSortDirectionAsc,
-		Status:         kernel.APIKeyListParamsStatusActive,
+		CreatedBy:        kernel.String("created_by"),
+		IncludeDeleted:   kernel.Bool(true),
+		Limit:            kernel.Int(100),
+		Name:             kernel.String("name"),
+		Offset:           kernel.Int(0),
+		PrincipalType:    kernel.APIKeyListParamsPrincipalTypeUser,
+		ProjectID:        kernel.String("project_id"),
+		Query:            kernel.String("query"),
+		ServiceAccountID: kernel.String("service_account_id"),
+		SortBy:           kernel.APIKeyListParamsSortByCreatedAt,
+		SortDirection:    kernel.APIKeyListParamsSortDirectionAsc,
+		Status:           kernel.APIKeyListParamsStatusActive,
 	})
 	if err != nil {
 		var apierr *kernel.Error

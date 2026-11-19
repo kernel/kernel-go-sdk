@@ -481,6 +481,7 @@ Methods:
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthContext">AuthContext</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#AuthContextWorkloadIdentity">AuthContextWorkloadIdentity</a>
 
 Methods:
 
@@ -869,6 +870,7 @@ Methods:
 Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyPrincipal">APIKeyPrincipal</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreatedAPIKey">CreatedAPIKey</a>
 
 Methods:
@@ -879,6 +881,84 @@ Methods:
 - <code title="get /org/api_keys">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyListParams">APIKeyListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKey">APIKey</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="delete /org/api_keys/{id}">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
 - <code title="post /org/api_keys/{id}/rotate">client.APIKeys.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyService.Rotate">Rotate</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#APIKeyRotateParams">APIKeyRotateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#CreatedAPIKey">CreatedAPIKey</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# ServiceAccounts
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountConfigParam">ServiceAccountConfigParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccount">ServiceAccount</a>
+
+Methods:
+
+- <code title="post /org/service_accounts">client.ServiceAccounts.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountNewParams">ServiceAccountNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccount">ServiceAccount</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/service_accounts/{id}">client.ServiceAccounts.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccount">ServiceAccount</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /org/service_accounts/{id}">client.ServiceAccounts.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountUpdateParams">ServiceAccountUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccount">ServiceAccount</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/service_accounts">client.ServiceAccounts.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountListParams">ServiceAccountListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccount">ServiceAccount</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /org/service_accounts/{id}">client.ServiceAccounts.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ServiceAccountService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+
+# WorkloadIdentityIssuers
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerConfigParam">WorkloadIdentityIssuerConfigParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityKeySourceParam">WorkloadIdentityKeySourceParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityPresetType">WorkloadIdentityPresetType</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityTokenValidationParam">WorkloadIdentityTokenValidationParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuer">WorkloadIdentityIssuer</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerKeyCheck">WorkloadIdentityIssuerKeyCheck</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityKeySource">WorkloadIdentityKeySource</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityPresetType">WorkloadIdentityPresetType</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityTokenValidation">WorkloadIdentityTokenValidation</a>
+
+Methods:
+
+- <code title="post /org/workload_identity_issuers">client.WorkloadIdentityIssuers.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerNewParams">WorkloadIdentityIssuerNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuer">WorkloadIdentityIssuer</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/workload_identity_issuers/{id}">client.WorkloadIdentityIssuers.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuer">WorkloadIdentityIssuer</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /org/workload_identity_issuers/{id}">client.WorkloadIdentityIssuers.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerUpdateParams">WorkloadIdentityIssuerUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuer">WorkloadIdentityIssuer</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/workload_identity_issuers">client.WorkloadIdentityIssuers.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerListParams">WorkloadIdentityIssuerListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuer">WorkloadIdentityIssuer</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /org/workload_identity_issuers/{id}">client.WorkloadIdentityIssuers.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+- <code title="post /org/workload_identity_issuers/{id}/verify">client.WorkloadIdentityIssuers.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerService.Verify">Verify</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityIssuerKeyCheck">WorkloadIdentityIssuerKeyCheck</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# WorkloadIdentityFederationRules
+
+Params Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityAuthorizationParam">WorkloadIdentityAuthorizationParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleConfigParam">WorkloadIdentityFederationRuleConfigParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityMatchParam">WorkloadIdentityMatchParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityTargetParam">WorkloadIdentityTargetParam</a>
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityAuthorization">WorkloadIdentityAuthorization</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRule">WorkloadIdentityFederationRule</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityMatch">WorkloadIdentityMatch</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityTarget">WorkloadIdentityTarget</a>
+
+Methods:
+
+- <code title="post /org/workload_identity_federation_rules">client.WorkloadIdentityFederationRules.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleService.New">New</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleNewParams">WorkloadIdentityFederationRuleNewParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRule">WorkloadIdentityFederationRule</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/workload_identity_federation_rules/{id}">client.WorkloadIdentityFederationRules.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRule">WorkloadIdentityFederationRule</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="patch /org/workload_identity_federation_rules/{id}">client.WorkloadIdentityFederationRules.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleUpdateParams">WorkloadIdentityFederationRuleUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRule">WorkloadIdentityFederationRule</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /org/workload_identity_federation_rules">client.WorkloadIdentityFederationRules.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleListParams">WorkloadIdentityFederationRuleListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRule">WorkloadIdentityFederationRule</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="delete /org/workload_identity_federation_rules/{id}">client.WorkloadIdentityFederationRules.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityFederationRuleService.Delete">Delete</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) <a href="https://pkg.go.dev/builtin#error">error</a></code>
+
+# WorkloadIdentityAuthenticationEvents
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityAuthenticationEvent">WorkloadIdentityAuthenticationEvent</a>
+
+Methods:
+
+- <code title="get /org/workload_identity_authentication_events">client.WorkloadIdentityAuthenticationEvents.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityAuthenticationEventService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityAuthenticationEventListParams">WorkloadIdentityAuthenticationEventListParams</a>) (\*<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination">pagination</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk/packages/pagination#OffsetPagination">OffsetPagination</a>[<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#WorkloadIdentityAuthenticationEvent">WorkloadIdentityAuthenticationEvent</a>], <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 
 # CredentialProviders
 
