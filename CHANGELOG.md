@@ -5,7 +5,9 @@
 
 ### Features
 
-* Implement workload identity federation and service account credentials ([10f570a](https://github.com/kernel/kernel-go-sdk/commit/10f570a40039088d872b17ffb1a59f7e341931db))
+* Add service account, workload identity issuer, federation rule and authentication event resources. They require a signed-in session; API keys get 403 ([10f570a](https://github.com/kernel/kernel-go-sdk/commit/10f570a40039088d872b17ffb1a59f7e341931db))
+* Add `service_account_id`, `principal_type`, `created_by` and `project_id` filters and the `expired` status to API key listing. `status=active`, the default, no longer returns expired keys ([10f570a](https://github.com/kernel/kernel-go-sdk/commit/10f570a40039088d872b17ffb1a59f7e341931db))
+* Change `APIKeyPrincipal.Type`, which 0.150.0 introduced as a `string`, to the new `APIKeyPrincipalType` ([10f570a](https://github.com/kernel/kernel-go-sdk/commit/10f570a40039088d872b17ffb1a59f7e341931db))
 
 ## [0.150.0](https://github.com/kernel/kernel-go-sdk/compare/v0.149.0...v0.150.0) (2026-11-19)
 
