@@ -1393,8 +1393,9 @@ type BrowserNewResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
-	// Provisional browser-session usage cost on GET detail responses. Omitted from
-	// list and other browser responses.
+	// Provisional browser-session usage cost. Present only on GET detail responses
+	// requested with include_cost=true; omitted otherwise and from list and other
+	// browser responses.
 	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
@@ -1610,8 +1611,9 @@ type BrowserGetResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
-	// Provisional browser-session usage cost on GET detail responses. Omitted from
-	// list and other browser responses.
+	// Provisional browser-session usage cost. Present only on GET detail responses
+	// requested with include_cost=true; omitted otherwise and from list and other
+	// browser responses.
 	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
@@ -1827,8 +1829,9 @@ type BrowserUpdateResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
-	// Provisional browser-session usage cost on GET detail responses. Omitted from
-	// list and other browser responses.
+	// Provisional browser-session usage cost. Present only on GET detail responses
+	// requested with include_cost=true; omitted otherwise and from list and other
+	// browser responses.
 	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
@@ -2044,8 +2047,9 @@ type BrowserListResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
-	// Provisional browser-session usage cost on GET detail responses. Omitted from
-	// list and other browser responses.
+	// Provisional browser-session usage cost. Present only on GET detail responses
+	// requested with include_cost=true; omitted otherwise and from list and other
+	// browser responses.
 	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
@@ -2507,6 +2511,8 @@ func (r *BrowserNewParamsTelemetryStorage) UnmarshalJSON(data []byte) error {
 }
 
 type BrowserGetParams struct {
+	// When true, includes the session's provisional usage cost in the response.
+	IncludeCost param.Opt[bool] `query:"include_cost,omitzero" json:"-"`
 	// When true, includes soft-deleted browser sessions in the lookup.
 	IncludeDeleted param.Opt[bool] `query:"include_deleted,omitzero" json:"-"`
 	paramObj

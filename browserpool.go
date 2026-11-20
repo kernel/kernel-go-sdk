@@ -396,8 +396,9 @@ type BrowserPoolAcquireResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
-	// Provisional browser-session usage cost on GET detail responses. Omitted from
-	// list and other browser responses.
+	// Provisional browser-session usage cost. Present only on GET detail responses
+	// requested with include_cost=true; omitted otherwise and from list and other
+	// browser responses.
 	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`

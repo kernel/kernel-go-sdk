@@ -174,6 +174,7 @@ func TestBrowserGetWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserGetParams{
+			IncludeCost:    kernel.Bool(true),
 			IncludeDeleted: kernel.Bool(true),
 		},
 	)
