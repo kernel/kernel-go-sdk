@@ -2119,7 +2119,7 @@ type CredentialAccountVaultItemAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2561,7 +2561,7 @@ type CredentialVaultItemAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -4081,6 +4081,77 @@ func (r *KernelWalletVaultItemSpecParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Get the Link page where the user sets up Link balance, adds money to it, and
+// chooses an approval threshold for this wallet's Link client. Kernel does not yet
+// create spend requests under that approval policy, so cards from this wallet
+// still require the user's approval even when they are paid from the balance.
+// Available on connected Link wallets. Kernel first reads Link's user info and
+// returns 409 unless Link reports eligible_for_balance as true, which depends on
+// both the user and the wallet's Link client. Both amounts are suggestions the
+// page prefills; the user makes the final choice. Send only what needs to change:
+// desired_balance_amount to ask for money to be added, desired_transaction_limit
+// to set or change the threshold, or both for first-time setup.
+//
+// The property Type is required.
+type LinkBalanceSetupVaultItemOperationRequestParam struct {
+	// Any of "link_balance_setup".
+	Type LinkBalanceSetupVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
+	// Balance, in cents, the user should end up with. The page prefills the amount to
+	// add to reach it and skips adding money when the balance already covers it. Whole
+	// dollars only. Link refuses links that ask the user to add more than $150 at
+	// once.
+	DesiredBalanceAmount param.Opt[int64] `json:"desired_balance_amount,omitzero"`
+	// Approval threshold, in cents, to prefill. Link skips approval only for spend
+	// requests created under its approval policy, which Kernel cards do not use yet.
+	// Whole dollars, at most $500 because a single spend request cannot exceed $500.
+	// When set the page always shows the threshold step; when omitted it skips it.
+	DesiredTransactionLimit param.Opt[int64] `json:"desired_transaction_limit,omitzero"`
+	paramObj
+}
+
+func (r LinkBalanceSetupVaultItemOperationRequestParam) MarshalJSON() (data []byte, err error) {
+	type shadow LinkBalanceSetupVaultItemOperationRequestParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *LinkBalanceSetupVaultItemOperationRequestParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type LinkBalanceSetupVaultItemOperationRequestType string
+
+const (
+	LinkBalanceSetupVaultItemOperationRequestTypeLinkBalanceSetup LinkBalanceSetupVaultItemOperationRequestType = "link_balance_setup"
+)
+
+// Share url with the user; only the user can complete the page. It does not expire
+// and is the same for first-time setup, adding money and changing the threshold.
+// Observe the result through the payment_methods expansion (a method with type
+// balance and its balance.available) rather than assuming the user finished.
+type LinkBalanceSetupVaultItemOperationResult struct {
+	// Any of "link_balance_setup".
+	Type LinkBalanceSetupVaultItemOperationResultType `json:"type" api:"required"`
+	URL  string                                       `json:"url" api:"required" format:"uri"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Type        respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r LinkBalanceSetupVaultItemOperationResult) RawJSON() string { return r.JSON.raw }
+func (r *LinkBalanceSetupVaultItemOperationResult) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type LinkBalanceSetupVaultItemOperationResultType string
+
+const (
+	LinkBalanceSetupVaultItemOperationResultTypeLinkBalanceSetup LinkBalanceSetupVaultItemOperationResultType = "link_balance_setup"
+)
+
 // One entry of Link's `GET /shipping_addresses` response, passed through as Link
 // reports it. Kernel never stores it.
 type LinkShippingAddress struct {
@@ -5457,7 +5528,7 @@ type PaymentRequestVaultItemAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -7794,7 +7865,7 @@ type VaultItemWalletAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -7913,7 +7984,7 @@ type VaultItemCardAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -8239,7 +8310,8 @@ func (r *VaultItemEvent) UnmarshalJSON(data []byte) error {
 // [OnePasswordFillVaultItemOperationResult],
 // [WebmcpInvokeVaultItemOperationResult],
 // [AddPaymentMethodVaultItemOperationResult],
-// [RemovePaymentMethodVaultItemOperationResult].
+// [RemovePaymentMethodVaultItemOperationResult],
+// [LinkBalanceSetupVaultItemOperationResult].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type VaultItemOperationResponseUnion struct {
@@ -8297,7 +8369,9 @@ type VaultItemOperationResponseUnion struct {
 	PaymentMethod VaultPaymentMethod `json:"payment_method"`
 	// This field is from variant [RemovePaymentMethodVaultItemOperationResult].
 	PaymentMethodID string `json:"payment_method_id"`
-	JSON            struct {
+	// This field is from variant [LinkBalanceSetupVaultItemOperationResult].
+	URL  string `json:"url"`
+	JSON struct {
 		ID                  respjson.Field
 		AvailableExpansions respjson.Field
 		AvailableOperations respjson.Field
@@ -8321,6 +8395,7 @@ type VaultItemOperationResponseUnion struct {
 		Output              respjson.Field
 		PaymentMethod       respjson.Field
 		PaymentMethodID     respjson.Field
+		URL                 respjson.Field
 		raw                 string
 	} `json:"-"`
 }
@@ -8376,6 +8451,11 @@ func (u VaultItemOperationResponseUnion) AsAddPaymentMethodVaultItemOperationRes
 }
 
 func (u VaultItemOperationResponseUnion) AsRemovePaymentMethodVaultItemOperationResult() (v RemovePaymentMethodVaultItemOperationResult) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u VaultItemOperationResponseUnion) AsLinkBalanceSetupVaultItemOperationResult() (v LinkBalanceSetupVaultItemOperationResult) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
@@ -8991,7 +9071,7 @@ type VaultItemOperationResponseWalletVaultItemAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -9115,7 +9195,7 @@ type VaultItemOperationResponseCardVaultItemAvailableOperation struct {
 	// "1pw_create_access_request", "1pw_access_request_status", "1pw_fill",
 	// "1pw_recover", "1pw_disconnect", "1pw_update_access_token",
 	// "update_access_token", "webmcp_invoke", "add_payment_method",
-	// "remove_payment_method".
+	// "remove_payment_method", "link_balance_setup".
 	Type string `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -9153,6 +9233,11 @@ type VaultPaymentMethod struct {
 	// ingest hostname served by the card vault, which the card's issuer posts the card
 	// to from its backend; Kernel never receives the card number or CVC.
 	Action VaultPaymentMethodAction `json:"action"`
+	// Present on stored-value payment methods, such as a Link balance (type
+	// `balance`). `available` is the amount available to spend, absent when the
+	// provider did not report it. Read live from the provider on every request and
+	// never stored by Kernel.
+	Balance VaultPaymentMethodBalance `json:"balance"`
 	// Expiry of a pending enrollment link or ingest URL.
 	ExpiresAt time.Time `json:"expires_at" format:"date-time"`
 	// Kernel wallets only. The issuer's reference for a card it pushed with a
@@ -9182,6 +9267,7 @@ type VaultPaymentMethod struct {
 		Provider        respjson.Field
 		Type            respjson.Field
 		Action          respjson.Field
+		Balance         respjson.Field
 		ExpiresAt       respjson.Field
 		IssuerReference respjson.Field
 		Status          respjson.Field
@@ -9298,6 +9384,46 @@ const (
 	VaultPaymentMethodStatusRemovalPending    VaultPaymentMethodStatus = "removal_pending"
 	VaultPaymentMethodStatusRecoveryRequired  VaultPaymentMethodStatus = "recovery_required"
 )
+
+type VaultPaymentMethodAmount struct {
+	// Amount in the currency's smallest unit, for example cents for USD.
+	Amount int64 `json:"amount" api:"required"`
+	// Lowercase ISO 4217 currency code.
+	Currency string `json:"currency" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Amount      respjson.Field
+		Currency    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultPaymentMethodAmount) RawJSON() string { return r.JSON.raw }
+func (r *VaultPaymentMethodAmount) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Present on stored-value payment methods, such as a Link balance (type
+// `balance`). `available` is the amount available to spend, absent when the
+// provider did not report it. Read live from the provider on every request and
+// never stored by Kernel.
+type VaultPaymentMethodBalance struct {
+	Available VaultPaymentMethodAmount `json:"available"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Available   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r VaultPaymentMethodBalance) RawJSON() string { return r.JSON.raw }
+func (r *VaultPaymentMethodBalance) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 // The properties Field, InputPath are required.
 type VaultWebmcpBindingParam struct {
@@ -10780,6 +10906,18 @@ type VaultItemPerformOperationParams struct {
 	// not proof that a payment did not occur. Scoped API keys require vaults:write in
 	// addition to vaults:use on this vault; otherwise the operation returns 403.
 	OfRemovePaymentMethod *RemovePaymentMethodVaultItemOperationRequestParam `json:",inline"`
+	// This field is a request body variant, only one variant field can be set. Get the
+	// Link page where the user sets up Link balance, adds money to it, and chooses an
+	// approval threshold for this wallet's Link client. Kernel does not yet create
+	// spend requests under that approval policy, so cards from this wallet still
+	// require the user's approval even when they are paid from the balance. Available
+	// on connected Link wallets. Kernel first reads Link's user info and returns 409
+	// unless Link reports eligible_for_balance as true, which depends on both the user
+	// and the wallet's Link client. Both amounts are suggestions the page prefills;
+	// the user makes the final choice. Send only what needs to change:
+	// desired_balance_amount to ask for money to be added, desired_transaction_limit
+	// to set or change the threshold, or both for first-time setup.
+	OfLinkBalanceSetup *LinkBalanceSetupVaultItemOperationRequestParam `json:",inline"`
 
 	paramObj
 }
@@ -10803,7 +10941,8 @@ func (u VaultItemPerformOperationParams) MarshalJSON() ([]byte, error) {
 		u.OfUpdateAccessToken,
 		u.OfWebmcpInvoke,
 		u.OfAddPaymentMethod,
-		u.OfRemovePaymentMethod)
+		u.OfRemovePaymentMethod,
+		u.OfLinkBalanceSetup)
 }
 func (r *VaultItemPerformOperationParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
