@@ -305,6 +305,8 @@ const (
 
 type WorkloadIdentityTokenValidation struct {
 	// Maximum incoming signed exp minus iat, independent of outgoing token lifetime.
+	// At most 172800 (48 hours), which covers Azure managed identity tokens that live
+	// slightly over 24 hours.
 	MaxLifetimeSeconds int64 `json:"max_lifetime_seconds"`
 	// Whether an incoming token can be exchanged more than once before it expires.
 	// Defaults to single_use for github_actions, aws, microsoft_entra and custom_oidc,
@@ -357,6 +359,8 @@ const (
 
 type WorkloadIdentityTokenValidationParam struct {
 	// Maximum incoming signed exp minus iat, independent of outgoing token lifetime.
+	// At most 172800 (48 hours), which covers Azure managed identity tokens that live
+	// slightly over 24 hours.
 	MaxLifetimeSeconds param.Opt[int64] `json:"max_lifetime_seconds,omitzero"`
 	// Whether an incoming token can be exchanged more than once before it expires.
 	// Defaults to single_use for github_actions, aws, microsoft_entra and custom_oidc,

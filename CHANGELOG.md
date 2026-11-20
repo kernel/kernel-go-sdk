@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.154.0](https://github.com/kernel/kernel-go-sdk/compare/v0.153.0...v0.154.0) (2026-11-20)
+
+
+### Features
+
+* Add macOS browsers: request contract and Hypeman allocation ([18531b8](https://github.com/kernel/kernel-go-sdk/commit/18531b88692994cd828fca9dcc3384466a6bd8e2))
+* Link balance: report balance amounts and add link_balance_setup ([687bace](https://github.com/kernel/kernel-go-sdk/commit/687bace599f5a68fc05c161eea2302610d544070))
+* Make browser cost opt-in with include_cost on browser detail ([d24b889](https://github.com/kernel/kernel-go-sdk/commit/d24b88990bbd11c2ee0a84df87a931c0a27b905f))
+
 ## [0.153.0](https://github.com/kernel/kernel-go-sdk/compare/v0.152.0...v0.153.0) (2026-11-20)
 
 

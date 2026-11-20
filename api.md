@@ -113,6 +113,8 @@ Params Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserMemoryRequest">BrowserMemoryRequest</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserNetworkConfigParam">BrowserNetworkConfigParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserNetworkUpdateParam">BrowserNetworkUpdateParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserOs">BrowserOs</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlatformParam">BrowserPlatformParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserProxyConfigParam">BrowserProxyConfigParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserProxyMode">BrowserProxyMode</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserReplRequestParam">BrowserReplRequestParam</a>
@@ -131,6 +133,8 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocationSource">BrowserLocationSource</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserMemory">BrowserMemory</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserNetworkConfig">BrowserNetworkConfig</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserOs">BrowserOs</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPlatform">BrowserPlatform</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserPoolRef">BrowserPoolRef</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserProxy">BrowserProxy</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserProxyConfig">BrowserProxyConfig</a>
@@ -658,6 +662,7 @@ Params Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelPaymentRequestVaultItemSpecParam">KernelPaymentRequestVaultItemSpecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelSingleUseCardParam">KernelSingleUseCardParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelWalletVaultItemSpecParam">KernelWalletVaultItemSpecParam</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LinkBalanceSetupVaultItemOperationRequestParam">LinkBalanceSetupVaultItemOperationRequestParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ManagedAuthCredentialVaultItemSpecInputParam">ManagedAuthCredentialVaultItemSpecInputParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialAccountSpecParam">OnePasswordCredentialAccountSpecParam</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#OnePasswordCredentialVaultItemSpecInputParam">OnePasswordCredentialVaultItemSpecInputParam</a>
@@ -705,6 +710,7 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelSingleUseCard">KernelSingleUseCard</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelWalletState">KernelWalletState</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#KernelWalletVaultItemSpec">KernelWalletVaultItemSpec</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LinkBalanceSetupVaultItemOperationResult">LinkBalanceSetupVaultItemOperationResult</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LinkShippingAddress">LinkShippingAddress</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#LinkUserInfo">LinkUserInfo</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#ManagedAuthCredentialVaultField">ManagedAuthCredentialVaultField</a>
@@ -733,6 +739,8 @@ Response Types:
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultItemEvent">VaultItemEvent</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultItemOperationResponseUnion">VaultItemOperationResponseUnion</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultPaymentMethod">VaultPaymentMethod</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultPaymentMethodAmount">VaultPaymentMethodAmount</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VaultPaymentMethodBalance">VaultPaymentMethodBalance</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VgsCardInput">VgsCardInput</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VgsCardState">VgsCardState</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#VgsCardVaultItemSpec">VgsCardVaultItemSpec</a>

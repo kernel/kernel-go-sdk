@@ -64,6 +64,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 				},
 			}},
 		},
+		Platform: kernel.BrowserPlatformParam{
+			Os: kernel.BrowserOsLinux,
+		},
 		Profile: shared.BrowserProfileParam{
 			ID:          kernel.String("id"),
 			Name:        kernel.String("name"),
@@ -171,6 +174,7 @@ func TestBrowserGetWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserGetParams{
+			IncludeCost:    kernel.Bool(true),
 			IncludeDeleted: kernel.Bool(true),
 		},
 	)
