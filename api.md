@@ -125,6 +125,7 @@ Response Types:
 
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserAllowlistState">BrowserAllowlistState</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCaptchaSolver">BrowserCaptchaSolver</a>
+- <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserCost">BrowserCost</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserFingerprint">BrowserFingerprint</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocation">BrowserLocation</a>
 - <a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk">kernel</a>.<a href="https://pkg.go.dev/github.com/kernel/kernel-go-sdk#BrowserLocationSource">BrowserLocationSource</a>
