@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.153.0](https://github.com/kernel/kernel-go-sdk/compare/v0.152.0...v0.153.0) (2026-11-20)
+
+
+### Features
+
+* Expose provisional browser cost on detail ([99b9a92](https://github.com/kernel/kernel-go-sdk/commit/99b9a928e55d8e2d238d960c2b98a902d26a17da))
+
 ## [0.152.0](https://github.com/kernel/kernel-go-sdk/compare/v0.151.0...v0.152.0) (2026-11-19)
 
 
