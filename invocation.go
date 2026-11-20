@@ -605,6 +605,9 @@ type InvocationListBrowsersResponseBrowser struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
+	// Provisional browser-session usage cost on GET detail responses. Omitted from
+	// list and other browser responses.
+	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Fingerprint applied to this browser session. Omitted when the session was
@@ -695,6 +698,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
+		Cost               respjson.Field
 		DeletedAt          respjson.Field
 		Fingerprint        respjson.Field
 		GPU                respjson.Field

@@ -333,6 +333,45 @@ func (r *BrowserCaptchaSolverParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type BrowserCost struct {
+	// Pending means the billing checkpoint or rate calculation is not ready;
+	// unavailable means the session cannot currently be priced safely.
+	//
+	// Any of "provisional", "pending", "unavailable".
+	Status BrowserCostStatus `json:"status" api:"required"`
+	// Time of the live uptime read or durable billing checkpoint. A running or
+	// recently deleted session may accrue additional usage.
+	AsOf time.Time `json:"as_of" format:"date-time"`
+	// Gross provisional USD browser-meter cost before credits, subscriptions, tax, and
+	// adjustments. Present only with provisional status, including zero for a
+	// completed zero-uptime session. Not an invoice total.
+	EstimatedUsageSpendUsd string `json:"estimated_usage_spend_usd"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Status                 respjson.Field
+		AsOf                   respjson.Field
+		EstimatedUsageSpendUsd respjson.Field
+		ExtraFields            map[string]respjson.Field
+		raw                    string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserCost) RawJSON() string { return r.JSON.raw }
+func (r *BrowserCost) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Pending means the billing checkpoint or rate calculation is not ready;
+// unavailable means the session cannot currently be priced safely.
+type BrowserCostStatus string
+
+const (
+	BrowserCostStatusProvisional BrowserCostStatus = "provisional"
+	BrowserCostStatusPending     BrowserCostStatus = "pending"
+	BrowserCostStatusUnavailable BrowserCostStatus = "unavailable"
+)
+
 // Overrides for browser attributes presented to websites.
 type BrowserFingerprint struct {
 	// Operating system the browser reports to websites.
@@ -1298,6 +1337,9 @@ type BrowserNewResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
+	// Provisional browser-session usage cost on GET detail responses. Omitted from
+	// list and other browser responses.
+	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Fingerprint applied to this browser session. Omitted when the session was
@@ -1388,6 +1430,7 @@ type BrowserNewResponse struct {
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
+		Cost               respjson.Field
 		DeletedAt          respjson.Field
 		Fingerprint        respjson.Field
 		GPU                respjson.Field
@@ -1508,6 +1551,9 @@ type BrowserGetResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
+	// Provisional browser-session usage cost on GET detail responses. Omitted from
+	// list and other browser responses.
+	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Fingerprint applied to this browser session. Omitted when the session was
@@ -1598,6 +1644,7 @@ type BrowserGetResponse struct {
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
+		Cost               respjson.Field
 		DeletedAt          respjson.Field
 		Fingerprint        respjson.Field
 		GPU                respjson.Field
@@ -1718,6 +1765,9 @@ type BrowserUpdateResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
+	// Provisional browser-session usage cost on GET detail responses. Omitted from
+	// list and other browser responses.
+	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Fingerprint applied to this browser session. Omitted when the session was
@@ -1808,6 +1858,7 @@ type BrowserUpdateResponse struct {
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
+		Cost               respjson.Field
 		DeletedAt          respjson.Field
 		Fingerprint        respjson.Field
 		GPU                respjson.Field
@@ -1928,6 +1979,9 @@ type BrowserListResponse struct {
 	// session, if any. Echoed back for verification. Keys are Chrome enterprise policy
 	// names.
 	ChromePolicy map[string]any `json:"chrome_policy"`
+	// Provisional browser-session usage cost on GET detail responses. Omitted from
+	// list and other browser responses.
+	Cost BrowserCost `json:"cost"`
 	// When the browser session was soft-deleted. Only present for deleted sessions.
 	DeletedAt time.Time `json:"deleted_at" format:"date-time"`
 	// Fingerprint applied to this browser session. Omitted when the session was
@@ -2018,6 +2072,7 @@ type BrowserListResponse struct {
 		BaseURL            respjson.Field
 		BrowserLiveViewURL respjson.Field
 		ChromePolicy       respjson.Field
+		Cost               respjson.Field
 		DeletedAt          respjson.Field
 		Fingerprint        respjson.Field
 		GPU                respjson.Field
