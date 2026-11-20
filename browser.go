@@ -822,6 +822,62 @@ func (r *BrowserNetworkUpdateParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Operating system of the browser's host.
+type BrowserOs string
+
+const (
+	BrowserOsLinux BrowserOs = "linux"
+	BrowserOsMacos BrowserOs = "macos"
+)
+
+// Host platform settings for the browser session.
+type BrowserPlatform struct {
+	// Operating system of the browser's host.
+	//
+	// Any of "linux", "macos".
+	Os BrowserOs `json:"os" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Os          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BrowserPlatform) RawJSON() string { return r.JSON.raw }
+func (r *BrowserPlatform) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ToParam converts this BrowserPlatform to a BrowserPlatformParam.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// BrowserPlatformParam.Overrides()
+func (r BrowserPlatform) ToParam() BrowserPlatformParam {
+	return param.Override[BrowserPlatformParam](json.RawMessage(r.RawJSON()))
+}
+
+// Host platform settings for the browser session.
+//
+// The property Os is required.
+type BrowserPlatformParam struct {
+	// Operating system of the browser's host.
+	//
+	// Any of "linux", "macos".
+	Os BrowserOs `json:"os,omitzero" api:"required"`
+	paramObj
+}
+
+func (r BrowserPlatformParam) MarshalJSON() (data []byte, err error) {
+	type shadow BrowserPlatformParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *BrowserPlatformParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // Browser pool this session was acquired from, if any.
 type BrowserPoolRef struct {
 	// Browser pool ID
@@ -1360,6 +1416,8 @@ type BrowserNewResponse struct {
 	// Network configuration the session was created with, if any. Omitted when the
 	// session has no network configuration.
 	Network BrowserNetworkConfig `json:"network"`
+	// Host platform for the browser session. Absent means linux.
+	Platform BrowserPlatform `json:"platform"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -1439,6 +1497,7 @@ type BrowserNewResponse struct {
 		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
+		Platform           respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -1574,6 +1633,8 @@ type BrowserGetResponse struct {
 	// Network configuration the session was created with, if any. Omitted when the
 	// session has no network configuration.
 	Network BrowserNetworkConfig `json:"network"`
+	// Host platform for the browser session. Absent means linux.
+	Platform BrowserPlatform `json:"platform"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -1653,6 +1714,7 @@ type BrowserGetResponse struct {
 		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
+		Platform           respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -1788,6 +1850,8 @@ type BrowserUpdateResponse struct {
 	// Network configuration the session was created with, if any. Omitted when the
 	// session has no network configuration.
 	Network BrowserNetworkConfig `json:"network"`
+	// Host platform for the browser session. Absent means linux.
+	Platform BrowserPlatform `json:"platform"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -1867,6 +1931,7 @@ type BrowserUpdateResponse struct {
 		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
+		Platform           respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -2002,6 +2067,8 @@ type BrowserListResponse struct {
 	// Network configuration the session was created with, if any. Omitted when the
 	// session has no network configuration.
 	Network BrowserNetworkConfig `json:"network"`
+	// Host platform for the browser session. Absent means linux.
+	Platform BrowserPlatform `json:"platform"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -2081,6 +2148,7 @@ type BrowserListResponse struct {
 		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
+		Platform           respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field
@@ -2251,6 +2319,15 @@ type BrowserNewParams struct {
 	// Network configuration for the browser session. Only allowed_hosts can be changed
 	// after creation, with PATCH /browsers/{id_or_name}.
 	Network BrowserNetworkConfigParam `json:"network,omitzero"`
+	// Host platform for the browser. Omit it, or set `os` to `linux`, for a Linux
+	// browser. This is the operating system the browser runs on; `fingerprint.os` only
+	// changes what a Linux browser reports to websites. macOS browsers are not
+	// available yet: requests for them return 503 `platform_unavailable`. macOS
+	// browsers are headful and run only in `us-east`. A macOS request that sets
+	// `headless: true`, `memory`, `gpu`, `video_memory`, `profile`, `location`,
+	// `fingerprint`, or a region other than `us-east` returns 400
+	// `unsupported_configuration`, listing those fields in `unsupported_fields`.
+	Platform BrowserPlatformParam `json:"platform,omitzero"`
 	// Profile selection for the browser session. Provide either id or name. If
 	// specified, the matching profile will be loaded into the browser session.
 	// Profiles must be created beforehand.

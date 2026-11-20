@@ -628,6 +628,8 @@ type InvocationListBrowsersResponseBrowser struct {
 	// Network configuration the session was created with, if any. Omitted when the
 	// session has no network configuration.
 	Network BrowserNetworkConfig `json:"network"`
+	// Host platform for the browser session. Absent means linux.
+	Platform BrowserPlatform `json:"platform"`
 	// Browser pool this session was acquired from, if any.
 	Pool BrowserPoolRef `json:"pool"`
 	// Browser profile metadata.
@@ -707,6 +709,7 @@ type InvocationListBrowsersResponseBrowser struct {
 		Location           respjson.Field
 		Name               respjson.Field
 		Network            respjson.Field
+		Platform           respjson.Field
 		Pool               respjson.Field
 		Profile            respjson.Field
 		ProfileSaveChanges respjson.Field

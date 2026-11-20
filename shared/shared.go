@@ -254,14 +254,17 @@ type ErrorModel struct {
 	// Additional error details (for multiple errors)
 	Details    []ErrorDetail `json:"details"`
 	InnerError ErrorDetail   `json:"inner_error"`
+	// Request fields that are incompatible with the requested browser platform.
+	UnsupportedFields []string `json:"unsupported_fields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Code        respjson.Field
-		Message     respjson.Field
-		Details     respjson.Field
-		InnerError  respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		Code              respjson.Field
+		Message           respjson.Field
+		Details           respjson.Field
+		InnerError        respjson.Field
+		UnsupportedFields respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 

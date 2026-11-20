@@ -64,6 +64,9 @@ func TestBrowserNewWithOptionalParams(t *testing.T) {
 				},
 			}},
 		},
+		Platform: kernel.BrowserPlatformParam{
+			Os: kernel.BrowserOsLinux,
+		},
 		Profile: shared.BrowserProfileParam{
 			ID:          kernel.String("id"),
 			Name:        kernel.String("name"),
