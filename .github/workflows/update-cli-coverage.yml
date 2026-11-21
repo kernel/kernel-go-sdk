@@ -251,13 +251,6 @@ jobs:
           persist-credentials: false
           ref: ${{ needs.prefetch.outputs.sha }}
 
-      - name: Checkout updater scripts
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
-        with:
-          path: updater
-          sparse-checkout: .github/scripts
-          persist-credentials: false
-
       - name: Download CLI coverage context
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
@@ -584,6 +577,14 @@ jobs:
         uses: kernel/security-workflows/.github/actions/llm-credentials@4144994f1d6977e07ef5a5832599ee4faaae9550 # main
         with:
           stop: true
+
+      # Pi can change or delete anything in the workspace, so check out the allowlist only after it exits.
+      - name: Checkout updater scripts
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        with:
+          path: updater
+          sparse-checkout: .github/scripts
+          persist-credentials: false
 
       - name: Snapshot publishable changes
         id: snapshot
