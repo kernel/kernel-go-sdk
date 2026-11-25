@@ -1974,12 +1974,12 @@ const (
 	CollectVaultItemOperationRequestTypeCollect CollectVaultItemOperationRequestType = "collect"
 )
 
-// Report a real merchant transaction outcome for an issued Kernel Visa or Shop Pay
-// credential. Shop Pay accepts PURCHASE, AUTHORIZATION and CAPTURE. Never infer
-// success from filling checkout or receiving a credential. Supply the observed
-// status, transaction type, actual amount, currency and timestamp. Unknown
-// outcomes require manual reconciliation, not retry. Each purchase accepts one
-// report.
+// Report a real merchant transaction outcome for an issued Kernel card or Shop Pay
+// credential. Kernel alias cards record the outcome without contacting the issuer.
+// Shop Pay accepts PURCHASE, AUTHORIZATION and CAPTURE. Never infer success from
+// filling checkout or receiving a credential. Supply the observed status,
+// transaction type, actual amount, currency and timestamp. Unknown outcomes
+// require manual reconciliation, not retry. Each purchase accepts one report.
 //
 // The properties Amount, Currency, OccurredAt, Status, TransactionType, Type are
 // required.
@@ -1999,14 +1999,14 @@ type ConfirmTransactionVaultItemOperationRequestParam struct {
 	Type ConfirmTransactionVaultItemOperationRequestType `json:"type,omitzero" api:"required"`
 	// Why the purchase did not succeed, for any other outcome, such as 3ds_challenge,
 	// captcha, login_required, timeout or site_error. payment_declined goes only with
-	// DECLINED, which takes no other code. Shop Pay reports it; other providers ignore
-	// it.
+	// DECLINED, which takes no other code. Shop Pay reports it to Shop Pay; Kernel
+	// cards store it with the purchase without reporting it.
 	FailureCode param.Opt[string] `json:"failure_code,omitzero"`
-	// The merchant's order number, for an APPROVED outcome. Shop Pay reports it; other
-	// providers ignore it.
+	// The merchant's order number, for an APPROVED outcome. Shop Pay reports it to
+	// Shop Pay; Kernel cards store it with the purchase without reporting it.
 	OrderID param.Opt[string] `json:"order_id,omitzero"`
-	// The merchant's https order page, for an APPROVED outcome. Shop Pay reports it;
-	// other providers ignore it.
+	// The merchant's https order page, for an APPROVED outcome. Shop Pay reports it to
+	// Shop Pay; Kernel cards store it with the purchase without reporting it.
 	OrderURL param.Opt[string] `json:"order_url,omitzero" format:"uri"`
 	paramObj
 }
@@ -10754,12 +10754,12 @@ type VaultItemPerformOperationParams struct {
 	// this operation.
 	OfRestartVerification *RestartVerificationVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Report
-	// a real merchant transaction outcome for an issued Kernel Visa or Shop Pay
-	// credential. Shop Pay accepts PURCHASE, AUTHORIZATION and CAPTURE. Never infer
-	// success from filling checkout or receiving a credential. Supply the observed
-	// status, transaction type, actual amount, currency and timestamp. Unknown
-	// outcomes require manual reconciliation, not retry. Each purchase accepts one
-	// report.
+	// a real merchant transaction outcome for an issued Kernel card or Shop Pay
+	// credential. Kernel alias cards record the outcome without contacting the issuer.
+	// Shop Pay accepts PURCHASE, AUTHORIZATION and CAPTURE. Never infer success from
+	// filling checkout or receiving a credential. Supply the observed status,
+	// transaction type, actual amount, currency and timestamp. Unknown outcomes
+	// require manual reconciliation, not retry. Each purchase accepts one report.
 	OfConfirmTransaction *ConfirmTransactionVaultItemOperationRequestParam `json:",inline"`
 	// This field is a request body variant, only one variant field can be set. Return
 	// the credential item with its collection action. Supported for ready and
