@@ -36,6 +36,17 @@ func TestDeploymentNewWithOptionalParams(t *testing.T) {
 		File:   io.Reader(bytes.NewBuffer([]byte("Example data"))),
 		Force:  kernel.Bool(false),
 		Region: kernel.DeploymentNewParamsRegionAwsUsEast1a,
+		RuntimePolicy: kernel.DeploymentNewParamsRuntimePolicy{
+			Statements: []kernel.DeploymentNewParamsRuntimePolicyStatement{{
+				Action:   "browsers:use",
+				Resource: "projects/proj_abc123/browsers/br_abc123",
+				Condition: kernel.DeploymentNewParamsRuntimePolicyStatementCondition{
+					Key:      "source_ip",
+					Operator: "in",
+					Values:   []string{"203.0.113.0/24"},
+				},
+			}},
+		},
 		Source: kernel.DeploymentNewParamsSource{
 			Entrypoint: "src/index.ts",
 			Ref:        "main",

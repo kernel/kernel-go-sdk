@@ -2534,6 +2534,10 @@ type BrowserUpdateParams struct {
 	// ID of the proxy to use. Omit to leave unchanged, set to empty string to remove
 	// proxy. Deprecated in favor of proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
+	// Enable or disable the stealth browser's CAPTCHA solver immediately, without
+	// restarting the browser or interrupting the current page. Omit to leave the
+	// solver unchanged. Only available for stealth browsers.
+	CaptchaSolverEnabled param.Opt[bool] `json:"captcha_solver_enabled,omitzero"`
 	// If true, stealth browsers connect directly instead of using the default stealth
 	// proxy. Deprecated in favor of proxy.mode.
 	DisableDefaultProxy param.Opt[bool] `json:"disable_default_proxy,omitzero"`
@@ -2723,6 +2727,9 @@ type BrowserListParams struct {
 	// Number of results to skip. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Search browsers by name, session ID, profile name or ID, proxy ID, or pool name.
+	// With `status=deleted` or `status=all`, only browsers created in the last 24
+	// hours are searched, including active ones; use `status=active` to search all
+	// active browsers.
 	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	// Filter sessions by geographic region. Omit to list sessions in all regions.
 	//
@@ -2735,7 +2742,9 @@ type BrowserListParams struct {
 	Status BrowserListParamsStatus `query:"status,omitzero" json:"-"`
 	// Filter sessions by tag key-value pairs using deepObject style, e.g.
 	// ?tags[team]=backend&tags[env]=staging. Multiple pairs are ANDed: a session must
-	// match every supplied pair exactly.
+	// match every supplied pair exactly. With `status=deleted` or `status=all`, only
+	// browsers created in the last 24 hours are matched; use `status=active` to match
+	// all active browsers.
 	Tags map[string]string `query:"tags,omitzero" json:"-"`
 	paramObj
 }

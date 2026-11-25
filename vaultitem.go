@@ -3943,18 +3943,18 @@ func (r *KernelSingleUseCardParam) UnmarshalJSON(data []byte) error {
 type KernelWalletState struct {
 	// Any of "kernel".
 	Provider KernelWalletStateProvider `json:"provider" api:"required"`
-	// connected means the wallet is usable. It holds zero or more cards as payment
-	// methods, listed by the payment_methods expansion, and each can pay once it
-	// reports capabilities.single_use_card.eligible. A wallet with no cards, before
-	// its first card or after its last is removed, is still connected. Where the
-	// wallet advertises add_payment_method and remove_payment_method, use them to
-	// manage cards. Otherwise the wallet enrolls one default card when created; until
-	// that card is enrolled the wallet reports pending_authorization with the card's
-	// card_enrollment action, or degraded when the card's enrollment outcome is
-	// unknown and the wallet must be deleted before adding another card.
-	// reconnect_required appears only on a wallet created before cards were payment
-	// methods and not yet upgraded. Reads preserve its stored state until the operator
-	// upgrade; payment and deletion requests are refused until then.
+	// connected means the wallet is usable. New wallets are created connected and
+	// empty. A wallet holds zero or more cards as payment methods, added with
+	// add_payment_method, removed with remove_payment_method and listed by the
+	// payment_methods expansion; each can pay once it reports
+	// capabilities.single_use_card.eligible. A wallet with no cards, before its first
+	// card or after its last is removed, is still connected. A wallet created before
+	// cards were added with add_payment_method holds a default card, ID card; while
+	// that card's enrollment is pending, its card_enrollment action is on the card in
+	// the payment_methods expansion, not on the wallet. pending_authorization,
+	// degraded and reconnect_required appear only on a wallet created before cards
+	// were payment methods and not yet upgraded. Reads preserve its stored state until
+	// the operator upgrade; payment and deletion requests are refused until then.
 	//
 	// Any of "pending_authorization", "connected", "reconnect_required", "degraded".
 	Status       KernelWalletStateStatus `json:"status" api:"required"`
@@ -3981,18 +3981,18 @@ const (
 	KernelWalletStateProviderKernel KernelWalletStateProvider = "kernel"
 )
 
-// connected means the wallet is usable. It holds zero or more cards as payment
-// methods, listed by the payment_methods expansion, and each can pay once it
-// reports capabilities.single_use_card.eligible. A wallet with no cards, before
-// its first card or after its last is removed, is still connected. Where the
-// wallet advertises add_payment_method and remove_payment_method, use them to
-// manage cards. Otherwise the wallet enrolls one default card when created; until
-// that card is enrolled the wallet reports pending_authorization with the card's
-// card_enrollment action, or degraded when the card's enrollment outcome is
-// unknown and the wallet must be deleted before adding another card.
-// reconnect_required appears only on a wallet created before cards were payment
-// methods and not yet upgraded. Reads preserve its stored state until the operator
-// upgrade; payment and deletion requests are refused until then.
+// connected means the wallet is usable. New wallets are created connected and
+// empty. A wallet holds zero or more cards as payment methods, added with
+// add_payment_method, removed with remove_payment_method and listed by the
+// payment_methods expansion; each can pay once it reports
+// capabilities.single_use_card.eligible. A wallet with no cards, before its first
+// card or after its last is removed, is still connected. A wallet created before
+// cards were added with add_payment_method holds a default card, ID card; while
+// that card's enrollment is pending, its card_enrollment action is on the card in
+// the payment_methods expansion, not on the wallet. pending_authorization,
+// degraded and reconnect_required appear only on a wallet created before cards
+// were payment methods and not yet upgraded. Reads preserve its stored state until
+// the operator upgrade; payment and deletion requests are refused until then.
 type KernelWalletStateStatus string
 
 const (
@@ -4003,20 +4003,18 @@ const (
 )
 
 // Cards stored with Kernel-managed credentials, each a payment method of the
-// wallet. Each card is enrolled through a card*enrollment action: the cardholder
-// enters the card and their email on a Kernel-hosted page. Where the wallet
-// advertises add_payment_method, creation returns an empty connected wallet and
-// each card is enrolled with that operation. Otherwise creation returns the
-// wallet's default card's card_enrollment action, and the wallet connects once
-// that card is stored. Kernel then enrolls each card for an agentic network token
-// when the issuer supports it. The card number never reaches Kernel. The connected
-// wallet's payment_methods expansion lists the cards;
-// capabilities.single_use_card.eligible is false, with a network_token*\* reason,
-// until the card has a network token, and authorize returns 400 for such a card
-// unless Kernel supports checkout delivery without a network token for that card.
-// In that case, fill types the checkout details. Visa purchases require the
-// cardholder to complete a spend_approval action before Kernel issues a one-time
-// code; Mastercard purchases need no hosted approval.
+// wallet. Creation returns a connected wallet with no cards and no action. Add
+// each card with the add*payment_method operation, which returns a card_enrollment
+// action: the cardholder enters the card and their email on a Kernel-hosted page.
+// Kernel then enrolls each card for an agentic network token when the issuer
+// supports it. The card number never reaches Kernel. The connected wallet's
+// payment_methods expansion lists the cards; capabilities.single_use_card.eligible
+// is false, with a network_token*\* reason, until the card has a network token,
+// and authorize returns 400 for such a card unless Kernel supports checkout
+// delivery without a network token for that card. In that case, fill types the
+// checkout details. Visa purchases require the cardholder to complete a
+// spend_approval action before Kernel issues a one-time code; Mastercard purchases
+// need no hosted approval.
 type KernelWalletVaultItemSpec struct {
 	// Any of "kernel".
 	Provider KernelWalletVaultItemSpecProvider `json:"provider" api:"required"`
@@ -4051,20 +4049,18 @@ const (
 )
 
 // Cards stored with Kernel-managed credentials, each a payment method of the
-// wallet. Each card is enrolled through a card*enrollment action: the cardholder
-// enters the card and their email on a Kernel-hosted page. Where the wallet
-// advertises add_payment_method, creation returns an empty connected wallet and
-// each card is enrolled with that operation. Otherwise creation returns the
-// wallet's default card's card_enrollment action, and the wallet connects once
-// that card is stored. Kernel then enrolls each card for an agentic network token
-// when the issuer supports it. The card number never reaches Kernel. The connected
-// wallet's payment_methods expansion lists the cards;
-// capabilities.single_use_card.eligible is false, with a network_token*\* reason,
-// until the card has a network token, and authorize returns 400 for such a card
-// unless Kernel supports checkout delivery without a network token for that card.
-// In that case, fill types the checkout details. Visa purchases require the
-// cardholder to complete a spend_approval action before Kernel issues a one-time
-// code; Mastercard purchases need no hosted approval.
+// wallet. Creation returns a connected wallet with no cards and no action. Add
+// each card with the add*payment_method operation, which returns a card_enrollment
+// action: the cardholder enters the card and their email on a Kernel-hosted page.
+// Kernel then enrolls each card for an agentic network token when the issuer
+// supports it. The card number never reaches Kernel. The connected wallet's
+// payment_methods expansion lists the cards; capabilities.single_use_card.eligible
+// is false, with a network_token*\* reason, until the card has a network token,
+// and authorize returns 400 for such a card unless Kernel supports checkout
+// delivery without a network token for that card. In that case, fill types the
+// checkout details. Visa purchases require the cardholder to complete a
+// spend_approval action before Kernel issues a one-time code; Mastercard purchases
+// need no hosted approval.
 //
 // The property Provider is required.
 type KernelWalletVaultItemSpecParam struct {
@@ -5249,23 +5245,63 @@ const (
 // page to determine successful authentication on the website.
 type OnePasswordFillVaultItemOperationResult struct {
 	// Kernel's outcome of the extension call. fill_submitted means the extension
-	// reported submission, not website authentication. fill_failed means the extension
-	// returned a known failure and includes error_code. fill_unknown means the form
-	// may have been filled or submitted without a conclusive result; inspect the page
-	// to see the result of the fill.
+	// reported submission, not website authentication; check the page. fill_failed
+	// means 1Password reported a failure, named by error_code; with fillFailed the
+	// form may already have been filled or submitted, so check the page. fill_unknown
+	// means the form may have been filled or submitted without a conclusive result;
+	// inspect the page to see the result of the fill.
 	//
 	// Any of "fill_submitted", "fill_failed", "fill_unknown".
 	Status OnePasswordFillVaultItemOperationResultStatus `json:"status" api:"required"`
 	// Any of "1pw_fill".
 	Type OnePasswordFillVaultItemOperationResultType `json:"type" api:"required"`
-	// Present for fill_failed, and for fill_unknown when the extension reported
-	// autosubmitFailed (it filled and submitted the form but could not confirm the
-	// fill finished). These are allowlisted 1Password extension codes, never raw
-	// errors, secrets, or page content.
+	// The 1Password extension's error code, passed through unchanged. Present for
+	// fill_failed, and for fill_unknown when the extension reported one. Codes
+	// 1Password adds later are returned with fill_unknown, because the form may have
+	// been filled or submitted. Codes are short identifiers, never raw errors,
+	// secrets, or page content.
 	//
-	// Any of "fillFailed", "autosubmitFailed", "noExistingCredentials",
-	// "authenticationFailed".
-	ErrorCode OnePasswordFillVaultItemOperationResultErrorCode `json:"error_code"`
+	// autosubmitFailed (fill_unknown): 1Password filled the form, saw no new page and
+	// no removed fields for 10 seconds, and cleared what it filled. If the login has a
+	// one-time password the site didn't ask for, the sign-in may still have worked.
+	// The approval is still valid: do not request access again. Check the page:
+	// continue if signed in or on a verification step; if the form is still showing,
+	// 1Password cannot sign in to this site, so ask the user or use another sign-in
+	// method rather than filling again.
+	//
+	// internal (fill_unknown): an unexpected 1Password error that may have happened
+	// after the fill. Inspect the page.
+	//
+	// noActiveGrant, credentialNotFound: the approval expired or was revoked, or the
+	// login was deleted or moved. Kernel returns the credential to
+	// pending_authorization and drops its approval; create a new access request with
+	// 1pw_create_access_request.
+	//
+	// fillFailed: 1Password couldn't complete the fill, and the form may already have
+	// been filled or submitted. Check the page before filling again.
+	//
+	// websiteMismatch: the page isn't on the login's website. Navigate to the login
+	// page and fill again.
+	//
+	// rateLimitExceeded: wait at least a minute before filling again.
+	// serviceUnavailable and networkError: fill again with backoff.
+	//
+	// extensionUnavailable: the 1Password extension failed to start in this browser.
+	// Create a new browser with the vault attached and fill there.
+	//
+	// invalidToken: 1Password rejected the access token. For a credential linked to a
+	// 1Password account, Kernel has already refreshed the token and filled once more;
+	// if that refresh failed, the account is now reconnect_required, so link it again
+	// with PUT. For a credential with a stored token, replace the token with
+	// 1pw_update_access_token, then fill again.
+	//
+	// integrationKeyInvalid: the 1Password connection was removed or is out of date.
+	// Invoke 1pw_disconnect on the credential_account item, then link it again with
+	// PUT.
+	//
+	// insufficientScope, permissionDenied, featureEntitlementMissing: the 1Password
+	// account or plan doesn't allow this. Tell the user; filling again won't help.
+	ErrorCode string `json:"error_code"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Status      respjson.Field
@@ -5283,10 +5319,11 @@ func (r *OnePasswordFillVaultItemOperationResult) UnmarshalJSON(data []byte) err
 }
 
 // Kernel's outcome of the extension call. fill_submitted means the extension
-// reported submission, not website authentication. fill_failed means the extension
-// returned a known failure and includes error_code. fill_unknown means the form
-// may have been filled or submitted without a conclusive result; inspect the page
-// to see the result of the fill.
+// reported submission, not website authentication; check the page. fill_failed
+// means 1Password reported a failure, named by error_code; with fillFailed the
+// form may already have been filled or submitted, so check the page. fill_unknown
+// means the form may have been filled or submitted without a conclusive result;
+// inspect the page to see the result of the fill.
 type OnePasswordFillVaultItemOperationResultStatus string
 
 const (
@@ -5299,19 +5336,6 @@ type OnePasswordFillVaultItemOperationResultType string
 
 const (
 	OnePasswordFillVaultItemOperationResultType1pwFill OnePasswordFillVaultItemOperationResultType = "1pw_fill"
-)
-
-// Present for fill_failed, and for fill_unknown when the extension reported
-// autosubmitFailed (it filled and submitted the form but could not confirm the
-// fill finished). These are allowlisted 1Password extension codes, never raw
-// errors, secrets, or page content.
-type OnePasswordFillVaultItemOperationResultErrorCode string
-
-const (
-	OnePasswordFillVaultItemOperationResultErrorCodeFillFailed            OnePasswordFillVaultItemOperationResultErrorCode = "fillFailed"
-	OnePasswordFillVaultItemOperationResultErrorCodeAutosubmitFailed      OnePasswordFillVaultItemOperationResultErrorCode = "autosubmitFailed"
-	OnePasswordFillVaultItemOperationResultErrorCodeNoExistingCredentials OnePasswordFillVaultItemOperationResultErrorCode = "noExistingCredentials"
-	OnePasswordFillVaultItemOperationResultErrorCodeAuthenticationFailed  OnePasswordFillVaultItemOperationResultErrorCode = "authenticationFailed"
 )
 
 type OnePasswordOAuthAction struct {
@@ -8358,7 +8382,7 @@ type VaultItemOperationResponseUnion struct {
 	// This field is from variant [PasskeyVaultItemOperationResult].
 	RpID string `json:"rp_id"`
 	// This field is from variant [OnePasswordFillVaultItemOperationResult].
-	ErrorCode OnePasswordFillVaultItemOperationResultErrorCode `json:"error_code"`
+	ErrorCode string `json:"error_code"`
 	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
 	ErrorText string `json:"error_text"`
 	// This field is from variant [WebmcpInvokeVaultItemOperationResult].
@@ -9221,8 +9245,8 @@ type VaultPaymentMethod struct {
 	Capabilities VaultPaymentMethodCapabilities `json:"capabilities" api:"required"`
 	Display      VaultPaymentMethodDisplay      `json:"display" api:"required"`
 	// For Kernel wallets, true for the default card, ID card, which a Kernel card item
-	// that omits payment_method_id selects. Wallets created with payment methods
-	// enabled have no default card.
+	// that omits payment_method_id selects. Only wallets created before cards were
+	// added with add_payment_method have a default card.
 	IsDefault bool `json:"is_default" api:"required"`
 	// Provider that issued this payment-method ID.
 	Provider string `json:"provider" api:"required"`

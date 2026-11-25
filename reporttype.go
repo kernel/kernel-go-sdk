@@ -170,6 +170,11 @@ type ReportTypeListParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Offset the number of report types to return.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// What the agent wants to report, in its own words. Types are ranked by how
+	// closely their meaning matches, most relevant first; they need not share any
+	// words. Only this text affects the ranking, not the task. Without it, or if
+	// ranking is unavailable, types are listed by name.
+	Query param.Opt[string] `query:"query,omitzero" json:"-"`
 	paramObj
 }
 

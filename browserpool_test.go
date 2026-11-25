@@ -59,6 +59,11 @@ func TestBrowserPoolNewWithOptionalParams(t *testing.T) {
 			ID:   kernel.String("id"),
 			Name: kernel.String("name"),
 		},
+		Proxy: kernel.BrowserProxyConfigParam{
+			ID:   kernel.String("x"),
+			Mode: kernel.BrowserProxyModeDirect,
+			Name: kernel.String("x"),
+		},
 		ProxyID:                kernel.String("proxy_id"),
 		RefreshOnProfileUpdate: kernel.Bool(true),
 		Region:                 kernel.BrowserPoolNewParamsRegionUsEast,
@@ -212,6 +217,11 @@ func TestBrowserPoolUpdateWithOptionalParams(t *testing.T) {
 			Profile: kernel.BrowserPoolUpdateParamsProfile{
 				ID:   kernel.String("id"),
 				Name: kernel.String("name"),
+			},
+			Proxy: kernel.BrowserProxyConfigParam{
+				ID:   kernel.String("x"),
+				Mode: kernel.BrowserProxyModeDirect,
+				Name: kernel.String("x"),
 			},
 			ProxyID:                kernel.String("proxy_id"),
 			RefreshOnProfileUpdate: kernel.Bool(true),

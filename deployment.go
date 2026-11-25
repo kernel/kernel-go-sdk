@@ -618,6 +618,18 @@ type DeploymentNewParams struct {
 	//
 	// Any of "aws.us-east-1a".
 	Region DeploymentNewParamsRegion `json:"region,omitzero"`
+	// Permissions for each invocation's injected API key. Send this multipart field as
+	// JSON. Requires scoped deployment enablement. The policy must stay within the
+	// deployment's project, be a subset of the caller's permissions when the caller
+	// has a policy, and grant container-wide invocations:write for runtime callbacks.
+	// It cannot include api_keys:issue_beyond_expiry. Exact resource IDs must exist.
+	// The policy outlives the deploying credential; each invocation gets a fresh key
+	// valid for 65 minutes from issuance. When the caller has a policy, omission
+	// grants only project-wide invocations:write for runtime callbacks. A supplied
+	// policy must explicitly include that permission; it is never added automatically.
+	// Callers without a policy keep an unrestricted runtime key when this field is
+	// omitted. Scoped invokers must cover the runtime policy.
+	RuntimePolicy DeploymentNewParamsRuntimePolicy `json:"runtime_policy,omitzero"`
 	// Source from which to fetch application code.
 	Source DeploymentNewParamsSource `json:"source,omitzero"`
 	paramObj
@@ -647,6 +659,100 @@ type DeploymentNewParamsRegion string
 const (
 	DeploymentNewParamsRegionAwsUsEast1a DeploymentNewParamsRegion = "aws.us-east-1a"
 )
+
+// Permissions for each invocation's injected API key. Send this multipart field as
+// JSON. Requires scoped deployment enablement. The policy must stay within the
+// deployment's project, be a subset of the caller's permissions when the caller
+// has a policy, and grant container-wide invocations:write for runtime callbacks.
+// It cannot include api_keys:issue_beyond_expiry. Exact resource IDs must exist.
+// The policy outlives the deploying credential; each invocation gets a fresh key
+// valid for 65 minutes from issuance. When the caller has a policy, omission
+// grants only project-wide invocations:write for runtime callbacks. A supplied
+// policy must explicitly include that permission; it is never added automatically.
+// Callers without a policy keep an unrestricted runtime key when this field is
+// omitted. Scoped invokers must cover the runtime policy.
+//
+// The property Statements is required.
+type DeploymentNewParamsRuntimePolicy struct {
+	// Allow statements. Every action and resource not listed is denied.
+	Statements []DeploymentNewParamsRuntimePolicyStatement `json:"statements,omitzero" api:"required"`
+	paramObj
+}
+
+func (r DeploymentNewParamsRuntimePolicy) MarshalJSON() (data []byte, err error) {
+	type shadow DeploymentNewParamsRuntimePolicy
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *DeploymentNewParamsRuntimePolicy) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Action, Resource are required.
+type DeploymentNewParamsRuntimePolicyStatement struct {
+	// Permitted action, such as browsers:use or vaults:read. When creating an API key
+	// or replacing its policy, `*` may replace whole components as shorthand:
+	// browsers:_ names every browsers action, _:delete every delete action the
+	// resource can carry, and _:_ every action the resource can carry. The stored
+	// policy lists the concrete actions, so actions added later are not granted, and
+	// api_keys:issue_beyond_expiry must always be listed explicitly. Partial
+	// components such as brow*:use and a bare * are rejected. Other policies, such as
+	// workload identity rules and deployment runtime policies, accept only exact
+	// actions.
+	Action string `json:"action" api:"required"`
+	// Resource the action applies to, in the format projects/{project_id}/{kind}/{id}.
+	// Wildcards are supported.
+	Resource string `json:"resource" api:"required"`
+	// A condition narrows a policy statement to requests matching its constraint: the
+	// request attribute, a comparison operator, and that operator's values.
+	Condition DeploymentNewParamsRuntimePolicyStatementCondition `json:"condition,omitzero"`
+	paramObj
+}
+
+func (r DeploymentNewParamsRuntimePolicyStatement) MarshalJSON() (data []byte, err error) {
+	type shadow DeploymentNewParamsRuntimePolicyStatement
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *DeploymentNewParamsRuntimePolicyStatement) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A condition narrows a policy statement to requests matching its constraint: the
+// request attribute, a comparison operator, and that operator's values.
+//
+// The properties Key, Operator, Values are required.
+type DeploymentNewParamsRuntimePolicyStatementCondition struct {
+	// Request attribute the condition constrains. `source_ip` restricts the statement
+	// to requests whose client address falls inside one of `values`.
+	//
+	// Any of "source_ip".
+	Key string `json:"key,omitzero" api:"required"`
+	// Comparison the condition applies between the request attribute and values.
+	//
+	// Any of "in".
+	Operator string `json:"operator,omitzero" api:"required"`
+	// Values the request attribute must match. For `source_ip`, CIDR networks: a bare
+	// address without a mask is rejected, and so are an entry with host bits set and
+	// an IPv4 network written in IPv6 notation.
+	Values []string `json:"values,omitzero" api:"required"`
+	paramObj
+}
+
+func (r DeploymentNewParamsRuntimePolicyStatementCondition) MarshalJSON() (data []byte, err error) {
+	type shadow DeploymentNewParamsRuntimePolicyStatementCondition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *DeploymentNewParamsRuntimePolicyStatementCondition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[DeploymentNewParamsRuntimePolicyStatementCondition](
+		"key", "source_ip",
+	)
+	apijson.RegisterFieldValidator[DeploymentNewParamsRuntimePolicyStatementCondition](
+		"operator", "in",
+	)
+}
 
 // Source from which to fetch application code.
 //
