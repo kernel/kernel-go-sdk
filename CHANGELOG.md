@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.155.0](https://github.com/kernel/kernel-go-sdk/compare/v0.154.0...v0.155.0) (2026-11-25)
+
+
+### Features
+
+* Accept a proxy object on browser pools ([5faf448](https://github.com/kernel/kernel-go-sdk/commit/5faf4482afda5049c839c6857c8407fc1fbc250b))
+* Let alias Kernel cards record a merchant outcome ([0400858](https://github.com/kernel/kernel-go-sdk/commit/0400858905be44e9b6d2b8cf32feca66f2497ac2))
+
 ## [0.154.0](https://github.com/kernel/kernel-go-sdk/compare/v0.153.0...v0.154.0) (2026-11-20)
 
 

@@ -248,8 +248,12 @@ type BrowserPoolBrowserPoolConfig struct {
 	// omitted here. Any save_changes value sent on a pool profile is silently ignored
 	// rather than rejected.
 	Profile BrowserPoolBrowserPoolConfigProfile `json:"profile"`
-	// Optional proxy associated to the browser session. References a proxy in the same
-	// project as the browser session.
+	// Resolved proxy configuration for browsers in this pool.
+	Proxy BrowserProxy `json:"proxy"`
+	// ID of the proxy associated with browsers in this pool, if any. Deprecated in
+	// favor of proxy.
+	//
+	// Deprecated: deprecated
 	ProxyID string `json:"proxy_id"`
 	// When true, flush idle browsers when the profile the pool uses is updated, so
 	// pool browsers pick up the latest profile data. When a profile is provided during
@@ -264,9 +268,9 @@ type BrowserPoolBrowserPoolConfig struct {
 	// chrome:// pages.
 	StartURL string `json:"start_url"`
 	// Whether browsers in this pool use stealth mode, which is CAPTCHA solving with
-	// Kernel's default stealth proxy unless proxy_id is set. A pool with only
+	// Kernel's default stealth proxy unless a proxy is set. A pool with only
 	// captcha_solver enabled reports false. Deprecated in favor of captcha_solver and
-	// proxy_id.
+	// proxy.
 	//
 	// Deprecated: deprecated
 	Stealth bool `json:"stealth"`
@@ -302,6 +306,7 @@ type BrowserPoolBrowserPoolConfig struct {
 		Name                   respjson.Field
 		Network                respjson.Field
 		Profile                respjson.Field
+		Proxy                  respjson.Field
 		ProxyID                respjson.Field
 		RefreshOnProfileUpdate respjson.Field
 		StartReplay            respjson.Field
@@ -591,8 +596,9 @@ type BrowserPoolNewParams struct {
 	KioskMode param.Opt[bool] `json:"kiosk_mode,omitzero"`
 	// Optional name for the browser pool. Must be unique within the project.
 	Name param.Opt[string] `json:"name,omitzero"`
-	// Optional proxy to associate to the browser session. Must reference a proxy in
-	// the same project as the browser session.
+	// Optional proxy to associate to browsers in this pool. Must reference a proxy in
+	// the same project as the pool. Cannot be combined with proxy. Deprecated in favor
+	// of proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// When true, flush idle browsers when the profile the pool uses is updated, so
 	// pool browsers pick up the latest profile data. When a profile is provided during
@@ -606,10 +612,9 @@ type BrowserPoolNewParams struct {
 	// previous lease left them on. Accepts any URL Chromium can resolve, including
 	// chrome:// pages.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
-	// If true, enables the CAPTCHA solver and, when proxy_id is omitted, uses Kernel's
-	// default stealth proxy. Defaults to false. Cannot be combined with
-	// captcha_solver.enabled=false. Deprecated in favor of captcha_solver and
-	// proxy_id.
+	// If true, enables the CAPTCHA solver and, when proxy and proxy_id are omitted,
+	// uses Kernel's default stealth proxy. Defaults to false. Cannot be combined with
+	// captcha_solver.enabled=false. Deprecated in favor of captcha_solver and proxy.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// Default idle timeout in seconds for browsers acquired from this pool before they
 	// are destroyed. Defaults to 600 seconds. Minimum 10, maximum 259200 (72 hours).
@@ -622,8 +627,9 @@ type BrowserPoolNewParams struct {
 	// browsers.
 	Telemetry BrowserPoolNewParamsTelemetry `json:"telemetry,omitzero"`
 	// Automatic CAPTCHA solving for browsers in this pool. Disabled by default.
-	// Enabling it does not select a proxy: when proxy_id is omitted, browsers use
-	// direct egress unless stealth=true.
+	// Enabling it does not select a proxy: when proxy and proxy_id are omitted,
+	// browsers use direct egress unless stealth=true. Set proxy.mode=default for
+	// Kernel's default stealth proxy.
 	CaptchaSolver BrowserCaptchaSolverParam `json:"captcha_solver,omitzero"`
 	// Custom Chrome enterprise policy overrides applied to all browsers in this pool.
 	// Keys are Chrome enterprise policy names; values must match their expected types.
@@ -648,6 +654,13 @@ type BrowserPoolNewParams struct {
 	// omitted here. Any save_changes value sent on a pool profile is silently ignored
 	// rather than rejected.
 	Profile BrowserPoolNewParamsProfile `json:"profile,omitzero"`
+	// Proxy configuration for browsers in this pool. Cannot be combined with proxy_id.
+	// Omit to use direct egress, or Kernel's default stealth proxy when stealth=true.
+	// Set mode to direct to force direct egress. Set mode to default to use Kernel's
+	// default stealth proxy when captcha_solver.enabled=true, or direct egress
+	// otherwise. Select id or name to use that proxy. Proxy selection does not change
+	// CAPTCHA solver behavior.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
 	// Geographic region for the browser pool. It is fixed once the pool is created.
 	// Region selection requires a Start-Up or Enterprise plan, defaults to us-east
 	// when omitted on create.
@@ -847,7 +860,7 @@ type BrowserPoolUpdateParams struct {
 	// cannot be cleared or reset to empty once assigned.
 	Name param.Opt[string] `json:"name,omitzero"`
 	// Empty string clears the previously-selected proxy. Omit this field to leave the
-	// proxy unchanged.
+	// proxy unchanged. Cannot be combined with proxy. Deprecated in favor of proxy.
 	ProxyID param.Opt[string] `json:"proxy_id,omitzero"`
 	// If provided, replaces whether idle browsers are flushed when the profile the
 	// pool uses is updated. When the pool's profile reference is changed (including
@@ -867,9 +880,9 @@ type BrowserPoolUpdateParams struct {
 	// it unchanged.
 	StartURL param.Opt[string] `json:"start_url,omitzero"`
 	// If provided, replaces whether browsers launch in stealth mode. stealth=true
-	// without proxy_id moves a pool on direct egress to Kernel's default stealth
-	// proxy. Cannot be combined with captcha_solver.enabled=false. Deprecated in favor
-	// of captcha_solver and proxy_id.
+	// without proxy or proxy_id moves a pool on direct egress to Kernel's default
+	// stealth proxy. Cannot be combined with captcha_solver.enabled=false. Deprecated
+	// in favor of captcha_solver and proxy.
 	Stealth param.Opt[bool] `json:"stealth,omitzero"`
 	// If provided, replaces the default idle timeout in seconds for browsers acquired
 	// from this pool before they are destroyed. Minimum 10, maximum 259200 (72 hours).
@@ -884,7 +897,7 @@ type BrowserPoolUpdateParams struct {
 	Telemetry BrowserPoolUpdateParamsTelemetry `json:"telemetry,omitzero"`
 	// If provided, replaces whether browsers in this pool automatically solve
 	// CAPTCHAs. Enabling it on a pool with direct egress keeps direct egress unless
-	// proxy_id or stealth=true is also set.
+	// proxy, proxy_id, or stealth=true is also set.
 	CaptchaSolver BrowserCaptchaSolverParam `json:"captcha_solver,omitzero"`
 	// If provided, replaces the custom Chrome enterprise policy overrides applied to
 	// all browsers in this pool. Empty object clears any previously-set policy. Keys
@@ -927,6 +940,12 @@ type BrowserPoolUpdateParams struct {
 	// omitted here. Any save_changes value sent on a pool profile is silently ignored
 	// rather than rejected.
 	Profile BrowserPoolUpdateParamsProfile `json:"profile,omitzero"`
+	// Proxy configuration to apply to browsers warmed after the update. Omit to leave
+	// the current configuration unchanged. Cannot be combined with proxy_id. Set mode
+	// to direct to switch to direct egress. Set mode to default to use Kernel's
+	// default stealth proxy for a pool with CAPTCHA solving enabled, or direct egress
+	// otherwise. Updating proxy does not change CAPTCHA solver behavior.
+	Proxy BrowserProxyConfigParam `json:"proxy,omitzero"`
 	// Initial browser window size in pixels with optional refresh rate. If omitted,
 	// image defaults apply (1920x1080@25). For GPU images, the default is
 	// 1920x1080@60. Arbitrary viewport dimensions and refresh rates are accepted.

@@ -204,7 +204,8 @@ func TestBrowserUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"htzv5orfit78e1m2biiifpbv",
 		kernel.BrowserUpdateParams{
-			DisableDefaultProxy: kernel.Bool(true),
+			CaptchaSolverEnabled: kernel.Bool(true),
+			DisableDefaultProxy:  kernel.Bool(true),
 			Location: kernel.BrowserLocationUpdateRequestParam{
 				Locale:   kernel.String("en-US"),
 				Timezone: kernel.String("America/Los_Angeles"),

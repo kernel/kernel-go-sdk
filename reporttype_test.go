@@ -53,6 +53,7 @@ func TestReportTypeListWithOptionalParams(t *testing.T) {
 		TaskID: "task_id",
 		Limit:  kernel.Int(1),
 		Offset: kernel.Int(0),
+		Query:  kernel.String("query"),
 	})
 	if err != nil {
 		var apierr *kernel.Error
