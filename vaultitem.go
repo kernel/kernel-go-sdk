@@ -5338,6 +5338,17 @@ const (
 	OnePasswordFillVaultItemOperationResultType1pwFill OnePasswordFillVaultItemOperationResultType = "1pw_fill"
 )
 
+// Deprecated: use string. ErrorCode can contain new values.
+type OnePasswordFillVaultItemOperationResultErrorCode = string
+
+// Deprecated: use the error code strings directly.
+const (
+	OnePasswordFillVaultItemOperationResultErrorCodeFillFailed            OnePasswordFillVaultItemOperationResultErrorCode = "fillFailed"
+	OnePasswordFillVaultItemOperationResultErrorCodeAutosubmitFailed      OnePasswordFillVaultItemOperationResultErrorCode = "autosubmitFailed"
+	OnePasswordFillVaultItemOperationResultErrorCodeNoExistingCredentials OnePasswordFillVaultItemOperationResultErrorCode = "noExistingCredentials"
+	OnePasswordFillVaultItemOperationResultErrorCodeAuthenticationFailed  OnePasswordFillVaultItemOperationResultErrorCode = "authenticationFailed"
+)
+
 type OnePasswordOAuthAction struct {
 	// Any of "1password_oauth".
 	Name OnePasswordOAuthActionName `json:"name" api:"required"`

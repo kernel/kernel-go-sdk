@@ -11,6 +11,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"net/url"
 	"slices"
 	"time"
@@ -629,9 +630,9 @@ type DeploymentNewParams struct {
 	// policy must explicitly include that permission; it is never added automatically.
 	// Callers without a policy keep an unrestricted runtime key when this field is
 	// omitted. Scoped invokers must cover the runtime policy.
-	RuntimePolicy DeploymentNewParamsRuntimePolicy `json:"runtime_policy,omitzero"`
+	RuntimePolicy DeploymentNewParamsRuntimePolicy `json:"runtime_policy,omitzero" form:"-"`
 	// Source from which to fetch application code.
-	Source DeploymentNewParamsSource `json:"source,omitzero"`
+	Source DeploymentNewParamsSource `json:"source,omitzero" form:"-"`
 	paramObj
 }
 
@@ -639,6 +640,12 @@ func (r DeploymentNewParams) MarshalMultipart() (data []byte, contentType string
 	buf := bytes.NewBuffer(nil)
 	writer := multipart.NewWriter(buf)
 	err = apiform.MarshalRoot(r, writer)
+	if err == nil && !param.IsOmitted(r.RuntimePolicy) {
+		err = writeDeploymentJSONPart(writer, "runtime_policy", r.RuntimePolicy)
+	}
+	if err == nil && !param.IsOmitted(r.Source) {
+		err = writeDeploymentJSONPart(writer, "source", r.Source)
+	}
 	if err == nil {
 		err = apiform.WriteExtras(writer, r.ExtraFields())
 	}
@@ -651,6 +658,22 @@ func (r DeploymentNewParams) MarshalMultipart() (data []byte, contentType string
 		return nil, "", err
 	}
 	return buf.Bytes(), writer.FormDataContentType(), nil
+}
+
+func writeDeploymentJSONPart(writer *multipart.Writer, name string, value json.Marshaler) error {
+	body, err := value.MarshalJSON()
+	if err != nil {
+		return err
+	}
+	part, err := writer.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": {fmt.Sprintf(`form-data; name="%s"`, name)},
+		"Content-Type":        {"application/json"},
+	})
+	if err != nil {
+		return err
+	}
+	_, err = part.Write(body)
+	return err
 }
 
 // Region for deployment. Currently we only support "aws.us-east-1a"
