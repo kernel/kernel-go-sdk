@@ -382,6 +382,7 @@ jobs:
           - API Spec: /tmp/cli-coverage-context/api/openapi.yaml - Full OpenAPI specification. CHECK for x-cli-skip: true on endpoints - skip those from CLI coverage.
           - API Spec diff: /tmp/cli-coverage-context/openapi-diff.patch - Spec changes between the SDK version on CLI main and the new one, including endpoint, parameter, and field description changes.
           - CLI: /tmp/kernel-cli - Existing CLI commands
+          - CLI conventions: /tmp/kernel-cli/AGENTS.md - Read this before changing the CLI and follow its rules for code and user-facing copy.
 
           # Task
 
